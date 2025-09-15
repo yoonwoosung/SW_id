@@ -1,32 +1,178 @@
 {% extends "layout.html" %}
+
 {% block content %}
 <div class="container">
     <div class="dashboard-header">
-        <h2>나의 농장 목록 🧑‍🌾</h2>
+        <h2>🧑‍🌾 나의 농장 대시보드</h2>
         <a href="{{ url_for('farmer_register') }}" class="btn-register">새 체험 등록하기 +</a>
     </div>
 
+    <div class="stats-cards">
+        <div class="card">
+            <h4>총 등록 체험</h4>
+            <p>{{ stats.total_listings }}개</p>
+        </div>
+        <div class="card">
+            <h4>총 예약</h4>
+            <p>{{ stats.total_bookings }}건</p>
+        </div>
+        <div class="card">
+            <h4>예상 수익</h4>
+            <p>{{ "{:,}".format(stats.expected_revenue) }}원</p>
+        </div>
+    </div>
+
+    <h3>체험 목록 및 예약 현황</h3>
+    
     {% if listings %}
     <div class="item-list">
         <div class="list-header">
-            <span>작물명</span><span>위치</span><span>가격</span><span>모집현황</span>
+            <span>체험명 (작물)</span>
+            <span>위치</span>
+            <span>가격</span>
+            <span>모집 현황</span>
+            <span>관리</span>
         </div>
+        
         {% for item in listings %}
-        <a href="#" class="list-item">  <span><strong>{{ item.crop }}</strong><br>#{{ "친환경" if item.pesticide_free else "일반" }}</span>
-            <span>{{ item.location }}</span>
-            <span>{{ "{:,}".format(item.cost) }}원</span>
-            <span class="d-day {% if item.d_day < 5 %}imminent{% endif %}">
-                D-{{ item.d_day }}<br>
-                <span>모집중</span>
-            </span>
-        </a>
-        {% endfor %}
-    </div>
-    {% else %}
-    <div class="no-items">
+        <div class="list-item-wrapper">
+            <div class="list-item">
+                <span>
+                    <strong>{{ item.title }}</strong><br> <span class="crop-name">#{{ item.crop }}</span> </span>
+                
+                <span>{{ item.location }}</span>
+                
+                <span>{{ "{:,}".format(item.cost) }}원</span>
+                
+                <span class="status">
+                    <span class="d-day {% if item.d_day < 5 %}imminent{% endif %}">D-{{ item.d_day }}</span>
+                    <span class="booking-status">{{ item.current_participants }} / {{ item.max_participants }}명</span>
+                    
+                    {% if item.current_participants == item.max_participants %}
+                        <span class="tag completed">모집완료</span>
+                    {% elif item.d_day < 5 %}
+                        <span class="tag imminent-tag">모집임박</span>
+                    {% else %}
+                        <span class="tag recruiting">모집중</span>
+                    {% endif %}
+                </span>
+                
+                <span>
+                    <a href="{{ url_for('manage_booking', listing_id=item.id) }}" class="btn-manage">예약자 관리</a>
+                </span>
+            </div>
+        </div>
+        {% endfor %} </div>
+    {% else %} <div class="no-items">
         <p>아직 등록된 농장 체험이 없습니다.</p>
         <p>'새 체험 등록하기' 버튼을 눌러 첫 체험을 등록해보세요!</p>
     </div>
-    {% endif %}
-</div>
-{% endblock %}
+    {% endif %} </div>
+{% endblock %} ```
+
+---
+
+### **CSS (`style.css`)**
+
+이 파일은 HTML로 만든 구조에 **디자인(스타일)**을 입힙니다. 색상, 글꼴, 레이아웃 등을 지정하여 보기 좋게 만듭니다.
+
+```css
+/* 대시보드 전체를 감싸는 영역에 대한 스타일 */
+.container {
+    width: 90%; /* 화면 너비의 90%를 차지 */
+    max-width: 1200px; /* 최대 너비는 1200px을 넘지 않도록 제한 */
+    margin: 2rem auto; /* 위아래 여백은 2rem, 좌우 여백은 auto로 주어 중앙 정렬 */
+    font-family: 'Pretendard', sans-serif; /* 기본 글꼴 설정 */
+}
+
+/* 헤더("나의 농장 대시보드"와 버튼이 있는 영역) 스타일 */
+.dashboard-header {
+    display: flex; /* 내부 요소들을 가로로 배치(flexbox) */
+    justify-content: space-between; /* 요소들 사이에 공간을 균등하게 배분하여 양 끝으로 보냄 */
+    align-items: center; /* 요소들을 세로 방향에서 중앙에 정렬 */
+    margin-bottom: 2rem; /* 아래쪽 바깥 여백 */
+    padding-bottom: 1rem; /* 아래쪽 안쪽 여백 */
+    border-bottom: 1px solid #e0e0e0; /* 아래쪽에 1px 두께의 회색 실선 */
+}
+
+/* '새 체험 등록하기' 버튼 스타일 */
+.btn-register {
+    background-color: #4CAF50; /* 배경색 (녹색 계열) */
+    color: white; /* 글자색 (흰색) */
+    padding: 10px 20px; /* 버튼의 안쪽 여백 (상하 10px, 좌우 20px) */
+    border-radius: 5px; /* 모서리를 5px만큼 둥글게 */
+    text-decoration: none; /* 링크의 밑줄 제거 */
+    font-weight: 600; /* 글자 굵기 */
+    transition: background-color 0.3s; /* 배경색이 변할 때 0.3초 동안 부드럽게 전환 */
+}
+
+/* 위 버튼에 마우스를 올렸을 때의 스타일 */
+.btn-register:hover {
+    background-color: #45a049; /* 배경색을 약간 더 어둡게 변경 */
+}
+
+/* 통계 카드들을 감싸는 영역 스타일 */
+.stats-cards {
+    display: grid; /* 그리드 레이아웃 사용 */
+    /* 화면 크기에 맞춰 열의 개수를 자동으로 조절합니다. 각 카드의 최소 너비는 250px, 최대 너비는 균등하게 채웁니다(1fr). */
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem; /* 카드 사이의 간격 */
+    margin-bottom: 3rem; /* 아래쪽 바깥 여백 */
+}
+
+/* 개별 통계 카드 스타일 */
+.card {
+    background-color: #f9f9f9; /* 연한 회색 배경 */
+    padding: 1.5rem; /* 안쪽 여백 */
+    border-radius: 8px; /* 모서리를 8px만큼 둥글게 */
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05); /* 부드러운 그림자 효과 */
+    text-align: center; /* 내부 텍스트 중앙 정렬 */
+}
+
+/* 체험 목록 전체를 감싸는 영역 스타일 */
+.item-list {
+    background-color: #fff; /* 흰색 배경 */
+    border-radius: 8px; /* 모서리 둥글게 */
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08); /* 그림자 효과 */
+    overflow: hidden; /* 내용이 영역을 벗어날 경우 숨김 */
+}
+
+/* 목록의 헤더("체험명", "위치" 등) 스타일 */
+.list-header {
+    display: grid; /* 그리드 레이아웃 */
+    /* 5개의 열 너비를 2:1.5:1:1.5:1 비율로 설정 */
+    grid-template-columns: 2fr 1.5fr 1fr 1.5fr 1fr;
+    padding: 1rem 1.5rem; /* 안쪽 여백 */
+    background-color: #f5f7fa; /* 배경색 */
+    color: #555; /* 글자색 */
+    font-weight: 600; /* 글자 굵기 */
+    border-bottom: 1px solid #e0e0e0; /* 아래쪽 실선 */
+}
+
+/* HTML에서 d-day가 5일 미만일 때 'imminent' 클래스가 추가됩니다. */
+/* 'd-day'와 'imminent' 클래스를 모두 가진 요소에 이 스타일을 적용합니다. */
+.d-day.imminent {
+    color: #e53935; /* 글자색을 강조되는 빨간색으로 변경 */
+}
+
+/* '모집중', '모집임박' 등 상태를 나타내는 태그의 공통 스타일 */
+.tag {
+    padding: 4px 8px; /* 안쪽 여백 */
+    border-radius: 12px; /* 모서리를 둥글게 만들어 알약 모양으로 */
+    font-size: 0.75rem; /* 작은 글자 크기 */
+    font-weight: 600; /* 글자 굵기 */
+    text-align: center; /* 텍스트 중앙 정렬 */
+    width: fit-content; /* 내용물의 길이에 맞게 너비 조절 */
+}
+/* 각 상태별 태그의 배경색과 글자색 설정 */
+.recruiting { background-color: #e3f2fd; color: #1e88e5; } /* 모집중: 파란색 계열 */
+.imminent-tag { background-color: #fff3e0; color: #fb8c00; } /* 모집임박: 주황색 계열 */
+.completed { background-color: #e8f5e9; color: #43a047; } /* 모집완료: 녹색 계열 */
+
+/* 등록된 체험이 없을 때 표시되는 영역의 스타일 */
+.no-items {
+    text-align: center; /* 텍스트 중앙 정렬 */
+    padding: 4rem 2rem; /* 안쪽 여백 */
+    background-color: #f9f9f9; /* 배경색 */
+    border-radius: 8px; /* 모서리 둥글게 */
+}

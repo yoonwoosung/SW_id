@@ -1,38 +1,61 @@
 # dummy_data.py
-from datetime import date, timedelta
 
-# D-day 계산을 위한 헬퍼 함수
-def calculate_d_day(end_date_str):
-    end_date = date.fromisoformat(end_date_str)
-    delta = end_date - date.today()
-    return delta.days
-
-# 임시 체험 데이터
-EXPERIENCES = [
-    {'id': 1, 'crop': '유기농 상추', 'location': '충남 천안시', 'pesticide_free': True, 'cost': 15000, 'end_date': (date.today() + timedelta(days=7)).isoformat(), 'd_day': 7, 'image': 'https://via.placeholder.com/300x200.png?text=Farm1'},
-    {'id': 2, 'crop': '고당도 사과', 'location': '경북 영주시', 'pesticide_free': False, 'cost': 20000, 'end_date': (date.today() + timedelta(days=3)).isoformat(), 'd_day': 3, 'image': 'https://via.placeholder.com/300x200.png?text=Farm2'},
-    {'id': 3, 'crop': '해남 고구마', 'location': '전남 해남군', 'pesticide_free': True, 'cost': 18000, 'end_date': (date.today() + timedelta(days=12)).isoformat(), 'd_day': 12, 'image': 'https://via.placeholder.com/300x200.png?text=Farm3'},
+farmer_listings = [
+    {
+        'id': 1,
+        'farm_name': '햇살농장',
+        'phone_number': '010-1111-2222',
+        'address': '충남 천안시 동남구 유량동 123-45',
+        'farm_size': 300,
+        'crop': '유기농 상추',
+        'is_organic': True,
+        'period_start': '2025-10-01',
+        'period_end': '2025-10-31',
+        'operating_times': ['월 09:00-10:00', '월 10:00-11:00', '수 14:00-15:00'],
+        'max_participants': 10,
+        'cost': 20000,
+        'preparation_note': '편한 복장과 신발, 모자, 선크림을 준비해주세요.',
+        'included_items': '수확한 상추 500g, 친환경 비료 1kg',
+        'excluded_items': '식사, 교통편',
+        'needs_volunteer': True,
+        'volunteer_count': 3,
+        'volunteer_duties': '잡초 제거, 수확물 운반 등',
+        'status': 'recruiting' # 'recruiting'(모집중), 'paused'(모집중단), 'completed'(모집완료)
+    }
 ]
 
-# 임시 봉사활동 데이터
-VOLUNTEER_OPS = [
-    {'id': 1, 'farm_name': '햇살농장', 'location': '충남 천안시 동남구', 'hours_per_day': 9, 'start_date': '2025-09-20', 'end_date': '2025-09-22', 'needed_staff': 5, 'current_staff': 2},
-    {'id': 2, 'farm_name': '바람농장', 'location': '강원도 평창군', 'hours_per_day': 9, 'start_date': '2025-09-18', 'end_date': '2025-09-19', 'needed_staff': 3, 'current_staff': 3},
-]
+def get_farmer_listings():
+    # 최신순으로 정렬하여 반환
+    return sorted(farmer_listings, key=lambda x: x['id'], reverse=True)
 
-def get_all_experiences():
-    for exp in EXPERIENCES:
-        exp['d_day'] = calculate_d_day(exp['end_date'])
-    return EXPERIENCES
+def get_listing_by_id(item_id):
+    # id로 특정 체험 정보 찾기
+    for item in farmer_listings:
+        if item.get('id') == item_id:
+            return item
+    return None
 
-def get_experience_by_id(item_id):
-    return next((item for item in EXPERIENCES if item['id'] == item_id), None)
+def add_farmer_listing(new_listing):
+    # 새로운 체험 정보 추가
+    if farmer_listings:
+        new_id = max(item.get('id', 0) for item in farmer_listings) + 1
+    else:
+        new_id = 1
+    new_listing['id'] = new_id
+    new_listing['status'] = 'recruiting' # 최초 등록 시 상태는 '모집중'
+    farmer_listings.insert(0, new_listing)
 
-def get_farmer_listings(): # 농부가 등록한 리스트 (임시로 전체 리스트 반환)
-    return get_all_experiences()
+def update_listing_by_id(item_id, updated_data):
+    # 기존 체험 정보 수정
+    for i, item in enumerate(farmer_listings):
+        if item.get('id') == item_id:
+            farmer_listings[i].update(updated_data)
+            return True
+    return False
 
-def get_all_volunteer_ops():
-    return VOLUNTEER_OPS
-
-def get_volunteer_op_by_id(item_id):
-    return next((item for item in VOLUNTEER_OPS if item['id'] == item_id), None)
+def delete_listing_by_id(item_id):
+    # 체험 정보 삭제
+    global farmer_listings
+    original_length = len(farmer_listings)
+    farmer_listings = [item for item in farmer_listings if item.get('id') != item_id]
+    return len(farmer_listings) < original_length

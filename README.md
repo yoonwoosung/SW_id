@@ -67,3 +67,52 @@ templates/layout.html: 모든 HTML 파일의 기본이 될 공통 상단 메뉴(
 QA 활동: 개발된 모든 기능을 사용자 입장에서 직접 사용해보며 버그를 찾고, 불편한 점을 기록하여 팀원들에게 공유합니다.
 
 서버 배포: 완성된 Flask 프로젝트를 PythonAnywhere와 같은 무료 호스팅 서비스에 업로드하여 실제 인터넷 주소로 접속할 수 있도록 만듭니다.
+
+
+
+기능
+my_farm_project/
+├── app.py              # (두뇌🧠) URL 접속 처리, 데이터 가공, HTML 연결 등 핵심 로직 담당
+├── dummy_data.py       # (임시 창고📦) 실제 DB를 대신할 가짜 데이터 보관 및 제공
+
+├── templates/          # (얼굴🎭) 사용자가 보는 모든 HTML 페이지의 원본 파일 보관
+│   ├── layout.html         # (공통 뼈대) 모든 페이지에 공통으로 들어갈 헤더/메뉴 등 기본 틀
+│   ├── index.html          # (체험자 메인) 전체 농장 체험 목록을 보여주는 첫 화면
+│   ├── detail_experience.html # (체험 상세) 단일 농장 체험의 상세 정보를 표시
+│   │
+│   ├── farmer_dashboard.html # (농부 메인) 농부가 등록한 자신의 체험 목록을 보는 화면
+│   ├── farmer_register.html  # (농부 등록) 새로운 체험을 등록하는 입력 폼
+│   │
+│   ├── volunteer_apply.html    # (봉사자 메인) 지원 가능한 봉사활동 목록을 표시
+│   ├── volunteer_detail.html   # (봉사 상세) 단일 봉사활동의 상세 정보와 날짜 선택 기능
+│   └── volunteer_myinfo.html   # (봉사자 내정보) 자신의 봉사 신청 현황을 확인
+│
+└── static/             # (옷과 장식🎨) 디자인(CSS), 기능(JS), 이미지 등 정적 파일 보관
+    ├── css/
+    │   └── style.css       # (디자이너) 웹사이트의 색상, 글꼴, 레이아웃 등 전반적인 디자인 정의
+    └── js/
+        └── main.js         # (기능 전문가) 날짜 선택, 시간 계산 등 동적인 사용자 인터랙션 담당
+
+
+담당부분 정리
+my_farm_farm_project/
+├── app.py              # (담당자 A) 전체 구조 설계, (담당자 B, C) 각자 맡은 기능의 라우트 로직 구현
+├── dummy_data.py       # (담당자 A) 데이터 구조 최종 확정
+
+├── templates/          # (담당자 B, C, D) 각 담당자가 자신의 페이지 UI 개발
+│   ├── layout.html         # (담당자 D) 모든 페이지의 공통 뼈대 설계 및 제작
+│   ├── index.html          # (담당자 B) 체험자 메인 페이지 개발
+│   ├── detail_experience.html # (담당자 B) 체험 상세 페이지 개발
+│   │
+│   ├── farmer_dashboard.html # (담당자 C) 농장주 대시보드 UI 개발
+│   ├── farmer_register.html  # (담당자 C) 농장주 체험 등록 페이지 UI 개발
+│   │
+│   ├── volunteer_apply.html    # (담당자 B) 체험 신청(봉사) 페이지 개발
+│   ├── volunteer_detail.html   # (담당자 B) 봉사 상세 페이지 개발
+│   └── volunteer_myinfo.html   # (담당자 B) 봉사자 '내 정보' 페이지 개발
+│
+└── static/             # (담당자 D) 웹사이트의 전체적인 디자인 및 정적 파일 총괄
+    ├── css/
+    │   └── style.css       # (담당자 D) 공통 디자인 시스템 개발
+    └── js/
+        └── main.js         # (담당자 B) 카카오맵 API 연동 등 체험자 기능 관련 JS 개발

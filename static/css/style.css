@@ -32,4 +32,17 @@ header {
 .list-item { text-decoration: none; color: #333; }
 .list-item:hover { background-color: #f9f9f9; }
 .d-day span { font-size: 12px; padding: 3px 6px; border-radius: 4px; color: white; }
+
 .d-day .imminent { background-color: #f44336; } /* 마감임박 */
+
+/* --- 알림 메시지 (flash) --- */
+.flash-messages .alert { padding: 15px; margin-bottom: 20px; border-radius: 4px; }
+.alert-success { background-color: #d4edda; color: #155724; }
+.alert-error { background-color: #f8d7da; color: #721c24; }
+.alert-info { background-color: #cce5ff; color: #004085; }
+
+/* --- 대시보드 상태 태그 --- */
+.tag { padding: 4px 10px; border-radius: 12px; font-size: 13px; font-weight: 600; }
+.recruiting { background-color: #e3f2fd; color: #1e88e5; }
+.paused { background-color: #fff3e0; color: #fb8c00; }
+.completed { background-color: #e0e0e0; color: #333; }

@@ -1,9 +1,7 @@
 # app.py
 from flask import Flask, render_template, session, redirect, url_for, request
 import logging
-from dummy_data import get_all_experiences, get_experience_by_id, get_all_volunteer_ops, get_volunteer_op_by_id,
-    get_farmer_listings, add_farmer_listing, get_listing_by_id,
-    update_listing_by_id, delete_listing_by_id
+from dummy_data import get_all_experiences, get_experience_by_id, get_all_volunteer_ops, get_volunteer_op_by_id, get_farmer_listings, add_farmer_listing, get_listing_by_id, update_listing_by_id, delete_listing_by_id
 
 app = Flask(__name__)
 # session을 사용하기 위해 secret_key가 필요합니다.
@@ -146,4 +144,5 @@ def my_info():
 if __name__ == '__main__':
 
     app.run(debug=True)
+
 

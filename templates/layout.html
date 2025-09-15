@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>우리 농장 체험</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <header class="header-{{ session.get('role', 'experiencer') }}">
+        <div class="header-content container">
+            <a href="/"><img src="https://via.placeholder.com/150x40.png?text=DreamSpoon" alt="로고" class="logo"></a>
+            <div class="user-menu">
+                <a href="#">로그인</a>
+                <a href="#">회원가입</a>
+                <a href="#">고객센터</a>
+            </div>
+            <div class="role-selector">
+                <div class="dropdown">
+                    <button class="dropbtn">
+                        {% if session.get('role') == 'farmer' %}
+                            농부 🧑‍🌾
+                        {% elif session.get('role') == 'volunteer' %}
+                            봉사자 🙋
+                        {% else %}
+                            체험자 👪
+                        {% endif %}
+                    </button>
+                    <div class="dropdown-content">
+                        <a href="/set_role/experiencer" style="color: blue;">체험자</a>
+                        <a href="/set_role/farmer" style="color: green;">농부</a>
+                        <a href="/set_role/volunteer" style="color: brown;">봉사자</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="container">
+        <div id="initial-popup" class="popup-overlay" {% if session.get('role') %}style="display: none;"{% endif %}>
+            <div class="popup-content">
+                <h2>어떤 목적으로 오셨나요?</h2>
+                <a href="/set_role/farmer" class="popup-button farmer">농부로 시작하기</a>
+                <a href="/set_role/experiencer" class="popup-button experiencer">체험자로 시작하기</a>
+            </div>
+        </div>
+
+        {% block content %}{% endblock %}
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>

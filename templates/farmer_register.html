@@ -1,0 +1,140 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="container mt-5 mb-5">
+    <h2 class="mb-4 text-center">신규 농장 체험 등록</h2>
+    <form class="register-form">
+
+        <!-- A. 기본정보 -->
+        <h4 class="mb-3 border-bottom pb-2">A. 기본 정보</h4>
+        <div class="form-group row">
+            <div class="col-md-6">
+                <label for="crop-info"><strong>주요 작물</strong></label>
+                <input type="text" id="crop-info" name="crop-info" class="form-control" placeholder="예: 유기농 상추, 방울토마토">
+            </div>
+            <div class="col-md-6 d-flex align-items-center justify-content-center">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="is-organic" name="is-organic">
+                    <label class="form-check-label" for="is-organic">
+                        <strong>친환경 작물 여부 (인증서 필요)</strong>
+                    </label>
+                </div>
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="phone-number"><strong>전화번호</strong></label>
+            <input type="tel" id="phone-number" name="phone-number" class="form-control" placeholder="010-1234-5678">
+            <small class="form-text text-muted">고객 문의사항 시 응대할 번호로 입력 부탁드립니다.</small>
+        </div>
+        <div class="form-group">
+            <label for="farm-address"><strong>농장 위치 및 주소</strong></label>
+            <input type="text" id="farm-address" name="farm-address" class="form-control" placeholder="예: 충남 천안시 동남구 유량동 123-45">
+        </div>
+        <div class="form-group">
+            <label for="farm-size"><strong>밭 평수</strong></label>
+            <input type="number" id="farm-size" name="farm-size" class="form-control" placeholder="예: 300">
+        </div>
+
+        <!-- B. 운영 정보 -->
+        <h4 class="mt-5 mb-3 border-bottom pb-2">B. 운영 정보</h4>
+        <div class="form-group">
+            <label><strong>운영 기간</strong></label>
+            <div class="input-group">
+                <input type="date" class="form-control" name="start-date">
+                <div class="input-group-prepend input-group-append">
+                    <span class="input-group-text">~</span>
+                </div>
+                <input type="date" class="form-control" name="end-date">
+            </div>
+        </div>
+        
+        <div class="form-group">
+            <label><strong>운영 시간표 (운영하실 시간대를 클릭하세요)</strong></label>
+            <table class="table table-bordered text-center timetable">
+                <thead>
+                    <tr>
+                        <th>시간</th>
+                        <th>월</th>
+                        <th>화</th>
+                        <th>수</th>
+                        <th>목</th>
+                        <th>금</th>
+                        <th>토</th>
+                        <th>일</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for hour in range(9, 21) %} <!-- 오전 9시부터 오후 9시까지 -->
+                    <tr>
+                        <td>{{ "%02d:00" | format(hour) }} - {{ "%02d:00" | format(hour + 1) }}</td>
+                        {% for day in ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] %}
+                        <td class="time-slot" data-day="{{ day }}" data-time="{{ hour }}"></td>
+                        {% endfor %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="form-group row">
+            <div class="col-md-6">
+                <label for="max-participants"><strong>모집 인원 (세션 당)</strong></label>
+                <input type="number" id="max-participants" name="max-participants" class="form-control" placeholder="예: 10">
+            </div>
+            <div class="col-md-6">
+                <label for="participation-fee"><strong>참가비 (1인 기준)</strong></label>
+                <div class="input-group">
+                    <input type="number" id="participation-fee" name="participation-fee" class="form-control" placeholder="예: 20000">
+                    <div class="input-group-append">
+                        <span class="input-group-text">원</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- C. 상세 정보 -->
+        <h4 class="mt-5 mb-3 border-bottom pb-2">C. 상세 정보 (소비자 설득)</h4>
+        <div class="form-group">
+            <label for="photos-videos"><strong>대표 사진 및 영상 (최대 10장)</strong></label>
+            <input type="file" id="photos-videos" name="photos-videos" class="form-control-file" multiple>
+        </div>
+        <div class="form-group">
+            <label for="preparation-notes"><strong>준비물 및 유의사항</strong></label>
+            <textarea id="preparation-notes" name="preparation-notes" class="form-control" rows="4" placeholder="예: 편한 복장과 신발, 모자, 선크림을 준비해주세요."></textarea>
+        </div>
+        <div class="form-group">
+            <label for="included-items"><strong>포함 내역</strong></label>
+            <textarea id="included-items" name="included-items" class="form-control" rows="3" placeholder="참가비에 포함되는 항목을 명확히 알려주세요. 예: 체험 도구, 1인당 수확물 500g"></textarea>
+        </div>
+        <div class="form-group">
+            <label for="excluded-items"><strong>불포함 내역</strong></label>
+            <textarea id="excluded-items" name="excluded-items" class="form-control" rows="3" placeholder="참가비에 포함되지 않는 항목을 명확히 알려주세요. 예: 식사, 교통편"></textarea>
+        </div>
+
+        <!-- D. 역할 구분 -->
+        <h4 class="mt-5 mb-3 border-bottom pb-2">D. 봉사자 모집 정보</h4>
+        <div class="form-group row">
+            <div class="col-md-6">
+                <label for="needed-volunteers"><strong>필요 봉사자 수</strong></label>
+                <input type="number" id="needed-volunteers" name="needed-volunteers" class="form-control" placeholder="필요 없으면 0 또는 미입력">
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="volunteer-tasks"><strong>봉사자 필요 업무</strong></label>
+            <textarea id="volunteer-tasks" name="volunteer-tasks" class="form-control" rows="4" placeholder="예: 잡초 제거, 수확물 운반, 체험객 안내 등 (봉사자가 필요한 경우에만 작성)"></textarea>
+        </div>
+
+        <!-- 약관 동의 -->
+        <div class="form-group form-check mt-5">
+            <input type="checkbox" class="form-check-input" id="terms-agreement">
+            <label class="form-check-label" for="terms-agreement"><strong>서비스 이용 약관 및 개인정보 처리 방침에 동의합니다.</strong></label>
+        </div>
+
+        <!-- 버튼 -->
+        <div class="form-buttons mt-4 d-flex justify-content-center">
+            <button type="button" class="btn btn-secondary mr-2">임시저장</button>
+            <button type="submit" class="btn btn-primary">등록하기</button>
+            <a href="{{ url_for('index') }}" class="btn btn-light ml-2 border">취소</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

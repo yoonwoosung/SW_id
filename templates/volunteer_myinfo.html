@@ -1,0 +1,32 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="container">
+    <h2>내 봉사활동 정보</h2>
+    <div class="myinfo-summary">
+        <p>총 지원 시간: <strong>{{ activities.total_hours }}시간</strong></p>
+        <p>완료된 봉사 시간: <strong>{{ activities.completed_hours }}시간</strong></p>
+    </div>
+
+    <h3>진행 예정 봉사</h3>
+    <div class="item-list">
+        {% for activity in activities.upcoming %}
+        <div class="list-item status-{{ activity.status }}">
+            <span><strong>{{ activity.farm_name }}</strong></span>
+            <span>{{ activity.date }}</span>
+            <span>예정됨</span>
+        </div>
+        {% endfor %}
+    </div>
+
+    <h3>완료된 봉사</h3>
+    <div class="item-list">
+        {% for activity in activities.completed %}
+         <div class="list-item status-{{ activity.status }}">
+            <span><strong>{{ activity.farm_name }}</strong></span>
+            <span>{{ activity.date }}</span>
+            <span>완료</span>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

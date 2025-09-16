@@ -1,0 +1,25 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="container">
+    <h2>현재 진행 중 체험 (체험 목록)</h2>
+    <div class="sort-options">
+        <a href="/?sort=imminent">임박순</a> | <a href="/?sort=region">지역순</a>
+    </div>
+    <div class="item-list">
+        <div class="list-header">
+            <span>작물명</span><span>위치</span><span>비용</span><span>모집현황</span>
+        </div>
+        {% for item in items %}
+        <a href="{{ url_for('experience_detail', item_id=item.id) }}" class="list-item">
+            <span><strong>{{ item.crop }}</strong><br>#{{ "친환경" if item.pesticide_free else "일반" }}</span>
+            <span>{{ item.location }}</span>
+            <span>{{ "{:,}".format(item.cost) }}원</span>
+            <span class="d-day {% if item.d_day < 5 %}imminent{% endif %}">
+                D-{{ item.d_day }}<br>
+                {% if item.d_day < 5 %}<span>마감임박</span>{% else %}<span>모집중</span>{% endif %}
+            </span>
+        </a>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

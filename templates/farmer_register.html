@@ -1,0 +1,39 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="container">
+    <h2>신규 농장 체험 등록</h2>
+    <form class="register-form">
+        <label for="address">상세 주소</label>
+        <input type="text" id="address" name="address" placeholder="예: 충남 천안시 동남구 유량동 123-45">
+
+        <label for="farm_size">소유한 밭 평수</label>
+        <input type="number" id="farm_size" name="farm_size" placeholder="예: 300">
+
+        <label for="crop">밭에 있는 작물</label>
+        <input type="text" id="crop" name="crop" placeholder="예: 유기농 상추">
+
+        <label for="is_organic">친환경 여부</label>
+        <select id="is_organic" name="is_organic">
+            <option value="true">네 (친환경 인증)</option>
+            <option value="false">아니오</option>
+        </select>
+
+        <label for="duration">등록 기간</label>
+        <input type="date" id="duration" name="duration">
+
+        <label for="price">가격 설정</label>
+        <input type="number" id="price" name="price" placeholder="추천 가격: 19,000원">
+        <small>추천 가격은 평균 매매가보다 3~5% 낮은 가격입니다. 클릭 시 사라집니다.</small>
+
+        <div class="checkbox-group">
+            <input type="checkbox" id="volunteer" name="volunteer" checked>
+            <label for="volunteer">봉사자 받기 (선택 시 필요한 봉사자 수가 자동 계산됩니다: 3명)</label>
+        </div>
+
+        <div class="form-buttons">
+            <button type="submit" class="btn-submit">등록하기</button>
+            <a href="{{ url_for('index') }}" class="btn-cancel">취소</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

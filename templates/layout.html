@@ -3,34 +3,32 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <title>우리 농장 체험</title>
+    <title>FarmLink</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
     <header class="header-{{ session.get('role', 'experiencer') }}">
         <div class="header-content container">
-            <a href="/"><img src="https://via.placeholder.com/150x40.png?text=DreamSpoon" alt="로고" class="logo"></a>
-            <div class="user-menu">
-                <a href="#">로그인</a>
-                <a href="#">회원가입</a>
-                <a href="#">고객센터</a>
-            </div>
-            <div class="role-selector">
-                <div class="dropdown">
-                    <button class="dropbtn">
-                        {% if session.get('role') == 'farmer' %}
-                            농부 🧑‍🌾
-                        {% elif session.get('role') == 'volunteer' %}
-                            봉사자 🙋
-                        {% else %}
-                            체험자 👪
-                        {% endif %}
-                    </button>
-                    <div class="dropdown-content">
-                        <a href="/set_role/experiencer" style="color: blue;">체험자</a>
-                        <a href="/set_role/farmer" style="color: green;">농부</a>
-                        <a href="/set_role/volunteer" style="color: brown;">봉사자</a>
+                        <a href="/set_role/experiencer" class="logo-text">FarmLink</a>
+            <div class="nav-items">
+                <a href="#" class="btn-login">로그인/회원가입</a>
+                <div class="role-selector">
+                    <div class="dropdown">
+                        <button class="dropbtn">
+                            {% if session.get('role') == 'farmer' %}
+                                농부 🧑‍🌾
+                            {% elif session.get('role') == 'volunteer' %}
+                                봉사자 🙋
+                            {% else %}
+                                체험자 👪
+                            {% endif %}
+                        </button>
+                        <div class="dropdown-content">
+                            <a href="/set_role/experiencer">체험자</a>
+                            <a href="/set_role/farmer">농부</a>
+                            <a href="/set_role/volunteer">봉사자</a>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -53,4 +51,5 @@
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 </body>
+</html>dy>
 </html>

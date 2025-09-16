@@ -1,0 +1,52 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="container">
+    <h2>{{ item.crop }} 체험 신청</h2>
+    <p><strong>📍 장소:</strong> {{ item.location }}</p>
+    <hr>
+    
+    {% if error_message %}
+        <div class="alert alert-danger">
+            {{ error_message }}
+        </div>
+    {% endif %}
+
+    <form method="POST" id="apply-form" action="{{ url_for('experience_apply', item_id=item.id) }}" class="apply-form">
+        <div class="form-group">
+            <label for="name">신청자 이름</label>
+            <input type="text" id="name" name="applicant_name" class="form-control" required>
+        </div>
+        <div class="form-group">
+            <label for="phone">연락처</label>
+            <input type="tel" id="phone" name="phone_number" class="form-control"
+                   placeholder="010-1234-5678" required>
+        </div>
+        <div class="form-group">
+            <label for="participants">참여 인원</label>
+            <input type="number" id="participants" name="participants_count" class="form-control" min="1" value="1" required>
+        </div>
+        
+        <button type="submit" class="btn-submit btn-large">신청 완료하기</button>
+    </form>
+</div>
+
+<script>
+    // 폼(form)이 제출(submit)될 때 이 함수를 실행
+    document.getElementById('apply-form').addEventListener('submit', function(event) {
+        const phoneInput = document.getElementById('phone');
+        const phoneValue = phoneInput.value;
+        
+        // 전화번호 양식을 검사할 정규식 (010-숫자4개-숫자4개)
+        const phonePattern = /^010-\d{4}-\d{4}$/;
+
+        // 만약 전화번호가 양식에 맞지 않으면
+        if (!phonePattern.test(phoneValue)) {
+            // 팝업창을 띄움
+            alert('전화번호를 010-1234-5678 형식으로 입력해주세요.');
+            
+            // 폼 제출을 막음
+            event.preventDefault();
+        }
+    });
+</script>
+{% endblock %}

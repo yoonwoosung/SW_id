@@ -14,9 +14,16 @@
             <span><strong>{{ item.crop }}</strong><br>#{{ "친환경" if item.pesticide_free else "일반" }}</span>
             <span>{{ item.location }}</span>
             <span>{{ "{:,}".format(item.cost) }}원</span>
-            <span class="d-day {% if item.d_day < 5 %}imminent{% endif %}">
-                D-{{ item.d_day }}<br>
-                {% if item.d_day < 5 %}<span>마감임박</span>{% else %}<span>모집중</span>{% endif %}
+            
+            <span class="d-day {% if item.current_participants >= item.max_participants or item.d_day < 5 %}imminent{% endif %}">
+                 {{ item.current_participants }} / {{ item.max_participants }}명<br>
+                {% if item.current_participants >= item.max_participants %}
+                    <span style="color: red;">모집완료</span>
+                {% elif item.d_day < 5 %}
+                    <span>마감임박</span>
+                {% else %}
+                    <span>모집중</span>
+                {% endif %}
             </span>
         </a>
         {% endfor %}

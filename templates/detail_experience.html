@@ -12,14 +12,26 @@
 
     <div class="detail-map">
         <h3>농장 위치</h3>
-        <div id="map" style="width:100%;height:350px;"></div>
+        <div id="map" style="width:350px;height:300px;"></div>
         <p style="margin-top: 10px;">지도 위의 📍마커를 클릭하면 상세 주소를 확인할 수 있습니다.</p>
     </div>
 
     <div class="detail-reviews">
         <h3>방문자 후기 ({{ reviews.total_count }}개)</h3>
         </div>
-    <button class="btn-submit btn-large">체험 예약하기</button>
+
+    {% if item.current_participants >= item.max_participants %}
+        <button class="btn-submit btn-large disabled-btn" disabled>모집이 완료되었습니다</button>
+    {% else %}
+        <a href="{{ url_for('experience_apply', item_id=item.id) }}" class="btn-submit btn-large" style="text-decoration: none;">체험 예약하기</a>
+    {% endif %}
+
+    <style>
+        .disabled-btn {
+            background-color: #A0A0A0; /* 회색 배경 */
+            cursor: not-allowed;     /* 마우스 커서 변경 */
+        }
+    </style>
 </div>
 
 <script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=fa87dcc52c2d82878875da3f4ea6b050"></script>

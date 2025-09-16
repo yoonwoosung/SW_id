@@ -1,3 +1,4 @@
+import re  # 👈 정규식 모듈 import 추가
 # app.py
 from flask import Flask, render_template, session, redirect, url_for, request, abort
 from dummy_data import get_all_experiences, get_experience_by_id, get_farmer_listings, get_all_volunteer_ops, get_volunteer_op_by_id
@@ -96,6 +97,47 @@ def my_info():
         ]
     }
     return render_template('volunteer_myinfo.html', activities=my_activities)
+
+# 7. 체험 신청 페이지 (GET: 폼 보여주기, POST: 신청 처리)
+@app.route('/experience/apply/<int:item_id>', methods=['GET', 'POST'])
+def experience_apply(item_id):
+    item = get_experience_by_id(item_id)
+    if item is None:
+        abort(404)
+
+    # POST 요청 (사용자가 폼을 제출했을 때)
+    if request.method == 'POST':
+        # 1. 예약이 꽉 찼는지 서버에서 다시 한번 확인
+        if item['current_participants'] >= item['max_participants']:
+            return render_template('experience_apply.html', item=item, error_message="죄송합니다, 모집이 마감되었습니다.")
+
+        # 2. 전화번호 양식이 올바른지 정규식으로 확인
+        phone = request.form.get('phone_number')
+        phone_pattern = re.compile(r'^01[0-9]-\d{3,4}-\d{4}$')
+        if not phone_pattern.match(phone):
+            return render_template('experience_apply.html', item=item, error_message="전화번호를 010-1234-5678 형식에 맞게 입력해주세요.")
+
+        # 모든 검증을 통과했을 때만 신청 처리
+        name = request.form.get('applicant_name')
+        count = request.form.get('participants_count')
+        
+        # 신청 후 인원이 최대 인원을 초과하는지 한번 더 확인
+        if item['current_participants'] + int(count) > item['max_participants']:
+             return render_template('experience_apply.html', item=item, error_message=f"신청 가능한 최대 인원은 {item['max_participants'] - item['current_participants']}명입니다.")
+
+        try:
+            item['current_participants'] += int(count)
+        except (ValueError, TypeError):
+            pass
+
+        print(f"신청 완료: {item['crop']} / 이름: {name} / 연락처: {phone} / 인원: {count}")
+        print(f"갱신된 인원: {item['current_participants']} / {item['max_participants']}")
+        
+        return render_template('apply_complete.html', item=item, name=name)
+
+    # GET 요청 (페이지에 처음 들어왔을 때)
+    return render_template('experience_apply.html', item=item)
+
 
 if __name__ == '__main__':
     app.run(debug=True)

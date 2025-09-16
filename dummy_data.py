@@ -20,40 +20,46 @@ EXPERIENCES = [
         'id': 1,
         'crop': '유기농 상추',
         'location': '충남 천안시',
-        'address_detail': '동남구 유량동 123-45 햇살농장', # 👈 상세 주소 추가
+        'address_detail': '동남구 유량동 123-45 햇살농장',
         'pesticide_free': True,
         'cost': 15000,
         'end_date': (date.today() + timedelta(days=7)).isoformat(),
         'd_day': 7,
         'image': 'https://via.placeholder.com/300x200.png?text=Farm1',
         'lat': 36.8151,
-        'lng': 127.1139
+        'lng': 127.1139,
+        'max_participants': 20, # 👈 최대 인원 추가
+        'current_participants': 8  # 👈 현재 인원 추가
     },
     {
         'id': 2,
         'crop': '고당도 사과',
         'location': '경북 영주시',
-        'address_detail': '풍기읍 백리 543-21 바람농원', # 👈 상세 주소 추가
+        'address_detail': '풍기읍 백리 543-21 바람농원',
         'pesticide_free': False,
         'cost': 20000,
         'end_date': (date.today() + timedelta(days=3)).isoformat(),
         'd_day': 3,
         'image': 'https://via.placeholder.com/300x200.png?text=Farm2',
         'lat': 36.8093,
-        'lng': 128.6240
+        'lng': 128.6240,
+        'max_participants': 15, # 👈 최대 인원 추가
+        'current_participants': 12 # 👈 현재 인원 추가
     },
     {
         'id': 3,
         'crop': '해남 고구마',
         'location': '전남 해남군',
-        'address_detail': '송지면 미학리 987-65 땅끝마을농장', # 👈 상세 주소 추가
+        'address_detail': '송지면 미학리 987-65 땅끝마을농장',
         'pesticide_free': True,
         'cost': 18000,
         'end_date': (date.today() + timedelta(days=12)).isoformat(),
         'd_day': 12,
         'image': 'https://via.placeholder.com/300x200.png?text=Farm3',
         'lat': 34.5736,
-        'lng': 126.5995
+        'lng': 126.5995,
+        'max_participants': 25, # 👈 최대 인원 추가
+        'current_participants': 25 # 👈 현재 인원 추가
     },
 ]
 

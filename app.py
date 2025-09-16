@@ -1,12 +1,10 @@
 # app.py
 from flask import Flask, render_template, session, redirect, url_for, request
-import logging
-from dummy_data import get_all_experiences, get_experience_by_id, get_all_volunteer_ops, get_volunteer_op_by_id, get_farmer_listings, add_farmer_listing, get_listing_by_id, update_listing_by_id, delete_listing_by_id
+from dummy_data import get_all_experiences, get_experience_by_id, get_farmer_listings, get_all_volunteer_ops, get_volunteer_op_by_id
 
 app = Flask(__name__)
 # session을 사용하기 위해 secret_key가 필요합니다.
 app.secret_key = 'supersecretkey'
-logging.basicConfig(level=logging.INFO)
 
 # --- 페이지 라우팅 ---
 
@@ -67,56 +65,9 @@ def experience_detail(item_id):
     return render_template('detail_experience.html', item=item, reviews=reviews)
 
 # 4. 농부 - 체험 등록 페이지
-@app.route('/farmer/register', methods=['GET', 'POST'])
+@app.route('/farmer/register')
 def farmer_register():
-    try:
-        if request.method == 'POST':
-            new_listing = { 'farm_name': request.form.get('farm_name'), 'phone_number': request.form.get('phone_number'), 'address': request.form.get('address'), 'farm_size': int(request.form.get('farm_size')), 'crop': request.form.get('crop'), 'is_organic': request.form.get('is_organic') == 'true', 'period_start': request.form.get('period_start'), 'period_end': request.form.get('period_end'), 'operating_times': request.form.getlist('operating_times'), 'max_participants': int(request.form.get('max_participants')), 'cost': int(request.form.get('cost')), 'preparation_note': request.form.get('preparation_note'), 'included_items': request.form.get('included_items'), 'excluded_items': request.form.get('excluded_items'), 'needs_volunteer': 'needs_volunteer' in request.form, 'volunteer_count': int(request.form.get('volunteer_count', 0)), 'volunteer_duties': request.form.get('volunteer_duties') }
-            add_farmer_listing(new_listing)
-            flash('새로운 체험이 성공적으로 등록되었습니다!', 'success')
-            return redirect(url_for('index'))
-    except Exception as e:
-        app.logger.error(f"등록 처리 중 오류 발생: {e}")
-        flash('등록 중 오류가 발생했습니다. 다시 시도해주세요.', 'error')
-    return render_template('farmer_register.html', item=None)
-
-# 4-1. (신규) 농부 - 체험 수정
-@app.route('/farmer/edit/<int:item_id>', methods=['GET', 'POST'])
-def farmer_edit(item_id):
-    item_to_edit = get_listing_by_id(item_id)
-    if not item_to_edit:
-        flash('해당 체험 정보를 찾을 수 없습니다.', 'error')
-        return redirect(url_for('index'))
-    try:
-        if request.method == 'POST':
-            updated_data = { 'farm_name': request.form.get('farm_name'), 'phone_number': request.form.get('phone_number'), 'address': request.form.get('address'), 'farm_size': int(request.form.get('farm_size')), 'crop': request.form.get('crop'), 'is_organic': request.form.get('is_organic') == 'true', 'period_start': request.form.get('period_start'), 'period_end': request.form.get('period_end'), 'operating_times': request.form.getlist('operating_times'), 'max_participants': int(request.form.get('max_participants')), 'cost': int(request.form.get('cost')), 'preparation_note': request.form.get('preparation_note'), 'included_items': request.form.get('included_items'), 'excluded_items': request.form.get('excluded_items'), 'needs_volunteer': 'needs_volunteer' in request.form, 'volunteer_count': int(request.form.get('volunteer_count', 0)), 'volunteer_duties': request.form.get('volunteer_duties') }
-            update_listing_by_id(item_id, updated_data)
-            flash('체험 정보가 성공적으로 수정되었습니다!', 'success')
-            return redirect(url_for('index'))
-    except Exception as e:
-        app.logger.error(f"수정 처리 중 오류 발생 (ID: {item_id}): {e}")
-        flash('수정 중 오류가 발생했습니다. 다시 시도해주세요.', 'error')
-    return render_template('farmer_register.html', item=item_to_edit)
-
-# 4-2. (신규) 농부 - 체험 삭제
-@app.route('/farmer/delete/<int:item_id>', methods=['POST'])
-def farmer_delete(item_id):
-    if delete_listing_by_id(item_id):
-        flash('체험 정보가 삭제되었습니다.', 'success')
-    else:
-        flash('삭제에 실패했습니다. 해당 정보를 찾을 수 없습니다.', 'error')
-    return redirect(url_for('index'))
-
-# 4-3. (신규) 농부 - 체험 상태 변경
-@app.route('/farmer/update_status/<int:item_id>', methods=['POST'])
-def farmer_update_status(item_id):
-    new_status = request.form.get('status')
-    if new_status in ['recruiting', 'paused']:
-        update_listing_by_id(item_id, {'status': new_status})
-        flash(f'체험 모집 상태가 변경되었습니다.', 'info')
-    else:
-        flash('잘못된 상태 값입니다.', 'error')
-    return redirect(url_for('index'))
+    return render_template('farmer_register.html')
     
 # 5. 봉사자 - 지원 상세 페이지
 @app.route('/volunteer/<int:item_id>')
@@ -142,7 +93,4 @@ def my_info():
     return render_template('volunteer_myinfo.html', activities=my_activities)
 
 if __name__ == '__main__':
-
     app.run(debug=True)
-
-

@@ -2,34 +2,6 @@
 
 // 페이지의 모든 내용이 로드된 후 스크립트 실행
 document.addEventListener('DOMContentLoaded', function() {
-    // --- 관리 드롭다운 메뉴 토글 기능 ---
-const dropdowns = document.querySelectorAll('.manage-dropdown');
-
-dropdowns.forEach(dropdown => {
-    const toggleButton = dropdown.querySelector('.dropdown-toggle');
-    const menu = dropdown.querySelector('.dropdown-menu');
-
-    toggleButton.addEventListener('click', function(event) {
-        // 다른 열린 메뉴가 있으면 닫기
-        document.querySelectorAll('.dropdown-menu.show').forEach(openMenu => {
-            if (openMenu !== menu) {
-                openMenu.classList.remove('show');
-            }
-        });
-        // 현재 메뉴 열기/닫기
-        menu.classList.toggle('show');
-        event.stopPropagation();
-    });
-});
-
-// 화면의 다른 곳을 클릭하면 메뉴 닫기
-window.addEventListener('click', function(event) {
-    if (!event.target.matches('.dropdown-toggle')) {
-        document.querySelectorAll('.dropdown-menu.show').forEach(openMenu => {
-            openMenu.classList.remove('show');
-        });
-    }
-});
     
     // 봉사활동 상세 페이지의 날짜 선택 로직
     const dateGrid = document.querySelector('.date-grid');
@@ -55,5 +27,4 @@ window.addEventListener('click', function(event) {
             totalHoursDisplay.textContent = totalHours;
         }
     }
-
 });

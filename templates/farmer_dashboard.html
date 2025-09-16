@@ -2,57 +2,31 @@
 {% block content %}
 <div class="container">
     <div class="dashboard-header">
-        <h2>🧑‍🌾 나의 농장 대시보드</h2>
+        <h2>나의 농장 목록 🧑‍🌾</h2>
         <a href="{{ url_for('farmer_register') }}" class="btn-register">새 체험 등록하기 +</a>
     </div>
 
-    {% with messages = get_flashed_messages(with_categories=true) %}
-      {% if messages %}
-        <div class="flash-messages">
-        {% for category, message in messages %}
-          <div class="alert alert-{{ category }}">{{ message }}</div>
-        {% endfor %}
-        </div>
-      {% endif %}
-    {% endwith %}
-
-    <h3>체험 목록 및 관리</h3>
     {% if listings %}
     <div class="item-list">
-        {% for item in listings %}
-        <div class="list-item">
-            <span><strong>{{ item.farm_name }}</strong><br><small>#{{ item.crop }}</small></span>
-            <span>
-                {% if item.status == 'recruiting' %}<span class="tag recruiting">모집중</span>
-                {% elif item.status == 'paused' %}<span class="tag paused">모집중단</span>
-                {% else %}<span class="tag completed">모집완료</span>
-                {% endif %}
-            </span>
-            <span>{{ item.period_start }} ~ {{ item.period_end }}</span>
-            
-            <div class="manage-dropdown">
-                <button class="btn-manage dropdown-toggle">관리 ▼</button>
-                <div class="dropdown-menu">
-                    <a href="{{ url_for('farmer_edit', item_id=item.id) }}">수정</a>
-                    <form action="{{ url_for('farmer_update_status', item_id=item.id) }}" method="POST" class="dropdown-form">
-                        {% if item.status == 'recruiting' %}
-                            <input type="hidden" name="status" value="paused">
-                            <button type="submit">모집 중단</button>
-                        {% else %}
-                            <input type="hidden" name="status" value="recruiting">
-                            <button type="submit">모집 재개</button>
-                        {% endif %}
-                    </form>
-                    <form action="{{ url_for('farmer_delete', item_id=item.id) }}" method="POST" class="dropdown-form" onsubmit="return confirm('정말 이 체험을 삭제하시겠습니까? 되돌릴 수 없습니다.');">
-                        <button type="submit" class="delete-btn">삭제</button>
-                    </form>
-                </div>
-            </div>
+        <div class="list-header">
+            <span>작물명</span><span>위치</span><span>가격</span><span>모집현황</span>
         </div>
+        {% for item in listings %}
+        <a href="#" class="list-item">  <span><strong>{{ item.crop }}</strong><br>#{{ "친환경" if item.pesticide_free else "일반" }}</span>
+            <span>{{ item.location }}</span>
+            <span>{{ "{:,}".format(item.cost) }}원</span>
+            <span class="d-day {% if item.d_day < 5 %}imminent{% endif %}">
+                D-{{ item.d_day }}<br>
+                <span>모집중</span>
+            </span>
+        </a>
         {% endfor %}
     </div>
     {% else %}
-    <div class="no-items"><p>아직 등록된 농장 체험이 없습니다.</p></div>
+    <div class="no-items">
+        <p>아직 등록된 농장 체험이 없습니다.</p>
+        <p>'새 체험 등록하기' 버튼을 눌러 첫 체험을 등록해보세요!</p>
+    </div>
     {% endif %}
 </div>
 {% endblock %}

@@ -4,7 +4,6 @@
     <h2 class="mb-4 text-center">신규 농장 체험 등록</h2>
     <form class="register-form">
 
-        <!-- A. 기본정보 -->
         <h4 class="mb-3 border-bottom pb-2">A. 기본 정보</h4>
         <div class="form-group row">
             <div class="col-md-6">
@@ -34,7 +33,6 @@
             <input type="number" id="farm-size" name="farm-size" class="form-control" placeholder="예: 300">
         </div>
 
-        <!-- B. 운영 정보 -->
         <h4 class="mt-5 mb-3 border-bottom pb-2">B. 운영 정보</h4>
         <div class="form-group">
             <label><strong>운영 기간</strong></label>
@@ -63,8 +61,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {% for hour in range(9, 21) %} <!-- 오전 9시부터 오후 9시까지 -->
-                    <tr>
+                    {% for hour in range(9, 21) %} <tr>
                         <td>{{ "%02d:00" | format(hour) }} - {{ "%02d:00" | format(hour + 1) }}</td>
                         {% for day in ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] %}
                         <td class="time-slot" data-day="{{ day }}" data-time="{{ hour }}"></td>
@@ -91,7 +88,6 @@
             </div>
         </div>
 
-        <!-- C. 상세 정보 -->
         <h4 class="mt-5 mb-3 border-bottom pb-2">C. 상세 정보 (소비자 설득)</h4>
         <div class="form-group">
             <label for="photos-videos"><strong>대표 사진 및 영상 (최대 10장)</strong></label>
@@ -110,7 +106,6 @@
             <textarea id="excluded-items" name="excluded-items" class="form-control" rows="3" placeholder="참가비에 포함되지 않는 항목을 명확히 알려주세요. 예: 식사, 교통편"></textarea>
         </div>
 
-        <!-- D. 역할 구분 -->
         <h4 class="mt-5 mb-3 border-bottom pb-2">D. 봉사자 모집 정보</h4>
         <div class="form-group row">
             <div class="col-md-6">
@@ -123,13 +118,11 @@
             <textarea id="volunteer-tasks" name="volunteer-tasks" class="form-control" rows="4" placeholder="예: 잡초 제거, 수확물 운반, 체험객 안내 등 (봉사자가 필요한 경우에만 작성)"></textarea>
         </div>
 
-        <!-- 약관 동의 -->
         <div class="form-group form-check mt-5">
             <input type="checkbox" class="form-check-input" id="terms-agreement">
             <label class="form-check-label" for="terms-agreement"><strong>서비스 이용 약관 및 개인정보 처리 방침에 동의합니다.</strong></label>
         </div>
 
-        <!-- 버튼 -->
         <div class="form-buttons mt-4 d-flex justify-content-center">
             <button type="button" class="btn btn-secondary mr-2">임시저장</button>
             <button type="submit" class="btn btn-primary">등록하기</button>
@@ -137,4 +130,69 @@
         </div>
     </form>
 </div>
+{% endblock %}
+
+
+{% block scripts %}
+<script>
+    // 1. 시간표(timetable) 클릭 기능
+    const timeSlots = document.querySelectorAll('.time-slot');
+    timeSlots.forEach(slot => {
+        slot.addEventListener('click', () => {
+            slot.classList.toggle('active'); // 'active' 클래스를 추가/제거
+        });
+    });
+
+    // 2. 폼(form) 제출 기능
+    const form = document.querySelector('.register-form');
+    form.addEventListener('submit', async (event) => {
+        event.preventDefault(); // 기본 제출 동작 방지
+
+        // FormData 객체를 사용하여 폼 데이터와 파일을 함께 처리
+        const formData = new FormData(form);
+
+        // 시간표에서 선택된(active) 시간들 정보 수집
+        const selectedTimes = [];
+        document.querySelectorAll('.time-slot.active').forEach(slot => {
+            selectedTimes.push({
+                day: slot.dataset.day,
+                time: slot.dataset.time
+            });
+        });
+
+        // 수집된 시간표 정보를 FormData에 추가
+        formData.append('available-times', JSON.stringify(selectedTimes));
+
+        try {
+            // 백엔드 API(/api/experiences)로 FormData 전송
+            const response = await fetch('/api/experiences', {
+                method: 'POST',
+                body: formData
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                alert(result.message);
+                window.location.href = "{{ url_for('index') }}"; // 성공 시 메인 페이지로 이동
+            } else {
+                alert('오류: ' + result.error);
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('등록 중 오류가 발생했습니다.');
+        }
+    });
+</script>
+
+<style>
+    .time-slot.active {
+        background-color: #28a745 !important;
+        color: white;
+    }
+    .time-slot {
+        cursor: pointer;
+    }
+</style>
+
 {% endblock %}

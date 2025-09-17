@@ -1,0 +1,35 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="container mt-5 mb-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>{{ session['nickname'] }}님의 농장 대시보드</h2>
+        <a href="{{ url_for('farmer_register') }}" class="btn btn-success">새 체험 등록하기</a>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h4>내가 등록한 체험 목록</h4>
+        </div>
+        <div class="card-body">
+            {% if experiences %}
+                <ul class="list-group list-group-flush">
+                    {% for exp in experiences %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5 class="mb-1">{{ exp.main_crops }}</h5>
+                            <small class="text-muted">{{ exp.address }} | 등록일: {{ exp.created_at.strftime('%Y-%m-%d') }}</small>
+                        </div>
+                        <div>
+                            <a href="#" class="btn btn-sm btn-outline-primary mr-2">수정</a>
+                            <a href="#" class="btn btn-sm btn-outline-danger">삭제</a>
+                        </div>
+                    </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p class="text-center text-muted">아직 등록한 체험이 없습니다. 새 체험을 등록해보세요!</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

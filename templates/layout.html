@@ -10,9 +10,18 @@
 <body>
     <header class="header-{{ session.get('role', 'experiencer') }}">
         <div class="header-content container">
-                        <a href="/set_role/experiencer" class="logo-text">FarmLink</a>
+            <a href="/" class="logo-text">FarmLink</a>
             <div class="nav-items">
-                <a href="#" class="btn-login">로그인/회원가입</a>
+                
+                {% if 'user_id' in session %}
+                    {% if session.get('role') == 'farmer' %}
+                    <a href="{{ url_for('my_farm') }}" class="text-white mr-3">내 농장</a>
+                    {% endif %}
+                    <span class="text-white mr-3">{{ session['nickname'] }}님</span>
+                    <a href="{{ url_for('logout') }}" class="btn-login">로그아웃</a>
+                {% else %}
+                     <a href="{{ url_for('login_page') }}" class="btn-login">로그인/회원가입</a>
+                {% endif %}
                 <div class="role-selector">
                     <div class="dropdown">
                         <button class="dropbtn">
@@ -47,9 +56,13 @@
         {% block content %}{% endblock %}
     </main>
 
-    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
+    
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+
+    {% block scripts %}{% endblock %}
+    
 </body>
-</html>dy>
 </html>

@@ -1,8 +1,51 @@
 {% extends "layout.html" %}
 {% block content %}
+
+<style>
+    /* 헤더 (제목 + 버튼) 정렬 */
+    .detail-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+    .detail-header h1 {
+        margin: 0;
+    }
+
+    /* 버튼 기본 스타일 */
+    .btn-submit {
+        background-color: #4CAF50; /* 초록색 배경 */
+        color: white;              /* 흰색 글자 */
+        padding: 10px 20px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        text-align: center;
+        text-decoration: none;
+        font-size: 16px;
+    }
+    .btn-submit:hover {
+        background-color: #45a049;
+    }
+
+    /* 비활성화된 버튼 스타일 */
+    .disabled-btn {
+        background-color: #A0A0A0; /* 회색 배경 */
+        cursor: not-allowed;
+    }
+</style>
+
 <div class="container detail-container">
-    <img src="{{ item.image }}" alt="{{ item.crop }}" class="detail-image">
-    <h1>{{ item.crop }} 체험</h1>
+    <div class="detail-header">
+        <h1>{{ item.crop }} 체험</h1>
+        {% if item.current_participants >= item.max_participants %}
+            <button class="btn-submit disabled-btn" disabled>모집완료</button>
+        {% else %}
+            <a href="{{ url_for('experience_apply', item_id=item.id) }}" class="btn-submit">체험 예약하기</a>
+        {% endif %}
+    </div>
+
     <div class="detail-info">
         <p><strong>📍 위치:</strong> {{ item.location }} (상세주소는 예약 후 공개)</p>
         <p><strong>🌿 친환경:</strong> {{ "예" if item.pesticide_free else "아니오" }}</p>
@@ -12,30 +55,18 @@
 
     <div class="detail-map">
         <h3>농장 위치</h3>
-        <div id="map" style="width:350px;height:300px;"></div>
+        <div id="map" style="width: 350px; height: 300px;"></div>
         <p style="margin-top: 10px;">지도 위의 📍마커를 클릭하면 상세 주소를 확인할 수 있습니다.</p>
     </div>
 
     <div class="detail-reviews">
         <h3>방문자 후기 ({{ reviews.total_count }}개)</h3>
-        </div>
-
-    {% if item.current_participants >= item.max_participants %}
-        <button class="btn-submit btn-large disabled-btn" disabled>모집이 완료되었습니다</button>
-    {% else %}
-        <a href="{{ url_for('experience_apply', item_id=item.id) }}" class="btn-submit btn-large" style="text-decoration: none;">체험 예약하기</a>
-    {% endif %}
-
-    <style>
-        .disabled-btn {
-            background-color: #A0A0A0; /* 회색 배경 */
-            cursor: not-allowed;     /* 마우스 커서 변경 */
-        }
-    </style>
+    </div>
 </div>
 
 <script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=fa87dcc52c2d82878875da3f4ea6b050"></script>
 <script>
+    // 이 아래 JavaScript 코드는 수정할 필요 없습니다.
     const itemData = {{ item|tojson }};
     const mapContainer = document.getElementById('map');
     const mapOption = {

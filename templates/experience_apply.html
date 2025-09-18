@@ -1,50 +1,176 @@
 {% extends "layout.html" %}
 {% block content %}
-<div class="container">
-    <h2>{{ item.crop }} 체험 신청</h2>
-    <p><strong>📍 장소:</strong> {{ item.location }}</p>
-    <hr>
-    
-    {% if error_message %}
-        <div class="alert alert-danger">
-            {{ error_message }}
-        </div>
-    {% endif %}
 
-    <form method="POST" id="apply-form" action="{{ url_for('experience_apply', item_id=item.id) }}" class="apply-form">
-        <div class="form-group">
-            <label for="name">신청자 이름</label>
-            <input type="text" id="name" name="applicant_name" class="form-control" required>
-        </div>
-        <div class="form-group">
-            <label for="phone">연락처</label>
-            <input type="tel" id="phone" name="phone_number" class="form-control"
-                   placeholder="010-1234-5678" required>
-        </div>
-        <div class="form-group">
-            <label for="participants">참여 인원</label>
-            <input type="number" id="participants" name="participants_count" class="form-control" min="1" value="1" required>
-        </div>
+<style>
+    /* (기존 스타일은 변경할 필요 없습니다) */
+    .apply-form-container {
+        max-width: 700px; margin: 2rem auto; padding: 2rem;
+        border: 1px solid #ddd; border-radius: 8px; background-color: #fff;
+    }
+    .apply-form .form-group { margin-bottom: 1.5rem; }
+    .apply-form label { display: block; font-weight: bold; margin-bottom: 0.5rem; }
+    .apply-form .form-control {
+        width: 100%; padding: 10px; border: 1px solid #ccc;
+        border-radius: 4px; font-size: 1rem;
+    }
+    .apply-form textarea { resize: none; overflow-y: auto; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .inline-group { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+    .inline-group input[type="number"] { width: 80px; text-align: right; }
+    .inline-group label { margin-bottom: 0; font-weight: normal; }
+    #other_method_text {
+        width: 150px; padding: 5px; font-size: 0.9rem;
+        border: 1px solid #ccc; border-radius: 4px;
+    }
+    .privacy-policy {
+        border: 1px solid #ccc; padding: 10px; height: 150px;
+        overflow-y: scroll; background-color: #f9f9f9;
+        white-space: pre-wrap; font-size: 12px; margin-bottom: 0.5rem;
+    }
+    .consent-group { display: flex; align-items: center; }
+    .consent-group input { margin-right: 10px; }
+</style>
+
+<div class="container">
+    <div class="apply-form-container">
+        <h2>{{ item.crop }} 체험 신청</h2>
+        <p><strong>📍 장소:</strong> {{ item.location }}</p>
+        <hr style="margin: 1rem 0 2rem;">
         
-        <button type="submit" class="btn-submit btn-large">신청 완료하기</button>
-    </form>
+        {% if error_message %}
+            <div class="alert alert-danger">{{ error_message }}</div>
+        {% endif %}
+
+        <form method="POST" id="apply-form" action="{{ url_for('experience_apply', item_id=item.id) }}" class="apply-form">
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="name">신청자 이름</label>
+                    <input type="text" id="name" name="applicant_name" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="phone">연락처</label>
+                    <input type="tel" id="phone" name="phone_number" class="form-control" placeholder="010-1234-5678" required>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>참가자 연령대</label>
+                <div class="inline-group">
+                    <label for="adults">성인</label> <input type="number" id="adults" name="adult_count" class="form-control" min="0" value="1"> 명 /
+                    <label for="youth">청소년</label> <input type="number" id="youth" name="youth_count" class="form-control" min="0" value="0"> 명 /
+                    <label for="child">아동</label> <input type="number" id="child" name="child_count" class="form-control" min="0" value="0"> 명
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="allergies">알레르기 정보 <span style="font-weight: normal; color: #666;">(해당 시 기재)</span></label>
+                <textarea id="allergies" name="allergies" class="form-control" rows="3"></textarea>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="visit_date">희망 체험 날짜</label>
+                    <input type="date" id="visit_date" name="visit_date" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="visit_time">희망 체험 시간</label>
+                    <input type="time" id="visit_time" name="visit_time" class="form-control" required>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>방문 경로</label>
+                <div class="inline-group">
+                    <input type="radio" id="car" name="visit_method" value="자가용" checked> <label for="car">자가용</label>
+                    <input type="radio" id="public_transport" name="visit_method" value="대중교통"> <label for="public_transport">대중교통</label>
+                    <input type="radio" id="other" name="visit_method" value="기타"> <label for="other">기타</label>
+                    <input type="text" id="other_method_text" name="other_method_text" placeholder="직접 입력" style="display: none;">
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="inquiry">문의 사항</label>
+                <textarea id="inquiry" name="inquiry" class="form-control" rows="5"></textarea>
+            </div>
+            <hr>
+            <div class="form-group">
+                <label>개인정보 수집 및 이용 동의</label>
+                <div class="privacy-policy" tabindex="0">
+**개인정보 수집 및 이용 안내**
+
+1. 수집하는 개인정보 항목
+- 필수항목: 신청자 이름, 연락처
+- 선택항목: 알레르기 정보, 문의 사항
+
+2. 개인정보의 수집 및 이용 목적
+- 체험 예약 진행, 본인 확인 및 원활한 의사소통 경로 확보
+- 알레르기 정보는 체험 진행 시 참고용으로만 사용됩니다.
+
+3. 개인정보의 보유 및 이용 기간
+- 원칙적으로 개인정보 수집 및 이용 목적이 달성된 후에는 해당 정보를 지체 없이 파기합니다.
+- 단, 관계 법령의 규정에 의하여 보존할 필요가 있는 경우 일정 기간 동안 개인정보를 보관할 수 있습니다.
+
+4. 동의를 거부할 권리
+- 귀하는 개인정보 수집 및 이용에 대한 동의를 거부할 권리가 있습니다.
+- 단, 필수항목에 대한 동의 거부 시 체험 예약이 제한될 수 있습니다.
+                </div>
+                <div class="consent-group">
+                    <input type="checkbox" id="privacy_consent" name="privacy_consent" value="agreed" required>
+                    <label for="privacy_consent">위 내용을 확인했으며, 개인정보 수집 및 이용에 동의합니다.</label>
+                </div>
+            </div>
+            <button type="submit" class="btn-submit btn-large">신청 완료하기</button>
+        </form>
+    </div>
 </div>
 
 <script>
-    // 폼(form)이 제출(submit)될 때 이 함수를 실행
-    document.getElementById('apply-form').addEventListener('submit', function(event) {
-        const phoneInput = document.getElementById('phone');
-        const phoneValue = phoneInput.value;
-        
-        // 전화번호 양식을 검사할 정규식 (010-숫자4개-숫자4개)
-        const phonePattern = /^010-\d{4}-\d{4}$/;
+    // --- '기타' 방문 경로 입력창을 조절하는 스크립트 ---
+    const visitMethodRadios = document.querySelectorAll('input[name="visit_method"]');
+    const otherMethodText = document.getElementById('other_method_text');
 
-        // 만약 전화번호가 양식에 맞지 않으면
-        if (!phonePattern.test(phoneValue)) {
-            // 팝업창을 띄움
+    visitMethodRadios.forEach(radio => {
+        radio.addEventListener('change', function() {
+            if (this.id === 'other' && this.checked) {
+                otherMethodText.style.display = 'inline-block';
+            } else {
+                otherMethodText.style.display = 'none';
+                otherMethodText.value = '';
+            }
+        });
+    });
+
+    // --- 폼 제출 시 유효성 검사 및 최종 확인 팝업을 띄우는 스크립트 ---
+    document.getElementById('apply-form').addEventListener('submit', function(event) {
+        // 1. 전화번호 양식 검사
+        const phoneInput = document.getElementById('phone');
+        const phonePattern = /^01[0-9]-\d{3,4}-\d{4}$/;
+        if (!phonePattern.test(phoneInput.value)) {
             alert('전화번호를 010-1234-5678 형식으로 입력해주세요.');
-            
-            // 폼 제출을 막음
+            event.preventDefault(); // 폼 제출 중단
+            return; // 함수 실행 종료
+        }
+
+        // 2. 최종 확인을 위한 정보 수집
+        const name = document.getElementById('name').value;
+        const phone = phoneInput.value;
+        const adults = parseInt(document.getElementById('adults').value) || 0;
+        const youth = parseInt(document.getElementById('youth').value) || 0;
+        const child = parseInt(document.getElementById('child').value) || 0;
+        const totalParticipants = adults + youth + child;
+        const visitDate = document.getElementById('visit_date').value;
+        const visitTime = document.getElementById('visit_time').value;
+
+        // 3. 확인 메시지 생성
+        const confirmationMessage = `
+아래 내용으로 신청하시겠습니까?
+
+----------------------------------
+신청자: ${name}
+연락처: ${phone}
+총 인원: ${totalParticipants}명 (성인 ${adults}, 청소년 ${youth}, 아동 ${child})
+희망 날짜: ${visitDate}
+희망 시간: ${visitTime}
+----------------------------------
+        `;
+
+        // 4. 확인 팝업창 띄우기 (취소 시 폼 제출 중단)
+        if (!confirm(confirmationMessage)) {
             event.preventDefault();
         }
     });

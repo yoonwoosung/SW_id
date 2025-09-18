@@ -1,32 +1,112 @@
 {% extends "layout.html" %}
 {% block content %}
+
+<style>
+    /* ----- 레이아웃 ----- */
+    .list-item {
+        display: flex; /* 내용과 버튼을 가로로 정렬 */
+        align-items: center;
+        padding: 15px 10px;
+        border-bottom: 1px solid #eee;
+        text-decoration: none;
+        color: #333;
+        transition: background-color 0.2s;
+    }
+    .list-item:hover:not(.item-full) {
+        background-color: #f9f9f9;
+    }
+    
+    /* 내용 부분 (상세페이지로 이동) */
+    .list-item-content {
+        flex-grow: 1; /* 남은 공간을 모두 차지 */
+        display: grid;
+        grid-template-columns: 2fr 1fr 1fr 1.2fr;
+        align-items: center;
+        text-decoration: none;
+        color: inherit; /* 부모 요소의 색상을 상속 */
+    }
+
+    /* 신청 버튼 부분 (신청페이지로 이동) */
+    .list-item-action {
+        width: 80px;
+        text-align: center;
+    }
+
+    /* ----- 모집완료 항목 스타일 ----- */
+    .item-full {
+        background-color: #f2f2f2 !important;
+    }
+    .item-full, .item-full span, .item-full strong, .item-full a {
+        color: #aaa !important;
+    }
+    .item-full .btn-disabled {
+        color: white !important;
+    } 
+
+    /* ----- 버튼 스타일 ----- */
+    .btn-disabled {
+        background-color: #A0A0A0;
+        padding: 5px 10px;
+        border-radius: 4px;
+        color: white;
+        font-size: 12px;
+    }
+    .btn-apply-now {
+        background-color: #4CAF50;
+        padding: 5px 10px;
+        border-radius: 4px;
+        color: white;
+        font-size: 12px;
+        text-decoration: none;
+    }
+</style>
+
 <div class="container">
     <h2>현재 진행 중 체험 (체험 목록)</h2>
     <div class="sort-options">
         <a href="/?sort=imminent">임박순</a> | <a href="/?sort=region">지역순</a>
     </div>
     <div class="item-list">
-        <div class="list-header">
-            <span>작물명</span><span>위치</span><span>비용</span><span>모집현황</span>
+        <div class="list-header" style="display: grid; grid-template-columns: 2fr 1fr 1fr 1.2fr 80px; align-items: center; padding: 15px 10px; border-bottom: 2px solid #666; font-weight: bold;">
+            <span>작물명</span>
+            <span>위치</span>
+            <span>비용</span>
+            <span>모집현황</span>
+            <span>신청</span> 
         </div>
+
         {% for item in items %}
-        <a href="{{ url_for('experience_detail', item_id=item.id) }}" class="list-item">
-            <span><strong>{{ item.crop }}</strong><br>#{{ "친환경" if item.pesticide_free else "일반" }}</span>
-            <span>{{ item.location }}</span>
-            <span>{{ "{:,}".format(item.cost) }}원</span>
+        <div class="list-item {% if item.current_participants >= item.max_participants %}item-full{% endif %}">
             
-            <span class="d-day {% if item.current_participants >= item.max_participants or item.d_day < 5 %}imminent{% endif %}">
-                 {{ item.current_participants }} / {{ item.max_participants }}명<br>
+            <a href="{{ url_for('experience_detail', item_id=item.id) }}" class="list-item-content">
+                <span><strong>{{ item.crop }}</strong><br>#{{ "친환경" if item.pesticide_free else "일반" }}</span>
+                <span>{{ item.location }}</span>
+                <span>{{ "{:,}".format(item.cost) }}원</span>
+                <span class="d-day">
+                    {{ item.current_participants }} / {{ item.max_participants }}명<br>
+                    {% if item.current_participants >= item.max_participants %}
+                        <span style="color: red;">모집완료</span>
+                    {% elif item.max_participants - item.current_participants == 1 %}
+                        <span style="color: red;">마감임박</span>
+                    {% elif item.d_day < 5 %}
+                        <span>마감임박</span>
+                    {% else %}
+                        <span>모집중</span>
+                    {% endif %}
+                </span>
+            </a>
+
+            <div class="list-item-action">
                 {% if item.current_participants >= item.max_participants %}
-                    <span style="color: red;">모집완료</span>
-                {% elif item.d_day < 5 %}
-                    <span>마감임박</span>
+                    <span class="btn-disabled">마감</span>
                 {% else %}
-                    <span>모집중</span>
+                    <a href="{{ url_for('experience_apply', item_id=item.id) }}" class="btn-apply-now">신청하기</a>
                 {% endif %}
-            </span>
-        </a>
+            </div>
+
+        </div>
         {% endfor %}
     </div>
 </div>
+
 {% endblock %}

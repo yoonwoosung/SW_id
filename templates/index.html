@@ -1,0 +1,52 @@
+{% extends "layout.html" %}
+{% block content %}
+
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2>현재 진행 중 체험 🧑‍🌾</h2>
+        <div class="sort-options">
+            <a href="/?sort=imminent">임박순</a> | <a href="/?sort=region">지역순</a>
+        </div>
+    </div>
+    <div class="item-list">
+        <div class="list-header">
+            <span>작물명</span>
+            <span>위치</span>
+            <span>비용</span>
+            <span>모집현황</span>
+            <span>신청</span>
+        </div>
+
+        {% for item in items %}
+        <div class="list-item {% if item.current_participants >= item.max_participants %}item-full{% endif %}">
+            
+            <a href="{{ url_for('experience_detail', item_id=item.id) }}" class="list-item-content">
+                <span><strong>{{ item.crop }}</strong><br>#{{ "친환경" if item.pesticide_free else "일반" }}</span>
+                <span>{{ item.location }}</span>
+                <span>{{ "{:,}".format(item.cost) }}원</span>
+                <span class="d-day">
+                    {{ item.current_participants }} / {{ item.max_participants }}명<br>
+                    {% if item.current_participants >= item.max_participants %}
+                        <span style="color: red;">모집완료</span>
+                    {% elif item.max_participants - item.current_participants <= 2 %}
+                        <span style="color: red;">마감임박</span>
+                    {% else %}
+                        <span>모집중</span>
+                    {% endif %}
+                </span>
+            </a>
+
+            <div class="list-item-action">
+                {% if item.current_participants >= item.max_participants %}
+                    <span class="btn-disabled">마감</span>
+                {% else %}
+                    <a href="{{ url_for('experience_apply', item_id=item.id) }}" class="btn-apply-now">신청하기</a>
+                {% endif %}
+            </div>
+
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+{% endblock %}

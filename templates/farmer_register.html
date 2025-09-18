@@ -1,0 +1,40 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="container">
+    <div class="apply-form-container">
+        <h2>신규 농장 체험 등록</h2>
+        <hr>
+        <form class="register-form apply-form" method="POST" action="{{ url_for('farmer_register') }}">
+            <div class="form-group">
+                <label for="crop">밭에 있는 작물</label>
+                <input type="text" id="crop" name="crop" class="form-control" placeholder="예: 유기농 상추" required>
+            </div>
+            <div class="form-group">
+                <label for="address">상세 주소</label>
+                <input type="text" id="address" name="address" class="form-control" placeholder="예: 충남 천안시 동남구 유량동 123-45" required>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="is_organic">친환경 여부</label>
+                    <select id="is_organic" name="is_organic" class="form-control">
+                        <option value="true">네 (친환경 인증)</option>
+                        <option value="false">아니오</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="price">가격 설정 (1인 기준)</label>
+                    <input type="number" id="price" name="price" class="form-control" placeholder="숫자만 입력" required>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="duration">모집 마감일</label>
+                <input type="date" id="duration" name="duration" class="form-control" required>
+            </div>
+            <div class="form-buttons d-flex justify-content-center mt-4">
+                <button type="submit" class="btn-submit">등록하기</button>
+                <a href="{{ url_for('index') }}" class="btn-cancel" style="margin-left: 10px;">취소</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

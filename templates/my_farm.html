@@ -1,0 +1,40 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="container">
+    <div class="dashboard-header">
+        <h2>{{ farm.farm_name }}'s 체험 목록 🧑‍🌾</h2>
+        <a href="{{ url_for('farmer_register') }}" class="btn-register">새 체험 등록하기 +</a>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category }}">{{ message }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    {% if experiences %}
+    <div class="item-list">
+        <div class="list-header" style="grid-template-columns: 2fr 1fr 1fr 1.5fr;">
+            <span>작물명</span><span>가격</span><span>마감일</span><span>모집현황</span>
+        </div>
+        {% for item in experiences %}
+        <a href="{{ url_for('experience_detail', item_id=item.id) }}" class="list-item" style="grid-template-columns: 2fr 1fr 1fr 1.5fr;">
+            <span><strong>{{ item.crop }}</strong><br>#{{ "친환경" if item.pesticide_free else "일반" }}</span>
+            <span>{{ "{:,}".format(item.cost) }}원</span>
+            <span>{{ item.end_date }} (D-{{ item.d_day }})</span>
+            <span class="d-day">
+                {{ item.current_participants }} / {{ item.max_participants }}명
+            </span>
+        </a>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="no-items text-center card p-5">
+        <p class="h5">아직 등록된 농장 체험이 없습니다.</p>
+        <p>'새 체험 등록하기' 버튼을 눌러 첫 체험을 등록해보세요!</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

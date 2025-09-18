@@ -1,0 +1,59 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="container">
+    <div class="apply-form-container">
+        <h2>{{ item.crop }} 체험 신청</h2>
+        <p><strong>📍 장소:</strong> {{ item.location }}</p>
+        <hr>
+        
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        {% if error_message %}
+            <div class="alert alert-danger">{{ error_message }}</div>
+        {% endif %}
+
+        <form method="POST" id="apply-form" action="{{ url_for('experience_apply', item_id=item.id) }}" class="apply-form">
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="name">신청자 이름</label>
+                    <input type="text" id="name" name="applicant_name" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="phone">연락처</label>
+                    <input type="tel" id="phone" name="phone_number" class="form-control" placeholder="010-1234-5678" required>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>참가 인원</label>
+                <div class="inline-group">
+                    <input type="number" id="participants_count" name="participants_count" class="form-control" min="1" value="1" style="width: 80px;"> 명
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="inquiry">문의 사항</label>
+                <textarea id="inquiry" name="inquiry" class="form-control" rows="5"></textarea>
+            </div>
+            <hr>
+            <div class="form-group">
+                <label>개인정보 수집 및 이용 동의</label>
+                <div class="privacy-policy">
+                    **개인정보 수집 및 이용 안내**
+                    1. 수집 항목: 이름, 연락처
+                    2. 이용 목적: 체험 예약 진행 및 안내
+                    3. 보유 기간: 체험 종료 후 1년
+                </div>
+                <div class="consent-group">
+                    <input type="checkbox" id="privacy_consent" required>
+                    <label for="privacy_consent">위 내용에 동의합니다.</label>
+                </div>
+            </div>
+            <button type="submit" class="btn-submit btn-large">신청 완료하기</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

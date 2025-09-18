@@ -45,14 +45,6 @@
     </header>
 
     <main class="container">
-        <div id="initial-popup" class="popup-overlay" {% if session.get('role') %}style="display: none;"{% endif %}>
-            <div class="popup-content">
-                <h2>어떤 목적으로 오셨나요?</h2>
-                <a href="/set_role/farmer" class="popup-button farmer">농부로 시작하기</a>
-                <a href="/set_role/experiencer" class="popup-button experiencer">체험자로 시작하기</a>
-            </div>
-        </div>
-
         {% block content %}{% endblock %}
     </main>
 

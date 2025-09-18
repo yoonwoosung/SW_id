@@ -1,6 +1,6 @@
 # app.py
 from flask import Flask, render_template, session, redirect, url_for, request
-from dummy_data import get_all_experiences, get_experience_by_id, get_farmer_listings, get_all_volunteer_ops, get_volunteer_op_by_id
+# from dummy_data import get_all_experiences, get_experience_by_id, get_farmer_listings, get_all_volunteer_ops, get_volunteer_op_by_id
 
 # ==================================
 # ▼▼▼ DB 연동을 위해 추가된 코드 ▼▼▼
@@ -10,6 +10,7 @@ from flask_bcrypt import Bcrypt
 from flask import jsonify
 import os
 import json
+import datetime
 from werkzeug.utils import secure_filename
 # ==================================
 # ▲▲▲ DB 연동을 위해 추가된 코드 ▲▲▲
@@ -42,6 +43,7 @@ db = SQLAlchemy(app)
 bcrypt = Bcrypt(app)
 
 # User 모델(테이블) 정의
+# User 모델(테이블) 정의
 class User(db.Model):
     __tablename__ = 'users'
     id = db.Column(db.Integer, primary_key=True)
@@ -49,8 +51,12 @@ class User(db.Model):
     password = db.Column(db.String(255), nullable=False)
     nickname = db.Column(db.String(50), unique=True, nullable=False)
     role = db.Column(db.String(20), nullable=False, default='user')
-    created_at = db.Column(db.TIMESTAMP, server_default=db.func.now())
+    
+    # ▼▼▼ age와 gender 두 줄이 추가되었습니다 ▼▼▼
+    age = db.Column(db.Integer)
+    gender = db.Column(db.String(10))
 
+    created_at = db.Column(db.TIMESTAMP, server_default=db.func.now())
 # app.py의 User 클래스 아래에 추가
 
 class Experience(db.Model):
@@ -77,34 +83,59 @@ class Experience(db.Model):
 # ▲▲▲ DB 연동을 위해 추가된 코드 ▲▲▲
 # ==================================
 
+# app.py
 
+# ... class Experience ... 바로 아래에 추가
+
+class Farm(db.Model):
+    __tablename__ = 'farms'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), unique=True, nullable=False)
+    farm_name = db.Column(db.String(255), nullable=False)
+    created_at = db.Column(db.TIMESTAMP, server_default=db.func.now())
 # --- 페이지 라우팅 ---
 
 # 1. 메인 페이지 (체험자, 농부, 봉사자 뷰 전환)
+# app.py
+
+# 파일 상단에 datetime 라이브러리를 import 해주세요
+import datetime
+
+# ... (다른 코드) ...
+
 @app.route('/')
 def index():
-    role = session.get('role', 'experiencer') # 기본값은 '체험자'
+    role = session.get('role', 'experiencer')
     
+    # 농부일 경우, 자신의 농장 관리 페이지로 리다이렉트 (기존 로직 유지)
     if role == 'farmer':
-        # 농부일 경우, 자신의 등록 리스트를 보여줌
-        my_listings = get_farmer_listings()
-        return render_template('farmer_dashboard.html', listings=my_listings)
+        return redirect(url_for('my_farm'))
     
-    elif role == 'volunteer':
-        # 봉사자일 경우, 지원 가능한 리스트를 보여줌
-        volunteer_ops = get_all_volunteer_ops()
-        return render_template('volunteer_apply.html', items=volunteer_ops)
-        
-    else: # 'experiencer' 또는 기본
-        # 체험자일 경우, 전체 체험 리스트를 보여줌
-        experiences = get_all_experiences()
-        # 정렬 기능 (임시)
-        sort_by = request.args.get('sort', 'imminent') # URL 파라미터로 정렬 기준 받기
-        if sort_by == 'region':
-            experiences = sorted(experiences, key=lambda x: x['location'])
+    # 체험자 또는 봉사자일 경우, DB에서 모든 체험 목록을 가져옴
+    experiences = Experience.query.order_by(Experience.start_date.asc()).all()
+    
+    # ▼▼▼ [수정된 부분] D-Day 계산 및 volunteer 역할에 필요한 추가 정보 주입 ▼▼▼
+    today = datetime.date.today()
+    for item in experiences:
+        # D-Day 계산
+        if item.start_date:
+            delta = item.start_date - today
+            item.d_day = delta.days
         else:
-            experiences = sorted(experiences, key=lambda x: x['d_day'])
+            item.d_day = None # 시작일이 없으면 D-Day도 없음
+
+        # 봉사자 목록에 필요한 추가 정보 (농장 이름, 현재 지원자 수)
+        if role == 'volunteer':
+            farm = Farm.query.filter_by(user_id=item.user_id).first()
+            item.farm_name = farm.farm_name if farm else "농장 이름 없음"
+            # TODO: 실제 지원자 수를 계산하는 로직이 필요합니다.
+            item.current_staff = 0 
+    # ▲▲▲ [수정된 부분] ▲▲▲
             
+    # 역할에 따라 다른 템플릿을 렌더링합니다. (기존 로직 유지)
+    if role == 'volunteer':
+        return render_template('volunteer_apply.html', items=experiences)
+    else: # 'experiencer' 또는 기본
         return render_template('index.html', items=experiences)
 
 # 2. 역할(직업) 선택 및 세션 저장
@@ -117,7 +148,7 @@ def set_role(role_name):
 # 3. 체험 상세 페이지
 @app.route('/experience/<int:item_id>')
 def experience_detail(item_id):
-    item = get_experience_by_id(item_id)
+    item = Experience.query.get_or_404(item_id)
     # 구글 플레이 스토어 같은 평점 구조 (임시 데이터)
     reviews = {
         'average': 4.3,
@@ -144,7 +175,7 @@ def farmer_register():
 # 5. 봉사자 - 지원 상세 페이지
 @app.route('/volunteer/<int:item_id>')
 def volunteer_detail(item_id):
-    item = get_volunteer_op_by_id(item_id)
+    item = Experience.query.get_or_404(item_id)
     return render_template('volunteer_detail.html', item=item)
     
 # 6. 봉사자 - 내 정보 페이지
@@ -179,107 +210,152 @@ def logout():
     session.clear() # 세션에 저장된 모든 정보를 삭제
     return redirect(url_for('index'))
 # 10. 농부 - 내 농장 대시보드 페이지
+# app.py
+
+# app.py
+
 @app.route('/myfarm')
 def my_farm():
-    # 1. 세션에 user_id가 없으면 로그인 페이지로 보냅니다 (로그인 필수).
-    if 'user_id' not in session:
+    if 'user_id' not in session or session.get('role') != 'farmer':
         return redirect(url_for('login_page'))
     
-    # 2. 현재 로그인된 사용자의 id를 가져옵니다.
     user_id = session['user_id']
     
-    # 3. experiences 테이블에서 현재 사용자가 등록한 모든 체험 목록을 찾습니다.
+    # 1. DB에서 이 농장주의 농장 정보를 찾습니다. (farms 테이블 사용)
+    farm = Farm.query.filter_by(user_id=user_id).first()
+    
+    # 2. 이 농장주가 등록한 모든 체험 목록을 찾습니다.
     my_experiences = Experience.query.filter_by(user_id=user_id).order_by(Experience.created_at.desc()).all()
     
-    # 4. 찾은 데이터를 my_farm.html 템플릿으로 전달합니다.
-    return render_template('my_farm.html', experiences=my_experiences)
+    # 3. 간단한 통계 정보 계산
+    stats = {
+        'total_experiences': len(my_experiences)
+        # 나중에 여기에 총 참여자 수, 평균 평점 등 더 복잡한 통계를 추가할 수 있습니다.
+    }
+    
+    # 4. 농장 정보, 체험 목록, 통계 정보를 템플릿으로 전달합니다.
+    return render_template('my_farm.html', farm=farm, experiences=my_experiences, stats=stats)
 # ==================================
 # ▼▼▼ DB 연동을 위해 추가된 코드 ▼▼▼
 # ==================================
+
 @app.route('/api/register', methods=['POST'])
 def api_register():
+    # 1. 프론트엔드에서 보낸 JSON 데이터를 받습니다.
     data = request.get_json()
+    if not data:
+        return jsonify({'error': '잘못된 요청입니다.'}), 400
+
+    # 2. 각 데이터를 변수에 저장합니다.
     email = data.get('email')
     nickname = data.get('nickname')
     password = data.get('password')
-    
-    if not all([email, nickname, password]):
-        return jsonify({'error': '모든 정보를 입력해주세요.'}), 400
+    role = data.get('role')
+    age = data.get('age')
+    gender = data.get('gender')
+    farm_name = data.get('farm_name') # 농장 이름 데이터 받아오기
 
+    # 3. 필수 정보가 모두 있는지 확인합니다.
+    if not all([email, nickname, password, role]):
+        return jsonify({'error': '필수 정보를 모두 입력해주세요.'}), 400
+    
+    # 역할이 농장주일 경우, 농장 이름도 필수값으로 검사
+    if role == 'farmer' and not farm_name:
+        return jsonify({'error': '농장 이름을 입력해주세요.'}), 400
+
+    # 4. 이메일, 닉네임 중복 여부를 확인합니다.
     if User.query.filter_by(email=email).first():
         return jsonify({'error': '이미 사용 중인 이메일입니다.'}), 409
     if User.query.filter_by(nickname=nickname).first():
         return jsonify({'error': '이미 사용 중인 닉네임입니다.'}), 409
 
+    # 5. 비밀번호는 암호화(해싱)해서 저장해야 합니다.
     hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
     
-    new_user = User(email=email, password=hashed_password, nickname=nickname)
-    db.session.add(new_user)
-    db.session.commit()
+    # 6. 모든 정보를 담아 새로운 사용자 객체를 만듭니다.
+    new_user = User(
+        email=email, 
+        password=hashed_password, 
+        nickname=nickname,
+        role=role,
+        age=age,
+        gender=gender
+    )
     
+    db.session.add(new_user)
+    db.session.commit() # 먼저 user를 저장해야 user.id가 생성됩니다.
+
+    # 7. 역할이 '농장주'라면, farms 테이블에도 정보를 저장합니다.
+    if role == 'farmer':
+        new_farm = Farm(user_id=new_user.id, farm_name=farm_name)
+        db.session.add(new_farm)
+        db.session.commit()
+    
+    # 8. 성공 메시지를 프론트엔드로 보냅니다.
     return jsonify({'message': '회원가입 성공!'}), 201
-# ==================================
-# ▲▲▲ DB 연동을 위해 추가된 코드 ▲▲▲
-# ==================================
+# app.py
+
+# (파일 상단에 필요한 import가 있는지 확인하세요: request, jsonify, session)
+# (User 모델과 bcrypt 객체도 필요합니다)
+
 @app.route('/api/login', methods=['POST'])
 def api_login():
+    # 1. 프론트엔드에서 보낸 JSON 데이터 받기
     data = request.get_json()
     email = data.get('email')
     password = data.get('password')
 
-    # 1. 이메일로 DB에서 사용자 정보 찾기
+    # 2. 이메일로 DB에서 사용자 정보 찾기
     user = User.query.filter_by(email=email).first()
 
-    # 2. 사용자가 존재하고, 암호화된 비밀번호가 일치하는지 확인
+    # 3. 사용자가 존재하고, 암호화된 비밀번호가 일치하는지 확인
     if user and bcrypt.check_password_hash(user.password, password):
-        # 3. 세션에 사용자 정보 저장 (이것이 로그인 상태를 유지하는 핵심!)
+        # 4. 세션에 사용자 정보 저장 (로그인 상태 유지의 핵심!)
         session['user_id'] = user.id
         session['nickname'] = user.nickname
-        session['role'] = user.role # 역할 정보도 세션에 저장
+        session['role'] = user.role # 역할 정보 저장
+        
         return jsonify({'message': '로그인 성공!'}), 200
     else:
-        # 사용자가 없거나 비밀번호가 틀린 경우
+        # 5. 사용자가 없거나 비밀번호가 틀린 경우
         return jsonify({'error': '이메일 또는 비밀번호가 올바르지 않습니다.'}), 401
-
 # ==================================
 # ▼▼▼ 농장 체험 등록 API 추가 ▼▼▼
 # ==================================
+# app.py
+
 @app.route('/api/experiences', methods=['POST'])
 def create_experience():
-    # 실제 서비스에서는 로그인 여부를 확인해야 합니다.
-    # 세션에 user_id가 없으면 로그인 페이지로 보냅니다.
     if 'user_id' not in session:
         return jsonify({'error': '로그인이 필요합니다.'}), 401
     
-    # 이제 임시 user_id=1 대신, 세션에서 실제 로그인한 사용자의 id를 가져옵니다.
     user_id = session['user_id']
 
-    # 폼 데이터 가져오기
-    main_crops = request.form.get('crop-info')
-    phone_number = request.form.get('phone-number')
-    address = request.form.get('farm-address')
-    area_size = request.form.get('farm-size')
-    start_date = request.form.get('start-date')
-    end_date = request.form.get('end-date')
-    available_times = request.form.get('available-times') # JSON 문자열 형태
-    recruit_count = request.form.get('max-participants')
-    participation_fee = request.form.get('participation-fee')
-    what_to_bring = request.form.get('preparation-notes')
-    inclusions = request.form.get('included-items')
-    exclusions = request.form.get('excluded-items')
-    volunteer_tasks = request.form.get('volunteer-tasks')
+    # ▼▼▼ html의 name 속성과 동일한 이름으로 데이터를 받습니다 ▼▼▼
+    main_crops = request.form.get('main_crops')
+    phone_number = request.form.get('phone_number')
+    address = request.form.get('address')
+    area_size = request.form.get('area_size')
+    start_date = request.form.get('start_date')
+    end_date = request.form.get('end_date')
+    available_times = request.form.get('available_times') # JavaScript에서 JSON 문자열로 넘어옵니다.
+    recruit_count = request.form.get('recruit_count')
+    participation_fee = request.form.get('participation_fee')
+    what_to_bring = request.form.get('what_to_bring')
+    inclusions = request.form.get('inclusions')
+    exclusions = request.form.get('exclusions')
+    volunteer_tasks = request.form.get('volunteer_tasks')
     
-    # 파일 처리
-    file = request.files.get('photos-videos')
+    # 파일 처리 (html의 name="main_image"와 일치)
+    file = request.files.get('main_image')
     main_image_url = None
     if file:
         filename = secure_filename(file.filename)
-        # static/uploads 폴더가 미리 생성되어 있어야 합니다.
         file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
         file.save(file_path)
-        main_image_url = file_path.replace('\\', '/')
+        main_image_url = file_path.replace('\\', '/') # URL 경로를 위해 / 사용
 
-    # DB에 저장할 새 Experience 객체 생성
+    # DB에 저장
     new_experience = Experience(
         user_id=user_id,
         main_crops=main_crops,

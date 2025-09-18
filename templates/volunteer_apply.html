@@ -9,12 +9,12 @@
         {% for item in items %}
         <a href="{{ url_for('volunteer_detail', item_id=item.id) }}" class="list-item">
             <span><strong>{{ item.farm_name }}</strong></span>
-            <span>{{ item.location }}</span>
+            <span>{{ item.address }}</span>
             <span>{{ item.start_date }} ~ {{ item.end_date }}</span>
-            <span class="staff-count {% if item.current_staff >= item.needed_staff %}full{% endif %}">
-                {{ item.needed_staff }}명 / {{ item.current_staff }}명
+            <span class="staff-count {% if item.current_staff >= item.recruit_count %}full{% endif %}">
+                {{ item.recruit_count }}명 / {{ item.current_staff }}명
                 <br>
-                {% if item.current_staff >= item.needed_staff %}
+                {% if item.current_staff >= item.recruit_count %}
                     <span>모집완료</span>
                 {% else %}
                     <span style="background-color: #2196F3;">모집중</span>

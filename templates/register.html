@@ -15,20 +15,63 @@
                         <h1 class="text-center">회원가입</h1>
                     </div>
                     <div class="card-body">
-                        <form id="register-form">
-                            <div class="form-group">
-                                <label for="email">이메일</label>
-                                <input type="email" id="email" name="email" class="form-control" required>
-                            </div>
+                        <form id="register-form" novalidate>
                             <div class="form-group">
                                 <label for="nickname">닉네임</label>
                                 <input type="text" id="nickname" name="nickname" class="form-control" required>
                             </div>
                             <div class="form-group">
+                                <label for="email">이메일</label>
+                                <input type="email" id="email" name="email" class="form-control" required>
+                                <div id="email-error" style="color: red; font-size: 0.9em; margin-top: 5px;"></div>
+                            </div>
+                            <div class="form-group">
                                 <label for="password">비밀번호</label>
                                 <input type="password" id="password" name="password" class="form-control" required>
                             </div>
-                            <button type="submit" class="btn btn-success btn-block">가입하기</button>
+                            <div class="form-group">
+                                <label for="password-confirm">비밀번호 확인</label>
+                                <input type="password" id="password-confirm" name="password-confirm" class="form-control" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label>가입 유형</label>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="role" id="role-user" value="user" checked>
+                                    <label class="form-check-label" for="role-user">체험자</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="role" id="role-farmer" value="farmer">
+                                    <label class="form-check-label" for="role-farmer">농장주</label>
+                                </div>
+                            </div>
+
+                            <div id="farmer-fields" style="display: none;">
+                                <div class="form-group">
+                                    <label for="farm-name">농장 이름</label>
+                                    <input type="text" id="farm-name" name="farm_name" class="form-control">
+                                </div>
+                                </div>
+                            <div class="form-group">
+                                <label for="age">나이</label>
+                                <input type="number" id="age" name="age" class="form-control">
+                            </div>
+                            <div class="form-group">
+                                <label>성별</label>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="gender" id="gender-male" value="male">
+                                    <label class="form-check-label" for="gender-male">남성</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="gender" id="gender-female" value="female">
+                                    <label class="form-check-label" for="gender-female">여성</label>
+                                </div>
+                            </div>
+                            <div class="form-group form-check">
+                                <input type="checkbox" class="form-check-input" id="terms" name="terms" required>
+                                <label class="form-check-label" for="terms">서비스 이용약관에 동의합니다.</label>
+                            </div>
+                            <button type="submit" class="btn btn-success btn-block mt-4">가입하기</button>
                         </form>
                     </div>
                 </div>
@@ -37,32 +80,83 @@
     </div>
 
     <script>
-        const form = document.getElementById('register-form');
-        form.addEventListener('submit', async (event) => {
-            event.preventDefault();
-            const email = document.getElementById('email').value;
-            const nickname = document.getElementById('nickname').value;
-            const password = document.getElementById('password').value;
-            const data = { email, nickname, password };
-
-            try {
-                const response = await fetch('/api/register', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(data)
-                });
-                const result = await response.json();
-                if (response.ok) {
-                    alert(result.message);
-                    window.location.href = "/";
-                } else {
-                    alert('오류: ' + result.error);
-                }
-            } catch (error) {
-                console.error('회원가입 요청 실패:', error);
-                alert('요청에 실패했습니다. 잠시 후 다시 시도해주세요.');
+        // ▼▼▼ 역할 선택에 따라 입력란을 보여주는 JavaScript 추가 ▼▼▼
+    // 역할 선택에 따라 입력란을 보여주는 부분 (이전과 동일)
+    const roleRadios = document.querySelectorAll('input[name="role"]');
+    const farmerFields = document.getElementById('farmer-fields');
+    roleRadios.forEach(radio => {
+        radio.addEventListener('change', function() {
+            if (this.value === 'farmer') {
+                farmerFields.style.display = 'block';
+            } else {
+                farmerFields.style.display = 'none';
             }
         });
-    </script>
+    });
+
+    const form = document.getElementById('register-form');
+    form.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        
+        // ... (기존 유효성 검사 로직은 그대로) ...
+        const emailInput = document.getElementById('email');
+        const emailError = document.getElementById('email-error');
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        let isValid = true;
+        if (!emailRegex.test(emailInput.value)) {
+            emailError.textContent = '※ 올바른 이메일 형식을 입력해주세요.';
+            isValid = false;
+        } else {
+            emailError.textContent = '';
+        }
+        const password = document.getElementById('password').value;
+        const passwordConfirm = document.getElementById('password-confirm').value;
+        if (password !== passwordConfirm) {
+            alert('비밀번호가 일치하지 않습니다. 다시 확인해주세요.');
+            isValid = false;
+        }
+        if (!isValid) {
+            return;
+        }
+
+        // ▼▼▼ [수정된 부분] ▼▼▼
+        const nickname = document.getElementById('nickname').value;
+        const role = document.querySelector('input[name="role"]:checked').value;
+        const age = document.getElementById('age').value;
+        const gender = document.querySelector('input[name="gender"]:checked') ? document.querySelector('input[name="gender"]:checked').value : null;
+        const termsAgreed = document.getElementById('terms').checked;
+        
+        // 서버로 보낼 기본 데이터
+        const data = { 
+            email: emailInput.value, nickname, password, role, age, gender, 
+            terms: termsAgreed 
+        };
+
+        // 만약 역할이 '농장주'라면, 농장 이름 데이터도 추가합니다.
+        if (role === 'farmer') {
+            data.farm_name = document.getElementById('farm-name').value;
+        }
+        // ▲▲▲ [수정된 부분] ▲▲▲
+
+        // 서버로 데이터 전송 (이하 동일)
+        try {
+            const response = await fetch('/api/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            const result = await response.json();
+            if (response.ok) {
+                alert('회원가입이 완료되었습니다! 로그인 페이지로 이동합니다.');
+                window.location.href = "/login";
+            } else {
+                alert('오류: ' + result.error);
+            }
+        } catch (error) {
+            console.error('회원가입 요청 실패:', error);
+            alert('요청에 실패했습니다. 잠시 후 다시 시도해주세요.');
+        }
+    });
+</script>
 </body>
 </html>

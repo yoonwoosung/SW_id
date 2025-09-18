@@ -1,13 +1,16 @@
 {% extends "layout.html" %}
 {% block content %}
 <div class="container detail-container">
-    <img src="{{ item.image }}" alt="{{ item.crop }}" class="detail-image">
-    <h1>{{ item.crop }} 체험</h1>
+    {% if item.main_image_url %}
+    <img src="{{ url_for('static', filename=item.main_image_url.replace('static/', '')) }}" alt="{{ item.main_crops }}" class="detail-image">
+    {% else %}
+    <img src="https://via.placeholder.com/800x400.png?text=No+Image" alt="No Image" class="detail-image">
+    {% endif %}
+    <h1>{{ item.main_crops }} 체험</h1>
     <div class="detail-info">
-        <p><strong>📍 위치:</strong> {{ item.location }} (상세주소는 예약 후 공개)</p>
-        <p><strong>🌿 친환경:</strong> {{ "예" if item.pesticide_free else "아니오" }}</p>
-        <p><strong>💰 비용:</strong> {{ "{:,}".format(item.cost) }}원 / 1인</p>
-        <p><strong>⏳ 모집 마감:</strong> D-{{ item.d_day }} ({{ item.end_date }})</p>
+        <p><strong>📍 위치:</strong> {{ item.address }} (상세주소는 예약 후 공개)</p>
+        <p><strong>💰 비용:</strong> {% if item.participation_fee is not none and item.participation_fee > 0 %}{{ "{:,}".format(item.participation_fee) }}원 / 1인{% else %}무료{% endif %}</p>
+        <p><strong>🗓️ 체험 마감일:</strong> {{ item.end_date.strftime('%Y-%m-%d') if item.end_date else '상시모집' }}</p>
     </div>
     
     <div class="detail-map">

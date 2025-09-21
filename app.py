@@ -5,6 +5,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 import requests
 from sqlalchemy.sql import func
+from collections import defaultdict
 from datetime import date, timedelta, datetime
 
 # --- 1. 앱 및 DB 설정 ---
@@ -93,6 +94,9 @@ class Application(db.Model):
     applicant_name = db.Column(db.String(100), nullable=False)
     phone_number = db.Column(db.String(50), nullable=False)
     participants_count = db.Column(db.Integer, nullable=False, default=1)
+    count_adult = db.Column(db.Integer, default=0)
+    count_teen = db.Column(db.Integer, default=0)
+    count_child = db.Column(db.Integer, default=0)
     apply_date = db.Column(db.Date, nullable=False)
     apply_time = db.Column(db.String(50), nullable=False)
     status = db.Column(db.String(50), nullable=False, default='예정') # '예정', '완료', '취소'
@@ -145,6 +149,18 @@ def index():
         my_listings = Experience.query.filter_by(farmer_id=farmer_id).all()
         experience_ids = [exp.id for exp in my_listings]
         
+        applications = Application.query.filter(Application.experience_id.in_(experience_ids)).all()
+        
+        reservations_by_date = defaultdict(list)
+        for app in applications:
+            reservations_by_date[app.apply_date.strftime('%Y-%m-%d')].append({
+                "name": app.applicant_name,
+                "phone": app.phone_number,
+                "adult": app.count_adult,
+                "teen": app.count_teen,
+                "child": app.count_child
+            })
+
         # 평균 별점 계산
         avg_rating = 0
         if experience_ids:
@@ -168,7 +184,8 @@ def index():
                                user=user, 
                                experiences=my_listings, 
                                stats=stats,
-                               inquiries=latest_inquiries)
+                               inquiries=latest_inquiries,
+                               reservations_data=reservations_by_date)
     else:
         # 체험자에게 보여주는 페이지 로직 (기존과 동일)
         page = request.args.get('page', 1, type=int)
@@ -287,6 +304,9 @@ def experience_apply(item_id):
             applicant_name=request.form.get('applicant_name'),
             phone_number=request.form.get('phone_number'),
             participants_count=total_participants,
+            count_adult=count_adult,
+            count_teen=count_teen,
+            count_child=count_child,
             apply_date=datetime.strptime(request.form.get('apply_date'), '%Y-%m-%d').date(),
             apply_time=request.form.get('apply_time'),
             user_id=session['user_id'],

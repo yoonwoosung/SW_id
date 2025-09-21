@@ -1,7 +1,7 @@
 {% extends "layout.html" %}
 {% block page_class %}page-volunteer{% endblock %}
 {% block content %}
-<div class="container page-container"> {# page-container 클래스 추가 #}
+<div class="container page-container">
 
     <div class="content-tabs">
         <a href="{{ url_for('index') }}" class="tab-item">
@@ -11,28 +11,44 @@
             <i class="fa-solid fa-handshake-angle"></i> 봉사활동
         </a>
     </div>
+
     <div class="tab-content-wrapper">
-        <h2>현재 모집 중 봉사활동 🙋‍♀️</h2>
-        <div class="item-list">
-            <div class="list-header" style="grid-template-columns: 2fr 2fr 2fr 1.5fr;">
-                <span>농장 이름</span><span>상세 지역</span><span>기간</span><span>필요/현재 인원</span>
+        <div class="list-title-header">
+            <h2>봉사자 모집 목록</h2>
+        </div>
+
+        <div class="experience-list-container">
+            <div class="list-header-row" style="grid-template-columns: 2.5fr 1.5fr 1fr 1fr;">
+                <span class="col-crop">작물명 (농장)</span>
+                <span class="col-location">위치</span>
+                <span class="col-status">모집현황</span>
+                <span class="col-action">신청</span>
             </div>
-            {% for item in items %}
-            <a href="{{ url_for('volunteer_detail', item_id=item.id) }}" class="list-item" style="grid-template-columns: 2fr 2fr 2fr 1.5fr;">
-                <span><strong>{{ item.farm_name }}</strong></span>
-                <span>{{ item.location }}</span>
-                <span>{{ item.start_date }} ~ {{ item.end_date }}</span>
-                <span class="staff-count {% if item.current_staff >= item.needed_staff %}full{% endif %}">
-                    {{ item.current_staff }} / {{ item.needed_staff }}명
-                    <br>
-                    {% if item.current_staff >= item.needed_staff %}
-                        <span style="background-color: #9E9E9E; color:white; padding: 2px 5px; font-size: 11px; border-radius: 3px;">모집완료</span>
-                    {% else %}
-                        <span style="background-color: #2196F3; color:white; padding: 2px 5px; font-size: 11px; border-radius: 3px;">모집중</span>
-                    {% endif %}
-                </span>
-            </a>
-            {% endfor %}
+
+            {% if items %}
+                {% for item in items %}
+                <div class="list-item-row" style="grid-template-columns: 2.5fr 1.5fr 1fr 1fr;">
+                    <span class="col-crop">
+                        <strong>{{ item.crop }}</strong>
+                        <div class="tag">#{{ "친환경" if item.pesticide_free else "일반" }}</div>
+                    </span>
+                    <span class="col-location">{{ item.address_detail }}</span>
+                    <span class="col-status">{{ item.current_volunteers }} / {{ item.volunteer_needed }}명</span>
+                    <span class="col-action">
+                        {% if item.current_volunteers >= item.volunteer_needed %}
+                            <button class="btn btn-sm btn-secondary" disabled>마감</button>
+                        {% else %}
+                            <a href="https://www.1365.go.kr/vols/main.do" target="_blank" class="btn btn-sm btn-success">신청하기</a>
+                        {% endif %}
+                    </span>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="no-items-message">
+                    <div class="empty-icon">🙌</div>
+                    <p>지금은 모집 중인 봉사활동이 없어요.</p>
+                </div>
+            {% endif %}
         </div>
     </div>
 </div>

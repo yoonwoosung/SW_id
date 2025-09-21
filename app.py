@@ -59,6 +59,9 @@ class Experience(db.Model):
     reviews = db.relationship('Review', backref='experience', lazy=True, cascade="all, delete-orphan")
     inquiries = db.relationship('Inquiry', backref='experience', lazy=True, cascade="all, delete-orphan")
     applications = db.relationship('Application', back_populates='experience', cascade="all, delete-orphan")
+    volunteer_needed = db.Column(db.Integer, default=0)
+    current_volunteers = db.Column(db.Integer, default=0)
+    volunteer_duties = db.Column(db.Text, nullable=True)
 
     @property
     def d_day(self):
@@ -98,17 +101,6 @@ class Application(db.Model):
 
     user = db.relationship('User', back_populates='applications')
     experience = db.relationship('Experience', back_populates='applications')   
-
-class Volunteer(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    farm_name = db.Column(db.String(100), nullable=False)
-    location = db.Column(db.String(255), nullable=False)
-    start_date = db.Column(db.Date, nullable=False)
-    end_date = db.Column(db.Date, nullable=False)
-    needed_staff = db.Column(db.Integer, nullable=False)
-    current_staff = db.Column(db.Integer, default=0)
-    # volunteer_detail.html 에 필요한 필드 추가
-    hours_per_day = db.Column(db.Integer, default=8)
         
 def get_coords_from_address(address):
     # --- 중요! ---
@@ -318,6 +310,8 @@ def farmer_register(item_id=None):
     item = Experience.query.get(item_id) if item_id else None
     if item and item.farmer_id != session['user_id']: abort(403)
     if request.method == 'POST':
+        volunteer_needed_str = request.form.get('volunteer_needed')
+        volunteer_needed = int(volunteer_needed_str) if volunteer_needed_str else 0
         uploaded_files = request.files.getlist('images')
         filenames = item.images.split(',') if item and item.images else []
         if any(f.filename for f in uploaded_files):
@@ -338,6 +332,8 @@ def farmer_register(item_id=None):
             item.images, item.notes, item.includes, item.excludes = image_string, request.form.get('notes'), request.form.get('includes'), request.form.get('excludes')
             item.timetable_data, item.pesticide_free = request.form.get('timetable_data'), 'is_organic' in request.form
             item.lat, item.lng = lat, lng
+            item.volunteer_needed = volunteer_needed
+            item.volunteer_duties = request.form.get('volunteer_duties')
             flash("체험 정보가 성공적으로 수정되었습니다!", "success")
         else:
             farmer = User.query.get(session['user_id'])
@@ -347,7 +343,9 @@ def farmer_register(item_id=None):
                 end_date=datetime.strptime(request.form.get('duration_end'), '%Y-%m-%d').date(), max_participants=int(request.form.get('max_participants')),
                 cost=int(request.form.get('price')), images=image_string, notes=request.form.get('notes'), includes=request.form.get('includes'),
                 excludes=request.form.get('excludes'), timetable_data=request.form.get('timetable_data'), pesticide_free='is_organic' in request.form,
-                lat=lat, lng=lng, farmer_id=session['user_id']
+                lat=lat, lng=lng, farmer_id=session['user_id'],
+                volunteer_needed=volunteer_needed,
+                volunteer_duties=request.form.get('volunteer_duties')
             )
             db.session.add(new_experience)
             flash("새로운 체험이 성공적으로 등록되었습니다!", "success")
@@ -477,16 +475,9 @@ def delete_application(app_id):
 
 @app.route('/volunteer')
 def volunteer_apply():
-    # 데이터베이스에서 모든 봉사활동 목록을 조회합니다.
-    items = Volunteer.query.order_by(Volunteer.start_date.asc()).all()
-    # 조회한 목록을 템플릿으로 전달하여 페이지를 보여줍니다.
+    # Experience 테이블에서 volunteer_needed가 0보다 큰 데이터만 조회
+    items = Experience.query.filter(Experience.volunteer_needed > 0).order_by(Experience.duration_start.asc()).all()
     return render_template('volunteer_apply.html', items=items)
-
-@app.route('/volunteer/<int:item_id>')
-def volunteer_detail(item_id):
-    item = Volunteer.query.get_or_404(item_id)
-    return render_template('volunteer_detail.html', item=item)
-
 # --- 앱 실행 ---
 if __name__ == '__main__':
     with app.app_context():

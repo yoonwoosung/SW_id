@@ -99,6 +99,17 @@ class Application(db.Model):
     user = db.relationship('User', back_populates='applications')
     experience = db.relationship('Experience', back_populates='applications')   
 
+class Volunteer(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    farm_name = db.Column(db.String(100), nullable=False)
+    location = db.Column(db.String(255), nullable=False)
+    start_date = db.Column(db.Date, nullable=False)
+    end_date = db.Column(db.Date, nullable=False)
+    needed_staff = db.Column(db.Integer, nullable=False)
+    current_staff = db.Column(db.Integer, default=0)
+    # volunteer_detail.html 에 필요한 필드 추가
+    hours_per_day = db.Column(db.Integer, default=8)
+        
 def get_coords_from_address(address):
     # --- 중요! ---
     # 카카오 개발자 사이트에서 발급받은 'REST API 키'를 여기에 입력해주세요.
@@ -463,6 +474,18 @@ def delete_application(app_id):
     
     flash("체험 신청이 취소되었습니다.", "success")
     return redirect(url_for('my_info'))
+
+@app.route('/volunteer')
+def volunteer_apply():
+    # 데이터베이스에서 모든 봉사활동 목록을 조회합니다.
+    items = Volunteer.query.order_by(Volunteer.start_date.asc()).all()
+    # 조회한 목록을 템플릿으로 전달하여 페이지를 보여줍니다.
+    return render_template('volunteer_apply.html', items=items)
+
+@app.route('/volunteer/<int:item_id>')
+def volunteer_detail(item_id):
+    item = Volunteer.query.get_or_404(item_id)
+    return render_template('volunteer_detail.html', item=item)
 
 # --- 앱 실행 ---
 if __name__ == '__main__':

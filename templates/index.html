@@ -1,78 +1,88 @@
 {% extends "layout.html" %}
+{% block page_class %}page-experiences{% endblock %}
 {% block content %}
 <div class="container page-container">
     
-    <div class="list-title-header">
-        <h2>현재 진행 중 체험</h2>
-        <div class="sort-links">
-            <a href="{{ url_for('index', sort='deadline') }}" class="sort-link {% if sort_by == 'deadline' %}active{% endif %}">임박순</a>
-            <a href="{{ url_for('index', sort='location') }}" class="sort-link {% if sort_by == 'location' %}active{% endif %}">지역순</a>
-        </div>
+    <div class="content-tabs">
+        <a href="{{ url_for('index') }}" class="tab-item active">
+            <i class="fa-solid fa-leaf"></i> 체험하기
+        </a>
+        <a href="{{ url_for('volunteer_apply') }}" class="tab-item">
+            <i class="fa-solid fa-handshake-angle"></i> 봉사활동
+        </a>
     </div>
-
-    <div class="experience-list-container">
-        <div class="list-header-row">
-            <span class="col-crop">작물명</span>
-            <span class="col-location">위치</span>
-            <span class="col-cost">비용</span>
-            <span class="col-status">모집현황</span>
-            <span class="col-action">신청</span>
+    <div class="tab-content-wrapper">
+        <div class="list-title-header">
+            <h2>현재 진행 중 체험</h2>
+            <div class="sort-links">
+                <a href="{{ url_for('index', sort='deadline') }}" class="sort-link {% if sort_by == 'deadline' %}active{% endif %}">임박순</a>
+                <a href="{{ url_for('index', sort='location') }}" class="sort-link {% if sort_by == 'location' %}active{% endif %}">지역순</a>
+            </div>
         </div>
 
-        {% if items %}
-            {% for item in items %}
-            <a href="{{ url_for('experience_detail', item_id=item.id) }}" class="list-item-row {% if item.current_participants >= item.max_participants %}closed{% endif %}">
-                <span class="col-crop">
-                    <strong>{{ item.crop }}</strong>
-                    <div class="tag">#{{ "친환경" if item.pesticide_free else "일반" }}</div>
-                </span>
-                <span class="col-location">{{ item.address_detail }}</span>
-                <span class="col-cost">{{ "{:,}".format(item.cost) }}원</span>
-                <span class="col-status">{{ item.current_participants }} / {{ item.max_participants }}명</span>
-                <span class="col-action">
-                    {% if item.current_participants >= item.max_participants %}
-                        <button class="btn btn-sm btn-secondary" disabled>마감</button>
-                    {% else %}
-                        <button class="btn btn-sm btn-success">신청하기</button>
-                    {% endif %}
-                </span>
-            </a>
-            {% endfor %}
-        {% else %}
-            <div class="no-items-message">
-                <div class="empty-icon">🌱</div>
-                <p>아직 등록된 체험이 없어요.</p>
-                {% if session.get('role') == 'farmer' %}
-                    <small>새로운 농장 체험을 등록하고 첫 손님을 맞이해보세요!</small>
-                    <a href="{{ url_for('farmer_register') }}" class="btn btn-success mt-3">
-                        내 농장 체험 등록하기
-                    </a>
-                {% endif %}
+        <div class="experience-list-container">
+            <div class="list-header-row">
+                <span class="col-crop">작물명</span>
+                <span class="col-location">위치</span>
+                <span class="col-cost">비용</span>
+                <span class="col-status">모집현황</span>
+                <span class="col-action">신청</span>
             </div>
+
+            {% if items %}
+                {% for item in items %}
+                <a href="{{ url_for('experience_detail', item_id=item.id) }}" class="list-item-row {% if item.current_participants >= item.max_participants %}closed{% endif %}">
+                    <span class="col-crop">
+                        <strong>{{ item.crop }}</strong>
+                        <div class="tag">#{{ "친환경" if item.pesticide_free else "일반" }}</div>
+                    </span>
+                    <span class="col-location">{{ item.address_detail }}</span>
+                    <span class="col-cost">{{ "{:,}".format(item.cost) }}원</span>
+                    <span class="col-status">{{ item.current_participants }} / {{ item.max_participants }}명</span>
+                    <span class="col-action">
+                        {% if item.current_participants >= item.max_participants %}
+                            <button class="btn btn-sm btn-secondary" disabled>마감</button>
+                        {% else %}
+                            <button class="btn btn-sm btn-success">신청하기</button>
+                        {% endif %}
+                    </span>
+                </a>
+                {% endfor %}
+            {% else %}
+                <div class="no-items-message">
+                    <div class="empty-icon">🌱</div>
+                    <p>아직 등록된 체험이 없어요.</p>
+                    {% if session.get('role') == 'farmer' %}
+                        <small>새로운 농장 체험을 등록하고 첫 손님을 맞이해보세요!</small>
+                        <a href="{{ url_for('farmer_register') }}" class="btn btn-success mt-3">
+                            내 농장 체험 등록하기
+                        </a>
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
+    
+        {% if pagination and pagination.pages > 1 %}
+        <nav class="pagination-container">
+            <ul class="pagination">
+                <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
+                    <a class="page-link" href="{{ url_for('index', page=pagination.prev_num, sort=sort_by) }}">&laquo;</a>
+                </li>
+                {% for page_num in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+                    {% if page_num %}
+                        <li class="page-item {% if pagination.page == page_num %}active{% endif %}">
+                            <a class="page-link" href="{{ url_for('index', page=page_num, sort=sort_by) }}">{{ page_num }}</a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled"><span class="page-link">...</span></li>
+                    {% endif %}
+                {% endfor %}
+                <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+                    <a class="page-link" href="{{ url_for('index', page=pagination.next_num, sort=sort_by) }}">&raquo;</a>
+                </li>
+            </ul>
+        </nav>
         {% endif %}
     </div>
-
-    {% if pagination and pagination.pages > 1 %}
-    <nav class="pagination-container">
-        <ul class="pagination">
-            <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
-                <a class="page-link" href="{{ url_for('index', page=pagination.prev_num, sort=sort_by) }}">&laquo;</a>
-            </li>
-            {% for page_num in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
-                {% if page_num %}
-                    <li class="page-item {% if pagination.page == page_num %}active{% endif %}">
-                        <a class="page-link" href="{{ url_for('index', page=page_num, sort=sort_by) }}">{{ page_num }}</a>
-                    </li>
-                {% else %}
-                    <li class="page-item disabled"><span class="page-link">...</span></li>
-                {% endif %}
-            {% endfor %}
-            <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
-                <a class="page-link" href="{{ url_for('index', page=pagination.next_num, sort=sort_by) }}">&raquo;</a>
-            </li>
-        </ul>
-    </nav>
-    {% endif %}
-
 </div>
 {% endblock %}

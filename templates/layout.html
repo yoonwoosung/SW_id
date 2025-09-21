@@ -8,10 +8,11 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"/>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
-<body>
+<body class="{% block page_class %}{% endblock %}">
     <header class="header-{{ session.get('role', 'experiencer') }}">
     <div class="container header-content">
         <a href="/" class="logo">FarmLink</a>
+
         <nav class="user-menu">
             {% if session.get('user_id') %}
                 <strong>{{ session.get('nickname') }}</strong>님

@@ -1,0 +1,749 @@
+/* static/css/style.css (최종 수정본) */
+
+/* --- 1. 기본 및 공통 스타일 --- */
+body {
+    background-color: #f9f9f9;
+}
+
+.page-container {
+    padding-bottom: 5rem;
+}
+
+/* --- 2. 헤더 스타일 --- */
+header {
+    background-color: #fff;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    transition: border-color 0.3s ease;
+    border-bottom: 4px solid #f8f9fa;
+}
+
+header.header-experiencer {
+    border-bottom-color: #2196F3;
+}
+header.header-farmer {
+    border-bottom-color: #4CAF50;
+}
+header.header-volunteer {
+    border-bottom-color: #FF9800;
+}
+
+.header-content {
+    display: flex;
+    justify-content: space-between; 
+    align-items: center;
+    min-height: 80px;
+}
+.logo {
+    font-size: 2.2rem;
+    font-weight: 700;
+    color: #4CAF50 !important;
+    text-decoration: none;
+}
+
+.logo:hover {
+    text-decoration: none;
+    color: #45a049 !important;
+}
+
+.user-menu a {
+    color: #555;
+    margin: 0 8px;
+    text-decoration: none;
+}
+
+.user-menu a:hover {
+    text-decoration: underline;
+}
+
+/* --- 3. 메인 페이지 (index.html) 스타일 --- */
+.list-title-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 3rem;
+    margin-bottom: 1.5rem;
+}
+
+.list-title-header h2 {
+    margin: 0;
+    font-size: 1.8rem;
+    font-weight: 600;
+}
+
+.sort-links a {
+    color: #6c757d;
+    text-decoration: none;
+    font-size: 0.9rem;
+    padding: 8px 16px;
+    border: 1px solid transparent;
+    border-radius: 20px;
+    transition: all 0.2s ease-in-out;
+    margin-left: 4px;
+}
+
+.sort-links a:hover {
+    background-color: #e9ecef;
+}
+
+.sort-links a.active {
+    color: #fff;
+    background-color: #4CAF50;
+    font-weight: bold;
+    border-color: #4CAF50;
+}
+
+.experience-list-container {
+    background-color: #fff;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.list-header-row, .list-item-row {
+    display: grid;
+    grid-template-columns: 2.5fr 1.5fr 1fr 1fr 1fr;
+    align-items: center;
+    padding: 1rem 1.5rem;
+    gap: 1rem;
+}
+
+.list-header-row {
+    background-color: #f8f9fa;
+    color: #495057;
+    font-weight: 600;
+    border-bottom: 1px solid #dee2e6;
+    font-size: 0.9rem;
+}
+
+.list-header-row span i {
+    margin-right: 6px;
+    color: #888;
+}
+
+.list-item-row {
+    color: #343a40;
+    text-decoration: none;
+    border-bottom: 1px solid #e9ecef;
+    transition: background-color 0.2s;
+}
+
+.list-item-row:last-child {
+    border-bottom: none;
+}
+
+.list-item-row:hover {
+    background-color: #f8f9fa;
+}
+
+.list-item-row.closed {
+    color: #adb5bd;
+    background-color: #f8f9fa;
+}
+
+.list-item-row.closed strong {
+    color: #adb5bd;
+}
+
+.list-item-row .tag {
+    font-size: 0.8rem;
+    color: #6c757d;
+}
+
+.col-cost, .col-status, .col-action {
+    text-align: center;
+}
+
+.no-items-message {
+    padding: 5rem 1.5rem;
+    text-align: center;
+    color: #6c757d;
+}
+.no-items-message .empty-icon {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+}
+.no-items-message p {
+    font-size: 1.2rem;
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+}
+.no-items-message small {
+    color: #888;
+}
+
+.pagination-container {
+    display: flex;
+    justify-content: center;
+    margin-top: 2.5rem;
+}
+
+/* --- 4. 농장주 관련 페이지 스타일 (대시보드, 등록) --- */
+.dashboard-container {
+    max-width: 1400px;
+}
+
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: 280px minmax(0, 1fr) 400px;
+    gap: 24px;
+}
+.dashboard-sidebar,
+.dashboard-main,
+.dashboard-right {
+    width: 100%;
+    overflow: hidden; /* 컨텐츠가 넘칠 경우 숨김 처리 */
+}
+
+.dashboard-card {
+    background-color: white;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 24px;
+    margin-bottom: 24px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+
+.profile-card {
+    text-align: center;
+}
+
+.profile-pic {
+    width: 80px;
+    height: 80px;
+    background-color: #f8f9fa;
+    border: 1px dashed #ced4da;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    color: #6c757d;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 12px;
+    margin-top: 16px;
+}
+
+.stats-grid span:nth-child(odd) {
+    color: #6c757d;
+}
+
+.stats-grid span:nth-child(even) {
+    font-weight: bold;
+    text-align: right;
+}
+
+.map-area, .calendar-area {
+    height: 300px;
+    background-color: #f8f9fa;
+    border: 1px dashed #ced4da;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #6c757d;
+    border-radius: 4px;
+}
+
+.activity-list, .inquiry-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.activity-list li, .inquiry-list li {
+    display: flex;
+    justify-content: space-between;
+    padding: 12px 0;
+    border-bottom: 1px solid #f1f3f5;
+}
+
+.activity-list li:last-child, .inquiry-list li:last-child {
+    border-bottom: none;
+}
+
+.inquiry-list a {
+    color: #007bff;
+    text-decoration: none;
+}
+
+.inquiry-list small {
+    color: #6c757d;
+}
+
+.register-container {
+    max-width: 900px;
+}
+
+.form-section {
+    margin-bottom: 4rem;
+    padding-bottom: 2rem;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.farm-register-form .form-group label {
+    font-weight: bold;
+}
+
+.timetable {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: center;
+}
+
+.timetable th, .timetable td {
+    border: 1px solid #dee2e6;
+    padding: 8px;
+}
+
+.timetable th {
+    background-color: #f8f9fa;
+}
+
+.timetable .time-slot {
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.timetable .time-slot:hover {
+    background-color: #e9ecef;
+}
+
+.timetable .time-slot.selected {
+    background-color: #28a745;
+    color: white;
+}
+
+/* --- 5. 신청 및 상세 페이지 스타일 --- */
+.apply-container {
+    max-width: 600px;
+}
+
+.apply-form-v2 {
+    background: #fff;
+    padding: 2.5rem;
+    border-radius: 8px;
+    border: 1px solid #dee2e6;
+}
+
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    background: white;
+    padding: 2rem;
+    border-radius: 8px;
+    width: 400px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+}
+
+#modal-summary p {
+    margin: 0.5rem 0;
+}
+
+#modal-summary strong {
+    min-width: 80px;
+    display: inline-block;
+}
+
+.modal-buttons {
+    margin-top: 1.5rem;
+    text-align: right;
+}
+
+.validation-message {
+    display: block;
+    width: 100%;
+    text-align: right;
+    font-size: 0.8rem;
+    margin-top: -0.4rem;
+    margin-bottom: 0.6rem;
+    min-height: 1rem; /* 메시지가 없을 때도 공간을 차지해 UI가 흔들리지 않게 함 */
+}
+
+.text-success {
+    color: #28a745;
+}
+
+.text-danger {
+    color: #dc3545;
+}
+.toggle-password {
+    cursor: pointer;
+}
+
+#view-terms-link {
+    font-size: 0.85rem;
+    margin-left: 4px;
+}
+
+.terms-content {
+    max-height: 300px;
+    overflow-y: auto;
+    border: 1px solid #eee;
+    padding: 1rem;
+    margin-top: 1rem;
+    background-color: #f9f9f9;
+    font-size: 0.9rem;
+}
+
+.profile-pic-img {
+    width: 100px;
+    height: 100px;
+    object-fit: cover; /* 이미지를 비율에 맞게 자르고 채움 */
+    border-radius: 50%;
+    border: 3px solid #eee;
+}
+
+.farm-photo-label {
+    display: block;
+    width: 100%;
+    height: 300px;
+    border: 2px dashed #ced4da;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    background-color: #f8f9fa;
+    transition: border-color 0.2s;
+}
+
+.farm-photo-label:hover {
+    border-color: #4CAF50;
+}
+
+.farm-photo-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover; /* 이미지를 비율에 맞게 자르고 채움 */
+}
+.farm-photo-label {
+    position: relative; /* 오버레이 위치 기준점 */
+}
+
+.farm-photo-overlay {
+    position: absolute;
+    bottom: 15px;
+    right: 15px;
+    background-color: rgba(0, 0, 0, 0.6);
+    color: white;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    opacity: 0;
+    transition: opacity 0.2s;
+    pointer-events: none; /* 오버레이가 클릭을 방해하지 않도록 함 */
+}
+
+.farm-photo-label:hover .farm-photo-overlay {
+    opacity: 1;
+}
+
+.timetable .time-slot.selected {
+    background-color: #28a745;
+    color: white;
+    font-weight: bold;
+}
+
+/* 체험 상세 - 이미지 슬라이더 */
+.detail-image {
+    height: 400px;
+    object-fit: cover;
+    border-radius: 8px;
+}
+/* 후기, 문의 섹션 */
+.detail-section {
+    background-color: #fff;
+    padding: 2rem;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+}
+/* 후기 목록 */
+.review-list {
+    margin-top: 2rem;
+}
+
+.review-item {
+    border-bottom: 1px solid #f1f3f5;
+    padding: 1.5rem 0;
+}
+
+.review-item:last-child {
+    border-bottom: none;
+}
+
+.review-item p {
+    margin-top: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+/* 별점 UI */
+.star-rating {
+    /* 별점 기능 구현 시 여기에 스타일을 추가합니다. */
+    /* 예를 들어, 별 모양 아이콘의 색상이나 크기 등을 지정할 수 있습니다. */
+    margin-bottom: 1rem;
+}
+
+.detail-info .card-body p {
+    white-space: pre-wrap;
+}
+
+/* style.css 파일 맨 아래에 추가 */
+
+.timetable-display { width: 100%; text-align: center; }
+.timetable-display th, .timetable-display td { border: 1px solid #dee2e6; padding: 8px; }
+.timetable-display thead th { background-color: #f8f9fa; }
+.timetable-display td.selected { background-color: #28a745; color: white; }
+
+@media (max-width: 1200px) {
+    .dashboard-grid {
+        grid-template-columns: 1fr; /* 화면이 작아지면 1단 레이아웃으로 변경 */
+    }
+}
+
+.detail-container .carousel-control-prev,
+.detail-container .carousel-control-next {
+    width: 40px;
+    height: 40px;
+    top: 50%;
+    transform: translateY(-50%);
+    background-color: rgba(0, 0, 0, 0.3);
+    border-radius: 50%;
+}
+
+.detail-container .carousel-control-prev {
+    left: 15px;
+}
+
+.detail-container .carousel-control-next {
+    right: 15px;
+}
+
+.timetable-apply {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: center;
+    margin-top: 0.5rem;
+}
+
+.timetable-apply th, .timetable-apply td {
+    border: 1px solid #dee2e6;
+    padding: 12px 8px;
+}
+
+.timetable-apply thead th {
+    background-color: #f8f9fa;
+}
+
+.timetable-apply .time-slot {
+    font-weight: bold;
+    transition: background-color 0.2s;
+}
+
+/* 선택 가능한 슬롯 */
+.timetable-apply .time-slot.available {
+    cursor: pointer;
+    color: #007bff;
+}
+.timetable-apply .time-slot.available:hover {
+    background-color: #e9ecef;
+}
+
+/* 선택된 슬롯 (파란색) */
+.timetable-apply .time-slot.selected {
+    background-color: #007bff;
+    color: white;
+}
+
+/* 선택 불가능한 슬롯 */
+.timetable-apply .time-slot.unavailable {
+    color: #ced4da;
+    background-color: #f8f9fa;
+    cursor: not-allowed;
+}
+.application-detail-trigger {
+    cursor: pointer;
+}
+
+.main-menu a {
+    color: #333;
+    font-weight: 500;
+    text-decoration: none;
+    padding: 8px 12px;
+    border-radius: 6px;
+    transition: background-color 0.2s;
+}
+
+.main-menu a:hover {
+    background-color: #f0f0f0;
+}
+
+.content-tabs {
+    margin-top: 2.5rem;
+    display: flex;
+}
+
+.tab-item {
+    padding: 1rem 1.5rem;
+    border: 1px solid #dee2e6;
+    background-color: #f8f9fa;
+    color: #495057;
+    text-decoration: none;
+    font-size: 1.1rem;
+    font-weight: 500;
+    border-radius: 8px 8px 0 0;
+    margin-right: 4px;
+    margin-bottom: -1px; /* 핵심: 아래 컨테이너와 테두리를 겹치게 함 */
+    transition: all 0.2s ease-in-out;
+    position: relative;
+    z-index: 2; /* 활성화 탭이 위로 오도록 함 */
+}
+
+.tab-item:hover {
+    background-color: #e9ecef;
+    text-decoration: none;
+    color: #000;
+}
+.tab-content-wrapper {
+    background-color: #fff;
+    border: 1px solid #dee2e6;
+    border-radius: 0 8px 8px 8px;
+    padding: 1.5rem 2rem;
+    position: relative;
+    z-index: 1;
+}
+.tab-content-wrapper > *:first-child {
+    margin-top: 0;
+}
+
+.tab-item.active {
+    background-color: #fff; /* 활성화 탭은 흰색 배경 */
+    border-bottom: 1px solid #fff; /* 아래쪽 테두리를 흰색으로 만들어 콘텐츠와 연결된 것처럼 보이게 함 */
+    font-weight: 700;
+}
+
+.tab-item.active i {
+    opacity: 1;
+}
+
+.page-experiences .tab-item.active {
+    color: #4CAF50; /* 초록색 */
+}
+.page-experiences header {
+    border-bottom-color: #2196F3; /* 파란색 */
+}
+
+/* 봉사활동 페이지일 때 */
+.page-volunteer .tab-item.active {
+    color: #FF9800; /* 주황색 */
+}
+.page-volunteer header {
+    border-bottom-color: #FF9800; /* 주황색 */
+}
+
+.tab-item i {
+    margin-right: 8px; /* 아이콘과 텍스트 사이 간격 */
+}
+
+#calendar {
+    min-height: 400px; /* 달력 높이 확보 */
+    border: none; /* 기존 테두리 제거 */
+    padding: 0;   /* 기존 패딩 제거 */
+}
+
+/* 달력 헤더 (날짜, 이전/다음 버튼) */
+.fc-header-toolbar {
+    margin-bottom: 1.5rem !important;
+}
+
+.fc .fc-toolbar-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #333;
+}
+
+.fc .fc-button {
+    background-color: #fff !important;
+    border: 1px solid #dee2e6 !important;
+    color: #555 !important;
+    box-shadow: none !important;
+    transition: background-color 0.2s;
+}
+.fc .fc-button:hover {
+    background-color: #f8f9fa !important;
+}
+.fc .fc-button .fc-icon {
+    font-size: 1.2rem; /* 아이콘 크기 키움 */
+}
+
+/* 요일 표시 헤더 (일, 월, 화...) */
+.fc .fc-col-header-cell-cushion {
+    color: #6c757d;
+    font-weight: 500;
+    text-decoration: none;
+    padding: 10px 4px;
+}
+
+/* 날짜 셀 */
+.fc .fc-daygrid-day-frame {
+    border-radius: 4px;
+    transition: background-color 0.2s;
+}
+
+.fc .fc-daygrid-day:hover .fc-daygrid-day-frame {
+    background-color: #f8f9fa; /* 날짜에 마우스 올렸을 때 배경색 */
+}
+
+.fc .fc-day-today .fc-daygrid-day-frame {
+    background-color: #e6f7ff; /* 오늘 날짜 배경색 */
+}
+.fc .fc-day-today {
+    font-weight: bold;
+}
+
+/* 예약 이벤트 표시 스타일 */
+.fc-event {
+    cursor: pointer;
+    background-color: #28a745 !important; /* 이벤트 배경색 (초록색) */
+    border: 1px solid #218838 !important;
+    color: #fff !important;
+    font-weight: 500;
+    padding: 4px 6px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+.reservation-item {
+    border-bottom: 1px solid #f0f0f0;
+    padding: 12px 0;
+}
+.reservation-item:last-child {
+    border-bottom: none;
+}
+.reservation-item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 4px;
+}
+.reservation-item-header span {
+    font-weight: bold;
+    color: #28a745;
+}

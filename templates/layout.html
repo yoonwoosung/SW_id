@@ -3,28 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>오늘의 밭</title>
+    <title>FarmLink</title>
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"/>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
     <header class="header-{{ session.get('role', 'experiencer') }}">
-        <div class="container header-content">
-            <a href="/" class="logo">오늘의 밭</a>
-            <nav class="user-menu">
-                {% if session.get('user_id') %}
-                    <strong>{{ session.get('nickname') }}</strong>님
-                    {% if session.get('role') == 'farmer' %}
-                        <a href="{{ url_for('index') }}">내 농장</a>
-                    {% endif %}
-                    <a href="{{ url_for('logout') }}">로그아웃</a>
-                {% else %}
-                    <a href="{{ url_for('login_page') }}">로그인</a>
-                    <a href="{{ url_for('register_page') }}">회원가입</a>
+    <div class="container header-content">
+        <a href="/" class="logo">FarmLink</a>
+        <nav class="user-menu">
+            {% if session.get('user_id') %}
+                <strong>{{ session.get('nickname') }}</strong>님
+                {% if session.get('role') == 'farmer' %}
+                    <a href="{{ url_for('index') }}">내 농장</a>
                 {% endif %}
-            </nav>
-        </div>
-    </header>
+                <a href="{{ url_for('my_info') }}">내 정보</a>
+                <a href="{{ url_for('logout') }}">로그아웃</a>
+            {% else %}
+                <a href="{{ url_for('login_page') }}">로그인</a>
+                <a href="{{ url_for('register_page') }}">회원가입</a>
+            {% endif %}
+        </nav>
+    </div>
+</header>
 
     <main>
         <div class="container mt-4">

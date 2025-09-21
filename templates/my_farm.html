@@ -1,40 +1,94 @@
 {% extends "layout.html" %}
 {% block content %}
-<div class="container">
-    <div class="dashboard-header">
-        <h2>{{ farm.farm_name }}'s 체험 목록 🧑‍🌾</h2>
-        <a href="{{ url_for('farmer_register') }}" class="btn-register">새 체험 등록하기 +</a>
-    </div>
+<div class="container dashboard-container">
+    <div class="dashboard-grid">
+        <aside class="dashboard-sidebar">
+            <div class="dashboard-card profile-card">
+                <form id="profile-pic-form" method="POST" action="{{ url_for('upload_profile') }}" enctype="multipart/form-data">
+                    <label for="profile-pic-input">
+                        <img id="profile-pic-preview" src="{{ url_for('static', filename='uploads/' + user.profile_image) }}" alt="Profile Picture" class="profile-pic-img">
+                        <div class="profile-pic-overlay">사진 변경</div>
+                    </label>
+                    <input type="file" id="profile-pic-input" name="profile_pic" accept="image/*" class="d-none">
+                </form>
+                <h4 class="mt-3">환영합니다,</h4>
+                <h3>{{ user.nickname }}님!</h3>
+            </div>
+            <div class="dashboard-card">
+                <h5>내 농장 통계</h5>
+                <div class="stats-grid">
+                    <span>총 등록 체험</span><span>{{ stats.total_experiences }}</span>
+                    <span>평균 별점</span><span>{{ stats.average_rating }} / 5.0</span>
+                    <span>총 방문자 수</span><span>{{ stats.total_visitors }}</span>
+                </div>
+            </div>
+        </aside>
 
-    {% with messages = get_flashed_messages(with_categories=true) %}
-      {% if messages %}
-        {% for category, message in messages %}
-          <div class="alert alert-{{ category }}">{{ message }}</div>
-        {% endfor %}
-      {% endif %}
-    {% endwith %}
-
-    {% if experiences %}
-    <div class="item-list">
-        <div class="list-header" style="grid-template-columns: 2fr 1fr 1fr 1.5fr;">
-            <span>작물명</span><span>가격</span><span>마감일</span><span>모집현황</span>
-        </div>
+        <main class="dashboard-main">
+            <div class="dashboard-card">
+                <h5>내 농장</h5>
+                <form id="farm-photo-form" method="POST" action="{{ url_for('upload_farm_photo') }}" enctype="multipart/form-data">
+                    <label for="farm-photo-input" class="farm-photo-label">
+                        {% if user.farm_image %}
+                            <img src="{{ url_for('static', filename='uploads/' + user.farm_image) }}" alt="Farm Photo" class="farm-photo-img">
+                            <div class="farm-photo-overlay">
+                                <i class="fa-solid fa-camera"></i> 사진 바꾸기
+                            </div>
+                        {% else %}
+                            <div class="farm-photo-placeholder">
+                                <i class="fa-solid fa-camera"></i>
+                                <span>사진 업로드</span>
+                            </div>
+                        {% endif %}
+                    </label>
+                    <input type="file" id="farm-photo-input" name="farm_photo" accept="image/*" class="d-none">
+                </form>
+            </div>
+            <div class="dashboard-card">
+    <h5>최근 활동 (내 체험 목록)</h5>
+    <ul class="activity-list">
         {% for item in experiences %}
-        <a href="{{ url_for('experience_detail', item_id=item.id) }}" class="list-item" style="grid-template-columns: 2fr 1fr 1fr 1.5fr;">
-            <span><strong>{{ item.crop }}</strong><br>#{{ "친환경" if item.pesticide_free else "일반" }}</span>
-            <span>{{ "{:,}".format(item.cost) }}원</span>
-            <span>{{ item.end_date }} (D-{{ item.d_day }})</span>
-            <span class="d-day">
-                {{ item.current_participants }} / {{ item.max_participants }}명
-            </span>
-        </a>
+        <li class="d-flex justify-content-between align-items-center">
+            <a href="{{ url_for('experience_detail', item_id=item.id) }}">{{ item.crop }}</a>
+            <div>
+                <a href="{{ url_for('farmer_register', item_id=item.id) }}" class="btn btn-sm btn-outline-primary mr-2">수정</a>
+                <form action="{{ url_for('delete_experience', item_id=item.id) }}" method="POST" class="d-inline" onsubmit="return confirmDelete()">
+                    <button type="submit" class="btn btn-sm btn-outline-danger">삭제</button>
+                </form>
+            </div>
+        </li>
+        {% else %}
+        <li>등록된 체험이 없습니다.</li>
         {% endfor %}
+    </ul>
+    <a href="{{ url_for('farmer_register') }}" class="btn btn-success btn-block mt-3">
+        <i class="fa-solid fa-plus"></i> 새로운 체험 추가하기
+    </a>
+</div>
+        </main>
+
+        <div class="dashboard-right">
+            <div class="dashboard-card">
+                <h5>예약 달력</h5>
+                <div class="calendar-area">예약 정보가 없습니다.</div>
+            </div>
+            <div class="dashboard-card">
+                <h5>최신 문의</h5>
+                <ul class="inquiry-list">
+                    {% for inquiry in inquiries %}
+                    <li>
+                        <div>
+                            <a href="{{ url_for('experience_detail', item_id=inquiry.experience_id) }}">{{ inquiry.experience.crop }}</a> 체험에 대한 문의
+                            <p style="margin: 4px 0 0; font-size: 0.9rem; color: #555;">{{ inquiry.content }}</p>
+                        </div>
+                        <small class="text-muted">{{ inquiry.timestamp.strftime('%m-%d') }}</small>
+                    </li>
+                    {% else %}
+                    <li>최신 문의가 없습니다.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
     </div>
-    {% else %}
-    <div class="no-items text-center card p-5">
-        <p class="h5">아직 등록된 농장 체험이 없습니다.</p>
-        <p>'새 체험 등록하기' 버튼을 눌러 첫 체험을 등록해보세요!</p>
-    </div>
-    {% endif %}
 </div>
 {% endblock %}

@@ -108,9 +108,8 @@ class Application(db.Model):
     experience = db.relationship('Experience', back_populates='applications')   
         
 def get_coords_from_address(address):
-    # --- 중요! ---
-    # 카카오 개발자 사이트에서 발급받은 'REST API 키'를 여기에 입력해주세요.
-    KAKAO_API_KEY = "54569873db07a9b66faf2a7be5c41a1c"
+    # 카카오 API 키는 config.py 또는 환경변수에서 관리됩니다.
+    KAKAO_API_KEY = app.config['KAKAO_API_KEY']
     
     url = f"https://dapi.kakao.com/v2/local/search/address.json?query={address}"
     headers = {"Authorization": f"KakaoAK {KAKAO_API_KEY}"}

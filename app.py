@@ -22,7 +22,6 @@ db_name     = 'kevin4201$default'
 DATABASE_URI = f"mysql+mysqlconnector://{db_username}:{db_password}@{db_hostname}/{db_name}"
 
 app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_URI
-app.secret_key = os.environ.get('SECRET_KEY', 'mysql-secret-key-for-production')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # --- 파일 업로드 설정 ---
@@ -204,7 +203,8 @@ def index():
         # 체험자에게 보여주는 페이지 로직 (기존과 동일)
         page = request.args.get('page', 1, type=int)
         sort_by = request.args.get('sort', 'deadline', type=str)
-        query_order = Experience.location.asc() if sort_by == 'location' else Experience.end_date.asc()
+        # 수정 코드
+        query_order = Experience.end_date.asc()
         experiences_query = Experience.query.order_by(query_order)
         pagination = experiences_query.paginate(page=page, per_page=15, error_out=False)
         items_on_page = sorted(pagination.items, key=lambda x: x.current_participants >= x.max_participants)

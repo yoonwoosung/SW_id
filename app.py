@@ -11,12 +11,25 @@ from datetime import date, timedelta, datetime
 # --- 1. 앱 및 DB 설정 ---
 app = Flask(__name__)
 app.secret_key = 'mysql-secret-key-for-production'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+mysqlconnector://root:rootpass0723@localhost/myfarm_db'
+
+# DB 접속 정보 변수 설정
+db_username = 'kevin4201'
+db_password = 'farmLink'
+db_hostname = 'kevin4201.mysql.pythonanywhere-services.com'
+db_name     = 'kevin4201$default'
+
+# f-string을 사용하여 가독성 좋게 조합
+DATABASE_URI = f"mysql+mysqlconnector://{db_username}:{db_password}@{db_hostname}/{db_name}"
+
+app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_URI
+app.secret_key = os.environ.get('SECRET_KEY', 'mysql-secret-key-for-production')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # --- 파일 업로드 설정 ---
+
 app.config['UPLOAD_FOLDER'] = os.path.join(app.static_folder, 'uploads')
 app.config['ALLOWED_EXTENSIONS'] = {'png', 'jpg', 'jpeg', 'gif'}
+app.config['KAKAO_API_KEY'] = os.environ.get('KAKAO_API_KEY', '54569873db07a9b66faf2a7be5c41a1c')
 
 db = SQLAlchemy(app)
 
@@ -34,7 +47,7 @@ class User(db.Model):
     profile_image = db.Column(db.String(255), nullable=False, default='shd.png')
     farm_image = db.Column(db.String(255), nullable=True)
     applications = db.relationship('Application', back_populates='user', cascade="all, delete-orphan")
-    
+
 
 class Experience(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -79,7 +92,7 @@ class Review(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     experience_id = db.Column(db.Integer, db.ForeignKey('experience.id'), nullable=False)
     user = db.relationship('User', backref=db.backref('reviews', lazy=True))
-    
+
 
 class Inquiry(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -105,15 +118,15 @@ class Application(db.Model):
     experience_id = db.Column(db.Integer, db.ForeignKey('experience.id'), nullable=False)
 
     user = db.relationship('User', back_populates='applications')
-    experience = db.relationship('Experience', back_populates='applications')   
-        
+    experience = db.relationship('Experience', back_populates='applications')
+
 def get_coords_from_address(address):
     # 카카오 API 키는 config.py 또는 환경변수에서 관리됩니다.
     KAKAO_API_KEY = app.config['KAKAO_API_KEY']
-    
+
     url = f"https://dapi.kakao.com/v2/local/search/address.json?query={address}"
     headers = {"Authorization": f"KakaoAK {KAKAO_API_KEY}"}
-    
+
     print("========================================")
     print(f"1. 좌표 변환을 시도하는 주소: {address}")
 
@@ -148,9 +161,9 @@ def index():
 
         my_listings = Experience.query.filter_by(farmer_id=farmer_id).all()
         experience_ids = [exp.id for exp in my_listings]
-        
+
         applications = Application.query.filter(Application.experience_id.in_(experience_ids)).all()
-        
+
         reservations_by_date = defaultdict(list)
         for app in applications:
             reservations_by_date[app.apply_date.strftime('%Y-%m-%d')].append({
@@ -180,10 +193,10 @@ def index():
             'average_rating': avg_rating if avg_rating > 0 else "N/A",
             'total_visitors': total_visitors
         }
-        
-        return render_template('my_farm.html', 
-                               user=user, 
-                               experiences=my_listings, 
+
+        return render_template('my_farm.html',
+                               user=user,
+                               experiences=my_listings,
                                stats=stats,
                                inquiries=latest_inquiries,
                                reservations_data=reservations_by_date)
@@ -279,7 +292,7 @@ def experience_apply(item_id):
     if 'user_id' not in session:
         flash("체험을 신청하려면 로그인이 필요합니다.", "warning")
         return redirect(url_for('login_page'))
-    
+
     item = Experience.query.get_or_404(item_id)
     if request.method == 'POST':
         apply_date_str = request.form.get('apply_date')
@@ -319,7 +332,7 @@ def experience_apply(item_id):
         db.session.commit()
 
         return render_template('apply_complete.html', item=item, name=new_application.applicant_name)
-    
+
     return render_template('experience_apply.html', item=item)
 # --- 농장주 전용 라우트 ---
 @app.route('/farmer/register', methods=['GET', 'POST'])
@@ -475,14 +488,14 @@ def my_info():
 
     # 사용자가 신청한 체험 목록을 DB에서 조회
     applications = Application.query.filter_by(user_id=user.id).order_by(Application.apply_date.desc()).all()
-    
+
     return render_template('my_info.html', user=user, applications=applications)
 
 @app.route('/application/delete/<int:app_id>', methods=['POST'])
 def delete_application(app_id):
     if 'user_id' not in session:
         abort(403)
-    
+
     application = Application.query.get_or_404(app_id)
     if application.user_id != session['user_id']:
         abort(403) # 본인의 신청 건이 아니면 삭제 불가
@@ -490,10 +503,10 @@ def delete_application(app_id):
     # 체험의 현재 참가 인원 수 되돌리기
     experience = Experience.query.get(application.experience_id)
     experience.current_participants -= application.participants_count
-    
+
     db.session.delete(application)
     db.session.commit()
-    
+
     flash("체험 신청이 취소되었습니다.", "success")
     return redirect(url_for('my_info'))
 

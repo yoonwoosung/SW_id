@@ -204,7 +204,7 @@ def index():
         page = request.args.get('page', 1, type=int)
         sort_by = request.args.get('sort', 'deadline', type=str)
         # 수정 코드
-        query_order = Experience.location.asc() if sort_by == 'location' else Experience.end_date.asc()
+        query_order = Experience.address_detail.asc() if sort_by == 'location' else Experience.end_date.asc()
         experiences_query = Experience.query.order_by(query_order)
         pagination = experiences_query.paginate(page=page, per_page=15, error_out=False)
         items_on_page = sorted(pagination.items, key=lambda x: x.current_participants >= x.max_participants)

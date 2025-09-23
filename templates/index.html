@@ -40,7 +40,9 @@
                     <span class="col-location">{{ item.address_detail }}</span>
                     <span class="col-d-day">
                         {% if item.d_day >= 0 and item.d_day < 999 %}
-                            D-{{ item.d_day }}
+                            <span class="{{ 'text-danger font-weight-bold' if item.d_day <= 3 else '' }}">
+                                D-{{ item.d_day }}
+                            </span>
                         {% else %}
                             -
                         {% endif %}

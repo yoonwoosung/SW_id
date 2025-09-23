@@ -88,6 +88,7 @@ class Experience(db.Model):
             'crop': self.crop,
             'location': self.location,
             'cost': self.cost,
+            'duration_start': self.duration_start.strftime('%Y-%m-%d') if self.duration_start else None,
             'end_date': self.end_date.strftime('%Y-%m-%d') if self.end_date else None,
             'lat': self.lat,
             'lng': self.lng

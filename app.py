@@ -32,7 +32,7 @@ app.config['SQLALCHEMY_POOL_TIMEOUT'] = 20
 
 app.config['UPLOAD_FOLDER'] = os.path.join(app.static_folder, 'uploads')
 app.config['ALLOWED_EXTENSIONS'] = {'png', 'jpg', 'jpeg', 'gif'}
-app.config['KAKAO_API_KEY'] = os.environ.get('KAKAO_API_KEY', '54569873db07a9b66faf2a7be5c41a1c')
+app.config['KAKAO_API_KEY'] = os.environ.get('KAKAO_API_KEY', 'fa87dcc52c2d82878875da3f4ea6b050')
 
 db = SQLAlchemy(app)
 

@@ -101,10 +101,14 @@ header.header-volunteer {
 
 .list-header-row, .list-item-row {
     display: grid;
-    grid-template-columns: 2.5fr 1.5fr 1fr 1fr 1fr;
+    grid-template-columns: 2.5fr 1.5fr 1fr 1fr 1fr 1fr;
     align-items: center;
     padding: 1rem 1.5rem;
     gap: 1rem;
+}
+
+.col-d-day {
+    text-align: center;
 }
 
 .list-header-row {

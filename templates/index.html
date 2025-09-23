@@ -24,6 +24,7 @@
             <div class="list-header-row">
                 <span class="col-crop">작물명</span>
                 <span class="col-location">위치</span>
+                <span class="col-d-day">마감까지</span>
                 <span class="col-cost">비용</span>
                 <span class="col-status">모집현황</span>
                 <span class="col-action">신청</span>
@@ -37,6 +38,13 @@
                         <div class="tag">#{{ "친환경" if item.pesticide_free else "일반" }}</div>
                     </span>
                     <span class="col-location">{{ item.address_detail }}</span>
+                    <span class="col-d-day">
+                        {% if item.d_day >= 0 and item.d_day < 999 %}
+                            D-{{ item.d_day }}
+                        {% else %}
+                            -
+                        {% endif %}
+                    </span>
                     <span class="col-cost">{{ "{:,}".format(item.cost) }}원</span>
                     <span class="col-status">{{ item.current_participants }} / {{ item.max_participants }}명</span>
                     <span class="col-action">

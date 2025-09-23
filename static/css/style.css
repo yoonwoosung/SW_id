@@ -689,7 +689,7 @@ header.header-volunteer {
 }
 
 /* 예약이 있는 날짜 칸의 배경색 */
-.fc .has-reservation .fc-daygrid-day-frame {
+.fc .is-available .fc-daygrid-day-frame {
     background-color: #d4edda; /* 연한 초록색 */
 }
 
@@ -699,7 +699,7 @@ header.header-volunteer {
 }
 
 /* 오늘 날짜이면서 예약도 있는 경우 (더 진한 색으로 강조) */
-.fc .fc-day-today.has-reservation .fc-daygrid-day-frame {
+.fc .fc-day-today.is-available .fc-daygrid-day-frame {
     background-color: #b8e0c2; 
 }
 

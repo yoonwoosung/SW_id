@@ -80,6 +80,7 @@ class Experience(db.Model):
     current_volunteers = db.Column(db.Integer, default=0)
     volunteer_duties = db.Column(db.Text, nullable=True)
     has_parking = db.Column(db.Boolean, default=False, nullable=False)
+    organic_certification_image = db.Column(db.String(255), nullable=True)
 
     def to_dict(self):
         """Experience 객체를 딕셔너리로 변환하는 함수"""

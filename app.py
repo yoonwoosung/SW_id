@@ -24,6 +24,10 @@ DATABASE_URI = f"mysql+mysqlconnector://{db_username}:{db_password}@{db_hostname
 app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_URI
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
+# 커넥션 풀 설정(사이트 새로고침 및 로딩 기다리는 시간)
+app.config['SQLALCHEMY_POOL_RECYCLE'] = 280
+app.config['SQLALCHEMY_POOL_TIMEOUT'] = 20
+
 # --- 파일 업로드 설정 ---
 
 app.config['UPLOAD_FOLDER'] = os.path.join(app.static_folder, 'uploads')

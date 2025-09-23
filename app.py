@@ -175,6 +175,7 @@ def index():
             return redirect(url_for('login_page'))
 
         my_listings = Experience.query.filter_by(farmer_id=farmer_id).all()
+        experiences_json = [exp.to_dict() for exp in my_listings]
         experience_ids = [exp.id for exp in my_listings]
 
         applications = Application.query.filter(Application.experience_id.in_(experience_ids)).all()
@@ -212,6 +213,7 @@ def index():
         return render_template('my_farm.html',
                                user=user,
                                experiences=my_listings,
+                               experiences_json=experiences_json,
                                stats=stats,
                                inquiries=latest_inquiries,
                                reservations_data=reservations_by_date)

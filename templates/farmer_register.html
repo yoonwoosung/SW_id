@@ -23,10 +23,23 @@
                         <input class="form-check-input" type="checkbox" name="is_organic" value="true" id="is_organic" {% if item and item.pesticide_free %}checked{% endif %}>
                         <label class="form-check-label" for="is_organic">친환경 작물</label>
                     </div>
+                    
                     <div class="form-check">
                         <input class="form-check-input" type="checkbox" name="has_parking" value="true" id="has_parking" {% if item and item.has_parking %}checked{% endif %}>
                         <label class="form-check-label" for="has_parking">주차장 제공</label>
                     </div>
+                </div>
+            </div>
+            <div class="form-group row {% if not item or not item.pesticide_free %}d-none{% endif %}" id="organic-cert-field">
+                <label class="col-sm-2 col-form-label">친환경 인증</label>
+                <div class="col-sm-10">
+                    <div class="custom-file">
+                        <input type="file" class="custom-file-input" name="organic_cert_image" id="organic_cert_image">
+                        <label class="custom-file-label" for="organic_cert_image">인증서 이미지 파일 선택</label>
+                    </div>
+                    {% if item and item.organic_certification_image %}
+                        <small class="form-text text-muted">현재 등록된 파일: {{ item.organic_certification_image }}</small>
+                    {% endif %}
                 </div>
             </div>
             <div class="form-group row">
@@ -194,4 +207,50 @@
     </div>
   </div>
 </div>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // --- 친환경 인증 업로드 필드 토글 로직 ---
+    const organicCheckbox = document.getElementById('is_organic');
+    const organicCertField = document.getElementById('organic-cert-field');
+    const organicCertInput = document.getElementById('organic_cert_image');
+
+    // ID 값들이 올바르게 존재하는지 확인 후 이벤트 리스너 추가
+    if (organicCheckbox && organicCertField) {
+        organicCheckbox.addEventListener('change', function() {
+            if (this.checked) {
+                // 'd-none' 클래스를 제거하여 필드를 보여줌
+                organicCertField.classList.remove('d-none');
+            } else {
+                // 'd-none' 클래스를 추가하여 필드를 숨김
+                organicCertField.classList.add('d-none');
+                
+                // 체크 해제 시 파일 선택을 초기화
+                if (organicCertInput) {
+                    organicCertInput.value = '';
+                    const label = organicCertInput.nextElementSibling;
+                    if(label) label.textContent = '인증서 이미지 파일 선택';
+                }
+            }
+        });
+    }
+    if (organicCertInput) {
+        organicCertInput.addEventListener('change', function(e) {
+            const fileName = e.target.files[0] ? e.target.files[0].name : '인증서 이미지 파일 선택';
+            const label = this.nextElementSibling;
+            if (label) label.textContent = fileName;
+        });
+    }
+    const form = document.getElementById('farm-register-form');
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            // '친환경 작물'이 체크되었지만, '친환경 인증' 파일이 첨부되지 않은 경우
+            if (organicCheckbox.checked && !organicCertInput.files[0]) {
+                alert('친환경 작물 선택 시, 인증서 이미지 파일은 필수입니다.');
+                e.preventDefault(); // 폼 제출을 막음
+            }
+        });
+    }
+});
+</script>
+
 {% endblock %}

@@ -64,6 +64,7 @@ class Experience(db.Model):
     current_volunteers = db.Column(db.Integer, default=0)
     volunteer_duties = db.Column(db.Text, nullable=True)
     has_parking = db.Column(db.Boolean, default=False, nullable=False)
+    organic_certification_image = db.Column(db.String(255), nullable=True)
 
     @property
     def d_day(self):
@@ -332,6 +333,17 @@ def farmer_register(item_id=None):
     item = Experience.query.get(item_id) if item_id else None
     if item and item.farmer_id != session['user_id']: abort(403)
     if request.method == 'POST':
+
+        is_organic = 'is_organic' in request.form
+        cert_file = request.files.get('organic_cert_image')
+        cert_filename = item.organic_certification_image if item else None
+        if is_organic and cert_file and allowed_file(cert_file.filename):
+            cert_filename = secure_filename(cert_file.filename)
+            cert_filepath = os.path.join(app.config['UPLOAD_FOLDER'], cert_filename)
+            cert_file.save(cert_filepath)
+        elif not is_organic:
+            cert_filename = None
+        
         has_parking = 'has_parking' in request.form
         volunteer_needed_str = request.form.get('volunteer_needed')
         volunteer_needed = int(volunteer_needed_str) if volunteer_needed_str else 0
@@ -353,11 +365,12 @@ def farmer_register(item_id=None):
             item.duration_start, item.end_date = datetime.strptime(request.form.get('duration_start'), '%Y-%m-%d').date(), datetime.strptime(request.form.get('duration_end'), '%Y-%m-%d').date()
             item.max_participants, item.cost = int(request.form.get('max_participants')), int(request.form.get('price'))
             item.images, item.notes, item.includes, item.excludes = image_string, request.form.get('notes'), request.form.get('includes'), request.form.get('excludes')
-            item.timetable_data, item.pesticide_free = request.form.get('timetable_data'), 'is_organic' in request.form
+            item.timetable_data, item.pesticide_free = request.form.get('timetable_data'), is_organic
             item.lat, item.lng = lat, lng
             item.volunteer_needed = volunteer_needed
             item.volunteer_duties = request.form.get('volunteer_duties')
             item.has_parking = has_parking
+            item.organic_certification_image = cert_filename
             flash("체험 정보가 성공적으로 수정되었습니다!", "success")
         else:
             farmer = User.query.get(session['user_id'])
@@ -366,10 +379,11 @@ def farmer_register(item_id=None):
                 farm_size=request.form.get('farm_size'), duration_start=datetime.strptime(request.form.get('duration_start'), '%Y-%m-%d').date(),
                 end_date=datetime.strptime(request.form.get('duration_end'), '%Y-%m-%d').date(), max_participants=int(request.form.get('max_participants')),
                 cost=int(request.form.get('price')), images=image_string, notes=request.form.get('notes'), includes=request.form.get('includes'),
-                excludes=request.form.get('excludes'), timetable_data=request.form.get('timetable_data'), pesticide_free='is_organic' in request.form,
+                excludes=request.form.get('excludes'), timetable_data=request.form.get('timetable_data'), pesticide_free=is_organic,
                 lat=lat, lng=lng, farmer_id=session['user_id'],
                 volunteer_needed=volunteer_needed,
                 has_parking=has_parking,
+                organic_certification_image=cert_filename,
                 volunteer_duties=request.form.get('volunteer_duties')
             )
             db.session.add(new_experience)
@@ -463,6 +477,20 @@ def my_info():
     user = User.query.get_or_404(session['user_id'])
 
     if request.method == 'POST':
+        is_organic = 'is_organic' in request.form
+        cert_file = request.files.get('organic_cert_image')
+        if is_organic and not cert_file:
+        # 수정 중인 경우, 기존에 파일이 등록되어 있었다면 통과
+            if not (item and item.organic_certification_image):
+                flash("친환경 작물 선택 시, 인증서 이미지는 필수입니다.", "danger")
+                return render_template('farmer_register.html', item=item)           
+        cert_filename = item.organic_certification_image if item else None
+        if is_organic and cert_file and allowed_file(cert_file.filename):
+            cert_filename = secure_filename(cert_file.filename)
+            cert_filepath = os.path.join(app.config['UPLOAD_FOLDER'], cert_filename)
+            cert_file.save(cert_filepath)
+        elif not is_organic:
+            cert_filename = None
         user.nickname = request.form.get('nickname')
         user.name = request.form.get('name')
         user.phone = request.form.get('phone')

@@ -316,6 +316,31 @@ header.header-volunteer {
     color: white;
 }
 
+
+/* --- 달력 스타일 추가 --- */
+
+/* (수정) 토요일 날짜 글자색 (파란색) */
+.fc .saturday-day .fc-daygrid-day-number {
+    color: #007BFF; /* 파란색 계열 */
+}
+
+/* (수정) 일요일 날짜 글자색 (빨간색) */
+.fc .sunday-day .fc-daygrid-day-number {
+    color: #d9534f; /* 붉은색 계열 */
+}
+
+/* 예약이 있는 날짜 칸의 배경색 변경 */
+.fc .has-reservation .fc-daygrid-day-frame {
+    background-color: #dff0d8; /* 은은한 초록색 배경 */
+    border-radius: 4px;
+}
+
+/* 오늘 날짜이면서 동시에 예약이 있는 경우 (더 진한 색으로 강조) */
+.fc .fc-day-today.has-reservation .fc-daygrid-day-frame {
+    background-color: #c2e5b8; 
+}
+
+
 /* --- 5. 신청 및 상세 페이지 스타일 --- */
 .apply-container {
     max-width: 600px;

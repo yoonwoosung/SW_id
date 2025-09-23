@@ -166,6 +166,26 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 modal.style.display = 'flex';
             }
+
+            dayCellDidMount: function(info) {
+                const day = info.date.getDay(); // 0:일요일, 1:월요일, ..., 6:토요일
+                const dateStr = info.date.toISOString().split('T')[0]; // YYYY-MM-DD 형식
+
+                // 일요일(0)이면 'sunday-day' 클래스 추가
+                 if (day === 0) {
+                    info.el.classList.add('sunday-day');
+                }
+                // 토요일(6)이면 'saturday-day' 클래스 추가
+                else if (day === 6) {
+                info.el.classList.add('saturday-day');
+                }
+
+                // 2. 예약이 있는 날인 경우 'has-reservation' 클래스 추가
+                if (reservationsData[dateStr]) {
+                    info.el.classList.add('has-reservation');
+                }
+            }
+            
         });
 
         calendar.render();

@@ -81,6 +81,18 @@ class Experience(db.Model):
     volunteer_duties = db.Column(db.Text, nullable=True)
     has_parking = db.Column(db.Boolean, default=False, nullable=False)
 
+    def to_dict(self):
+        """Experience 객체를 딕셔너리로 변환하는 함수"""
+        return {
+            'id': self.id,
+            'crop': self.crop,
+            'location': self.location,
+            'cost': self.cost,
+            'end_date': self.end_date.strftime('%Y-%m-%d') if self.end_date else None,
+            'lat': self.lat,
+            'lng': self.lng
+        }
+
     @property
     def d_day(self):
         if self.end_date:
@@ -519,6 +531,13 @@ def volunteer_apply():
     # Experience 테이블에서 volunteer_needed가 0보다 큰 데이터만 조회
     items = Experience.query.filter(Experience.volunteer_needed > 0).order_by(Experience.duration_start.asc()).all()
     return render_template('volunteer_apply.html', items=items)
+@app.route('/api/experiences')
+def get_experiences_json():
+    experiences = Experience.query.all()
+    # 각 Experience 객체를 to_dict() 함수를 사용해 딕셔너리로 변환
+    experience_list = [exp.to_dict() for exp in experiences]
+    return jsonify(experience_list)
+
 # --- 앱 실행 ---
 if __name__ == '__main__':
     with app.app_context():

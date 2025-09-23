@@ -316,31 +316,6 @@ header.header-volunteer {
     color: white;
 }
 
-
-/* --- 달력 스타일 추가 --- */
-
-/* (수정) 토요일 날짜 글자색 (파란색) */
-.fc .saturday-day .fc-daygrid-day-number {
-    color: #007BFF; /* 파란색 계열 */
-}
-
-/* (수정) 일요일 날짜 글자색 (빨간색) */
-.fc .sunday-day .fc-daygrid-day-number {
-    color: #d9534f; /* 붉은색 계열 */
-}
-
-/* 예약이 있는 날짜 칸의 배경색 변경 */
-.fc .has-reservation .fc-daygrid-day-frame {
-    background-color: #dff0d8; /* 은은한 초록색 배경 */
-    border-radius: 4px;
-}
-
-/* 오늘 날짜이면서 동시에 예약이 있는 경우 (더 진한 색으로 강조) */
-.fc .fc-day-today.has-reservation .fc-daygrid-day-frame {
-    background-color: #c2e5b8; 
-}
-
-
 /* --- 5. 신청 및 상세 페이지 스타일 --- */
 .apply-container {
     max-width: 600px;
@@ -528,8 +503,6 @@ header.header-volunteer {
     white-space: pre-wrap;
 }
 
-/* style.css 파일 맨 아래에 추가 */
-
 .timetable-display { width: 100%; text-align: center; }
 .timetable-display th, .timetable-display td { border: 1px solid #dee2e6; padding: 8px; }
 .timetable-display thead th { background-color: #f8f9fa; }
@@ -691,54 +664,43 @@ header.header-volunteer {
     padding: 0;   /* 기존 패딩 제거 */
 }
 
-/* 달력 헤더 (날짜, 이전/다음 버튼) */
-.fc-header-toolbar {
-    margin-bottom: 1.5rem !important;
-}
+/* --- 달력 스타일 수정 --- */
 
-.fc .fc-toolbar-title {
-    font-size: 1.5rem;
-    font-weight: 600;
-    color: #333;
-}
-
-.fc .fc-button {
-    background-color: #fff !important;
-    border: 1px solid #dee2e6 !important;
-    color: #555 !important;
-    box-shadow: none !important;
-    transition: background-color 0.2s;
-}
-.fc .fc-button:hover {
-    background-color: #f8f9fa !important;
-}
-.fc .fc-button .fc-icon {
-    font-size: 1.2rem; /* 아이콘 크기 키움 */
-}
-
-/* 요일 표시 헤더 (일, 월, 화...) */
-.fc .fc-col-header-cell-cushion {
-    color: #6c757d;
-    font-weight: 500;
+/* 평일 날짜 기본 글자색 (검정) 및 링크 밑줄 제거 */
+.fc .fc-daygrid-day-number, .fc .fc-col-header-cell-cushion {
+    color: black;
     text-decoration: none;
-    padding: 10px 4px;
 }
 
-/* 날짜 셀 */
-.fc .fc-daygrid-day-frame {
-    border-radius: 4px;
-    transition: background-color 0.2s;
+/* 주말(토, 일) 전체 배경색 */
+.fc .saturday-day .fc-daygrid-day-frame,
+.fc .sunday-day .fc-daygrid-day-frame {
+    background-color: #f8f9fa; /* 연한 회색 */
 }
 
-.fc .fc-daygrid-day:hover .fc-daygrid-day-frame {
-    background-color: #f8f9fa; /* 날짜에 마우스 올렸을 때 배경색 */
+/* 토요일 날짜 글자색 (파란색) */
+.fc .saturday-day .fc-daygrid-day-number {
+    color: #007BFF !important; 
 }
 
+/* 일요일 날짜 글자색 (빨간색) */
+.fc .sunday-day .fc-daygrid-day-number {
+    color: #dc3545 !important;
+}
+
+/* 예약이 있는 날짜 칸의 배경색 */
+.fc .has-reservation .fc-daygrid-day-frame {
+    background-color: #d4edda; /* 연한 초록색 */
+}
+
+/* 오늘 날짜 배경색 */
 .fc .fc-day-today .fc-daygrid-day-frame {
-    background-color: #e6f7ff; /* 오늘 날짜 배경색 */
+    background-color: #e6f7ff; /* 연한 하늘색 */
 }
-.fc .fc-day-today {
-    font-weight: bold;
+
+/* 오늘 날짜이면서 예약도 있는 경우 (더 진한 색으로 강조) */
+.fc .fc-day-today.has-reservation .fc-daygrid-day-frame {
+    background-color: #b8e0c2; 
 }
 
 /* 예약 이벤트 표시 스타일 */

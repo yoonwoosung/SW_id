@@ -698,9 +698,10 @@ header.header-volunteer {
     background-color: #e6f7ff; /* 연한 하늘색 */
 }
 
-/* 오늘 날짜이면서 예약도 있는 경우 (더 진한 색으로 강조) */
+/* 오늘 날짜이면서 체험 가능 기간일 경우 (가시성 개선) */
 .fc .fc-day-today.is-available .fc-daygrid-day-frame {
-    background-color: #b8e0c2; 
+    background-color: #98d89e; /* 더 진한 초록색 */
+    border: 2px solid #28a745; /* 강조 테두리 */
 }
 
 /* 예약 이벤트 표시 스타일 */

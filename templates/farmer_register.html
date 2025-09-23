@@ -29,6 +29,23 @@
                     </div>
                 </div>
             </div>
+
+            <!-- 친환경 인증 이미지 업로드 필드 -->
+            <div class="form-group row {% if not item or not item.pesticide_free %}d-none{% endif %}" id="organic-cert-field">
+                <label class="col-sm-2 col-form-label">친환경 인증</label>
+                <div class="col-sm-10">
+                    <div class="custom-file">
+                        <input type="file" class="custom-file-input" name="organic_certification_image" id="organic_certification_image">
+                        <label class="custom-file-label" for="organic_certification_image">
+                            {% if item and item.organic_certification_image %}
+                                {{ item.organic_certification_image }}
+                            {% else %}
+                                인증서 이미지 파일 선택
+                            {% endif %}
+                        </label>
+                    </div>
+                </div>
+            </div>
             <div class="form-group row">
                 <label class="col-sm-2 col-form-label">전화번호</label>
                 <div class="col-sm-10">
@@ -194,4 +211,44 @@
     </div>
   </div>
 </div>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const organicCheckbox = document.getElementById('is_organic');
+    const certField = document.getElementById('organic-cert-field');
+    const certInput = document.getElementById('organic_certification_image');
+    const certLabel = certField.querySelector('.custom-file-label');
+    const originalCertLabel = certLabel.innerHTML.trim();
+    const form = document.getElementById('farm-register-form');
+
+    // 체크박스 변경 감지
+    organicCheckbox.addEventListener('change', function() {
+        if (this.checked) {
+            certField.classList.remove('d-none');
+        } else {
+            certField.classList.add('d-none');
+            // 체크 해제 시 입력 값 및 라벨 초기화
+            certInput.value = '';
+            certLabel.innerHTML = originalCertLabel;
+        }
+    });
+
+    // 파일 입력 감지
+    certInput.addEventListener('change', function() {
+        if (this.files && this.files.length > 0) {
+            certLabel.textContent = this.files[0].name;
+        } else {
+            certLabel.innerHTML = originalCertLabel;
+        }
+    });
+
+    // 폼 제출 전 유효성 검사
+    form.addEventListener('submit', function(event) {
+        if (organicCheckbox.checked && !certInput.value && !certLabel.textContent.includes('.')) {
+             // 수정 시 기존 파일이 있는 경우 certInput.value가 비어있을 수 있으므로, 라벨 텍스트도 함께 확인
+            alert('친환경 인증을 선택하셨습니다. 인증서 이미지를 업로드해주세요.');
+            event.preventDefault(); // 폼 제출 중단
+        }
+    });
+});
+</script>
 {% endblock %}

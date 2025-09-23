@@ -362,10 +362,31 @@ def farmer_register(item_id=None):
         return redirect(url_for('login_page'))
     item = Experience.query.get(item_id) if item_id else None
     if item and item.farmer_id != session['user_id']: abort(403)
+
     if request.method == 'POST':
+        # 친환경 및 주차 가능 여부 확인
+        is_organic = 'is_organic' in request.form
         has_parking = 'has_parking' in request.form
-        volunteer_needed_str = request.form.get('volunteer_needed')
-        volunteer_needed = int(volunteer_needed_str) if volunteer_needed_str else 0
+
+        # 친환경 인증 이미지 처리
+        cert_filename = item.organic_certification_image if item and item.organic_certification_image else None
+        cert_file = request.files.get('organic_certification_image')
+
+        if cert_file and cert_file.filename != '':
+            if allowed_file(cert_file.filename):
+                # 파일명 보안 처리 및 저장
+                cert_filename = secure_filename(f"cert_{item_id or 'new'}_{cert_file.filename}")
+                cert_file.save(os.path.join(app.config['UPLOAD_FOLDER'], cert_filename))
+        elif not is_organic:
+            # 친환경 체크 해제 시 기존 이미지 파일명도 초기화
+            cert_filename = None
+
+        # 서버 측 유효성 검사: 친환경 체크 시 인증 이미지 필수
+        if is_organic and not cert_filename:
+            flash("친환경 인증을 선택한 경우, 인증 이미지를 반드시 업로드해야 합니다.", "danger")
+            return render_template('farmer_register.html', item=item, form_data=request.form)
+
+        # 대표 이미지들 처리
         uploaded_files = request.files.getlist('images')
         filenames = item.images.split(',') if item and item.images else []
         if any(f.filename for f in uploaded_files):
@@ -377,37 +398,72 @@ def farmer_register(item_id=None):
                 file.save(filepath)
                 if filename not in filenames: filenames.append(filename)
         image_string = ",".join(filter(None, filenames))
+        
+        # 주소 및 좌표 처리
         address_detail = request.form.get('address')
         lat, lng = get_coords_from_address(address_detail)
-        if item:
-            item.crop, item.phone, item.address_detail, item.farm_size = request.form.get('crop'), request.form.get('phone'), address_detail, request.form.get('farm_size')
-            item.duration_start, item.end_date = datetime.strptime(request.form.get('duration_start'), '%Y-%m-%d').date(), datetime.strptime(request.form.get('duration_end'), '%Y-%m-%d').date()
-            item.max_participants, item.cost = int(request.form.get('max_participants')), int(request.form.get('price'))
-            item.images, item.notes, item.includes, item.excludes = image_string, request.form.get('notes'), request.form.get('includes'), request.form.get('excludes')
-            item.timetable_data, item.pesticide_free = request.form.get('timetable_data'), 'is_organic' in request.form
-            item.lat, item.lng = lat, lng
+        
+        # 봉사자 관련
+        volunteer_needed_str = request.form.get('volunteer_needed')
+        volunteer_needed = int(volunteer_needed_str) if volunteer_needed_str else 0
+
+        # DB 업데이트 또는 생성
+        if item: # 수정
+            item.crop = request.form.get('crop')
+            item.phone = request.form.get('phone')
+            item.address_detail = address_detail
+            item.farm_size = request.form.get('farm_size')
+            item.duration_start = datetime.strptime(request.form.get('duration_start'), '%Y-%m-%d').date()
+            item.end_date = datetime.strptime(request.form.get('duration_end'), '%Y-%m-%d').date()
+            item.max_participants = int(request.form.get('max_participants'))
+            item.cost = int(request.form.get('price'))
+            item.images = image_string
+            item.notes = request.form.get('notes')
+            item.includes = request.form.get('includes')
+            item.excludes = request.form.get('excludes')
+            item.timetable_data = request.form.get('timetable_data')
+            item.pesticide_free = is_organic
+            item.organic_certification_image = cert_filename
+            item.lat = lat
+            item.lng = lng
             item.volunteer_needed = volunteer_needed
             item.volunteer_duties = request.form.get('volunteer_duties')
             item.has_parking = has_parking
             flash("체험 정보가 성공적으로 수정되었습니다!", "success")
-        else:
+        else: # 생성
             farmer = User.query.get(session['user_id'])
             new_experience = Experience(
-                crop=request.form.get('crop'), phone=request.form.get('phone'), location=farmer.farm_address, address_detail=address_detail,
-                farm_size=request.form.get('farm_size'), duration_start=datetime.strptime(request.form.get('duration_start'), '%Y-%m-%d').date(),
-                end_date=datetime.strptime(request.form.get('duration_end'), '%Y-%m-%d').date(), max_participants=int(request.form.get('max_participants')),
-                cost=int(request.form.get('price')), images=image_string, notes=request.form.get('notes'), includes=request.form.get('includes'),
-                excludes=request.form.get('excludes'), timetable_data=request.form.get('timetable_data'), pesticide_free='is_organic' in request.form,
-                lat=lat, lng=lng, farmer_id=session['user_id'],
+                crop=request.form.get('crop'),
+                phone=request.form.get('phone'),
+                location=farmer.farm_address,
+                address_detail=address_detail,
+                farm_size=request.form.get('farm_size'),
+                duration_start=datetime.strptime(request.form.get('duration_start'), '%Y-%m-%d').date(),
+                end_date=datetime.strptime(request.form.get('duration_end'), '%Y-%m-%d').date(),
+                max_participants=int(request.form.get('max_participants')),
+                cost=int(request.form.get('price')),
+                images=image_string,
+                notes=request.form.get('notes'),
+                includes=request.form.get('includes'),
+                excludes=request.form.get('excludes'),
+                timetable_data=request.form.get('timetable_data'),
+                pesticide_free=is_organic,
+                organic_certification_image=cert_filename,
+                lat=lat,
+                lng=lng,
+                farmer_id=session['user_id'],
                 volunteer_needed=volunteer_needed,
                 has_parking=has_parking,
                 volunteer_duties=request.form.get('volunteer_duties')
             )
             db.session.add(new_experience)
             flash("새로운 체험이 성공적으로 등록되었습니다!", "success")
+            
         db.session.commit()
         return redirect(url_for('index'))
-    return render_template('farmer_register.html', item=item)
+
+    # GET 요청 시
+    return render_template('farmer_register.html', item=item, form_data={})
 
 @app.route('/experience/delete/<int:item_id>', methods=['POST'])
 def delete_experience(item_id):

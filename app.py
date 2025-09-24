@@ -26,7 +26,7 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # 커넥션 풀 설정(사이트 새로고침 및 로딩 기다리는 시간)
 app.config['SQLALCHEMY_POOL_RECYCLE'] = 280
-app.config['SQLALCHEMY_POOL_TIMEOUT'] = 20
+app.config['SQLALCHEMY_POOL_TIMEOUT'] = 30
 
 # --- 파일 업로드 설정 ---
 
@@ -34,7 +34,7 @@ app.config['UPLOAD_FOLDER'] = os.path.join(app.static_folder, 'uploads')
 app.config['ALLOWED_EXTENSIONS'] = {'png', 'jpg', 'jpeg', 'gif'}
 app.config['KAKAO_API_KEY'] = os.environ.get('KAKAO_API_KEY', '432f80fcdc8239c7c87db2520e85597e')
 
-db = SQLAlchemy(app)
+db = SQLAlchemy(app, engine_options={"pool_pre_ping": True})
 
 # --- 2. DB 모델(테이블) 정의 ---
 class User(db.Model):

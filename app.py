@@ -10,7 +10,7 @@ from datetime import date, timedelta, datetime
 
 # --- 1. 앱 및 DB 설정 ---
 app = Flask(__name__)
-app.secret_key = 'mysql-secret-key-for-production'
+app.secret_key = os.environ.get('SECRET_KEY', 'mysql-secret-key-for-production')
 
 # DB 접속 정보 변수 설정
 db_username = 'kevin4201'

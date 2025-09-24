@@ -112,3 +112,7 @@
     ├── my_farm.html    # 농장주 대시보드
     └── ...             # 기타 페이지 템플릿
 ```
+
+
+링크
+kevin4201.pythonanywhere.com/

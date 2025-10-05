@@ -1,0 +1,170 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="container apply-container">
+    <div class="apply-form-v2">
+        <div class="text-center">
+            <h2>{{ item.crop }} 체험 신청</h2>
+            <p class="text-muted">📍 장소: {{ item.address_detail }}</p>
+            <p class="text-muted small">🚗 주차 가능 여부: <strong style="color: #333;">{{ "가능" if item.has_parking else "불가" }}</strong></p>
+        </div>
+
+        <form method="POST" id="apply-form" action="{{ url_for('experience_apply', item_id=item.id) }}">
+            <div class="form-group">
+                <label>신청자 이름</label>
+                <input type="text" id="applicant_name" name="applicant_name" class="form-control" placeholder="홍길동" required>
+            </div>
+             <div class="form-group">
+                <label>연락처</label>
+                <input type="tel" id="phone_number" name="phone_number" class="form-control" placeholder="010-1111-1111" required>
+            </div>
+             <div class="form-group">
+                <label>참가자 연령대</label>
+                <div class="d-flex">
+                    <div class="input-group mr-2">
+                        <div class="input-group-prepend"><span class="input-group-text">성인</span></div>
+                        <input type="number" id="count_adult" name="count_adult" class="form-control" value="1" min="0">
+                    </div>
+                    <div class="input-group mr-2">
+                        <div class="input-group-prepend"><span class="input-group-text">청소년</span></div>
+                        <input type="number" id="count_teen" name="count_teen" class="form-control" value="0" min="0">
+                    </div>
+                    <div class="input-group">
+                        <div class="input-group-prepend"><span class="input-group-text">아동</span></div>
+                        <input type="number" id="count_child" name="count_child" class="form-control" value="0" min="0">
+                    </div>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>희망 체험 날짜</label>
+                <input type="date" id="apply_date" name="apply_date" class="form-control"
+                       min="{{ item.duration_start.strftime('%Y-%m-%d') }}"
+                       max="{{ item.end_date.strftime('%Y-%m-%d') }}" required>
+            </div>
+
+            <div class="form-group">
+                <label>희망 체험 시간</label>
+                <p class="text-muted small" id="time-select-guide">날짜를 먼저 선택해주세요.</p>
+                <table class="timetable-apply" style="display: none;">
+                    <thead>
+                        <tr><th>시간</th><th>선택</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td data-time="09:00">09:00 - 10:00</td><td class="time-slot" data-time="09:00"></td></tr>
+                        <tr><td data-time="10:00">10:00 - 11:00</td><td class="time-slot" data-time="10:00"></td></tr>
+                        <tr><td data-time="11:00">11:00 - 12:00</td><td class="time-slot" data-time="11:00"></td></tr>
+                        <tr><td data-time="12:00">12:00 - 13:00</td><td class="time-slot" data-time="12:00"></td></tr>
+                        <tr><td data-time="13:00">13:00 - 14:00</td><td class="time-slot" data-time="13:00"></td></tr>
+                        <tr><td data-time="14:00">14:00 - 15:00</td><td class="time-slot" data-time="14:00"></td></tr>
+                        <tr><td data-time="15:00">15:00 - 16:00</td><td class="time-slot" data-time="15:00"></td></tr>
+                        <tr><td data-time="16:00">16:00 - 17:00</td><td class="time-slot" data-time="16:00"></td></tr>
+                    </tbody>
+                </table>
+                <input type="hidden" id="selected-time" name="apply_time" required>
+            </div>
+
+            <input type="hidden" id="participants_count" name="participants_count" value="1">
+
+            <div class="text-center">
+                <button type="submit" class="btn btn-success btn-lg">신청 완료하기</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 1. 필요한 HTML 요소들을 가져옵니다.
+    const dateInput = document.getElementById('apply_date');
+    const timeTable = document.querySelector('.timetable-apply');
+    const timeSelectGuide = document.getElementById('time-select-guide');
+    const timeSlots = document.querySelectorAll('.timetable-apply .time-slot');
+    const hiddenTimeInput = document.getElementById('selected-time');
+
+    const applyForm = document.getElementById('apply-form');
+    if (applyForm) {
+        applyForm.addEventListener('submit', function(event) {
+            const selectedDate = document.getElementById('apply_date').value;
+            const selectedTime = document.getElementById('selected-time').value;
+
+            // 날짜나 시간이 비어있으면
+            if (!selectedDate || !selectedTime) {
+                // 경고창을 띄우고
+                alert('체험을 신청하려면 날짜와 시간을 모두 선택해야 합니다.');
+                // 폼 제출을 막습니다.
+                event.preventDefault(); 
+            }
+        });
+    }
+
+    // 2. 농장주가 설정한 전체 운영 시간 데이터를 파싱하여 객체로 저장합니다.
+    // 예: { '월': ['09:00', '10:00'], '화': ['14:00'] }
+    const availableSlotsData = "{{ item.timetable_data or '' }}";
+    const availableSlotsByDay = {};
+    availableSlotsData.split(',').forEach(slot => {
+        const [day, time] = slot.split('-');
+        if (day && time) {
+            if (!availableSlotsByDay[day]) {
+                availableSlotsByDay[day] = [];
+            }
+            availableSlotsByDay[day].push(time);
+        }
+    });
+
+    // 3. 날짜 입력창의 값이 변경될 때마다 실행될 함수를 정의합니다.
+    dateInput.addEventListener('change', function() {
+        const selectedDate = new Date(this.value);
+        if (!this.value) { // 날짜 선택이 취소된 경우
+            timeTable.style.display = 'none';
+            timeSelectGuide.textContent = '날짜를 먼저 선택해주세요.';
+            hiddenTimeInput.value = ''; // 선택값 초기화
+            return;
+        }
+
+        // 선택된 날짜의 요일을 구합니다. (일=0, 월=1, ..., 토=6)
+        const dayIndex = selectedDate.getDay();
+        const days = ['일', '월', '화', '수', '목', '금', '토'];
+        const selectedDay = days[dayIndex];
+
+        // 해당 요일에 운영하는 시간 목록을 가져옵니다.
+        const availableTimes = new Set(availableSlotsByDay[selectedDay] || []);
+
+        // 시간표를 화면에 보여주고 안내 문구를 변경합니다.
+        timeTable.style.display = 'table';
+        timeSelectGuide.textContent = `선택하신 날짜(${selectedDay}요일)에 가능한 시간입니다.`;
+        hiddenTimeInput.value = ''; // 시간 선택 초기화
+
+        // 모든 시간 슬롯을 순회하며 상태를 업데이트합니다.
+        timeSlots.forEach(slot => {
+            // 이전 이벤트 리스너를 제거하여 중복 실행 방지
+            slot.replaceWith(slot.cloneNode(true));
+        });
+        
+        // 새로 복제된 슬롯들에 이벤트 리스너를 다시 설정
+        document.querySelectorAll('.timetable-apply .time-slot').forEach(slot => {
+            const time = slot.dataset.time;
+
+            // 모든 클래스 초기화
+            slot.className = 'time-slot';
+            
+            if (availableTimes.has(time)) {
+                slot.classList.add('available');
+                slot.textContent = '선택';
+                slot.addEventListener('click', function() {
+                    const currentSelected = document.querySelector('.timetable-apply .time-slot.selected');
+                    if (currentSelected) {
+                        currentSelected.classList.remove('selected');
+                        currentSelected.textContent = '선택';
+                    }
+                    slot.classList.add('selected');
+                    slot.textContent = '✓';
+                    hiddenTimeInput.value = time;
+                });
+            } else {
+                slot.classList.add('unavailable');
+                slot.textContent = 'X';
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

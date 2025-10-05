@@ -1,0 +1,55 @@
+{% extends "layout.html" %}
+{% block page_class %}page-volunteer{% endblock %}
+{% block content %}
+<div class="container page-container">
+
+    <div class="content-tabs">
+        <a href="{{ url_for('index') }}" class="tab-item">
+            <i class="fa-solid fa-leaf"></i> 체험하기
+        </a>
+        <a href="{{ url_for('volunteer_apply') }}" class="tab-item active">
+            <i class="fa-solid fa-handshake-angle"></i> 봉사활동
+        </a>
+    </div>
+
+    <div class="tab-content-wrapper">
+        <div class="list-title-header">
+            <h2>봉사자 모집 목록</h2>
+        </div>
+
+        <div class="experience-list-container">
+            <div class="list-header-row" style="grid-template-columns: 2.5fr 1.5fr 1fr 1fr;">
+                <span class="col-crop">작물명 (농장)</span>
+                <span class="col-location">위치</span>
+                <span class="col-status">모집현황</span>
+                <span class="col-action">신청</span>
+            </div>
+
+            {% if items %}
+                {% for item in items %}
+                <div class="list-item-row" style="grid-template-columns: 2.5fr 1.5fr 1fr 1fr;">
+                    <span class="col-crop">
+                        <strong>{{ item.crop }}</strong>
+                        <div class="tag">#{{ "친환경" if item.pesticide_free else "일반" }}</div>
+                    </span>
+                    <span class="col-location">{{ item.address_detail }}</span>
+                    <span class="col-status">{{ item.current_volunteers }} / {{ item.volunteer_needed }}명</span>
+                    <span class="col-action">
+                        {% if item.current_volunteers >= item.volunteer_needed %}
+                            <button class="btn btn-sm btn-secondary" disabled>마감</button>
+                        {% else %}
+                            <a href="https://www.1365.go.kr/vols/main.do" target="_blank" class="btn btn-sm btn-success">신청하기</a>
+                        {% endif %}
+                    </span>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="no-items-message">
+                    <div class="empty-icon">🙌</div>
+                    <p>지금은 모집 중인 봉사활동이 없어요.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

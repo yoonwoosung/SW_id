@@ -23,6 +23,10 @@
                         <input class="form-check-input" type="checkbox" name="is_organic" value="true" id="is_organic" {% if item and item.pesticide_free %}checked{% endif %}>
                         <label class="form-check-label" for="is_organic">친환경 작물</label>
                     </div>
+                    <div class="form-check mr-4">
+                        <input class="form-check-input" type="checkbox" name="has_cert" value="true" id="has_cert" {% if item and item.organic_certification_pdf %}checked{% endif %}>
+                        <label class="form-check-label" for="has_cert">인증서 등록</label>
+                    </div>
                     <div class="form-check">
                         <input class="form-check-input" type="checkbox" name="has_parking" value="true" id="has_parking" {% if item and item.has_parking %}checked{% endif %}>
                         <label class="form-check-label" for="has_parking">주차장 제공</label>
@@ -30,22 +34,55 @@
                 </div>
             </div>
 
-            <!-- 친환경 인증 이미지 업로드 필드 -->
-            <div class="form-group row {% if not item or not item.pesticide_free %}d-none{% endif %}" id="organic-cert-field">
-                <label class="col-sm-2 col-form-label">친환경 인증</label>
-                <div class="col-sm-10">
-                    <div class="custom-file">
-                        <input type="file" class="custom-file-input" name="organic_certification_image" id="organic_certification_image">
-                        <label class="custom-file-label" for="organic_certification_image">
-                            {% if item and item.organic_certification_image %}
-                                {{ item.organic_certification_image }}
-                            {% else %}
-                                인증서 이미지 파일 선택
-                            {% endif %}
-                        </label>
+            <!-- 친환경 인증 섹션 -->
+            <div id="organic-cert-section" class="{% if not item or not item.pesticide_free %}d-none{% endif %}">
+                <div class="form-group row">
+                    <label class="col-sm-2 col-form-label">친환경 인증 종류</label>
+                    <div class="col-sm-10">
+                        <select class="form-control" name="organic_certification_type">
+                            <option value="유기농" {% if item and item.organic_certification_type == '유기농' %}selected{% endif %}>유기농</option>
+                            <option value="무농약" {% if item and item.organic_certification_type == '무농약' %}selected{% endif %}>무농약</option>
+                            <option value="GAP" {% if item and item.organic_certification_type == 'GAP' %}selected{% endif %}>GAP(농산물우수관리)</option>
+                            <option value="기타" {% if item and item.organic_certification_type == '기타' %}selected{% endif %}>기타</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <label class="col-sm-2 col-form-label">인증서 이미지</label>
+                    <div class="col-sm-10">
+                        <div class="custom-file">
+                            <input type="file" class="custom-file-input" name="organic_certification_image" id="organic_certification_image">
+                            <label class="custom-file-label" for="organic_certification_image">
+                                {% if item and item.organic_certification_image %}
+                                    {{ item.organic_certification_image }}
+                                {% else %}
+                                    인증서 이미지 파일 선택
+                                {% endif %}
+                            </label>
+                        </div>
                     </div>
                 </div>
             </div>
+
+            <!-- PDF 인증서 섹션 -->
+            <div id="cert-pdf-section" class="{% if not item or not item.organic_certification_pdf %}d-none{% endif %}">
+                <div class="form-group row">
+                    <label class="col-sm-2 col-form-label">인증서 PDF</label>
+                    <div class="col-sm-10">
+                        <div class="custom-file">
+                            <input type="file" class="custom-file-input" name="organic_certification_pdf" id="organic_certification_pdf" accept=".pdf">
+                            <label class="custom-file-label" for="organic_certification_pdf">
+                                {% if item and item.organic_certification_pdf %}
+                                    {{ item.organic_certification_pdf }}
+                                {% else %}
+                                    인증서 PDF 파일 선택
+                                {% endif %}
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <div class="form-group row">
                 <label class="col-sm-2 col-form-label">전화번호</label>
                 <div class="col-sm-10">
@@ -213,40 +250,47 @@
 </div>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const organicCheckbox = document.getElementById('is_organic');
-    const certField = document.getElementById('organic-cert-field');
-    const certInput = document.getElementById('organic_certification_image');
-    const certLabel = certField.querySelector('.custom-file-label');
-    const originalCertLabel = certLabel.innerHTML.trim();
-    const form = document.getElementById('farm-register-form');
+    // 오늘 날짜를 YYYY-MM-DD 형식으로 가져오기
+    const today = new Date().toISOString().split('T')[0];
+    
+    // 운영 기간 종료일 input의 min 속성을 오늘 날짜로 설정
+    const durationEndInput = document.querySelector('input[name="duration_end"]');
+    if (durationEndInput) {
+        durationEndInput.min = today;
+    }
 
-    // 체크박스 변경 감지
+    const organicCheckbox = document.getElementById('is_organic');
+    const certCheckbox = document.getElementById('has_cert');
+    const organicCertSection = document.getElementById('organic-cert-section');
+    const certPdfSection = document.getElementById('cert-pdf-section');
+
     organicCheckbox.addEventListener('change', function() {
-        if (this.checked) {
-            certField.classList.remove('d-none');
-        } else {
-            certField.classList.add('d-none');
-            // 체크 해제 시 입력 값 및 라벨 초기화
-            certInput.value = '';
-            certLabel.innerHTML = originalCertLabel;
-        }
+        organicCertSection.classList.toggle('d-none', !this.checked);
+    });
+
+    certCheckbox.addEventListener('change', function() {
+        certPdfSection.classList.toggle('d-none', !this.checked);
     });
 
     // 파일 입력 감지
-    certInput.addEventListener('change', function() {
+    const certImageInput = document.getElementById('organic_certification_image');
+    const certPdfInput = document.getElementById('organic_certification_pdf');
+
+    certImageInput.addEventListener('change', function() {
+        const label = this.nextElementSibling;
         if (this.files && this.files.length > 0) {
-            certLabel.textContent = this.files[0].name;
+            label.textContent = this.files[0].name;
         } else {
-            certLabel.innerHTML = originalCertLabel;
+            label.textContent = '인증서 이미지 파일 선택';
         }
     });
 
-    // 폼 제출 전 유효성 검사
-    form.addEventListener('submit', function(event) {
-        if (organicCheckbox.checked && !certInput.value && !certLabel.textContent.includes('.')) {
-             // 수정 시 기존 파일이 있는 경우 certInput.value가 비어있을 수 있으므로, 라벨 텍스트도 함께 확인
-            alert('친환경 인증을 선택하셨습니다. 인증서 이미지를 업로드해주세요.');
-            event.preventDefault(); // 폼 제출 중단
+    certPdfInput.addEventListener('change', function() {
+        const label = this.nextElementSibling;
+        if (this.files && this.files.length > 0) {
+            label.textContent = this.files[0].name;
+        } else {
+            label.textContent = '인증서 PDF 파일 선택';
         }
     });
 });

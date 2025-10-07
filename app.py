@@ -7,19 +7,22 @@ import requests
 from sqlalchemy.sql import func
 from collections import defaultdict
 from datetime import date, timedelta, datetime
+from flask_apscheduler import APScheduler
+from PIL import Image
 
 # --- 1. 앱 및 DB 설정 ---
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'mysql-secret-key-for-production')
 
 # DB 접속 정보 변수 설정
-db_username = 'kevin4201'
-db_password = 'farmLink'
-db_hostname = 'kevin4201.mysql.pythonanywhere-services.com'
-db_name     = 'kevin4201$default'
+# db_username = 'kevin4201'
+# db_password = 'farmLink'
+# db_hostname = 'kevin4201.mysql.pythonanywhere-services.com'
+# db_name     = 'kevin4201$default'
 
 # f-string을 사용하여 가독성 좋게 조합
-DATABASE_URI = f"mysql+mysqlconnector://{db_username}:{db_password}@{db_hostname}/{db_name}"
+# DATABASE_URI = f"mysql+mysqlconnector://{db_username}:{db_password}@{db_hostname}/{db_name}"
+DATABASE_URI = r"sqlite:///D:\대외활동\SW_id\local_db.sqlite"
 
 app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_URI
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -31,10 +34,15 @@ app.config['SQLALCHEMY_POOL_TIMEOUT'] = 30
 # --- 파일 업로드 설정 ---
 
 app.config['UPLOAD_FOLDER'] = os.path.join(app.static_folder, 'uploads')
-app.config['ALLOWED_EXTENSIONS'] = {'png', 'jpg', 'jpeg', 'gif'}
+app.config['ALLOWED_EXTENSIONS'] = {'png', 'jpg', 'jpeg', 'gif', 'pdf'}
 app.config['KAKAO_API_KEY'] = os.environ.get('KAKAO_API_KEY', '432f80fcdc8239c7c87db2520e85597e')
 
 db = SQLAlchemy(app, engine_options={"pool_pre_ping": True})
+
+# 스케줄러 설정
+scheduler = APScheduler()
+scheduler.init_app(app)
+scheduler.start()
 
 # --- 2. DB 모델(테이블) 정의 ---
 class User(db.Model):
@@ -49,7 +57,9 @@ class User(db.Model):
     farm_size = db.Column(db.String(100), nullable=True)
     profile_image = db.Column(db.String(255), nullable=False, default='shd.png')
     farm_image = db.Column(db.String(255), nullable=True)
+    profile_bio = db.Column(db.String(150), nullable=True)  # 한 줄 소개 (VARCHAR(150))
     applications = db.relationship('Application', back_populates='user', cascade="all, delete-orphan")
+    experiences = db.relationship('Experience', back_populates='farmer', cascade="all, delete-orphan")
 
 
 class Experience(db.Model):
@@ -73,6 +83,7 @@ class Experience(db.Model):
     timetable_data = db.Column(db.Text, nullable=True)
     phone = db.Column(db.String(50), nullable=True)
     farm_size = db.Column(db.String(100), nullable=True)
+    status = db.Column(db.String(50), nullable=False, default='recruiting') # recruiting, expired, hidden
     reviews = db.relationship('Review', backref='experience', lazy=True, cascade="all, delete-orphan")
     inquiries = db.relationship('Inquiry', backref='experience', lazy=True, cascade="all, delete-orphan")
     applications = db.relationship('Application', back_populates='experience', cascade="all, delete-orphan")
@@ -81,6 +92,9 @@ class Experience(db.Model):
     volunteer_duties = db.Column(db.Text, nullable=True)
     has_parking = db.Column(db.Boolean, default=False, nullable=False)
     organic_certification_image = db.Column(db.String(255), nullable=True)
+    organic_certification_type = db.Column(db.String(100), nullable=True)
+    organic_certification_pdf = db.Column(db.String(255), nullable=True)
+    farmer = db.relationship('User', back_populates='experiences')
 
     def to_dict(self):
         """Experience 객체를 딕셔너리로 변환하는 함수"""
@@ -92,7 +106,8 @@ class Experience(db.Model):
             'duration_start': self.duration_start.strftime('%Y-%m-%d') if self.duration_start else None,
             'end_date': self.end_date.strftime('%Y-%m-%d') if self.end_date else None,
             'lat': self.lat,
-            'lng': self.lng
+            'lng': self.lng,
+            'status': self.status
         }
 
     @property
@@ -133,35 +148,73 @@ class Application(db.Model):
     status = db.Column(db.String(50), nullable=False, default='예정') # '예정', '완료', '취소'
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     experience_id = db.Column(db.Integer, db.ForeignKey('experience.id'), nullable=False)
+    can_review = db.Column(db.Boolean, default=False)
 
     user = db.relationship('User', back_populates='applications')
     experience = db.relationship('Experience', back_populates='applications')
 
-def get_coords_from_address(address):
-    # 카카오 API 키는 config.py 또는 환경변수에서 관리됩니다.
-    KAKAO_API_KEY = app.config['KAKAO_API_KEY']
+class Notification(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    message = db.Column(db.Text, nullable=False)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    is_read = db.Column(db.Boolean, default=False)
 
+    user = db.relationship('User', backref=db.backref('notifications', lazy=True))
+
+@scheduler.task('interval', id='update_experience_status', minutes=1)
+def update_experience_status():
+    with app.app_context():
+        now = datetime.now()
+        recruiting_experiences = Experience.query.filter_by(status='recruiting').all()
+        expired_experiences = []
+
+        days_map = {0: '월', 1: '화', 2: '수', 3: '목', 4: '금', 5: '토', 6: '일'}
+
+        for exp in recruiting_experiences:
+            if exp.end_date < now.date():
+                expired_experiences.append(exp)
+            elif exp.end_date == now.date():
+                if exp.timetable_data:
+                    day_of_week = days_map[exp.end_date.weekday()]
+                    slots = exp.timetable_data.split(',')
+                    last_time = None
+                    for slot in slots:
+                        day, time_str = slot.split('-')
+                        if day == day_of_week:
+                            slot_time = datetime.strptime(time_str, '%H:%M').time()
+                            if last_time is None or slot_time > last_time:
+                                last_time = slot_time
+                    
+                    if last_time and now.time() > last_time:
+                        expired_experiences.append(exp)
+
+        for exp in expired_experiences:
+            exp.status = 'expired'
+            notification = Notification(
+                user_id=exp.farmer_id,
+                message=f"'{exp.crop}' 체험의 모집 기간이 만료되었습니다."
+            )
+            db.session.add(notification)
+        
+        if expired_experiences:
+            db.session.commit()
+            print(f"[{datetime.now()}] {len(expired_experiences)}개의 체험을 '기간 만료'로 업데이트했습니다.")
+
+def get_coords_from_address(address):
+    KAKAO_API_KEY = app.config['KAKAO_API_KEY']
     url = f"https://dapi.kakao.com/v2/local/search/address.json?query={address}"
     headers = {"Authorization": f"KakaoAK {KAKAO_API_KEY}"}
-
-    print("========================================")
-    print(f"1. 좌표 변환을 시도하는 주소: {address}")
-
     try:
         response = requests.get(url, headers=headers)
         response.raise_for_status()
         data = response.json()
-        print(f"2. 카카오 API 응답 결과: {data}")
-        print("========================================")
-
         if data['documents']:
             location = data['documents'][0]
             return float(location['y']), float(location['x'])
-        else:
-            return 36.8583, 127.2943
     except Exception as e:
         print(f"지오코딩 처리 중 오류 발생: {e}")
-        return 36.8583, 127.2943
+    return 36.8583, 127.2943
 
 # --- 3. 핵심 라우트 ---
 @app.route('/')
@@ -176,7 +229,14 @@ def index():
             flash("세션 정보가 유효하지 않습니다.", "warning")
             return redirect(url_for('login_page'))
 
-        my_listings = Experience.query.filter_by(farmer_id=farmer_id).all()
+        notifications = Notification.query.filter_by(user_id=farmer_id).order_by(Notification.timestamp.desc()).limit(5).all()
+        
+        # 'recruiting' 또는 'hidden' 상태의 체험 목록 조회
+        my_listings = Experience.query.filter(
+            Experience.farmer_id == farmer_id,
+            Experience.status.in_(['recruiting', 'hidden'])
+        ).all()
+        
         experiences_json = [exp.to_dict() for exp in my_listings]
         experience_ids = [exp.id for exp in my_listings]
 
@@ -185,22 +245,19 @@ def index():
         reservations_by_date = defaultdict(list)
         for app in applications:
             reservations_by_date[app.apply_date.strftime('%Y-%m-%d')].append({
-                "name": app.applicant_name,
-                "phone": app.phone_number,
-                "adult": app.count_adult,
-                "teen": app.count_teen,
-                "child": app.count_child,
-                "time": app.apply_time
+                "id": app.id,
+                "name": app.applicant_name, "phone": app.phone_number,
+                "adult": app.count_adult, "teen": app.count_teen, "child": app.count_child,
+                "time": app.apply_time,
+                "crop": app.experience.crop
             })
 
-        # 평균 별점 계산
         avg_rating = 0
         if experience_ids:
             avg_result = db.session.query(func.avg(Review.rating)).filter(Review.experience_id.in_(experience_ids)).scalar()
             if avg_result is not None:
                 avg_rating = round(avg_result, 1)
 
-        # 최신 문의 조회
         latest_inquiries = []
         if experience_ids:
             latest_inquiries = Inquiry.query.filter(Inquiry.experience_id.in_(experience_ids)).order_by(Inquiry.timestamp.desc()).limit(5).all()
@@ -213,27 +270,46 @@ def index():
         }
 
         return render_template('my_farm.html',
-                               user=user,
-                               experiences=my_listings,
-                               experiences_json=experiences_json,
-                               stats=stats,
-                               inquiries=latest_inquiries,
-                               reservations_data=reservations_by_date)
+                               user=user, experiences=my_listings, experiences_json=experiences_json,
+                               stats=stats, inquiries=latest_inquiries,
+                               reservations_data=reservations_by_date, notifications=notifications)
     else:
-        # 체험자에게 보여주는 페이지 로직 (기존과 동일)
         page = request.args.get('page', 1, type=int)
         sort_by = request.args.get('sort', 'deadline', type=str)
-        # 수정 코드
-        query_order = Experience.address_detail.asc() if sort_by == 'location' else Experience.end_date.asc()
-        experiences_query = Experience.query.order_by(query_order)
+        
+        # 'recruiting' 상태인 체험만 필터링
+        today = date.today()
+        query = Experience.query.filter(Experience.status == 'recruiting', Experience.end_date >= today)
+        
+        if sort_by == 'location':
+            query_order = Experience.address_detail.asc()
+        else:
+            query_order = Experience.end_date.asc()
+            
+        experiences_query = query.order_by(query_order)
+        
         pagination = experiences_query.paginate(page=page, per_page=15, error_out=False)
         items_on_page = sorted(pagination.items, key=lambda x: x.current_participants >= x.max_participants)
+        
         return render_template('index.html', items=items_on_page, pagination=pagination, sort_by=sort_by)
+
+@app.route('/my_farm/expired')
+def expired_experiences():
+    if session.get('role') != 'farmer':
+        flash("농장주만 접근 가능합니다.", "warning")
+        return redirect(url_for('index'))
+    
+    farmer_id = session.get('user_id')
+    user = User.query.get(farmer_id)
+    expired_list = Experience.query.filter_by(farmer_id=farmer_id, status='expired').order_by(Experience.end_date.desc()).all()
+    
+    return render_template('expired_experiences.html', user=user, experiences=expired_list)
 
 # --- 사용자 인증 관련 라우트 ---
 @app.route('/register', methods=['GET', 'POST'])
 def register_page():
     if request.method == 'POST':
+        # ... (기존 회원가입 로직 유지)
         role = request.form.get('role')
         nickname = request.form.get('nickname')
         email = request.form.get('email')
@@ -242,27 +318,25 @@ def register_page():
         phone = request.form.get('phone')
         password_confirm = request.form.get('password_confirm')
 
-        # 필수 필드 목록 정의
         required_fields = [role, nickname, email, password, name, phone]
 
         if password != password_confirm:
             flash("비밀번호가 일치하지 않습니다.", "danger")
-            # 아래에서 form_data를 넘겨주도록 수정할 것이므로 여기선 일단 redirect
             return render_template('register.html', form_data=request.form)
-        # 하나라도 비어있는 필드가 있는지 확인
         if not all(required_fields):
             flash("모든 필수 항목을 올바르게 입력해주세요.", "danger")
             return render_template('register.html', form_data=request.form)
-        email = request.form.get('email')
         if User.query.filter_by(email=email).first():
             flash("이미 가입된 이메일입니다.", "danger")
             return render_template('register.html', form_data=request.form)
-        hashed_password = generate_password_hash(request.form.get('password'))
+        
+        hashed_password = generate_password_hash(password)
         new_user = User(
-            email=email, nickname=request.form.get('nickname'), password=hashed_password,
-            role=request.form.get('role', 'experiencer'), name=request.form.get('name'),
-            phone=request.form.get('phone'), farm_address=request.form.get('farm_address'),
-            farm_size=request.form.get('farm_size')
+            email=email, nickname=nickname, password=hashed_password,
+            role=role, name=name, phone=phone, 
+            farm_address=request.form.get('farm_address'),
+            farm_size=request.form.get('farm_size'),
+            profile_bio=request.form.get('profile_bio')
         )
         db.session.add(new_user)
         db.session.commit()
@@ -298,14 +372,52 @@ def logout():
     flash("로그아웃되었습니다.", "info")
     return redirect(url_for('index'))
 
+@app.route('/update_bio', methods=['POST'])
+def update_bio():
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'message': '로그인이 필요합니다.'}), 401
+    user = User.query.get(session['user_id'])
+    if not user:
+        return jsonify({'success': False, 'message': '사용자를 찾을 수 없습니다.'}), 404
+    
+    data = request.get_json()
+    new_bio = data.get('profile_bio')
+    
+    if new_bio is None:
+        return jsonify({'success': False, 'message': '소개 내용이 없습니다.'}), 400
+        
+    user.profile_bio = new_bio
+    db.session.commit()
+    
+    return jsonify({'success': True, 'message': '한 줄 소개가 업데이트되었습니다.'})
+
 # --- 체험 관련 라우트 ---
 @app.route('/experience/<int:item_id>')
 def experience_detail(item_id):
+    if 'user_id' not in session: return redirect(url_for('login_page'))
+
     item = Experience.query.get_or_404(item_id)
+    if item.status != 'recruiting' and session.get('user_id') != item.farmer_id:
+        flash("현재 모집 중인 체험이 아닙니다.", "warning")
+        return redirect(url_for('index'))
+
+    can_review = False
+    if 'user_id' in session:
+        user_id = session['user_id']
+        # 사용자가 해당 체험에 참여했는지 확인 (신청 날짜가 과거)
+        applications = Application.query.filter_by(user_id=user_id, experience_id=item_id).all()
+        has_attended = any(app.apply_date < date.today() for app in applications)
+
+        if has_attended:
+            # 이미 후기를 작성했는지 확인
+            existing_review = Review.query.filter_by(user_id=user_id, experience_id=item_id).first()
+            if not existing_review:
+                can_review = True
+
     reviews = Review.query.filter_by(experience_id=item_id).order_by(Review.timestamp.desc()).all()
     inquiries = Inquiry.query.filter_by(experience_id=item_id).order_by(Inquiry.timestamp.desc()).all()
     item_data_for_js = {'lat': item.lat, 'lng': item.lng}
-    return render_template('detail_experience.html', item=item, item_data_for_js=item_data_for_js, reviews=reviews, inquiries=inquiries)
+    return render_template('detail_experience.html', item=item, item_data_for_js=item_data_for_js, reviews=reviews, inquiries=inquiries, can_review=can_review)
 
 @app.route('/experience/apply/<int:item_id>', methods=['GET', 'POST'])
 def experience_apply(item_id):
@@ -314,7 +426,12 @@ def experience_apply(item_id):
         return redirect(url_for('login_page'))
 
     item = Experience.query.get_or_404(item_id)
+    if item.status != 'recruiting':
+        flash("현재 모집 중인 체험이 아닙니다.", "warning")
+        return redirect(url_for('experience_detail', item_id=item.id))
+
     if request.method == 'POST':
+        # ... (기존 신청 로직 유지)
         apply_date_str = request.form.get('apply_date')
         apply_time_str = request.form.get('apply_time')
 
@@ -354,6 +471,7 @@ def experience_apply(item_id):
         return render_template('apply_complete.html', item=item, name=new_application.applicant_name)
 
     return render_template('experience_apply.html', item=item)
+
 # --- 농장주 전용 라우트 ---
 @app.route('/farmer/register', methods=['GET', 'POST'])
 @app.route('/farmer/modify/<int:item_id>', methods=['GET', 'POST'])
@@ -365,29 +483,37 @@ def farmer_register(item_id=None):
     if item and item.farmer_id != session['user_id']: abort(403)
 
     if request.method == 'POST':
-        # 친환경 및 주차 가능 여부 확인
+        # ... (기존 등록/수정 로직 대부분 유지)
         is_organic = 'is_organic' in request.form
         has_parking = 'has_parking' in request.form
-
-        # 친환경 인증 이미지 처리
         cert_filename = item.organic_certification_image if item and item.organic_certification_image else None
         cert_file = request.files.get('organic_certification_image')
+        cert_pdf_filename = item.organic_certification_pdf if item and item.organic_certification_pdf else None
+        cert_pdf_file = request.files.get('organic_certification_pdf')
 
         if cert_file and cert_file.filename != '':
             if allowed_file(cert_file.filename):
-                # 파일명 보안 처리 및 저장
                 cert_filename = secure_filename(f"cert_{item_id or 'new'}_{cert_file.filename}")
                 cert_file.save(os.path.join(app.config['UPLOAD_FOLDER'], cert_filename))
         elif not is_organic:
-            # 친환경 체크 해제 시 기존 이미지 파일명도 초기화
             cert_filename = None
 
-        # 서버 측 유효성 검사: 친환경 체크 시 인증 이미지 필수
-        if is_organic and not cert_filename:
-            flash("친환경 인증을 선택한 경우, 인증 이미지를 반드시 업로드해야 합니다.", "danger")
+        if cert_pdf_file and cert_pdf_file.filename != '':
+            if allowed_file(cert_pdf_file.filename):
+                cert_pdf_filename = secure_filename(f"cert_pdf_{item_id or 'new'}_{cert_pdf_file.filename}")
+                cert_pdf_file.save(os.path.join(app.config['UPLOAD_FOLDER'], cert_pdf_filename))
+        elif not is_organic:
+            cert_pdf_filename = None
+
+        if is_organic and not cert_filename and not cert_pdf_filename:
+            flash("친환경 인증을 선택한 경우, 인증 이미지 또는 PDF를 반드시 업로드해야 합니다.", "danger")
             return render_template('farmer_register.html', item=item, form_data=request.form)
 
-        # 대표 이미지들 처리
+        end_date_str = request.form.get('duration_end')
+        if datetime.strptime(end_date_str, '%Y-%m-%d').date() < date.today():
+            flash("모집 마감일은 현재 날짜보다 이전일 수 없습니다.", "danger")
+            return render_template('farmer_register.html', item=item, form_data=request.form)
+
         uploaded_files = request.files.getlist('images')
         filenames = item.images.split(',') if item and item.images else []
         if any(f.filename for f in uploaded_files):
@@ -396,19 +522,18 @@ def farmer_register(item_id=None):
             if file and allowed_file(file.filename):
                 filename = secure_filename(file.filename)
                 filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-                file.save(filepath)
+                img = Image.open(file.stream)
+                img.thumbnail((800, 600))
+                img.save(filepath)
                 if filename not in filenames: filenames.append(filename)
         image_string = ",".join(filter(None, filenames))
         
-        # 주소 및 좌표 처리
         address_detail = request.form.get('address')
         lat, lng = get_coords_from_address(address_detail)
         
-        # 봉사자 관련
         volunteer_needed_str = request.form.get('volunteer_needed')
         volunteer_needed = int(volunteer_needed_str) if volunteer_needed_str else 0
 
-        # DB 업데이트 또는 생성
         if item: # 수정
             item.crop = request.form.get('crop')
             item.phone = request.form.get('phone')
@@ -425,6 +550,8 @@ def farmer_register(item_id=None):
             item.timetable_data = request.form.get('timetable_data')
             item.pesticide_free = is_organic
             item.organic_certification_image = cert_filename
+            item.organic_certification_type = request.form.get('organic_certification_type')
+            item.organic_certification_pdf = cert_pdf_filename
             item.lat = lat
             item.lng = lng
             item.volunteer_needed = volunteer_needed
@@ -450,12 +577,15 @@ def farmer_register(item_id=None):
                 timetable_data=request.form.get('timetable_data'),
                 pesticide_free=is_organic,
                 organic_certification_image=cert_filename,
+                organic_certification_type=request.form.get('organic_certification_type'),
+                organic_certification_pdf=cert_pdf_filename,
                 lat=lat,
                 lng=lng,
                 farmer_id=session['user_id'],
                 volunteer_needed=volunteer_needed,
                 has_parking=has_parking,
-                volunteer_duties=request.form.get('volunteer_duties')
+                volunteer_duties=request.form.get('volunteer_duties'),
+                status='recruiting'  # 생성 시 기본 상태
             )
             db.session.add(new_experience)
             flash("새로운 체험이 성공적으로 등록되었습니다!", "success")
@@ -463,7 +593,6 @@ def farmer_register(item_id=None):
         db.session.commit()
         return redirect(url_for('index'))
 
-    # GET 요청 시
     return render_template('farmer_register.html', item=item, form_data={})
 
 @app.route('/experience/delete/<int:item_id>', methods=['POST'])
@@ -471,14 +600,47 @@ def delete_experience(item_id):
     if 'user_id' not in session or session['role'] != 'farmer': abort(403)
     item = Experience.query.get_or_404(item_id)
     if item.farmer_id != session.get('user_id'): abort(403)
+    
+    # 실제 삭제 대신 status를 'deleted'로 변경하는 것을 고려할 수 있으나,
+    # 현재 요청은 DB에서 완전히 삭제하는 것이므로 그대로 둡니다.
+    # item.status = 'deleted' 
     db.session.delete(item)
     db.session.commit()
     flash("체험이 삭제되었습니다.", "info")
     return redirect(url_for('index'))
 
+@app.route('/api/experience/<int:item_id>/toggle_visibility', methods=['PATCH'])
+def toggle_visibility(item_id):
+    if 'user_id' not in session or session.get('role') != 'farmer':
+        return jsonify({'success': False, 'message': '권한이 없습니다.'}), 403
+
+    item = Experience.query.get_or_404(item_id)
+    if item.farmer_id != session.get('user_id'):
+        return jsonify({'success': False, 'message': '자신이 등록한 체험만 변경할 수 있습니다.'}), 403
+
+    if item.status == 'recruiting':
+        item.status = 'hidden'
+        message = '체험을 비공개로 전환했습니다.'
+    elif item.status == 'hidden':
+        item.status = 'recruiting'
+        message = '체험을 공개로 전환했습니다.'
+    else:
+        return jsonify({'success': False, 'message': '상태를 변경할 수 없는 체험입니다.'}), 400
+    
+    db.session.commit()
+    return jsonify({'success': True, 'message': message, 'new_status': item.status})
+
+
 @app.route('/experience/<int:item_id>/review', methods=['POST'])
 def add_review(item_id):
     if 'user_id' not in session: return redirect(url_for('login_page'))
+
+    # 사용자가 이 체험에 대해 이미 후기를 작성했는지 확인
+    existing_review = Review.query.filter_by(user_id=session['user_id'], experience_id=item_id).first()
+    if existing_review:
+        flash("이미 이 체험에 대한 후기를 작성하셨습니다.", "warning")
+        return redirect(url_for('experience_detail', item_id=item_id))
+
     new_review = Review(
         rating=int(request.form.get('rating')), content=request.form.get('content'),
         user_id=session['user_id'], experience_id=item_id
@@ -510,18 +672,24 @@ def upload_profile():
     if 'user_id' not in session: return redirect(url_for('login_page'))
     if 'profile_pic' not in request.files or request.files['profile_pic'].filename == '':
         flash('선택된 파일이 없습니다.', 'warning')
-        return redirect(url_for('index'))
+        return redirect(url_for('my_info'))
     file = request.files['profile_pic']
     if file and allowed_file(file.filename):
         filename = secure_filename(file.filename)
-        file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+
+        # Image resizing
+        img = Image.open(file.stream)
+        img.thumbnail((400, 400))
+        img.save(filepath)
+
         user = User.query.get(session['user_id'])
         user.profile_image = filename
         db.session.commit()
         flash('프로필 사진이 변경되었습니다.', 'success')
     else:
         flash('허용되지 않는 파일 형식입니다.', 'danger')
-    return redirect(url_for('index'))
+    return redirect(url_for('my_info'))
 
 @app.route('/upload_farm_photo', methods=['POST'])
 def upload_farm_photo():
@@ -532,7 +700,12 @@ def upload_farm_photo():
     file = request.files['farm_photo']
     if file and allowed_file(file.filename):
         filename = secure_filename(file.filename)
-        file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+
+        img = Image.open(file.stream)
+        img.thumbnail((800, 600))
+        img.save(filepath)
+
         user = User.query.get(session['user_id'])
         user.farm_image = filename
         db.session.commit()
@@ -540,7 +713,6 @@ def upload_farm_photo():
     else:
         flash('허용되지 않는 파일 형식입니다.', 'danger')
     return redirect(url_for('index'))
-# app.py의 기존 my_info 함수를 찾아 아래 코드로 교체
 
 @app.route('/my_info', methods=['GET', 'POST'])
 def my_info():
@@ -557,28 +729,24 @@ def my_info():
         if user.role == 'farmer':
             user.farm_address = request.form.get('farm_address')
             user.farm_size = request.form.get('farm_size')
+            user.profile_bio = request.form.get('profile_bio') # 한 줄 소개 업데이트
         db.session.commit()
         flash("회원 정보가 성공적으로 수정되었습니다.", "success")
         session['nickname'] = user.nickname
         return redirect(url_for('my_info'))
 
-    # 사용자가 신청한 체험 목록을 DB에서 조회
     applications = Application.query.filter_by(user_id=user.id).order_by(Application.apply_date.desc()).all()
-
     return render_template('my_info.html', user=user, applications=applications)
 
 @app.route('/application/delete/<int:app_id>', methods=['POST'])
 def delete_application(app_id):
-    if 'user_id' not in session:
-        abort(403)
-
+    if 'user_id' not in session: abort(403)
     application = Application.query.get_or_404(app_id)
-    if application.user_id != session['user_id']:
-        abort(403) # 본인의 신청 건이 아니면 삭제 불가
+    if application.user_id != session['user_id']: abort(403)
 
-    # 체험의 현재 참가 인원 수 되돌리기
     experience = Experience.query.get(application.experience_id)
-    experience.current_participants -= application.participants_count
+    if experience:
+        experience.current_participants = max(0, experience.current_participants - application.participants_count)
 
     db.session.delete(application)
     db.session.commit()
@@ -588,13 +756,12 @@ def delete_application(app_id):
 
 @app.route('/volunteer')
 def volunteer_apply():
-    # Experience 테이블에서 volunteer_needed가 0보다 큰 데이터만 조회
-    items = Experience.query.filter(Experience.volunteer_needed > 0).order_by(Experience.duration_start.asc()).all()
+    items = Experience.query.filter(Experience.volunteer_needed > 0, Experience.status == 'recruiting').order_by(Experience.duration_start.asc()).all()
     return render_template('volunteer_apply.html', items=items)
+
 @app.route('/api/experiences')
 def get_experiences_json():
-    experiences = Experience.query.all()
-    # 각 Experience 객체를 to_dict() 함수를 사용해 딕셔너리로 변환
+    experiences = Experience.query.filter_by(status='recruiting').all()
     experience_list = [exp.to_dict() for exp in experiences]
     return jsonify(experience_list)
 

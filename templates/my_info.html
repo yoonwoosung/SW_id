@@ -41,6 +41,12 @@
                             <input type="text" name="farm_size" class="form-control" value="{{ user.farm_size }}">
                         </div>
                     </div>
+                    <div class="form-group row">
+                        <label class="col-sm-3 col-form-label">한 줄 소개</label>
+                        <div class="col-sm-9">
+                            <textarea name="profile_bio" class="form-control" rows="3" placeholder="농장을 방문하는 체험자에게 자신을 알려보세요. 이 소개는 체험 상세 페이지에 표시됩니다.">{{ user.profile_bio or '' }}</textarea>
+                        </div>
+                    </div>
                     {% endif %}
                 </fieldset>
                 <div id="form-buttons" class="text-right mt-3" style="display: none;">

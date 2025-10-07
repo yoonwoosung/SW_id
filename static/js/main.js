@@ -233,6 +233,52 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    // --- 이용가이드 슬라이더 스크립트 ---
+    const slider = document.getElementById('guide-slider');
+    if (slider) {
+        const slides = slider.querySelector('.guide-slides');
+        const slide = slider.querySelectorAll('.guide-slide');
+        const prevBtn = slider.querySelector('.prev-btn');
+        const nextBtn = slider.querySelector('.next-btn');
+        const pagination = slider.querySelector('.slider-pagination');
+        let currentIndex = 0;
+        const slideCount = slide.length;
+
+        // Create pagination dots
+        for (let i = 0; i < slideCount; i++) {
+            const dot = document.createElement('span');
+            dot.classList.add('pagination-dot');
+            dot.addEventListener('click', () => goToSlide(i));
+            pagination.appendChild(dot);
+        }
+
+        const dots = pagination.querySelectorAll('.pagination-dot');
+
+        function updateSlider() {
+            slides.style.transform = `translateX(-${currentIndex * 100}%)`;
+            dots.forEach((dot, index) => {
+                dot.classList.toggle('active', index === currentIndex);
+            });
+        }
+
+        function goToSlide(index) {
+            currentIndex = index;
+            updateSlider();
+        }
+
+        nextBtn.addEventListener('click', () => {
+            currentIndex = (currentIndex + 1) % slideCount;
+            updateSlider();
+        });
+
+        prevBtn.addEventListener('click', () => {
+            currentIndex = (currentIndex - 1 + slideCount) % slideCount;
+            updateSlider();
+        });
+
+        updateSlider(); // Initial setup
+    }
+
 }); // <-- 모든 코드는 이 괄호 안에서 끝나야 합니다.
 
 

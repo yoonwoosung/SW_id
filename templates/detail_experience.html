@@ -33,7 +33,7 @@
             <!-- 방문자 후기 -->
             <div class="detail-section mt-5">
                 <h3>방문자 후기 🌟</h3>
-                {% if session.get('user_id') %}
+                {% if can_review %}
                 <form action="{{ url_for('add_review', item_id=item.id) }}" method="POST" class="mb-4">
                     <div class="form-group">
                         <label for="rating">별점</label>
@@ -46,6 +46,8 @@
                     </div>
                     <button type="submit" class="btn btn-primary mt-2">후기 등록</button>
                 </form>
+                {% elif session.get('user_id') %}
+                <p class="text-muted small">체험을 하신 후에 후기 작성이 가능합니다.</p>
                 {% else %}
                  <p class="text-muted small">후기를 남기시려면 <a href="{{ url_for('login_page') }}">로그인</a>이 필요합니다.</p>
                 {% endif %}
@@ -103,6 +105,21 @@
                     <p><strong>⏳ 모집 마감:</strong> D-{{ item.d_day }} ({{ item.end_date.strftime('%Y-%m-%d') }})</p>
                     <p><strong>👥 모집 인원:</strong> {{ item.current_participants }} / {{ item.max_participants }}명</p>
                     <p><strong>🚗 주차 가능:</strong> {{ "예" if item.has_parking else "아니오" }}</p>
+                </div>
+            </div>
+
+            <div class="detail-info card mt-4">
+                <div class="card-header">농장주 프로필</div>
+                <div class="card-body">
+                    <div class="d-flex align-items-start">
+                        <div class="text-center mr-4" style="width: 90px;">
+                            <img src="{{ url_for('static', filename='uploads/' + item.farmer.profile_image) }}" alt="{{ item.farmer.nickname }}" class="img-fluid rounded-circle mb-2" style="width: 80px; height: 80px; object-fit: cover;">
+                            <h6 class="mb-0" style="font-weight: bold;">{{ item.farmer.nickname }}</h6>
+                        </div>
+                        <div class="flex-grow-1" style="padding-top: 10px;">
+                            <p class="text-muted" style="font-size: 0.9rem; margin-bottom: 5px;">"{{ item.farmer.profile_bio | default('한 줄 소개가 없습니다.', true) }}"</p>
+                        </div>
+                    </div>
                 </div>
             </div>
 

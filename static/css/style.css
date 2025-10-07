@@ -1,35 +1,875 @@
-/* static/css/style.css */
-/* ... (기본적인 body, a, button 스타일 생략) ... */
+/* static/css/style.css (최종 수정본) */
 
-/* 헤더 스타일 */
-header {
-    border-bottom: 1px solid #eee;
-    padding: 10px 20px;
-    transition: background-color 0.3s;
+/* --- 1. 기본 및 공통 스타일 --- */
+body {
+    background-color: #f9f9f9;
 }
-.header-content { display: flex; align-items: center; justify-content: space-between; }
-/* 역할별 헤더 색상 */
-.header-experiencer { background-color: #e7f0f7; } /* 파란색 계열 */
-.header-farmer { background-color: #e8f5e9; } /* 녹색 계열 */
-.header-volunteer { background-color: #efebe9; } /* 갈색 계열 */
 
-/* 드롭다운 (역할 선택) */
-.dropdown { position: relative; display: inline-block; }
-.dropdown-content { display: none; position: absolute; background-color: #f9f9f9; min-width: 100px; box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2); z-index: 1; }
-.dropdown-content a { color: black; padding: 12px 16px; text-decoration: none; display: block; }
-.dropdown:hover .dropdown-content { display: block; }
+.page-container {
+    padding-bottom: 5rem;
+}
 
-/* 초기 팝업 */
-.popup-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 1000; }
-.popup-content { background: white; padding: 40px; border-radius: 8px; text-align: center; }
-.popup-button { display: block; padding: 15px 30px; margin: 10px; border-radius: 5px; text-decoration: none; color: white; font-weight: bold; }
-.popup-button.farmer { background-color: #4CAF50; }
-.popup-button.experiencer { background-color: #2196F3; }
+/* --- 2. 헤더 스타일 --- */
+header {
+    background-color: #fff;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    transition: border-color 0.3s ease;
+    border-bottom: 4px solid #f8f9fa;
+}
 
-/* 리스트 스타일 (제공된 이미지 참고) */
-.item-list { border: 1px solid #ddd; }
-.list-header, .list-item { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; padding: 15px; border-bottom: 1px solid #eee; align-items: center; text-align: center;}
-.list-item { text-decoration: none; color: #333; }
-.list-item:hover { background-color: #f9f9f9; }
-.d-day span { font-size: 12px; padding: 3px 6px; border-radius: 4px; color: white; }
-.d-day .imminent { background-color: #f44336; } /* 마감임박 */
+header.header-experiencer {
+    border-bottom-color: #2196F3;
+}
+header.header-farmer {
+    border-bottom-color: #4CAF50;
+}
+header.header-volunteer {
+    border-bottom-color: #FF9800;
+}
+
+.header-content {
+    display: flex;
+    justify-content: space-between; 
+    align-items: center;
+    min-height: 80px;
+}
+.logo {
+    font-size: 2.2rem;
+    font-weight: 700;
+    color: #4CAF50 !important;
+    text-decoration: none;
+}
+
+.logo:hover {
+    text-decoration: none;
+    color: #45a049 !important;
+}
+
+.user-menu a {
+    color: #555;
+    margin: 0 8px;
+    text-decoration: none;
+}
+
+.user-menu a:hover {
+    text-decoration: underline;
+}
+
+/* --- 3. 메인 페이지 (index.html) 스타일 --- */
+.list-title-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 3rem;
+    margin-bottom: 1.5rem;
+}
+
+.list-title-header h2 {
+    margin: 0;
+    font-size: 1.8rem;
+    font-weight: 600;
+}
+
+.sort-links a {
+    color: #6c757d;
+    text-decoration: none;
+    font-size: 0.9rem;
+    padding: 8px 16px;
+    border: 1px solid transparent;
+    border-radius: 20px;
+    transition: all 0.2s ease-in-out;
+    margin-left: 4px;
+}
+
+.sort-links a:hover {
+    background-color: #e9ecef;
+}
+
+.sort-links a.active {
+    color: #fff;
+    background-color: #4CAF50;
+    font-weight: bold;
+    border-color: #4CAF50;
+}
+
+.experience-list-container {
+    background-color: #fff;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.list-header-row, .list-item-row {
+    display: grid;
+    grid-template-columns: 2.5fr 1.5fr 1fr 1fr 1fr 1fr;
+    align-items: center;
+    padding: 1rem 1.5rem;
+    gap: 1rem;
+}
+
+.col-d-day {
+    text-align: center;
+}
+
+.list-header-row {
+    background-color: #f8f9fa;
+    color: #495057;
+    font-weight: 600;
+    border-bottom: 1px solid #dee2e6;
+    font-size: 0.9rem;
+}
+
+.list-header-row span i {
+    margin-right: 6px;
+    color: #888;
+}
+
+.list-item-row {
+    color: #343a40;
+    text-decoration: none;
+    border-bottom: 1px solid #e9ecef;
+    transition: background-color 0.2s;
+}
+
+.list-item-row:last-child {
+    border-bottom: none;
+}
+
+.list-item-row:hover {
+    background-color: #f8f9fa;
+}
+
+.list-item-row.closed {
+    color: #adb5bd;
+    background-color: #f8f9fa;
+}
+
+.list-item-row.closed strong {
+    color: #adb5bd;
+}
+
+.list-item-row .tag {
+    font-size: 0.8rem;
+    color: #6c757d;
+}
+
+.col-cost, .col-status, .col-action {
+    text-align: center;
+}
+
+.no-items-message {
+    padding: 5rem 1.5rem;
+    text-align: center;
+    color: #6c757d;
+}
+.no-items-message .empty-icon {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+}
+.no-items-message p {
+    font-size: 1.2rem;
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+}
+.no-items-message small {
+    color: #888;
+}
+
+.pagination-container {
+    display: flex;
+    justify-content: center;
+    margin-top: 2.5rem;
+}
+
+/* --- 4. 농장주 관련 페이지 스타일 (대시보드, 등록) --- */
+.dashboard-container {
+    max-width: 1400px;
+}
+
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: 280px minmax(0, 1fr) 400px;
+    gap: 24px;
+}
+.dashboard-sidebar,
+.dashboard-main,
+.dashboard-right {
+    width: 100%;
+    overflow: hidden; /* 컨텐츠가 넘칠 경우 숨김 처리 */
+}
+
+.dashboard-card {
+    background-color: white;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 24px;
+    margin-bottom: 24px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+
+.profile-card {
+    text-align: center;
+}
+
+.profile-pic {
+    width: 80px;
+    height: 80px;
+    background-color: #f8f9fa;
+    border: 1px dashed #ced4da;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    color: #6c757d;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 12px;
+    margin-top: 16px;
+}
+
+.stats-grid span:nth-child(odd) {
+    color: #6c757d;
+}
+
+.stats-grid span:nth-child(even) {
+    font-weight: bold;
+    text-align: right;
+}
+
+.map-area, .calendar-area {
+    height: 300px;
+    background-color: #f8f9fa;
+    border: 1px dashed #ced4da;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #6c757d;
+    border-radius: 4px;
+}
+
+.activity-list, .inquiry-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.activity-list li, .inquiry-list li {
+    display: flex;
+    justify-content: space-between;
+    padding: 12px 0;
+    border-bottom: 1px solid #f1f3f5;
+}
+
+.activity-list li:last-child, .inquiry-list li:last-child {
+    border-bottom: none;
+}
+
+.inquiry-list a {
+    color: #007bff;
+    text-decoration: none;
+}
+
+.inquiry-list small {
+    color: #6c757d;
+}
+
+.register-container {
+    max-width: 900px;
+}
+
+.form-section {
+    margin-bottom: 4rem;
+    padding-bottom: 2rem;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.farm-register-form .form-group label {
+    font-weight: bold;
+}
+
+.timetable {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: center;
+}
+
+.timetable th, .timetable td {
+    border: 1px solid #dee2e6;
+    padding: 8px;
+}
+
+.timetable th {
+    background-color: #f8f9fa;
+}
+
+.timetable .time-slot {
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.timetable .time-slot:hover {
+    background-color: #e9ecef;
+}
+
+.timetable .time-slot.selected {
+    background-color: #28a745;
+    color: white;
+}
+
+/* --- 5. 신청 및 상세 페이지 스타일 --- */
+.apply-container {
+    max-width: 600px;
+}
+
+.apply-form-v2 {
+    background: #fff;
+    padding: 2.5rem;
+    border-radius: 8px;
+    border: 1px solid #dee2e6;
+}
+
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    background: white;
+    padding: 2rem;
+    border-radius: 8px;
+    width: 400px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+}
+
+#modal-summary p {
+    margin: 0.5rem 0;
+}
+
+#modal-summary strong {
+    min-width: 80px;
+    display: inline-block;
+}
+
+.modal-buttons {
+    margin-top: 1.5rem;
+    text-align: right;
+}
+
+.validation-message {
+    display: block;
+    width: 100%;
+    text-align: right;
+    font-size: 0.8rem;
+    margin-top: -0.4rem;
+    margin-bottom: 0.6rem;
+    min-height: 1rem; /* 메시지가 없을 때도 공간을 차지해 UI가 흔들리지 않게 함 */
+}
+
+.text-success {
+    color: #28a745;
+}
+
+.text-danger {
+    color: #dc3545;
+}
+.toggle-password {
+    cursor: pointer;
+}
+
+#view-terms-link {
+    font-size: 0.85rem;
+    margin-left: 4px;
+}
+
+.terms-content {
+    max-height: 300px;
+    overflow-y: auto;
+    border: 1px solid #eee;
+    padding: 1rem;
+    margin-top: 1rem;
+    background-color: #f9f9f9;
+    font-size: 0.9rem;
+}
+
+.profile-pic-img {
+    width: 100px;
+    height: 100px;
+    object-fit: cover; /* 이미지를 비율에 맞게 자르고 채움 */
+    border-radius: 50%;
+    border: 3px solid #eee;
+}
+
+.farm-photo-label {
+    display: block;
+    width: 100%;
+    height: 300px;
+    border: 2px dashed #ced4da;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    background-color: #f8f9fa;
+    transition: border-color 0.2s;
+}
+
+.farm-photo-label:hover {
+    border-color: #4CAF50;
+}
+
+.farm-photo-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover; /* 이미지를 비율에 맞게 자르고 채움 */
+}
+.farm-photo-label {
+    position: relative; /* 오버레이 위치 기준점 */
+}
+
+.farm-photo-overlay {
+    position: absolute;
+    bottom: 15px;
+    right: 15px;
+    background-color: rgba(0, 0, 0, 0.6);
+    color: white;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    opacity: 0;
+    transition: opacity 0.2s;
+    pointer-events: none; /* 오버레이가 클릭을 방해하지 않도록 함 */
+}
+
+.farm-photo-label:hover .farm-photo-overlay {
+    opacity: 1;
+}
+
+.timetable .time-slot.selected {
+    background-color: #28a745;
+    color: white;
+    font-weight: bold;
+}
+
+/* 체험 상세 - 이미지 슬라이더 */
+.detail-image {
+    height: 400px;
+    object-fit: cover;
+    border-radius: 8px;
+}
+/* 후기, 문의 섹션 */
+.detail-section {
+    background-color: #fff;
+    padding: 2rem;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+}
+/* 후기 목록 */
+.review-list {
+    margin-top: 2rem;
+}
+
+.review-item {
+    border-bottom: 1px solid #f1f3f5;
+    padding: 1.5rem 0;
+}
+
+.review-item:last-child {
+    border-bottom: none;
+}
+
+.review-item p {
+    margin-top: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+/* 별점 UI */
+.star-rating {
+    /* 별점 기능 구현 시 여기에 스타일을 추가합니다. */
+    /* 예를 들어, 별 모양 아이콘의 색상이나 크기 등을 지정할 수 있습니다. */
+    margin-bottom: 1rem;
+}
+
+.detail-info .card-body p {
+    white-space: pre-wrap;
+}
+
+.timetable-display { width: 100%; text-align: center; }
+.timetable-display th, .timetable-display td { border: 1px solid #dee2e6; padding: 8px; }
+.timetable-display thead th { background-color: #f8f9fa; }
+.timetable-display td.selected { background-color: #28a745; color: white; }
+
+@media (max-width: 1200px) {
+    .dashboard-grid {
+        grid-template-columns: 1fr; /* 화면이 작아지면 1단 레이아웃으로 변경 */
+    }
+}
+
+.detail-container .carousel-control-prev,
+.detail-container .carousel-control-next {
+    width: 40px;
+    height: 40px;
+    top: 50%;
+    transform: translateY(-50%);
+    background-color: rgba(0, 0, 0, 0.3);
+    border-radius: 50%;
+}
+
+.detail-container .carousel-control-prev {
+    left: 15px;
+}
+
+.detail-container .carousel-control-next {
+    right: 15px;
+}
+
+.timetable-apply {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: center;
+    margin-top: 0.5rem;
+}
+
+.timetable-apply th, .timetable-apply td {
+    border: 1px solid #dee2e6;
+    padding: 12px 8px;
+}
+
+.timetable-apply thead th {
+    background-color: #f8f9fa;
+}
+
+.timetable-apply .time-slot {
+    font-weight: bold;
+    transition: background-color 0.2s;
+}
+
+/* 선택 가능한 슬롯 */
+.timetable-apply .time-slot.available {
+    cursor: pointer;
+    color: #007bff;
+}
+.timetable-apply .time-slot.available:hover {
+    background-color: #e9ecef;
+}
+
+/* 선택된 슬롯 (파란색) */
+.timetable-apply .time-slot.selected {
+    background-color: #007bff;
+    color: white;
+}
+
+/* 선택 불가능한 슬롯 */
+.timetable-apply .time-slot.unavailable {
+    color: #ced4da;
+    background-color: #f8f9fa;
+    cursor: not-allowed;
+}
+.application-detail-trigger {
+    cursor: pointer;
+}
+
+.main-menu a {
+    color: #333;
+    font-weight: 500;
+    text-decoration: none;
+    padding: 8px 12px;
+    border-radius: 6px;
+    transition: background-color 0.2s;
+}
+
+.main-menu a:hover {
+    background-color: #f0f0f0;
+}
+
+.content-tabs {
+    margin-top: 2.5rem;
+    display: flex;
+}
+
+.tab-item {
+    padding: 1rem 1.5rem;
+    border: 1px solid #dee2e6;
+    background-color: #f8f9fa;
+    color: #495057;
+    text-decoration: none;
+    font-size: 1.1rem;
+    font-weight: 500;
+    border-radius: 8px 8px 0 0;
+    margin-right: 4px;
+    margin-bottom: -1px; /* 핵심: 아래 컨테이너와 테두리를 겹치게 함 */
+    transition: all 0.2s ease-in-out;
+    position: relative;
+    z-index: 2; /* 활성화 탭이 위로 오도록 함 */
+}
+
+.tab-item:hover {
+    background-color: #e9ecef;
+    text-decoration: none;
+    color: #000;
+}
+.tab-content-wrapper {
+    background-color: #fff;
+    border: 1px solid #dee2e6;
+    border-radius: 0 8px 8px 8px;
+    padding: 1.5rem 2rem;
+    position: relative;
+    z-index: 1;
+}
+.tab-content-wrapper > *:first-child {
+    margin-top: 0;
+}
+
+.tab-item.active {
+    background-color: #fff; /* 활성화 탭은 흰색 배경 */
+    border-bottom: 1px solid #fff; /* 아래쪽 테두리를 흰색으로 만들어 콘텐츠와 연결된 것처럼 보이게 함 */
+    font-weight: 700;
+}
+
+.tab-item.active i {
+    opacity: 1;
+}
+
+.page-experiences .tab-item.active {
+    color: #4CAF50; /* 초록색 */
+}
+.page-experiences header {
+    border-bottom-color: #2196F3; /* 파란색 */
+}
+
+/* 봉사활동 페이지일 때 */
+.page-volunteer .tab-item.active {
+    color: #FF9800; /* 주황색 */
+}
+.page-volunteer .list-item-row .btn-success {
+    background-color: #FF9800; /* 주황색 */
+    border-color: #FF9800;
+    color: #fff;
+}
+
+/* 2. 마우스 오버(hover) 시 색상 */
+.page-volunteer .list-item-row .btn-success:hover {
+    background-color: #e68900; /* 조금 더 어두운 주황색 */
+    border-color: #e68900;
+}
+.page-volunteer header {
+    border-bottom-color: #FF9800; /* 주황색 */
+}
+
+/* 봉사활동 페이지의 검색 버튼 색상 변경 */
+.page-volunteer .search-filter-box .btn-success {
+    background-color: #FF9800;
+    border-color: #FF9800;
+}
+
+.page-volunteer .search-filter-box .btn-success:hover {
+    background-color: #e68900;
+    border-color: #e68900;
+}
+
+/* 봉사활동 페이지의 활성화된 정렬 버튼 색상 */
+.page-volunteer .sort-links a.active {
+    background-color: #FF9800;
+    border-color: #FF9800;
+    color: #fff;
+}
+
+.tab-item i {
+    margin-right: 8px; /* 아이콘과 텍스트 사이 간격 */
+}
+
+#calendar {
+    min-height: 400px; /* 달력 높이 확보 */
+    border: none; /* 기존 테두리 제거 */
+    padding: 0;   /* 기존 패딩 제거 */
+}
+
+/* --- 달력 스타일 수정 --- */
+
+/* 평일 날짜 기본 글자색 (검정) 및 링크 밑줄 제거 */
+.fc .fc-daygrid-day-number, .fc .fc-col-header-cell-cushion {
+    color: black;
+    text-decoration: none;
+}
+
+/* 주말(토, 일) 전체 배경색 */
+.fc .saturday-day .fc-daygrid-day-frame,
+.fc .sunday-day .fc-daygrid-day-frame {
+    background-color: #f8f9fa; /* 연한 회색 */
+}
+
+/* 토요일 날짜 글자색 (파란색) */
+.fc .saturday-day .fc-daygrid-day-number {
+    color: #007BFF !important; 
+}
+
+/* 일요일 날짜 글자색 (빨간색) */
+.fc .sunday-day .fc-daygrid-day-number {
+    color: #dc3545 !important;
+}
+
+/* 예약이 있는 날짜 칸의 배경색 */
+.fc .is-available .fc-daygrid-day-frame {
+    background-color: #d4edda; /* 연한 초록색 */
+}
+
+/* 오늘 날짜 배경색 */
+.fc .fc-day-today .fc-daygrid-day-frame {
+    background-color: #e6f7ff; /* 연한 하늘색 */
+}
+
+/* 오늘 날짜이면서 체험 가능 기간일 경우 (가시성 개선) */
+.fc .fc-day-today.is-available .fc-daygrid-day-frame {
+    background-color: #98d89e; /* 더 진한 초록색 */
+    border: 2px solid #28a745; /* 강조 테두리 */
+}
+
+/* 예약 이벤트 표시 스타일 */
+.fc-event {
+    cursor: pointer;
+    background-color: #28a745 !important; /* 이벤트 배경색 (초록색) */
+    border: 1px solid #218838 !important;
+    color: #fff !important;
+    font-weight: 500;
+    padding: 4px 6px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+.reservation-item {
+    border-bottom: 1px solid #f0f0f0;
+    padding: 12px 0;
+}
+.reservation-item:last-child {
+    border-bottom: none;
+}
+.reservation-item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 4px;
+}
+.reservation-item-header span {
+    font-weight: bold;
+    color: #28a745;
+}
+
+/* 메인 슬라이드 배너(캐러셀) 스타일 */
+#main-carousel {
+    margin-bottom: 0.5rem; /* 배너와 아래 컨텐츠 사이 간격 */
+    border-radius: 20px; /* <--- 이 줄을 추가합니다 (원하는 둥근 정도에 따라 숫자 조정) */
+    overflow: hidden; /* <--- 이 줄도 추가합니다. 둥근 모서리가 이미지에 적용되도록 */
+}
+
+#main-carousel .carousel-item {
+    height: 430px; /* 배너의 높이를 키웁니다. */
+    background-size: cover;
+    background-position: center center;
+    position: relative;
+}
+/* 메인 배너의 가로 폭을 조절하기 위한 새로운 스타일 */
+.main-banner-container {
+    max-width: 1150px; /* <--- 이 값을 조절하여 원하는 가로 크기로 변경하세요. */
+    padding-left: 15px;
+    padding-right: 15px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* 이미지 위에 어두운 필터를 씌워 텍스트 가독성을 높입니다. */
+#main-carousel .carousel-item::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+/* 배너 안의 텍스트와 버튼 위치 및 스타일 */
+#main-carousel .carousel-caption {
+    top: 50%;
+    transform: translateY(-50%);
+    bottom: auto;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7); /* 텍스트에 그림자 추가 */
+    z-index: 10; /* 필터 위에 표시되도록 */
+}
+
+#main-carousel .carousel-caption h2 {
+    font-size: 2.8rem;
+    font-weight: bold;
+}
+
+#main-carousel .carousel-caption p {
+    font-size: 1.2rem;
+    margin-bottom: 2rem;
+}
+
+.container.mt-4:empty {
+    display: none;
+}
+
+/* 체험 상세 페이지 제목 배너 스타일 */
+.page-title-banner {
+    position: relative;
+    padding: 1.5rem 2rem;
+    background-size: cover;
+    background-position: center;
+    border-radius: 12px;
+    overflow: hidden;
+    text-align: center;
+}
+
+/* 이미지 위에 어두운 필터를 씌워 텍스트 가독성을 높입니다. */
+.page-title-banner::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 1;
+}
+
+/* 텍스트가 필터 위에 표시되도록 설정 */
+.page-title-banner h1,
+.page-title-banner p {
+    position: relative;
+    z-index: 2;
+    text-shadow: 1px 1px 3px rgba(0,0,0,0.6);
+}
+
+/* 이미지가 없을 때 표시될 안내 문구 박스 스타일 */
+.image-placeholder {
+    display: flex;
+    flex-direction: column; /* 아이콘과 텍스트를 세로로 정렬 */
+    justify-content: center;
+    align-items: center;
+    height: 400px; /* 기존 이미지와 동일한 높이 */
+    background-color: #f8f9fa; /* 연한 회색 배경 */
+    color: #6c757d; /* 회색 계열 글자색 */
+    border-radius: 8px; /* 모서리 둥글게 */
+    font-weight: 500;
+}
+
+.image-placeholder i {
+    font-size: 3rem; /* 아이콘 크기 */
+    margin-bottom: 1rem; /* 아이콘과 텍스트 사이 간격 */
+}

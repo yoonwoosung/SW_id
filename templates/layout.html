@@ -2,51 +2,106 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>우리 농장 체험</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FarmLink</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"/>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
-<body>
+<body class="{% block page_class %}{% endblock %}">
     <header class="header-{{ session.get('role', 'experiencer') }}">
-        <div class="header-content">
-            <a href="/"><img src="https://via.placeholder.com/150x40.png?text=DreamSpoon" alt="로고" class="logo"></a>
-            <div class="user-menu">
-                <a href="#">로그인</a>
-                <a href="#">회원가입</a>
-                <a href="#">고객센터</a>
-            </div>
-            <div class="role-selector">
-                <div class="dropdown">
-                    <button class="dropbtn">
-                        {% if session.get('role') == 'farmer' %}
-                            농부 🧑‍🌾
-                        {% elif session.get('role') == 'volunteer' %}
-                            봉사자 🙋
-                        {% else %}
-                            체험자 👪
-                        {% endif %}
+    <div class="container header-content">
+        <a href="/" class="logo">FarmLink</a>
+
+        <nav class="user-menu">
+            {% if session.get('user_id') %}
+                <strong>{{ session.get('nickname') }}</strong>님
+                {% if session.get('role') == 'farmer' %}
+                    <a href="{{ url_for('index') }}">내 농장</a>
+                {% endif %}
+                <a href="{{ url_for('my_info') }}">내 정보</a>
+                <a href="{{ url_for('logout') }}">로그아웃</a>
+            {% else %}
+                <a href="{{ url_for('login_page') }}">로그인</a>
+                <a href="{{ url_for('register_page') }}">회원가입</a>
+            {% endif %}
+        </nav>
+    </div>
+</header>
+
+<main>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="container mt-3">
+                {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
                     </button>
-                    <div class="dropdown-content">
-                        <a href="/set_role/experiencer" style="color: blue;">체험자</a>
-                        <a href="/set_role/farmer" style="color: green;">농부</a>
-                        <a href="/set_role/volunteer" style="color: brown;">봉사자</a>
+                </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    {% if (request.endpoint == 'index' and session.get('role') != 'farmer') or request.endpoint == 'volunteer_apply' %}
+    <div class="main-banner-container mt-3">
+        <div id="main-carousel" class="carousel slide" data-ride="carousel" data-interval="7000">
+            <ol class="carousel-indicators">
+                <li data-target="#main-carousel" data-slide-to="0" class="active"></li>
+                <li data-target="#main-carousel" data-slide-to="1"></li>
+                <li data-target="#main-carousel" data-slide-to="2"></li>
+            </ol>
+            <div class="carousel-inner">
+                <div class="carousel-item active" style="background-image: url('https://images.unsplash.com/photo-1598512752271-33f913a53283?q=80&w=2070&auto=format&fit=crop');">
+                    <div class="carousel-caption">
+                        <h2>체험 후기를 남겨주세요! 📸</h2>
+                        <p>매달 5분을 추첨해 신선한 농산물 꾸러미를 보내드립니다.</p>
+                        <a href="#" 
+                        id="write-review-btn" 
+                        data-is-logged-in="{{ 'true' if session.get('user_id') else 'false' }}"
+                        data-login-url="{{ url_for('login_page') }}"
+                        data-target-url="{{ url_for('index') }}"
+                        class="btn btn-lg btn-success">후기 작성하기</a>
+                    </div>
+                </div>
+                <div class="carousel-item" style="background-image: url('https://images.unsplash.com/photo-1444464666168-49d633b86797?q=80&w=2069&auto=format&fit=crop');">
+                    <div class="carousel-caption">
+                        <h2>FarmLink가 처음이신가요? 🌱</h2>
+                        <p>농장 체험 예약부터 결제까지, 사이트 이용 방법을 알려드려요.</p>
+                        <a href="{{ url_for('guide_page') }}" class="btn btn-lg btn-success">가이드 보기</a>
+                    </div>
+                </div>
+                <div class="carousel-item" style="background-image: url('https://images.unsplash.com/photo-1622023535803-cb3913075253?q=80&w=2070&auto=format&fit=crop');">
+                     <div class="carousel-caption">
+                        <h2>제철 맞은 유기농 딸기! 🍓</h2>
+                        <p>지금이 가장 달콤할 때! 주말 농장 체험을 놓치지 마세요.</p>
+                        <a href="#" class="btn btn-lg btn-success">추천 체험 보기</a>
                     </div>
                 </div>
             </div>
+            <a class="carousel-control-prev" href="#main-carousel" role="button" data-slide="prev">
+                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                <span class="sr-only">Previous</span>
+            </a>
+            <a class="carousel-control-next" href="#main-carousel" role="button" data-slide="next">
+                <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                <span class="sr-only">Next</span>
+            </a>
         </div>
-    </header>
+    </div>
+    {% endif %}
+    
+    {% block content %}{% endblock %}
+</main>
 
-    <main>
-        <div id="initial-popup" class="popup-overlay" {% if session.get('role') %}style="display: none;"{% endif %}>
-            <div class="popup-content">
-                <h2>어떤 목적으로 오셨나요?</h2>
-                <a href="/set_role/farmer" class="popup-button farmer">농부로 시작하기</a>
-                <a href="/set_role/experiencer" class="popup-button experiencer">체험자로 시작하기</a>
-            </div>
-        </div>
-
-        {% block content %}{% endblock %}
-    </main>
-
+    <footer class="text-center mt-5 py-4 bg-light">
+        <p class="mb-0">&copy; 2025 오늘의 밭. Farm to Link.</p>
+    </footer>
+    
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 </body>
 </html>

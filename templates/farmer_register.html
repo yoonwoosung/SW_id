@@ -1,39 +1,254 @@
 {% extends "layout.html" %}
 {% block content %}
-<div class="container">
-    <h2>신규 농장 체험 등록</h2>
-    <form class="register-form">
-        <label for="address">상세 주소</label>
-        <input type="text" id="address" name="address" placeholder="예: 충남 천안시 동남구 유량동 123-45">
+<div class="container register-container">
+    <div class="text-center mb-5">
+        <h2>{{ "체험 수정하기" if item else "신규 농장 체험 등록" }}</h2>
+    </div>
 
-        <label for="farm_size">소유한 밭 평수</label>
-        <input type="number" id="farm_size" name="farm_size" placeholder="예: 300">
+    <form id="farm-register-form" method="POST" action="{{ url_for('farmer_register', item_id=item.id) if item else url_for('farmer_register') }}" enctype="multipart/form-data">
+        
+        <!-- A. 기본 정보 -->
+        <div class="form-section">
+            <h3>A. 기본 정보</h3>
+            <div class="form-group row">
+                <label class="col-sm-2 col-form-label">주요 작물</label>
+                <div class="col-sm-10">
+                    <input type="text" name="crop" class="form-control" value="{{ item.crop if item else '' }}" placeholder="예: 유기농 상추, 킹스베리 딸기" required>
+                </div>
+            </div>
+            <div class="form-group row">
+                <label class="col-sm-2 col-form-label">부가 정보</label>
+                <div class="col-sm-10 d-flex align-items-center">
+                    <div class="form-check mr-4">
+                        <input class="form-check-input" type="checkbox" name="is_organic" value="true" id="is_organic" {% if item and item.pesticide_free %}checked{% endif %}>
+                        <label class="form-check-label" for="is_organic">친환경 작물</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="has_parking" value="true" id="has_parking" {% if item and item.has_parking %}checked{% endif %}>
+                        <label class="form-check-label" for="has_parking">주차장 제공</label>
+                    </div>
+                </div>
+            </div>
 
-        <label for="crop">밭에 있는 작물</label>
-        <input type="text" id="crop" name="crop" placeholder="예: 유기농 상추">
-
-        <label for="is_organic">친환경 여부</label>
-        <select id="is_organic" name="is_organic">
-            <option value="true">네 (친환경 인증)</option>
-            <option value="false">아니오</option>
-        </select>
-
-        <label for="duration">등록 기간</label>
-        <input type="date" id="duration" name="duration">
-
-        <label for="price">가격 설정</label>
-        <input type="number" id="price" name="price" placeholder="추천 가격: 19,000원">
-        <small>추천 가격은 평균 매매가보다 3~5% 낮은 가격입니다. 클릭 시 사라집니다.</small>
-
-        <div class="checkbox-group">
-            <input type="checkbox" id="volunteer" name="volunteer" checked>
-            <label for="volunteer">봉사자 받기 (선택 시 필요한 봉사자 수가 자동 계산됩니다: 3명)</label>
+            <!-- 친환경 인증 이미지 업로드 필드 -->
+            <div class="form-group row {% if not item or not item.pesticide_free %}d-none{% endif %}" id="organic-cert-field">
+                <label class="col-sm-2 col-form-label">친환경 인증</label>
+                <div class="col-sm-10">
+                    <div class="custom-file">
+                        <input type="file" class="custom-file-input" name="organic_certification_image" id="organic_certification_image">
+                        <label class="custom-file-label" for="organic_certification_image">
+                            {% if item and item.organic_certification_image %}
+                                {{ item.organic_certification_image }}
+                            {% else %}
+                                인증서 이미지 파일 선택
+                            {% endif %}
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <div class="form-group row">
+                <label class="col-sm-2 col-form-label">전화번호</label>
+                <div class="col-sm-10">
+                    <input type="tel" name="phone" class="form-control" value="{{ item.phone if item else '' }}" placeholder="010-1234-5678" required>
+                </div>
+            </div>
+            <div class="form-group row">
+                <label class="col-sm-2 col-form-label">농장 위치 및 주소</label>
+                <div class="col-sm-10">
+                    <input type="text" name="address" class="form-control" value="{{ item.address_detail if item else '' }}" placeholder="예: 충남 천안시 동남구 병천면 충절로 1600" required>
+                </div>
+            </div>
+            <div class="form-group row">
+                <label class="col-sm-2 col-form-label">밭 평수</label>
+                <div class="col-sm-4">
+                    <input type="number" name="farm_size" class="form-control" value="{{ item.farm_size if item else '' }}" placeholder="예: 300" required>
+                </div>
+            </div>
         </div>
 
-        <div class="form-buttons">
-            <button type="submit" class="btn-submit">등록하기</button>
-            <a href="{{ url_for('index') }}" class="btn-cancel">취소</a>
+        <!-- B. 운영 정보 -->
+        <div class="form-section">
+            <h3>B. 운영 정보</h3>
+            <div class="form-group row">
+                <label class="col-sm-2 col-form-label">운영 기간</label>
+                <div class="col-sm-10 d-flex">
+                    <input type="date" name="duration_start" class="form-control" value="{{ item.duration_start.strftime('%Y-%m-%d') if item else '' }}" required>
+                    <span class="mx-2 align-self-center">~</span>
+                    <input type="date" name="duration_end" class="form-control" value="{{ item.end_date.strftime('%Y-%m-%d') if item else '' }}" required>
+                </div>
+            </div>
+            <div class="form-group row">
+                <label class="col-sm-2 col-form-label">운영 시간표</label>
+                <div class="col-sm-10">
+                    <p class="text-muted small">운영하실 시간대를 클릭 또는 드래그하세요.</p>
+                    <table class="timetable">
+                        <thead>
+                            <tr><th>시간</th><th>월</th><th>화</th><th>수</th><th>목</th><th>금</th><th>토</th><th>일</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>09:00 - 10:00</td><td class="time-slot"></td><td class="time-slot"></td><td class="time-slot"></td><td class="time-slot"></td><td class="time-slot"></td><td class="time-slot"></td><td class="time-slot"></td></tr>
+                            <tr><td>10:00 - 11:00</td><td class="time-slot"></td><td class="time-slot"></td><td class="time-slot"></td><td class="time-slot"></td><td class="time-slot"></td><td class="time-slot"></td><td class="time-slot"></td></tr>
+                            <tr><td>11:00 - 12:00</td><td class="time-slot"></td><td class="time-slot"></td><td class="time-slot"></td><td class="time-slot"></td><td class="time-slot"></td><td class="time-slot"></td><td class="time-slot"></td></tr>
+                            <tr><td>12:00 - 13:00</td><td class="time-slot"></td><td class="time-slot"></td><td class="time-slot"></td><td class="time-slot"></td><td class="time-slot"></td><td class="time-slot"></td><td class="time-slot"></td></tr>
+                            <tr><td>13:00 - 14:00</td><td class="time-slot"></td><td class="time-slot"></td><td class="time-slot"></td><td class="time-slot"></td><td class="time-slot"></td><td class="time-slot"></td><td class="time-slot"></td></tr>
+                            <tr><td>14:00 - 15:00</td><td class="time-slot"></td><td class="time-slot"></td><td class="time-slot"></td><td class="time-slot"></td><td class="time-slot"></td><td class="time-slot"></td><td class="time-slot"></td></tr>
+                            <tr><td>15:00 - 16:00</td><td class="time-slot"></td><td class="time-slot"></td><td class="time-slot"></td><td class="time-slot"></td><td class="time-slot"></td><td class="time-slot"></td><td class="time-slot"></td></tr>
+                            <tr><td>16:00 - 17:00</td><td class="time-slot"></td><td class="time-slot"></td><td class="time-slot"></td><td class="time-slot"></td><td class="time-slot"></td><td class="time-slot"></td><td class="time-slot"></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="form-group row">
+                <label class="col-sm-2 col-form-label">모집 인원 (세션 당)</label>
+                <div class="col-sm-4">
+                    <input type="number" name="max_participants" class="form-control" 
+                        value="{{ item.max_participants if item else '' }}" 
+                        placeholder="예: 10" min="1" required
+                        {% if item %}readonly{% endif %}>
+        
+                    {% if item %}
+                    <small class="form-text text-muted">
+                        * 모집 인원은 안전한 체험 진행을 위해 수정할 수 없습니다.
+                    </small>
+                    {% endif %}
+                </div>
+            </div>
+             <div class="form-group row">
+                <label class="col-sm-2 col-form-label">참가비 (1인 기준)</label>
+                <div class="col-sm-4">
+                    <input type="number" name="price" class="form-control" value="{{ item.cost if item else '' }}" placeholder="예: 20000" min="0" required>
+                </div>
+            </div>
         </div>
+
+        <!-- C. 상세 정보 -->
+        <div class="form-section">
+            <h3>C. 상세 정보 (소비자 설득)</h3>
+            <div class="form-group">
+                <label>대표 사진 (최대 10장)</label>
+                <div class="custom-file">
+                    <input type="file" class="custom-file-input" name="images" id="images" multiple>
+                    <label class="custom-file-label" for="images">파일 선택</label>
+                </div>
+                <div id="file-list" class="mt-2 small text-muted">
+                    {% if item and item.images %}
+                        <strong>현재 파일: </strong> 
+                        {% for img in item.images.split(',') %}
+                            {{ img }}{% if not loop.last %}, {% endif %}
+                        {% endfor %}
+                    {% endif %}
+                </div>
+            </div>
+             <div class="form-group">
+                <label>준비물 및 유의사항</label>
+                <textarea class="form-control" name="notes" rows="4" placeholder="예: 편한 복장과 신발, 모자, 선크림을 준비해주세요.">{{ item.notes if item else '' }}</textarea>
+            </div>
+            <div class="form-group">
+                <label>포함 내역</label>
+                <textarea class="form-control" name="includes" rows="3" placeholder="예: 체험 도구, 1인당 수확물 500g">{{ item.includes if item else '' }}</textarea>
+            </div>
+            <div class="form-group">
+                <label>불포함 내역</label>
+                <textarea class="form-control" name="excludes" rows="3" placeholder="예: 식사, 교통편">{{ item.excludes if item else '' }}</textarea>
+            </div>
+        </div>
+
+        <!-- D. 봉사자 모집 정보 (선택 사항) -->
+        <div class="form-section">
+            <h3>D. 봉사자 모집 정보</h3>
+            <div class="form-group row">
+                <label class="col-sm-2 col-form-label">필요 봉사자 수</label>
+                <div class="col-sm-4">
+                    <input type="number" name="volunteer_needed" class="form-control" placeholder="필요 없을 시 0 또는 빈칸" min="0">
+                </div>
+            </div>
+             <div class="form-group">
+                <label>봉사자 필요 업무</label>
+                <textarea class="form-control" name="volunteer_duties" rows="3" placeholder="예: 잡초 제거, 수확물 운반 등"></textarea>
+            </div>
+        </div>
+
+        <!-- 제출 -->
+        <div class="text-center mt-5">
+            <div class="form-check mb-3">
+                <input class="form-check-input" type="checkbox" id="terms" required>
+                <label class="form-check-label" for="terms">
+                     <a href="#" data-toggle="modal" data-target="#termsModal">서비스 이용 약관</a> 및 개인정보 처리 방침에 동의합니다.
+                </label>
+            </div>
+            <button type="submit" class="btn btn-success btn-lg ml-2">{{ "수정 완료" if item else "등록하기" }}</button>
+        </div>
+        <input type="hidden" id="timetable-data" name="timetable_data">
     </form>
 </div>
+
+<!-- 약관 모달 -->
+<div class="modal fade" id="termsModal" tabindex="-1" role="dialog" aria-labelledby="termsModalLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="termsModalLabel">서비스 이용 약관</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p><strong>제1조 (목적)</strong> 이 약관은 FarmLink(이하 "회사")가 제공하는 농장 체험 중개 및 관련 제반 서비스의 이용과 관련하여 회사와 회원 간의 권리, 의무 및 책임사항, 기타 필요한 사항을 규정함을 목적으로 합니다.</p>
+        <p><strong>제2조 (용어의 정의)</strong> 본 약관에서 사용하는 용어의 정의는 다음과 같습니다.</p>
+        <ul>
+            <li>"서비스"라 함은 구현되는 단말기와 상관없이 "회원"이 이용할 수 있는 FarmLink 및 관련 제반 서비스를 의미합니다.</li>
+            <li>"회원"이라 함은 회사의 "서비스"에 접속하여 이 약관에 따라 "회사"와 이용계약을 체결하고 "회사"가 제공하는 "서비스"를 이용하는 고객을 말합니다.</li>
+            <li>"농장주"라 함은 "회원" 중 농장 체험 프로그램을 등록하고 제공하는 자를 의미합니다.</li>
+            <li>"체험자"라 함은 "회원" 중 "농장주"가 등록한 체험 프로그램에 참여하는 자를 의미합니다.</li>
+        </ul>
+        <p><strong>제3조 (정보의 제공 및 변경)</strong> 회사는 다음 각 호의 사항을 서비스 초기 화면에 게시하여 회원이 이를 쉽게 알 수 있도록 합니다. 다만, 약관의 내용은 이용자가 연결화면을 통하여 볼 수 있도록 할 수 있습니다.</p>
+        <p>...</p>
+        <p><strong>제15조 (책임제한)</strong> 회사는 천재지변 또는 이에 준하는 불가항력으로 인하여 서비스를 제공할 수 없는 경우에는 서비스 제공에 관한 책임이 면제됩니다. 회사는 회원의 귀책사유로 인한 서비스 이용의 장애에 대하여는 책임을 지지 않습니다.</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">닫기</button>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const organicCheckbox = document.getElementById('is_organic');
+    const certField = document.getElementById('organic-cert-field');
+    const certInput = document.getElementById('organic_certification_image');
+    const certLabel = certField.querySelector('.custom-file-label');
+    const originalCertLabel = certLabel.innerHTML.trim();
+    const form = document.getElementById('farm-register-form');
+
+    // 체크박스 변경 감지
+    organicCheckbox.addEventListener('change', function() {
+        if (this.checked) {
+            certField.classList.remove('d-none');
+        } else {
+            certField.classList.add('d-none');
+            // 체크 해제 시 입력 값 및 라벨 초기화
+            certInput.value = '';
+            certLabel.innerHTML = originalCertLabel;
+        }
+    });
+
+    // 파일 입력 감지
+    certInput.addEventListener('change', function() {
+        if (this.files && this.files.length > 0) {
+            certLabel.textContent = this.files[0].name;
+        } else {
+            certLabel.innerHTML = originalCertLabel;
+        }
+    });
+
+    // 폼 제출 전 유효성 검사
+    form.addEventListener('submit', function(event) {
+        if (organicCheckbox.checked && !certInput.value && !certLabel.textContent.includes('.')) {
+             // 수정 시 기존 파일이 있는 경우 certInput.value가 비어있을 수 있으므로, 라벨 텍스트도 함께 확인
+            alert('친환경 인증을 선택하셨습니다. 인증서 이미지를 업로드해주세요.');
+            event.preventDefault(); // 폼 제출 중단
+        }
+    });
+});
+</script>
 {% endblock %}

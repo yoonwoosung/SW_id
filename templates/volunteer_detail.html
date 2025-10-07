@@ -1,7 +1,7 @@
 {% extends "layout.html" %}
 {% block content %}
 <div class="container detail-container">
-    <img src="https://via.placeholder.com/600x300.png?text={{ item.farm_name }}" alt="{{ item.farm_name }}" class="detail-image">
+    <img src="https://via.placeholder.com/800x300.png?text={{ item.farm_name }}" alt="{{ item.farm_name }}" class="detail-image">
     <h1>{{ item.farm_name }} 봉사활동</h1>
     <div class="detail-info">
         <p><strong>📍 위치:</strong> {{ item.location }}</p>
@@ -11,31 +11,19 @@
     
     <div class="volunteer-schedule">
         <h3>봉사 가능 날짜 선택</h3>
-        <p>참여하고 싶은 날짜를 클릭하여 선택하세요. (드래그 선택은 추후 구현)</p>
+        <p>참여하고 싶은 날짜를 클릭하여 선택하세요.</p>
         <div class="date-grid" data-hours-per-day="{{ item.hours_per_day }}">
-            <div class="date-box selectable available" data-date="2025-09-20">
-                <strong>9월 20일 (토)</strong><br>
-                <span>5명 중 2명 지원</span>
-            </div>
-            <div class="date-box selectable few-left" data-date="2025-09-21">
-                <strong>9월 21일 (일)</strong><br>
-                <span>5명 중 4명 지원</span>
-            </div>
-             <div class="date-box selectable available" data-date="2025-09-22">
-                <strong>9월 22일 (월)</strong><br>
-                <span>5명 중 1명 지원</span>
-            </div>
-            <div class="date-box full" data-date="2025-09-23">
-                <strong>9월 23일 (화)</strong><br>
-                <span>모집 완료</span>
-            </div>
+            <div class="date-box selectable available" data-date="2025-09-20"><strong>9월 20일 (토)</strong><br><span>5명 중 2명 지원</span></div>
+            <div class="date-box selectable few-left" data-date="2025-09-21"><strong>9월 21일 (일)</strong><br><span>5명 중 4명 지원</span></div>
+            <div class="date-box selectable available" data-date="2025-09-22"><strong>9월 22일 (월)</strong><br><span>5명 중 1명 지원</span></div>
+            <div class="date-box full" data-date="2025-09-23"><strong>9월 23일 (화)</strong><br><span>모집 완료</span></div>
         </div>
         <div class="total-hours-display">
             총 선택 시간: <span id="total-hours">0</span>시간
         </div>
     </div>
 
-    <div class="form-buttons">
+    <div class="form-buttons mt-4">
         <button type="submit" class="btn-submit">지원하기</button>
         <a href="{{ url_for('index') }}" class="btn-cancel">취소</a>
     </div>

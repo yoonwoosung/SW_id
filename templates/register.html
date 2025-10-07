@@ -1,0 +1,127 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card mt-5 mb-5">
+                <div class="card-header">
+                    <h1 class="text-center">회원가입</h1>
+                </div>
+                <div class="card-body">
+                    <form id="register-form" method="POST" action="{{ url_for('register_page') }}" novalidate>
+                        
+                        <div class="form-group">
+                            <label>가입 유형</label>
+                            <div class="d-flex">
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="role" id="role-user" value="experiencer" checked>
+                                    <label class="form-check-label" for="role-user">체험자</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="role" id="role-farmer" value="farmer">
+                                    <label class="form-check-label" for="role-farmer">농장주</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group position-relative">
+                            <label for="nickname">닉네임</label>
+                            <input type="text" id="nickname" name="nickname" class="form-control" placeholder="2~10자 사이로 입력하세요" required value="{{ form_data.get('nickname', '') }}">
+                        </div>
+
+                        <div class="form-group position-relative">
+                            <label for="email">이메일</label>
+                            <span class="validation-message"></span>
+                            <div class="input-group">
+                                <input type="email" id="email" name="email" class="form-control" placeholder="예: farmlink@example.com" required value="{{ form_data.get('email', '') }}">
+                                <div class="input-group-append">
+                                    <button class="btn btn-outline-secondary" type="button" id="check-email-btn">중복확인</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group position-relative">
+                            <label for="password">비밀번호</label>
+                            <span class="validation-message"></span>
+                            <div class="input-group">
+                                <input type="password" id="password" name="password" class="form-control" placeholder="영문, 숫자 포함 8자 이상" required>
+                                <div class="input-group-append">
+                                    <button class="btn btn-outline-secondary toggle-password" type="button">
+                                        <i class="fa-solid fa-eye"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group position-relative">
+                            <label for="password-confirm">비밀번호 확인</label>
+                            <span class="validation-message"></span>
+                             <div class="input-group">
+                                <input type="password" id="password-confirm" name="password_confirm" class="form-control" required>
+                                <div class="input-group-append">
+                                    <button class="btn btn-outline-secondary toggle-password" type="button">
+                                        <i class="fa-solid fa-eye"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group position-relative">
+                            <label for="name">이름</label>
+                            <input type="text" id="name" name="name" class="form-control" required value="{{ form_data.get('name', '') }}">
+                        </div>
+
+                        <div class="form-group position-relative">
+                            <label for="phone">전화번호</label>
+                            <span class="validation-message"></span>
+                            <input type="tel" id="phone" name="phone" class="form-control" placeholder="'-' 없이 숫자만 입력" required value="{{ form_data.get('phone', '') }}">
+                        </div>
+
+                        <div id="farmer-fields" style="display: none;">
+                            <div class="form-group position-relative">
+                                <label for="farm_address">농장 주소</label>
+                                <input type="text" id="farm_address" name="farm_address" class="form-control">
+                            </div>
+                            <div class="form-group position-relative">
+                                <label for="farm_size">농장 규모 (평)</label>
+                                <span class="validation-message"></span>
+                                <input type="text" id="farm_size" name="farm_size" class="form-control">
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" id="terms" required>
+                                <label class="form-check-label" for="terms">
+                                    서비스 이용 약관 및 개인정보 처리 방침에 동의합니다. 
+                                    <a href="#" id="view-terms-link">(내용 보기)</a>
+                                </label>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-success btn-block mt-4">가입하기</button>
+                    </form>
+                    <div class="text-center mt-3">
+                        <small>이미 회원이신가요? <a href="{{ url_for('login_page') }}">로그인</a></small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="terms-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-content">
+        <h4>서비스 이용 약관</h4>
+        <div class="terms-content">
+            <p><strong>제1조 (목적)</strong> 이 약관은 FarmLink가 제공하는 농장 체험 중개 서비스의 이용과 관련하여 회사와 회원 간의 권리, 의무 및 책임사항을 규정함을 목적으로 합니다.</p>
+            <p><strong>제2조 (정의)</strong> "회원"이라 함은 회사에 개인정보를 제공하여 회원등록을 한 자로서, 회사의 정보를 지속적으로 제공받으며, 회사가 제공하는 서비스를 계속적으로 이용할 수 있는 자를 말합니다.</p>
+            <p><strong>제3조 (약관의 명시와 개정)</strong> 회사는 이 약관의 내용을 회원이 쉽게 알 수 있도록 서비스 초기 화면에 게시합니다. 회사는 관련 법령을 위배하지 않는 범위에서 이 약관을 개정할 수 있습니다.</p>
+            <p>...</p>
+        </div>
+        <div class="modal-buttons">
+            <button id="modal-close" class="btn btn-success">확인</button>
+        </div>
+    </div>
+</div>
+{% endblock %}

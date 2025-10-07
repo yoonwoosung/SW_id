@@ -654,8 +654,37 @@ header.header-volunteer {
 .page-volunteer .tab-item.active {
     color: #FF9800; /* 주황색 */
 }
+.page-volunteer .list-item-row .btn-success {
+    background-color: #FF9800; /* 주황색 */
+    border-color: #FF9800;
+    color: #fff;
+}
+
+/* 2. 마우스 오버(hover) 시 색상 */
+.page-volunteer .list-item-row .btn-success:hover {
+    background-color: #e68900; /* 조금 더 어두운 주황색 */
+    border-color: #e68900;
+}
 .page-volunteer header {
     border-bottom-color: #FF9800; /* 주황색 */
+}
+
+/* 봉사활동 페이지의 검색 버튼 색상 변경 */
+.page-volunteer .search-filter-box .btn-success {
+    background-color: #FF9800;
+    border-color: #FF9800;
+}
+
+.page-volunteer .search-filter-box .btn-success:hover {
+    background-color: #e68900;
+    border-color: #e68900;
+}
+
+/* 봉사활동 페이지의 활성화된 정렬 버튼 색상 */
+.page-volunteer .sort-links a.active {
+    background-color: #FF9800;
+    border-color: #FF9800;
+    color: #fff;
 }
 
 .tab-item i {
@@ -740,91 +769,107 @@ header.header-volunteer {
     color: #28a745;
 }
 
-
-/* 광고 배너 스타일 */
-.ad-banner {
-    background: linear-gradient(135deg, #66bb6a, #a5d6a7); /* 부드러운 녹색 그라데이션 배경 */
-    border-radius: 8px; /* 모서리를 둥글게 */
-    padding: 20px 30px; /* 내부 여백 */
-    display: flex; /* 내부 요소를 가로로 배치 */
-    justify-content: space-between; /* 요소 사이에 공간을 만듦 */
-    align-items: center; /* 세로 중앙 정렬 */
-    color: white; /* 글자색을 흰색으로 */
-    box-shadow: 0 4px 8px rgba(0,0,0,0.1); /* 은은한 그림자 효과 */
+/* 메인 슬라이드 배너(캐러셀) 스타일 */
+#main-carousel {
+    margin-bottom: 0.5rem; /* 배너와 아래 컨텐츠 사이 간격 */
+    border-radius: 20px; /* <--- 이 줄을 추가합니다 (원하는 둥근 정도에 따라 숫자 조정) */
+    overflow: hidden; /* <--- 이 줄도 추가합니다. 둥근 모서리가 이미지에 적용되도록 */
 }
 
-.ad-banner .ad-text h4 {
-    margin: 0 0 5px 0; /* 제목 아래쪽 여백 */
-    font-weight: bold;
+#main-carousel .carousel-item {
+    height: 430px; /* 배너의 높이를 키웁니다. */
+    background-size: cover;
+    background-position: center center;
+    position: relative;
+}
+/* 메인 배너의 가로 폭을 조절하기 위한 새로운 스타일 */
+.main-banner-container {
+    max-width: 1150px; /* <--- 이 값을 조절하여 원하는 가로 크기로 변경하세요. */
+    padding-left: 15px;
+    padding-right: 15px;
+    margin-left: auto;
+    margin-right: auto;
 }
 
-.ad-banner .ad-text p {
-    margin: 0;
-    opacity: 0.9; /* 본문 텍스트를 약간 투명하게 */
-}
-
-.ad-banner .ad-button {
-    background-color: #ffffff; /* 버튼 배경색 */
-    color: #4caf50; /* 버튼 글자색 */
-    padding: 10px 20px; /* 버튼 내부 여백 */
-    border-radius: 5px; /* 버튼 모서리 둥글게 */
-    text-decoration: none; /* 밑줄 제거 */
-    font-weight: bold;
-    transition: all 0.2s ease-in-out; /* 부드러운 전환 효과 */
-    white-space: nowrap; /* 버튼 글자가 줄바꿈되지 않도록 */
-}
-
-.ad-banner .ad-button:hover {
-    background-color: #f1f8e9; /* 마우스를 올렸을 때 배경색 변경 */
-    transform: scale(1.05); /* 약간 확대되는 효과 */
-}
-
-/* 광고 배너 닫기 버튼 스타일 */
-.ad-banner {
-    position: relative; /* 닫기 버튼의 위치를 잡기 위해 필요합니다 */
-}
-
-.ad-close-btn {
-    position: absolute; /* 광고 배너 기준으로 위치 설정 */
-    top: 60px;
-    right: 10px;
-    font-size: 24px;
-    font-weight: bold;
-    cursor: pointer; /* 마우스 커서를 손가락 모양으로 변경 */
-    opacity: 0.7;
-    transition: opacity 0.2s;
-}
-
-.ad-close-btn:hover {
-    opacity: 1; /* 마우스를 올리면 더 진하게 표시 */
-}
-/* 광고 닫기 확인 창(Modal) 스타일 */
-#ad-modal-overlay {
-    position: fixed; /* 화면 전체에 고정 */
+/* 이미지 위에 어두운 필터를 씌워 텍스트 가독성을 높입니다. */
+#main-carousel .carousel-item::after {
+    content: '';
+    position: absolute;
     top: 0;
     left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.5); /* 반투명 검은 배경 */
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+/* 배너 안의 텍스트와 버튼 위치 및 스타일 */
+#main-carousel .carousel-caption {
+    top: 50%;
+    transform: translateY(-50%);
+    bottom: auto;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7); /* 텍스트에 그림자 추가 */
+    z-index: 10; /* 필터 위에 표시되도록 */
+}
+
+#main-carousel .carousel-caption h2 {
+    font-size: 2.8rem;
+    font-weight: bold;
+}
+
+#main-carousel .carousel-caption p {
+    font-size: 1.2rem;
+    margin-bottom: 2rem;
+}
+
+.container.mt-4:empty {
+    display: none;
+}
+
+/* 체험 상세 페이지 제목 배너 스타일 */
+.page-title-banner {
+    position: relative;
+    padding: 1.5rem 2rem;
+    background-size: cover;
+    background-position: center;
+    border-radius: 12px;
+    overflow: hidden;
+    text-align: center;
+}
+
+/* 이미지 위에 어두운 필터를 씌워 텍스트 가독성을 높입니다. */
+.page-title-banner::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 1;
+}
+
+/* 텍스트가 필터 위에 표시되도록 설정 */
+.page-title-banner h1,
+.page-title-banner p {
+    position: relative;
+    z-index: 2;
+    text-shadow: 1px 1px 3px rgba(0,0,0,0.6);
+}
+
+/* 이미지가 없을 때 표시될 안내 문구 박스 스타일 */
+.image-placeholder {
     display: flex;
+    flex-direction: column; /* 아이콘과 텍스트를 세로로 정렬 */
     justify-content: center;
     align-items: center;
-    z-index: 1000; /* 다른 요소들 위에 표시 */
+    height: 400px; /* 기존 이미지와 동일한 높이 */
+    background-color: #f8f9fa; /* 연한 회색 배경 */
+    color: #6c757d; /* 회색 계열 글자색 */
+    border-radius: 8px; /* 모서리 둥글게 */
+    font-weight: 500;
 }
 
-#ad-modal-content {
-    background-color: white;
-    padding: 30px;
-    border-radius: 8px;
-    text-align: center;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-}
-
-#ad-modal-content p {
-    margin: 0 0 20px 0;
-    font-size: 1.1rem;
-}
-
-#ad-modal-buttons button {
-    margin: 0 10px;
+.image-placeholder i {
+    font-size: 3rem; /* 아이콘 크기 */
+    margin-bottom: 1rem; /* 아이콘과 텍스트 사이 간격 */
 }

@@ -226,44 +226,25 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
-    // --- 광고 배너 기능 ---
-    const adBanner = document.querySelector('.ad-banner');
-    const adCloseButton = document.querySelector('.ad-close-btn');
-    const adModal = document.querySelector('#ad-modal-overlay');
-    const adConfirmCloseBtn = document.querySelector('#ad-confirm-close');
-    const adConfirmTodayBtn = document.querySelector('#ad-confirm-today');
+// --- 캐러셀 배너 '후기 작성하기' 버튼 스크립트 ---
+    const writeReviewBtn = document.getElementById('write-review-btn');
+    if (writeReviewBtn) {
+        writeReviewBtn.addEventListener('click', function(event) {
+            event.preventDefault(); // a 태그의 기본 동작(페이지 이동)을 막음
 
-    // 페이지가 로드될 때 쿠키를 확인해서 광고를 숨길지 결정합니다.
-    if (document.cookie.includes('ad_hidden_today=true')) {
-        if(adBanner) adBanner.style.display = 'none';
-    }
+            const isLoggedIn = this.dataset.isLoggedIn === 'true';
+            const loginUrl = this.dataset.loginUrl;
+            const targetUrl = this.dataset.targetUrl;
 
-    // 'X' 버튼을 클릭하면 확인 창(Modal)을 엽니다.
-    if (adCloseButton && adBanner) {
-        adCloseButton.addEventListener('click', function() {
-            if(adModal) adModal.style.display = 'flex';
-        });
-    }
-
-    // '그냥 닫기' 버튼을 클릭하면 광고와 확인 창을 모두 닫습니다.
-    if (adConfirmCloseBtn && adBanner && adModal) {
-        adConfirmCloseBtn.addEventListener('click', function() {
-            adBanner.style.display = 'none';
-            adModal.style.display = 'none';
-        });
-    }
-
-    // '오늘 하루 보지 않기' 버튼을 클릭하면 쿠키를 설정하고 닫습니다.
-    if (adConfirmTodayBtn && adBanner && adModal) {
-        adConfirmTodayBtn.addEventListener('click', function() {
-            // 자정까지 유효한 쿠키를 설정합니다.
-        const now = new Date();
-        const midnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 0);
-        const secondsUntilMidnight = Math.floor((midnight.getTime() - now.getTime()) / 1000);
-        document.cookie = `ad_hidden_today=true; max-age=${secondsUntilMidnight}; path=/`;
-
-            adBanner.style.display = 'none';
-            adModal.style.display = 'none';
+            if (isLoggedIn) {
+                // 로그인 상태이면, 안내창을 먼저 띄우고 목표 페이지로 이동
+                alert("후기를 작성할 체험을 목록에서 선택해주세요.");
+                window.location.href = targetUrl;
+            } else {
+                // 비로그인 상태이면, 안내창을 띄우고 로그인 페이지로 이동
+                alert("후기를 작성하려면 먼저 로그인이 필요합니다.");
+                window.location.href = loginUrl;
+            }
         });
     }
 

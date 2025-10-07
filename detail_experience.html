@@ -1,8 +1,15 @@
 {% extends "layout.html" %}
 {% block content %}
-<div class="container detail-container">
+<div class="container detail-container mt-3">
+    
+{% set first_image = item.images.split(',')[0] if item.images else 'default_banner.jpg' %}
+    <div class="page-title-banner mb-4" style="background-image: url({{ url_for('static', filename='uploads/' + first_image) }});">
+        <h1 class="font-weight-bold mb-1 text-white">{{ item.crop }} 체험</h1>
+        <p class="mb-0 text-white-50"><i class="fa-solid fa-location-dot mr-2"></i>{{ item.address_detail }}</p>
+    </div>
+
     <div class="row">
-<div class="col-md-7">
+        <div class="col-md-7">
             <div id="experience-carousel" class="carousel slide" data-ride="carousel">
                 <div class="carousel-inner">
                     {% if item.images %}
@@ -13,7 +20,10 @@
                         {% endfor %}
                     {% else %}
                         <div class="carousel-item active">
-                           <img src="https://via.placeholder.com/800x400.png?text=Farm+Image" class="d-block w-100 detail-image" alt="이미지 없음">
+                            <div class="image-placeholder">
+                                <i class="fa-solid fa-camera"></i>
+                                <span>농장주가 아직 이미지를 등록하지 않았습니다.</span>
+                            </div>
                         </div>
                     {% endif %}
                 </div>
@@ -117,18 +127,20 @@
         <!-- 오른쪽 사이드바 정보 -->
         <div class="col-md-5">
             <div class="detail-map card mt-1 ">
-                <div class="card-header">농장 위치</div>
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span>농장 위치</span>
+                    <a href="https://map.kakao.com/?q={{ item.address_detail }} 주변 편의시설" target="_blank" class="btn btn-sm btn-outline-success">주변시설 검색</a>
+                </div>
                 <div class="card-body">
                     <div id="map" style="width:100%;height:300px;"></div>
                 </div>
-                <div class="card-footer text-center">
-                    <small class="text-muted d-block mb-2">주변 시설 검색:</small>
-                    <button class="btn btn-outline-secondary btn-sm category-btn" data-category="CS2">편의점</button>
-                    <button class="btn btn-outline-secondary btn-sm category-btn" data-category="PM9">약국</button>
-                    <button class="btn btn-outline-secondary btn-sm category-btn" data-category="PK6">주차장</button>
-                    <button class="btn btn-outline-secondary btn-sm category-btn" data-category="AD5">숙박</button>
-                    <button class="btn btn-outline-secondary btn-sm category-btn" data-category="HP8">병원</button>
-                    <button class="btn btn-outline-secondary btn-sm category-btn" data-keyword="화장실">화장실</button>
+            </div>
+            <div id="nearby-distances" class="card mt-3">
+                <div class="card-body">
+                    <h6 class="card-title mb-0">주요 시설까지의 직선거리</h6>
+                    <div id="distance-list" class="mt-2">
+                        <small class="text-muted">가장 가까운 시설을 검색 중입니다...</small>
+                    </div>
                 </div>
             </div>
             
@@ -166,20 +178,6 @@
 <script type="text/javascript" src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=7dd9cd8d1e3754dcf8532c81dea3e95f&libraries=services"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-
-// --- 1. 마커를 이모티콘 이미지로 사용하도록 URL들을 새로 정의합니다. ---
-    const markerImageUrls = {
-        farm: 'https://em-content.zobj.net/source/twitter/376/tractor_1f69c.png', // 🚜 농장
-        CS2: 'https://em-content.zobj.net/source/twitter/376/convenience-store_1f3ea.png', // 🏪 편의점
-        PM9: 'https://em-content.zobj.net/source/twitter/376/pill_1f48a.png', // 💊 약국
-        PK6: 'https://em-content.zobj.net/source/twitter/376/p-button_1f17f.png', // 🅿️ 주차장
-        AD5: 'https://em-content.zobj.net/source/twitter/376/hotel_1f3e8.png', // 🏨 숙박
-        HP8: 'https://em-content.zobj.net/source/twitter/376/hospital_1f3e5.png', // 🏥 병원
-        '화장실': 'https://em-content.zobj.net/source/twitter/376/restroom_1f6bb.png' // 🚻 화장실
-    };
-    const imageSize = new kakao.maps.Size(27, 27); // 이모티콘 이미지 크기
-    const imageOption = {offset: new kakao.maps.Point(14, 27)}; // 마커의 좌표에 일치시킬 이미지 안의 좌표 설정
-
     const itemDataElement = document.getElementById('item-data-json');
     const itemData = JSON.parse(itemDataElement.textContent);
 
@@ -189,83 +187,67 @@ document.addEventListener('DOMContentLoaded', function() {
         level: 3 // 확대 레벨 조정
     };
     const map = new kakao.maps.Map(mapContainer, mapOption);
-    const farmMarkerImage = new kakao.maps.MarkerImage(markerImageUrls.farm, imageSize, imageOption);
     const marker = new kakao.maps.Marker({
-        position: new kakao.maps.LatLng(itemData.lat, itemData.lng),
-        image: farmMarkerImage // 이모티콘 이미지로 설정
+        position: new kakao.maps.LatLng(itemData.lat, itemData.lng)
     });
     marker.setMap(map);
 
-    const ps = new kakao.maps.services.Places(); 
-    let activeMarkers = {}; // 카테고리 또는 키워드별 마커들을 저장할 객체
+    // --- ▼▼▼▼▼ 페이지 로딩 시 주변 시설 거리 자동 계산 기능 ▼▼▼▼▼ ---
 
-    // 검색 결과를 지도에 마커로 표시하는 함수
-    function displayMarkers(places, key) {
-        activeMarkers[key] = []; // 새 마커 배열 생성
-        
-        const imageUrl = markerImageUrls[key] || 'https://em-content.zobj.net/source/twitter/376/round-pushpin_1f4cd.png'; // 기본 핀 이미지
-        const markerImage = new kakao.maps.MarkerImage(imageUrl, imageSize, imageOption);
+    // 1. 검색할 카테고리 목록 정의
+    const categoriesToSearch = [
+        { code: 'CS2', name: '편의점', emoji: '🏪' },
+        { code: 'PM9', name: '약국', emoji: '💊' },
+        { code: 'HP8', name: '병원', emoji: '🏥' },
+        { code: 'PK6', name: '공용주차장', emoji: '🅿️' }
+    ];
 
-        for (var i=0; i<places.length; i++) {
-            const marker = new kakao.maps.Marker({
-                map: map,
-                position: new kakao.maps.LatLng(places[i].y, places[i].x),
-                image: markerImage // 이모티콘 이미지로 설정
-            });
-            activeMarkers[key].push(marker); // 생성된 마커를 배열에 추가
-        }
-    }
-    
-    // 특정 키(카테고리 또는 키워드)의 마커들을 지도에서 숨기는 함수
-    function hideMarkers(key) {
-        if (activeMarkers[key]) {
-            for (let i=0; i<activeMarkers[key].length; i++) {
-                activeMarkers[key][i].setMap(null);
-            }
-            delete activeMarkers[key]; // 마커 정보 삭제
-        }
-    }
+    // 2. 장소 검색 객체 및 결과 표시 영역 찾기
+    const ps = new kakao.maps.services.Places();
+    const listContainer = document.getElementById('distance-list');
+    const farmLatLng = new kakao.maps.LatLng(itemData.lat, itemData.lng);
+    listContainer.innerHTML = ''; // '검색 중' 메시지 초기화
 
-    // 버튼 클릭 이벤트 처리
-    document.querySelectorAll('.category-btn').forEach(button => {
-        button.addEventListener('click', function () {
-            const category = this.dataset.category;
-            const keyword = this.dataset.keyword;
-            const searchKey = category || keyword; // 검색을 위한 고유 키
+    // 3. 각 카테고리별로 가장 가까운 장소 검색 실행
+    categoriesToSearch.forEach(category => {
+        const searchOptions = {
+            location: farmLatLng,
+            radius: 20000, // 20km 반경
+            size: 1,      // 가장 가까운 1개만
+            sort: kakao.maps.services.SortBy.DISTANCE
+        };
 
-            this.classList.toggle('active');
+        // 검색 콜백 함수
+// 검색 콜백 함수
+        const callback = function(result, status) {
+            const p = document.createElement('p');
+            p.className = 'mb-1';
 
-            // 이미 활성화된 마커가 있다면 숨김 처리
-            if (activeMarkers[searchKey]) {
-                hideMarkers(searchKey);
-                return;
-            }
-
-            // 검색 콜백 함수
-            const callback = function(result, status) {
-                if (status === kakao.maps.services.Status.OK) {
-                    displayMarkers(result, searchKey);
+            if (status === kakao.maps.services.Status.OK) {
+                // 검색 결과가 있을 경우
+                if (result.length > 0) {
+                    const place = result[0];
+                    const placeLatLng = new kakao.maps.LatLng(place.y, place.x);
+                    const polyline = new kakao.maps.Polyline({ path: [farmLatLng, placeLatLng] });
+                    const distance = Math.round(polyline.getLength());
+                    let distanceText = (distance > 1000) ? `약 ${(distance / 1000).toFixed(1)} km` : `약 ${distance} m`;
+                    p.innerHTML = `${category.emoji} ${category.name}: <strong>${distanceText}</strong> <small class="text-muted">(${place.place_name})</small>`;
+                } else {
+                // 검색 결과가 없을 경우
+                    p.innerHTML = `${category.emoji} ${category.name}: <span class="text-muted">주변에 없음</span>`;
                 }
-            };
-            
-            const searchOptions = {
-                location: new kakao.maps.LatLng(itemData.lat, itemData.lng),
-                radius: 1000 // 1km 반경
-            };
-
-            if (category) {
-                // 카테고리로 검색
-                ps.categorySearch(category, callback, searchOptions); 
-            } else if (keyword) {
-                // 키워드로 검색
-                ps.keywordSearch(keyword, callback, searchOptions);
+            } else {
+                // API 검색 자체가 실패했을 경우
+                p.innerHTML = `${category.emoji} ${category.name}: <span class="text-danger">검색 실패</span>`;
             }
-        });
+            listContainer.appendChild(p);
+        };
+
+        // 카테고리 검색 실행
+        ps.categorySearch(category.code, callback, searchOptions);
     });
 
-    // --- ▲▲▲▲▲ 여기까지 기능 추가 ▲▲▲▲▲ ---
-
-
+    // --- ▲▲▲▲▲ 여기까지 ▲▲▲▲▲ ---
 
     const timetableData = "{{ item.timetable_data or '' }}";
     if (timetableData) {

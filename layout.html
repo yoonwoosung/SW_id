@@ -29,54 +29,77 @@
     </div>
 </header>
 
-    <main>
-        <div class="container mt-4">
-            {# --- ▼▼▼▼▼ 플래시 메시지를 표시하는 부분 ▼▼▼▼▼ --- #}
-            {% with messages = get_flashed_messages(with_categories=true) %}
-                {% if messages %}
-                    {% for category, message in messages %}
-                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-                        {{ message }}
-                        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                            <span aria-hidden="true">&times;</span>
-                        </button>
-                    </div>
-                    {% endfor %}
-                {% endif %}
-            {% endwith %}
-            {# --- ▲▲▲▲▲ 여기까지 추가/수정 ▲▲▲▲▲ --- #}
-        </div>
-
-    <div class="container mt-4 mb-4">
-        <div class="ad-banner">
-            <div class="ad-text">
-                <h4>팜링크(FarmLink)와 함께하는 신선농장 가을맞이 할인!</h4>
-                <p>지금 신선농장의 유기농 작물 체험을 신청하시면 20% 할인 혜택을 드립니다.</p>
+<main>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="container mt-3">
+                {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                {% endfor %}
             </div>
-            <a href="#" class="ad-button">자세히 보기</a>
-            <span class="ad-close-btn">&times;</span>
+        {% endif %}
+    {% endwith %}
+
+    {% if (request.endpoint == 'index' and session.get('role') != 'farmer') or request.endpoint == 'volunteer_apply' %}
+    <div class="main-banner-container mt-3">
+        <div id="main-carousel" class="carousel slide" data-ride="carousel" data-interval="7000">
+            <ol class="carousel-indicators">
+                <li data-target="#main-carousel" data-slide-to="0" class="active"></li>
+                <li data-target="#main-carousel" data-slide-to="1"></li>
+                <li data-target="#main-carousel" data-slide-to="2"></li>
+            </ol>
+            <div class="carousel-inner">
+                <div class="carousel-item active" style="background-image: url('https://images.unsplash.com/photo-1598512752271-33f913a53283?q=80&w=2070&auto=format&fit=crop');">
+                    <div class="carousel-caption">
+                        <h2>체험 후기를 남겨주세요! 📸</h2>
+                        <p>매달 5분을 추첨해 신선한 농산물 꾸러미를 보내드립니다.</p>
+                        <a href="#" 
+                        id="write-review-btn" 
+                        data-is-logged-in="{{ 'true' if session.get('user_id') else 'false' }}"
+                        data-login-url="{{ url_for('login_page') }}"
+                        data-target-url="{{ url_for('index') }}"
+                        class="btn btn-lg btn-success">후기 작성하기</a>
+                    </div>
+                </div>
+                <div class="carousel-item" style="background-image: url('https://images.unsplash.com/photo-1444464666168-49d633b86797?q=80&w=2069&auto=format&fit=crop');">
+                    <div class="carousel-caption">
+                        <h2>FarmLink가 처음이신가요? 🌱</h2>
+                        <p>농장 체험 예약부터 결제까지, 사이트 이용 방법을 알려드려요.</p>
+                        <a href="{{ url_for('guide_page') }}" class="btn btn-lg btn-success">가이드 보기</a>
+                    </div>
+                </div>
+                <div class="carousel-item" style="background-image: url('https://images.unsplash.com/photo-1622023535803-cb3913075253?q=80&w=2070&auto=format&fit=crop');">
+                     <div class="carousel-caption">
+                        <h2>제철 맞은 유기농 딸기! 🍓</h2>
+                        <p>지금이 가장 달콤할 때! 주말 농장 체험을 놓치지 마세요.</p>
+                        <a href="#" class="btn btn-lg btn-success">추천 체험 보기</a>
+                    </div>
+                </div>
+            </div>
+            <a class="carousel-control-prev" href="#main-carousel" role="button" data-slide="prev">
+                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                <span class="sr-only">Previous</span>
+            </a>
+            <a class="carousel-control-next" href="#main-carousel" role="button" data-slide="next">
+                <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                <span class="sr-only">Next</span>
+            </a>
         </div>
     </div>
-
-        {% block content %}{% endblock %}
-    </main>
+    {% endif %}
+    
+    {% block content %}{% endblock %}
+</main>
 
     <footer class="text-center mt-5 py-4 bg-light">
-        <p class="mb-0">&copy; 2025 오늘의 밭. All Rights Reserved.</p>
+        <p class="mb-0">&copy; 2025 오늘의 밭. Farm to Link.</p>
     </footer>
-
-    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
-    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
-<div id="ad-modal-overlay" style="display: none;">
-        <div id="ad-modal-content">
-            <p>이 광고를 더 이상 보지 않으시겠습니까?</p>
-            <div id="ad-modal-buttons">
-                <button id="ad-confirm-close" class="btn btn-secondary">닫기</button>
-                <button id="ad-confirm-today" class="btn btn-success">오늘 하루 보지 않기</button>
-            </div>
-        </div>
-    </div>
+    
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>

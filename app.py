@@ -7,6 +7,7 @@ import requests
 from sqlalchemy.sql import func
 from collections import defaultdict
 from datetime import date, timedelta, datetime
+from sqlalchemy import or_
 
 # --- 1. 앱 및 DB 설정 ---
 app = Flask(__name__)
@@ -226,15 +227,39 @@ def index():
                                inquiries=latest_inquiries,
                                reservations_data=reservations_by_date)
     else:
-        # 체험자에게 보여주는 페이지 로직 (기존과 동일)
+        # 체험자에게 보여주는 페이지 로직 (필터 및 검색 기능 추가)
         page = request.args.get('page', 1, type=int)
         sort_by = request.args.get('sort', 'deadline', type=str)
-        # 수정 코드
-        query_order = Experience.address_detail.asc() if sort_by == 'location' else Experience.end_date.asc()
-        experiences_query = Experience.query.order_by(query_order)
+        region = request.args.get('region', type=str)
+        crop_query = request.args.get('crop_query', type=str)
+
+        # 1. 기본 쿼리 시작
+        experiences_query = Experience.query
+
+        # 2. 지역 필터링 조건 추가 (선택된 경우)
+        if region:
+            experiences_query = experiences_query.filter(Experience.address_detail.like(f"%{region}%"))
+
+        # 3. 작물 키워드 검색 조건 추가 (입력된 경우)
+        if crop_query:
+            experiences_query = experiences_query.filter(Experience.crop.like(f"%{crop_query}%"))
+
+        # 4. 정렬 조건 적용
+        if sort_by == 'reviews':
+            # 후기(Review) 테이블과 조인하여 후기 개수를 기준으로 내림차순 정렬
+            experiences_query = experiences_query.outerjoin(Review).group_by(Experience.id).order_by(func.count(Review.id).desc())
+        else:
+            # 기본 정렬은 마감 임박순
+            experiences_query = experiences_query.order_by(Experience.end_date.asc())
+        
+        # 5. 페이지네이션 적용
         pagination = experiences_query.paginate(page=page, per_page=15, error_out=False)
         items_on_page = sorted(pagination.items, key=lambda x: x.current_participants >= x.max_participants)
-        return render_template('index.html', items=items_on_page, pagination=pagination, sort_by=sort_by)
+        
+        return render_template('index.html', 
+                               items=items_on_page, 
+                               pagination=pagination, 
+                               sort_by=sort_by)
 
 # --- 사용자 인증 관련 라우트 ---
 @app.route('/register', methods=['GET', 'POST'])
@@ -594,15 +619,43 @@ def delete_application(app_id):
 
 @app.route('/volunteer')
 def volunteer_apply():
-    # Experience 테이블에서 volunteer_needed가 0보다 큰 데이터만 조회
-    items = Experience.query.filter(Experience.volunteer_needed > 0).order_by(Experience.duration_start.asc()).all()
-    return render_template('volunteer_apply.html', items=items)
+    page = request.args.get('page', 1, type=int)
+    sort_by = request.args.get('sort', 'deadline', type=str)
+    region = request.args.get('region', type=str)
+    crop_query = request.args.get('crop_query', type=str)
+
+    # 1. 기본 쿼리: 봉사자가 필요한 체험만 선택
+    query = Experience.query.filter(Experience.volunteer_needed > 0)
+
+    # 2. 필터링
+    if region:
+        query = query.filter(Experience.address_detail.like(f"%{region}%"))
+    if crop_query:
+        query = query.filter(Experience.crop.like(f"%{crop_query}%"))
+
+    # 3. 정렬 조건 적용
+    if sort_by == 'reviews':
+        query = query.outerjoin(Review).group_by(Experience.id).order_by(func.count(Review.id).desc(), Experience.duration_start.asc())
+    else: # 'deadline' 또는 기본값
+        query = query.order_by(Experience.duration_start.asc())
+
+    # 4. 페이지네이션 적용
+    pagination = query.paginate(page=page, per_page=15, error_out=False)
+    items_on_page = pagination.items
+    
+    return render_template('volunteer_apply.html', 
+                           items=items_on_page, 
+                           pagination=pagination,
+                           sort_by=sort_by)
 @app.route('/api/experiences')
 def get_experiences_json():
     experiences = Experience.query.all()
     # 각 Experience 객체를 to_dict() 함수를 사용해 딕셔너리로 변환
     experience_list = [exp.to_dict() for exp in experiences]
     return jsonify(experience_list)
+@app.route('/guide')
+def guide_page():
+    return render_template('guide.html')
 
 # --- 앱 실행 ---
 if __name__ == '__main__':

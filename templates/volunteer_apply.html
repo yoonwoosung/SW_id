@@ -12,9 +12,41 @@
         </a>
     </div>
 
-    <div class="tab-content-wrapper">
+<div class="tab-content-wrapper">
         <div class="list-title-header">
             <h2>봉사자 모집 목록</h2>
+            <div class="sort-links">
+                <a href="{{ url_for('volunteer_apply', sort='deadline', region=request.args.get('region'), crop_query=request.args.get('crop_query')) }}" class="sort-link {% if sort_by == 'deadline' or not sort_by %}active{% endif %}">모집 임박순</a>
+                <a href="{{ url_for('volunteer_apply', sort='reviews', region=request.args.get('region'), crop_query=request.args.get('crop_query')) }}" class="sort-link {% if sort_by == 'reviews' %}active{% endif %}">리뷰 많은순</a>
+            </div>
+        </div>
+
+        <div class="search-filter-box card mb-3">
+            <div class="card-body">
+                <form method="GET" action="{{ url_for('volunteer_apply') }}" class="row">
+                    <div class="col-md-4">
+                        <div class="form-group mb-md-0">
+                            <label for="region-select">지역 선택</label>
+                            <select id="region-select" name="region" class="form-control">
+                                <option value="">전체</option>
+                                {% set regions = ["서울", "경기", "인천", "강원", "대전", "세종", "충북", "충남", "부산", "대구", "울산", "경북", "경남", "광주", "전북", "전남", "제주"] %}
+                                {% for r in regions %}
+                                    <option value="{{ r }}" {% if request.args.get('region') == r %}selected{% endif %}>{{ r }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group mb-md-0">
+                            <label for="crop-search">작물 키워드</label>
+                            <input type="text" id="crop-search" name="crop_query" class="form-control" placeholder="예: 딸기, 상추" value="{{ request.args.get('crop_query', '') }}">
+                        </div>
+                    </div>
+                    <div class="col-md-2 d-flex align-items-end">
+                        <button type="submit" class="btn btn-success btn-block"><i class="fa-solid fa-magnifying-glass"></i> 검색</button>
+                    </div>
+                </form>
+            </div>
         </div>
 
         <div class="experience-list-container">
@@ -50,6 +82,28 @@
                 </div>
             {% endif %}
         </div>
+
+        {% if pagination and pagination.pages > 1 %}
+        <nav class="pagination-container">
+            <ul class="pagination">
+                <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
+                    <a class="page-link" href="{{ url_for('volunteer_apply', page=pagination.prev_num, sort=sort_by, region=request.args.get('region'), crop_query=request.args.get('crop_query')) }}">&laquo;</a>
+                </li>
+                {% for page_num in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+                    {% if page_num %}
+                        <li class="page-item {% if page_num == pagination.page %}active{% endif %}">
+                            <a class="page-link" href="{{ url_for('volunteer_apply', page=page_num, sort=sort_by, region=request.args.get('region'), crop_query=request.args.get('crop_query')) }}">{{ page_num }}</a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled"><span class="page-link">...</span></li>
+                    {% endif %}
+                {% endfor %}
+                <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+                    <a class="page-link" href="{{ url_for('volunteer_apply', page=pagination.next_num, sort=sort_by, region=request.args.get('region'), crop_query=request.args.get('crop_query')) }}">&raquo;</a>
+                </li>
+            </ul>
+        </nav>
+        {% endif %}
     </div>
 </div>
 {% endblock %}

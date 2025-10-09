@@ -1,9 +1,15 @@
 {% extends "layout.html" %}
 {% block content %}
-<div class="container detail-container">
+<div class="container detail-container mt-3">
+    
+    {% set first_image = item.images.split(',')[0] if item.images else 'default_banner.jpg' %}
+    <div class="page-title-banner mb-4" style="background-image: url({{ url_for('static', filename='uploads/' + first_image) }});">
+        <h1 class="font-weight-bold mb-1 text-white">{{ item.crop }} 체험</h1>
+        <p class="mb-0 text-white-50"><i class="fa-solid fa-location-dot mr-2"></i>{{ item.address_detail }}</p>
+    </div>
+
     <div class="row">
         <div class="col-md-7">
-            <!-- 사진 캐러셀 -->
             <div id="experience-carousel" class="carousel slide" data-ride="carousel">
                 <div class="carousel-inner">
                     {% if item.images %}
@@ -14,7 +20,10 @@
                         {% endfor %}
                     {% else %}
                         <div class="carousel-item active">
-                           <img src="https://via.placeholder.com/800x400.png?text=Farm+Image" class="d-block w-100 detail-image" alt="이미지 없음">
+                            <div class="image-placeholder">
+                                <i class="fa-solid fa-camera"></i>
+                                <span>농장주가 아직 이미지를 등록하지 않았습니다.</span>
+                            </div>
                         </div>
                     {% endif %}
                 </div>
@@ -30,72 +39,103 @@
                 {% endif %}
             </div>
 
-            <!-- 방문자 후기 -->
-            <div class="detail-section mt-5">
-                <h3>방문자 후기 🌟</h3>
-                {% if session.get('user_id') %}
-                <form action="{{ url_for('add_review', item_id=item.id) }}" method="POST" class="mb-4">
-                    <div class="form-group">
-                        <label for="rating">별점</label>
-                        <select class="form-control" id="rating" name="rating">
-                            <option>5</option><option>4</option><option>3</option><option>2</option><option>1</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <textarea name="content" class="form-control" rows="3" placeholder="후기를 남겨주세요." required></textarea>
-                    </div>
-                    <button type="submit" class="btn btn-primary mt-2">후기 등록</button>
-                </form>
-                {% else %}
-                 <p class="text-muted small">후기를 남기시려면 <a href="{{ url_for('login_page') }}">로그인</a>이 필요합니다.</p>
-                {% endif %}
-                
-                <div class="review-list">
-                    {% for review in reviews %}
-                    <div class="review-item">
-                        <strong>{{ review.user.nickname }}</strong> <span class="text-muted">| {{ review.rating }}점</span>
-                        <p>{{ review.content }}</p>
-                        <small class="text-muted">{{ review.timestamp.strftime('%Y-%m-%d') }}</small>
-                    </div>
+            <div class="card mt-4">
+                <div class="card-body">
+                    <h3 class="card-title">방문자 후기 🌟</h3>
+                    {% if session.get('user_id') %}
+                    <form action="{{ url_for('add_review', item_id=item.id) }}" method="POST" class="mb-4">
+                        <div class="form-group">
+                            <label for="rating">별점</label>
+                            <select class="form-control" id="rating" name="rating">
+                                <option>5</option><option>4</option><option>3</option><option>2</option><option>1</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <textarea name="content" class="form-control" rows="3" placeholder="후기를 남겨주세요." required></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary mt-2">후기 등록</button>
+                    </form>
                     {% else %}
-                    <p>아직 작성된 후기가 없습니다.</p>
-                    {% endfor %}
+                     <p class="text-muted small">후기를 남기시려면 <a href="{{ url_for('login_page') }}">로그인</a>이 필요합니다.</p>
+                    {% endif %}
+                    
+                    <div class="review-list">
+                        {% for review in reviews %}
+                        <div class="review-item">
+                            <strong>{{ review.user.nickname }}</strong> <span class="text-muted">| {{ review.rating }}점</span>
+                            <p>{{ review.content }}</p>
+                            <small class="text-muted">{{ review.timestamp.strftime('%Y-%m-%d') }}</small>
+                        </div>
+                        {% else %}
+                        <p>아직 작성된 후기가 없습니다.</p>
+                        {% endfor %}
+                    </div>
                 </div>
             </div>
             
-            <!-- 문의하기 -->
-            <div class="detail-section mt-5">
-                <h3>문의하기 💬</h3>
-                {% if session.get('user_id') %}
-                <form action="{{ url_for('add_inquiry', item_id=item.id) }}" method="POST" class="mb-4">
-                    <div class="form-group">
-                        <textarea name="content" class="form-control" rows="3" placeholder="농장주에게 궁금한 점을 질문해보세요." required></textarea>
-                    </div>
-                    <button type="submit" class="btn btn-primary mt-2">문의 등록</button>
-                </form>
-                {% else %}
-                <p class="text-muted small">문의를 남기시려면 <a href="{{ url_for('login_page') }}">로그인</a>이 필요합니다.</p>
-                {% endif %}
-                
-                <div class="review-list">
-                    {% for inquiry in inquiries %}
-                    <div class="review-item">
-                        <strong>{{ inquiry.user.nickname }}</strong>
-                        <p>{{ inquiry.content }}</p>
-                        <small class="text-muted">{{ inquiry.timestamp.strftime('%Y-%m-%d') }}</small>
-                    </div>
+            <div class="card mt-4">
+                <div class="card-body">
+                    <h3 class="card-title">문의하기 💬</h3>
+                    {% if session.get('user_id') %}
+                    <form action="{{ url_for('add_inquiry', item_id=item.id) }}" method="POST" class="mb-4">
+                        <div class="form-group">
+                            <textarea name="content" class="form-control" rows="3" placeholder="농장주에게 궁금한 점을 질문해보세요." required></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary mt-2">문의 등록</button>
+                    </form>
                     {% else %}
-                    <p>아직 작성된 문의가 없습니다.</p>
-                    {% endfor %}
+                    <p class="text-muted small">문의를 남기시려면 <a href="{{ url_for('login_page') }}">로그인</a>이 필요합니다.</p>
+                    {% endif %}
+                    
+                    <div class="review-list">
+                        {% for inquiry in inquiries %}
+                        <div class="review-item">
+                            <strong>{{ inquiry.user.nickname }}</strong>
+                            <p>{{ inquiry.content }}</p>
+                            <small class="text-muted">{{ inquiry.timestamp.strftime('%Y-%m-%d') }}</small>
+                        </div>
+                        {% else %}
+                        <p>아직 작성된 문의가 없습니다.</p>
+                        {% endfor %}
+                    </div>
                 </div>
             </div>
         </div>
-
-        <!-- 오른쪽 사이드바 정보 -->
         <div class="col-md-5">
-            <a href="{{ url_for('experience_apply', item_id=item.id) }}" class="btn btn-success btn-lg btn-block mb-3">체험 예약하기</a>
-            
-            <div class="detail-info card">
+            <div class="detail-map card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span>농장 위치</span>
+                    <a href="https://map.kakao.com/?q={{ item.address_detail }} 주변 편의시설" target="_blank" class="btn btn-sm btn-outline-success">주변시설 검색</a>
+                </div>
+                <div class="card-body">
+                    <div id="map" style="width:100%;height:250px;"></div>
+                </div>
+            </div>
+            <div id="nearby-distances" class="card mb-4">
+                <div class="card-body">
+                    <h6 class="card-title mb-0">주요 시설까지의 직선거리</h6>
+                    <div id="distance-list" class="mt-2">
+                        <small class="text-muted">가장 가까운 시설을 검색 중입니다...</small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="detail-info card mt-1">
+                <div class="card-header">농장주 프로필</div>
+                <div class="card-body">
+                    <div class="d-flex align-items-start">
+                        <div class="text-center mr-4" style="width: 90px;">
+                            <img src="{{ url_for('static', filename='uploads/' + item.farmer.profile_image) }}" alt="{{ item.farmer.nickname }}" class="img-fluid rounded-circle mb-2" style="width: 80px; height: 80px; object-fit: cover;">
+                            <h6 class="mb-0" style="font-weight: bold;">{{ item.farmer.nickname }}</h6>
+                        </div>
+                        <div class="flex-grow-1" style="padding-top: 10px;">
+                            <p class="text-muted" style="font-size: 0.9rem; margin-bottom: 5px;">"{{ item.farmer.profile_bio | default('한 줄 소개가 없습니다.', true) }}"</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="detail-info card mt-4">
                 <div class="card-body">
                     <p><strong>📍 위치:</strong> {{ item.address_detail }}</p>
                     <p><strong>🌿 친환경:</strong> {{ "예" if item.pesticide_free else "아니오" }}</p>
@@ -105,7 +145,7 @@
                     <p><strong>🚗 주차 가능:</strong> {{ "예" if item.has_parking else "아니오" }}</p>
                 </div>
             </div>
-
+            
             <div class="detail-info card mt-4">
                 <div class="card-header">체험 상세정보</div>
                 <div class="card-body">
@@ -144,19 +184,14 @@
             </div>
             {% endif %}
 
-            <div class="detail-map card mt-4">
-                <div class="card-header">농장 위치</div>
-                <div class="card-body">
-                    <div id="map" style="width:100%;height:300px;"></div>
-                </div>
-            </div>
+            <a href="{{ url_for('experience_apply', item_id=item.id) }}" class="btn btn-success btn-lg btn-block my-3">체험 예약하기</a>
         </div>
     </div>
 </div>
 
 <div id="item-data-json" style="display: none;">{{ item_data_for_js|tojson|safe }}</div>
 
-<script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=fa87dcc52c2d82878875da3f4ea6b050"></script>
+<script type="text/javascript" src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=7dd9cd8d1e3754dcf8532c81dea3e95f&libraries=services"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const itemDataElement = document.getElementById('item-data-json');
@@ -165,7 +200,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const mapContainer = document.getElementById('map');
     const mapOption = {
         center: new kakao.maps.LatLng(itemData.lat, itemData.lng),
-        level: 3 // 확대 레벨 조정
+        level: 3
     };
     const map = new kakao.maps.Map(mapContainer, mapOption);
     const marker = new kakao.maps.Marker({
@@ -173,6 +208,45 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     marker.setMap(map);
 
+    // --- 주변 시설 거리 자동 계산 기능 ---
+    const categoriesToSearch = [
+        { code: 'CS2', name: '편의점', emoji: '🏪' },
+        { code: 'PM9', name: '약국', emoji: '💊' },
+        { code: 'HP8', name: '병원', emoji: '🏥' },
+        { code: 'PK6', name: '공용주차장', emoji: '🅿️' }
+    ];
+    const ps = new kakao.maps.services.Places();
+    const listContainer = document.getElementById('distance-list');
+    const farmLatLng = new kakao.maps.LatLng(itemData.lat, itemData.lng);
+    listContainer.innerHTML = ''; 
+
+    categoriesToSearch.forEach(category => {
+        const searchOptions = {
+            location: farmLatLng,
+            radius: 20000,
+            size: 1,
+            sort: kakao.maps.services.SortBy.DISTANCE
+        };
+
+        const callback = function(result, status) {
+            const p = document.createElement('p');
+            p.className = 'mb-1';
+            if (status === kakao.maps.services.Status.OK && result.length > 0) {
+                const place = result[0];
+                const placeLatLng = new kakao.maps.LatLng(place.y, place.x);
+                const polyline = new kakao.maps.Polyline({ path: [farmLatLng, placeLatLng] });
+                const distance = Math.round(polyline.getLength());
+                let distanceText = (distance > 1000) ? `약 ${(distance / 1000).toFixed(1)} km` : `약 ${distance} m`;
+                p.innerHTML = `${category.emoji} ${category.name}: <strong>${distanceText}</strong> <small class="text-muted">(${place.place_name})</small>`;
+            } else {
+                p.innerHTML = `${category.emoji} ${category.name}: <span class="text-muted">주변에 없음</span>`;
+            }
+            listContainer.appendChild(p);
+        };
+        ps.categorySearch(category.code, callback, searchOptions);
+    });
+
+    // --- 시간표 렌더링 ---
     const timetableData = "{{ item.timetable_data or '' }}";
     if (timetableData) {
         const selectedSlots = timetableData.split(',');

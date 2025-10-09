@@ -218,13 +218,13 @@ def index():
         
         experiences_json = [exp.to_dict() for exp in my_listings]
         experience_ids = [exp.id for exp in my_listings]
-        applications = Application.query.filter(Application.experience_id.in_(experience_ids)).all()
+        applications = Application.query.filter(Application.experience_id.in_(experience_ids), Application.status != '취소').all()
         reservations_by_date = defaultdict(list)
         for app in applications:
             reservations_by_date[app.apply_date.strftime('%Y-%m-%d')].append({
                 "id": app.id, "name": app.applicant_name, "phone": app.phone_number,
                 "adult": app.count_adult, "teen": app.count_teen, "child": app.count_child,
-                "time": app.apply_time, "crop": app.experience.crop
+                "time": app.apply_time, "crop": app.experience.crop, "status": app.status
             })
 
         avg_rating = 0
@@ -388,21 +388,32 @@ def experience_detail(item_id):
         flash("현재 모집 중인 체험이 아닙니다.", "warning")
         return redirect(url_for('index'))
 
-    can_review = False
+    review_status = 'not_logged_in'
     if 'user_id' in session:
         user_id = session['user_id']
-        applications = Application.query.filter_by(user_id=user_id, experience_id=item_id).all()
-        has_attended = any(app.apply_date < date.today() for app in applications)
+        existing_review = Review.query.filter_by(user_id=user_id, experience_id=item_id).first()
+        if existing_review:
+            review_status = 'already_reviewed'
+        else:
+            application = Application.query.filter(
+                Application.user_id == user_id,
+                Application.experience_id == item_id
+            ).order_by(Application.id.desc()).first()
 
-        if has_attended:
-            existing_review = Review.query.filter_by(user_id=user_id, experience_id=item_id).first()
-            if not existing_review:
-                can_review = True
+            if application:
+                if application.status == '확정':
+                    review_status = 'allowed'
+                elif application.status == '예정':
+                    review_status = 'pending_confirmation'
+                else: # 취소 또는 다른 상태
+                    review_status = 'not_applicable'
+            else:
+                review_status = 'not_applied'
 
     reviews = Review.query.filter_by(experience_id=item_id).order_by(Review.timestamp.desc()).all()
     inquiries = Inquiry.query.filter_by(experience_id=item_id).order_by(Inquiry.timestamp.desc()).all()
     item_data_for_js = {'lat': item.lat, 'lng': item.lng}
-    return render_template('detail_experience.html', item=item, item_data_for_js=item_data_for_js, reviews=reviews, inquiries=inquiries, can_review=can_review)
+    return render_template('detail_experience.html', item=item, item_data_for_js=item_data_for_js, reviews=reviews, inquiries=inquiries, review_status=review_status)
 
 @app.route('/experience/apply/<int:item_id>', methods=['GET', 'POST'])
 def experience_apply(item_id):
@@ -614,7 +625,19 @@ def toggle_visibility(item_id):
 @app.route('/experience/<int:item_id>/review', methods=['POST'])
 def add_review(item_id):
     if 'user_id' not in session: return redirect(url_for('login_page'))
-    existing_review = Review.query.filter_by(user_id=session['user_id'], experience_id=item_id).first()
+    
+    user_id = session['user_id']
+    has_confirmed_app = Application.query.filter(
+        Application.user_id == user_id,
+        Application.experience_id == item_id,
+        Application.status == '확정'
+    ).first()
+
+    if not has_confirmed_app:
+        flash("후기를 작성할 권한이 없습니다. 예약이 확정된 체험에만 후기를 남길 수 있습니다.", "warning")
+        return redirect(url_for('experience_detail', item_id=item_id))
+
+    existing_review = Review.query.filter_by(user_id=user_id, experience_id=item_id).first()
     if existing_review:
         flash("이미 이 체험에 대한 후기를 작성하셨습니다.", "warning")
         return redirect(url_for('experience_detail', item_id=item_id))
@@ -640,6 +663,28 @@ def add_inquiry(item_id):
     db.session.commit()
     flash("문의가 등록되었습니다.", "success")
     return redirect(url_for('experience_detail', item_id=item_id))
+
+@app.route('/application/confirm/<int:app_id>', methods=['POST'])
+def confirm_application(app_id):
+    if 'user_id' not in session or session.get('role') != 'farmer':
+        flash("권한이 없습니다.", "danger")
+        return redirect(url_for('login_page'))
+
+    application = Application.query.get_or_404(app_id)
+    experience = Experience.query.get_or_404(application.experience_id)
+
+    if experience.farmer_id != session.get('user_id'):
+        flash("자신의 체험에 대한 예약만 확정할 수 있습니다.", "danger")
+        return redirect(url_for('index'))
+
+    if application.status == '예정':
+        application.status = '확정'
+        db.session.commit()
+        flash(f"{application.applicant_name}님의 예약을 확정했습니다.", "success")
+    else:
+        flash("이미 처리된 예약입니다.", "warning")
+
+    return redirect(url_for('index'))
 
 # --- 파일 업로드 관련 ---
 def allowed_file(filename):
@@ -721,10 +766,19 @@ def delete_application(app_id):
     if application.user_id != session['user_id']: abort(403)
 
     experience = Experience.query.get(application.experience_id)
-    if experience:
+    if experience and application.status != '취소': # 이미 취소된 건은 인원수 복구 안함
         experience.current_participants = max(0, experience.current_participants - application.participants_count)
 
-    db.session.delete(application)
+    application.status = '취소'
+    
+    # Delete the associated review
+    existing_review = Review.query.filter_by(
+        user_id=application.user_id,
+        experience_id=application.experience_id
+    ).first()
+    if existing_review:
+        db.session.delete(existing_review)
+
     db.session.commit()
 
     flash("체험 신청이 취소되었습니다.", "success")

@@ -152,41 +152,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // --- 농장 등록 시간표 드래그 & 클릭 스크립트 (farmer 방식) ---
-    const timetable = document.querySelector('.timetable');
-    if (timetable) {
-        let isMouseDown = false;
-        let selectionMode = 'select';
-
-        const timeSlots = timetable.querySelectorAll('.time-slot');
-        timeSlots.forEach(slot => {
-            slot.addEventListener('mousedown', (e) => {
-                if (e.button !== 0) return;
-                e.preventDefault();
-                isMouseDown = true;
-                if (slot.classList.contains('selected')) {
-                    selectionMode = 'deselect';
-                    slot.classList.remove('selected');
-                } else {
-                    selectionMode = 'select';
-                    slot.classList.add('selected');
-                }
-            });
-            slot.addEventListener('mouseover', () => {
-                if (isMouseDown) {
-                    if (selectionMode === 'select') {
-                        slot.classList.add('selected');
-                    } else {
-                        slot.classList.remove('selected');
-                    }
-                }
-            });
-        });
-        document.addEventListener('mouseup', () => {
-            isMouseDown = false;
-        });
-    }
-
     // --- 농장 등록 페이지 (jQuery 사용 부분) ---
     $('#images').on('change', function() {
         var fileList = "선택된 파일: ";

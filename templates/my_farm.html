@@ -219,9 +219,21 @@ document.addEventListener('DOMContentLoaded', function() {
                     modalTitle.textContent = `${info.event.startStr} 예약자 목록`;
                     let bodyHtml = '<ul class="list-group">';
                     info.event.extendedProps.reservations.forEach(res => {
+                        let confirmButton = '';
+                        if (res.status === '예정') {
+                            confirmButton = `
+                                <form action="/application/confirm/${res.id}" method="POST" class="d-inline ml-2">
+                                    <button type="submit" class="btn btn-sm btn-success">예약 확정</button>
+                                </form>`;
+                        }
                         bodyHtml += `
-                            <li class="list-group-item">
-                                <strong>[${res.crop}]</strong> ${res.name} (${res.phone}) - ${res.adult}명 (성인), ${res.teen}명 (청소년), ${res.child}명 (아동) / ${res.time}
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <div>
+                                    <strong>[${res.crop}]</strong> ${res.name} (${res.phone}) - ${res.adult}명 (성인), ${res.teen}명 (청소년), ${res.child}명 (아동) / ${res.time}
+                                    <br>
+                                    <span class="badge badge-info">${res.status}</span>
+                                </div>
+                                ${confirmButton}
                             </li>`;
                     });
                     bodyHtml += '</ul>';

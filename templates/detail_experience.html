@@ -42,7 +42,7 @@
             <div class="card mt-4">
                 <div class="card-body">
                     <h3 class="card-title">방문자 후기 🌟</h3>
-                    {% if session.get('user_id') %}
+                    {% if review_status == 'allowed' %}
                     <form action="{{ url_for('add_review', item_id=item.id) }}" method="POST" class="mb-4">
                         <div class="form-group">
                             <label for="rating">별점</label>
@@ -55,8 +55,12 @@
                         </div>
                         <button type="submit" class="btn btn-primary mt-2">후기 등록</button>
                     </form>
-                    {% else %}
-                     <p class="text-muted small">후기를 남기시려면 <a href="{{ url_for('login_page') }}">로그인</a>이 필요합니다.</p>
+                    {% elif review_status == 'already_reviewed' %}
+                    <p class="text-muted small">이미 이 체험에 대한 후기를 작성하셨습니다.</p>
+                    {% elif review_status == 'pending_confirmation' %}
+                    <p class="text-muted small">농장주가 예약을 확정하면 후기를 작성할 수 있습니다.</p>
+                    {% elif review_status == 'not_logged_in' %}
+                    <p class="text-muted small">후기를 남기시려면 <a href="{{ url_for('login_page') }}">로그인</a>이 필요합니다.</p>
                     {% endif %}
                     
                     <div class="review-list">

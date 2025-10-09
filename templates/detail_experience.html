@@ -102,7 +102,24 @@
             </div>
         </div>
         <div class="col-md-5">
-            
+            <div class="detail-map card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span>농장 위치</span>
+                    <a href="https://map.kakao.com/?q={{ item.address_detail }} 주변 편의시설" target="_blank" class="btn btn-sm btn-outline-success">주변시설 검색</a>
+                </div>
+                <div class="card-body">
+                    <div id="map" style="width:100%;height:250px;"></div>
+                </div>
+            </div>
+            <div id="nearby-distances" class="card mb-4">
+                <div class="card-body">
+                    <h6 class="card-title mb-0">주요 시설까지의 직선거리</h6>
+                    <div id="distance-list" class="mt-2">
+                        <small class="text-muted">가장 가까운 시설을 검색 중입니다...</small>
+                    </div>
+                </div>
+            </div>
+
             <div class="detail-info card mt-1">
                 <div class="card-header">농장주 프로필</div>
                 <div class="card-body">
@@ -167,23 +184,6 @@
             </div>
             {% endif %}
 
-            <div class="detail-map card mt-4">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <span>농장 위치</span>
-                    <a href="https://map.kakao.com/?q={{ item.address_detail }} 주변 편의시설" target="_blank" class="btn btn-sm btn-outline-success">주변시설 검색</a>
-                </div>
-                <div class="card-body">
-                    <div id="map" style="width:100%;height:300px;"></div>
-                </div>
-            </div>
-            <div id="nearby-distances" class="card mt-3">
-                <div class="card-body">
-                    <h6 class="card-title mb-0">주요 시설까지의 직선거리</h6>
-                    <div id="distance-list" class="mt-2">
-                        <small class="text-muted">가장 가까운 시설을 검색 중입니다...</small>
-                    </div>
-                </div>
-            </div>
             <a href="{{ url_for('experience_apply', item_id=item.id) }}" class="btn btn-success btn-lg btn-block my-3">체험 예약하기</a>
         </div>
     </div>

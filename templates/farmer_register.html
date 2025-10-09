@@ -1,55 +1,273 @@
 {% extends "layout.html" %}
-{% block page_class %}page-volunteer{% endblock %}
 {% block content %}
-<div class="container page-container">
-
-    <div class="content-tabs">
-        <a href="{{ url_for('index') }}" class="tab-item">
-            <i class="fa-solid fa-leaf"></i> 체험하기
-        </a>
-        <a href="{{ url_for('volunteer_apply') }}" class="tab-item active">
-            <i class="fa-solid fa-handshake-angle"></i> 봉사활동
-        </a>
-    </div>
-
-    <div class="tab-content-wrapper">
-        <div class="list-title-header">
-            <h2>봉사자 모집 목록</h2>
-        </div>
-
-        <div class="experience-list-container">
-            <div class="list-header-row" style="grid-template-columns: 2.5fr 1.5fr 1fr 1fr;">
-                <span class="col-crop">작물명 (농장)</span>
-                <span class="col-location">위치</span>
-                <span class="col-status">모집현황</span>
-                <span class="col-action">신청</span>
-            </div>
-
-            {% if items %}
-                {% for item in items %}
-                <div class="list-item-row" style="grid-template-columns: 2.5fr 1.5fr 1fr 1fr;">
-                    <span class="col-crop">
-                        <strong>{{ item.crop }}</strong>
-                        <div class="tag">#{{ "친환경" if item.pesticide_free else "일반" }}</div>
-                    </span>
-                    <span class="col-location">{{ item.address_detail }}</span>
-                    <span class="col-status">{{ item.current_volunteers }} / {{ item.volunteer_needed }}명</span>
-                    <span class="col-action">
-                        {% if item.current_volunteers >= item.volunteer_needed %}
-                            <button class="btn btn-sm btn-secondary" disabled>마감</button>
-                        {% else %}
-                            <a href="https://www.1365.go.kr/vols/main.do" target="_blank" class="btn btn-sm btn-success">신청하기</a>
-                        {% endif %}
-                    </span>
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <h2 class="mb-4 text-center">{% if item %}체험 수정하기{% else %}새로운 체험 등록{% endif %}</h2>
+            <form id="farm-register-form" method="POST" enctype="multipart/form-data">
+                <div class="card mb-4">
+                    <div class="card-header">기본 정보</div>
+                    <div class="card-body">
+                        <div class="form-group">
+                            <label for="crop">작물명</label>
+                            <input type="text" class="form-control" id="crop" name="crop" value="{{ item.crop if item else form_data.get('crop', '') }}" required>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group col-md-6">
+                                <label for="phone">농장 연락처</label>
+                                <input type="text" class="form-control" id="phone" name="phone" value="{{ item.phone if item else form_data.get('phone', '') }}" required>
+                            </div>
+                            <div class="form-group col-md-6">
+                                <label for="farm_size">농장 크기 (e.g., 100평)</label>
+                                <input type="text" class="form-control" id="farm_size" name="farm_size" value="{{ item.farm_size if item else form_data.get('farm_size', '') }}">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="address">상세 주소 (체험 장소)</label>
+                            <input type="text" class="form-control" id="address" name="address" value="{{ item.address_detail if item else form_data.get('address', '') }}" required>
+                        </div>
+                    </div>
                 </div>
-                {% endfor %}
-            {% else %}
-                <div class="no-items-message">
-                    <div class="empty-icon">🙌</div>
-                    <p>지금은 모집 중인 봉사활동이 없어요.</p>
+
+                <div class="card mb-4">
+                    <div class="card-header">모집 정보</div>
+                    <div class="card-body">
+                        <div class="form-row">
+                            <div class="form-group col-md-6">
+                                <label for="duration_start">체험 시작일</label>
+                                <input type="date" class="form-control" id="duration_start" name="duration_start" value="{{ (item.duration_start.strftime('%Y-%m-%d') if item) or form_data.get('duration_start', '') }}" required>
+                            </div>
+                            <div class="form-group col-md-6">
+                                <label for="duration_end">모집 마감일</label>
+                                <input type="date" class="form-control" id="duration_end" name="duration_end" value="{{ (item.end_date.strftime('%Y-%m-%d') if item) or form_data.get('duration_end', '') }}" required>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>운영 시간 설정</label>
+                            <p class="text-muted small">체험이 가능한 요일과 시간대를 클릭 또는 드래그하여 선택해주세요.</p>
+                            <div class="timetable-wrapper">
+                                <table class="table table-bordered timetable text-center">
+                                    <thead>
+                                        <tr>
+                                            <th>시간</th>
+                                            <th>월</th><th>화</th><th>수</th><th>목</th><th>금</th><th>토</th><th>일</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for time in ['09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00'] %}
+                                        <tr>
+                                            <td>{{ time }}</td>
+                                            {% for day in ['월', '화', '수', '목', '금', '토', '일'] %}
+                                            <td class="time-slot" data-day="{{ day }}" data-time="{{ time }}"></td>
+                                            {% endfor %}
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            <input type="hidden" id="timetable-data" name="timetable_data" value="{{ item.timetable_data if item else form_data.get('timetable_data', '') }}">
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group col-md-6">
+                                <label for="max_participants">최대 참가 인원</label>
+                                <input type="number" class="form-control" id="max_participants" name="max_participants" value="{{ item.max_participants if item else form_data.get('max_participants', 20) }}" required>
+                            </div>
+                            <div class="form-group col-md-6">
+                                <label for="price">가격 (1인 기준)</label>
+                                <input type="number" class="form-control" id="price" name="price" value="{{ item.cost if item else form_data.get('price', '') }}" required>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-            {% endif %}
+
+                <div class="card mb-4">
+                    <div class="card-header">체험 상세</div>
+                    <div class="card-body">
+                        <div class="form-group">
+                            <label for="images">체험 대표 사진 (첫 번째 사진이 메인으로 사용됩니다)</label>
+                            <div class="custom-file">
+                                <input type="file" class="custom-file-input" id="images" name="images" multiple>
+                                <label class="custom-file-label" for="images">파일 선택...</label>
+                            </div>
+                            {% if item and item.images %}
+                            <div class="mt-2">
+                                <small>현재 등록된 사진: {{ item.images }}</small>
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div class="form-group">
+                            <label for="notes">상세 설명</label>
+                            <textarea class="form-control" id="notes" name="notes" rows="5">{{ item.notes if item else form_data.get('notes', '') }}</textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="includes">포함 내역 (쉼표로 구분)</label>
+                            <input type="text" class="form-control" id="includes" name="includes" value="{{ item.includes if item else form_data.get('includes', '') }}" placeholder="예: 수확 체험, 시식, 기념품">
+                        </div>
+                        <div class="form-group">
+                            <label for="excludes">불포함 내역 (쉼표로 구분)</label>
+                            <input type="text" class="form-control" id="excludes" name="excludes" value="{{ item.excludes if item else form_data.get('excludes', '') }}" placeholder="예: 개인 준비물, 교통비">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card mb-4">
+                    <div class="card-header">부가 정보</div>
+                    <div class="card-body">
+                        <div class="form-check mb-3">
+                            <input type="checkbox" class="form-check-input" id="has_parking" name="has_parking" {% if (item and item.has_parking) or form_data.get('has_parking') %}checked{% endif %}>
+                            <label class="form-check-label" for="has_parking">주차장 제공</label>
+                        </div>
+                        <hr>
+                        <div class="form-check mb-3">
+                            <input type="checkbox" class="form-check-input" id="is_organic" name="is_organic" {% if (item and item.pesticide_free) or form_data.get('is_organic') %}checked{% endif %}>
+                            <label class="form-check-label" for="is_organic">친환경 농법 인증</label>
+                        </div>
+                        <div id="organic-cert-fields" style="display: {% if (item and item.pesticide_free) or form_data.get('is_organic') %}block{% else %}none{% endif %};">
+                            <div class="form-group">
+                                <label for="organic_certification_type">친환경 인증 종류</label>
+                                <input type="text" class="form-control" id="organic_certification_type" name="organic_certification_type" value="{{ item.organic_certification_type if item else form_data.get('organic_certification_type', '') }}">
+                            </div>
+                            <div class="form-group">
+                                <label for="organic_certification_image">인증서 이미지</label>
+                                <div class="custom-file">
+                                    <input type="file" class="custom-file-input" id="organic_certification_image" name="organic_certification_image">
+                                    <label class="custom-file-label" for="organic_certification_image">파일 선택...</label>
+                                </div>
+                                {% if item and item.organic_certification_image %}
+                                <small class="form-text text-muted">현재 파일: {{ item.organic_certification_image }}</small>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <hr>
+                        <div class="form-check mb-3">
+                            <input type="checkbox" class="form-check-input" id="has_cert" name="has_cert" {% if (item and item.organic_certification_pdf) or form_data.get('has_cert') %}checked{% endif %}>
+                            <label class="form-check-label" for="has_cert">기타 인증서 등록 (PDF)</label>
+                        </div>
+                        <div id="pdf-cert-fields" style="display: {% if (item and item.organic_certification_pdf) or form_data.get('has_cert') %}block{% else %}none{% endif %};">
+                            <div class="form-group">
+                                <label for="organic_certification_pdf">인증서 PDF 파일</label>
+                                <div class="custom-file">
+                                    <input type="file" class="custom-file-input" id="organic_certification_pdf" name="organic_certification_pdf">
+                                    <label class="custom-file-label" for="organic_certification_pdf">파일 선택...</label>
+                                </div>
+                                {% if item and item.organic_certification_pdf %}
+                                <small class="form-text text-muted">현재 파일: {{ item.organic_certification_pdf }}</small>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card mb-4">
+                    <div class="card-header">봉사활동 모집 (선택)</div>
+                    <div class="card-body">
+                        <div class="form-group">
+                            <label for="volunteer_needed">필요 봉사자 수 (모집하지 않으면 0으로 두세요)</label>
+                            <input type="number" class="form-control" id="volunteer_needed" name="volunteer_needed" value="{{ item.volunteer_needed if item else form_data.get('volunteer_needed', 0) }}">
+                        </div>
+                        <div class="form-group">
+                            <label for="volunteer_duties">봉사자 주요 업무</label>
+                            <textarea class="form-control" id="volunteer_duties" name="volunteer_duties" rows="3">{{ item.volunteer_duties if item else form_data.get('volunteer_duties', '') }}</textarea>
+                        </div>
+                    </div>
+                </div>
+                
+
+
+                <div class="form-group form-check">
+                    <input type="checkbox" class="form-check-input" id="terms" required>
+                    <label class="form-check-label" for="terms">서비스 이용 약관에 동의합니다.</label>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-block">{% if item %}체험 수정하기{% else %}체험 등록하기{% endif %}</button>
+            </form>
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Bootstrap custom file input
+    $('.custom-file-input').on('change', function(event) {
+        var inputFile = event.currentTarget;
+        var fileName = Array.from(inputFile.files).map(f => f.name).join(', ');
+        $(inputFile).parent().find('.custom-file-label').html(fileName || '파일 선택...');
+    });
+
+    // Organic certification fields toggle
+    $('#is_organic').on('change', function() {
+        $('#organic-cert-fields').toggle(this.checked);
+    });
+
+    // PDF certification fields toggle
+    $('#has_cert').on('change', function() {
+        $('#pdf-cert-fields').toggle(this.checked);
+    });
+
+    // Timetable selection logic
+    const timetable = document.querySelector('.timetable');
+    if (timetable) {
+        let isMouseDown = false;
+        let selectionMode = 'select';
+
+        const timeSlots = timetable.querySelectorAll('.time-slot');
+        
+        // 이전에 선택된 데이터 복원
+        const existingTimetableData = document.getElementById('timetable-data').value;
+        if (existingTimetableData) {
+            const selections = existingTimetableData.split(',');
+            selections.forEach(sel => {
+                const [day, time] = sel.split('-');
+                const slot = timetable.querySelector(`[data-day="${day}"][data-time="${time}"]`);
+                if (slot) {
+                    slot.classList.add('selected');
+                }
+            });
+        }
+
+        timeSlots.forEach(slot => {
+            slot.addEventListener('mousedown', (e) => {
+                if (e.button !== 0) return;
+                e.preventDefault();
+                isMouseDown = true;
+                if (slot.classList.contains('selected')) {
+                    selectionMode = 'deselect';
+                    slot.classList.remove('selected');
+                } else {
+                    selectionMode = 'select';
+                    slot.classList.add('selected');
+                }
+            });
+            slot.addEventListener('mouseover', () => {
+                if (isMouseDown) {
+                    if (selectionMode === 'select') {
+                        slot.classList.add('selected');
+                    } else {
+                        slot.classList.remove('selected');
+                    }
+                }
+            });
+        });
+        document.addEventListener('mouseup', () => {
+            isMouseDown = false;
+        });
+    }
+
+    // Form submission: gather timetable data
+    $('#farm-register-form').on('submit', function() {
+        const selectedSlots = [];
+        document.querySelectorAll('.timetable .time-slot.selected').forEach(slot => {
+            selectedSlots.push(`${slot.dataset.day}-${slot.dataset.time}`);
+        });
+        document.getElementById('timetable-data').value = selectedSlots.join(',');
+        
+        if (!$('#terms').is(':checked')) {
+            alert("서비스 이용 약관에 동의해주세요.");
+            e.preventDefault();
+        }
+    });
+});
+</script>
 {% endblock %}

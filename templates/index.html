@@ -12,48 +12,53 @@
         </a>
     </div>
 
-    <div class="tab-content-wrapper">
-        <div class="list-title-header">
-            <h2>현재 진행 중 체험</h2>
-            <div class="sort-links">
-                <a href="{{ url_for('index', sort='deadline', region=request.args.get('region'), crop_query=request.args.get('crop_query')) }}" class="sort-link {% if sort_by == 'deadline' or not sort_by %}active{% endif %}">모집 임박순</a>
-                <a href="{{ url_for('index', sort='reviews', region=request.args.get('region'), crop_query=request.args.get('crop_query')) }}" class="sort-link {% if sort_by == 'reviews' %}active{% endif %}">리뷰 많은순</a>
+
+<div class="tab-content-wrapper">
+    <div class="list-title-header">
+        <h2>현재 진행 중 체험</h2>
+        <div class="sort-links">
+            <a href="{{ url_for('index', sort='deadline', region=request.args.get('region'), crop_query=request.args.get('crop_query')) }}" class="sort-link {% if sort_by == 'deadline' or not sort_by %}active{% endif %}">모집 임박순</a>
+            <a href="{{ url_for('index', sort='reviews', region=request.args.get('region'), crop_query=request.args.get('crop_query')) }}" class="sort-link {% if sort_by == 'reviews' %}active{% endif %}">리뷰 많은순</a>
+        </div>
+    </div>
+
+    <div class="search-filter-box card mb-3">
+        <div class="card-body">
+        <form method="GET" action="{{ url_for('index') }}" class="row align-items-end">
+            <div class="col-md-4">
+                <label for="region-select">지역 선택</label>
+                <select id="region-select" name="region" class="form-control">
+                    <option value="">전체</option>
+                    {% set regions = ["서울", "경기", "인천", "강원", "대전", "세종", "충북", "충남", "부산", "대구", "울산", "경북", "경남", "광주", "전북", "전남", "제주"] %}
+                    {% for r in regions %}
+                        <option value="{{ r }}" {% if request.args.get('region') == r %}selected{% endif %}>{{ r }}</option>
+                    {% endfor %}
+                </select>
             </div>
+            <div class="col-md-6">
+                <label for="crop-search">작물 키워드</label>
+                <input type="text" id="crop-search" name="crop_query" class="form-control" placeholder="예: 딸기, 상추" value="{{ request.args.get('crop_query', '') }}">
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-success btn-block"><i class="fa-solid fa-magnifying-glass"></i> 검색</button>
+            </div>
+        </form>
+        </div>
+    </div>
+
+    <div class="experience-list-container">
+        <div class="list-header-row">
+            <span class="col-crop">작물명</span>
+            <span class="col-location">위치</span>
+            <span class="col-d-day">마감까지</span>
+            <span class="col-cost">비용</span>
+            <span class="col-status">모집현황</span>
+            <span class="col-action">신청</span>
         </div>
 
-        <div class="search-filter-box card mb-3">
-            <div class="card-body">
-            <form method="GET" action="{{ url_for('index') }}" class="row align-items-end">
-                <div class="col-md-4">
-                    <label for="region-select">지역 선택</label>
-                    <select id="region-select" name="region" class="form-control">
-                        <option value="">전체</option>
-                        {% set regions = ["서울", "경기", "인천", "강원", "대전", "세종", "충북", "충남", "부산", "대구", "울산", "경북", "경남", "광주", "전북", "전남", "제주"] %}
-                        {% for r in regions %}
-                            <option value="{{ r }}" {% if request.args.get('region') == r %}selected{% endif %}>{{ r }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="col-md-6">
-                    <label for="crop-search">작물 키워드</label>
-                    <input type="text" id="crop-search" name="crop_query" class="form-control" placeholder="예: 딸기, 상추" value="{{ request.args.get('crop_query', '') }}">
-                </div>
-                <div class="col-md-2">
-                    <button type="submit" class="btn btn-success btn-block"><i class="fa-solid fa-magnifying-glass"></i> 검색</button>
-                </div>
-            </form>
-            </div>
-        </div>
 
-        <div class="experience-list-container">
-            <div class="list-header-row">
-                <span class="col-crop">작물명</span>
-                <span class="col-location">위치</span>
-                <span class="col-d-day">마감까지</span>
-                <span class="col-cost">비용</span>
-                <span class="col-status">모집현황</span>
-                <span class="col-action">신청</span>
-            </div>
+
+
 
             {% if items %}
                 {% for item in items %}
@@ -106,7 +111,7 @@
                 </li>
                 {% for page_num in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
                     {% if page_num %}
-                        <li class="page-item {% if pagination.page == page_num %}active{% endif %}">
+                        <li class="page-item ...">
                             <a class="page-link" href="{{ url_for('index', page=page_num, sort=sort_by, region=request.args.get('region'), crop_query=request.args.get('crop_query')) }}">{{ page_num }}</a>
                         </li>
                     {% else %}

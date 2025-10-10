@@ -10,6 +10,13 @@ from datetime import date, timedelta, datetime
 from sqlalchemy import or_
 from flask_apscheduler import APScheduler
 from PIL import Image
+import fitz  # PyMuPDF
+import re
+import pytesseract
+import io
+
+# Tesseract OCR 경로 설정
+pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
 
 # --- 1. 앱 및 DB 설정 ---
 app = Flask(__name__)
@@ -39,6 +46,35 @@ db = SQLAlchemy(app, engine_options={"pool_pre_ping": True})
 scheduler = APScheduler()
 scheduler.init_app(app)
 scheduler.start()
+
+# PDF 텍스트 추출 및 정규화 함수 (OCR 기능 포함)
+def extract_and_normalize_text_from_pdf(pdf_bytes):
+    text = ""
+    try:
+        # 1. 텍스트 기반 추출 시도
+        doc = fitz.open(stream=pdf_bytes, filetype="pdf")
+        for page in doc:
+            text += page.get_text()
+        
+        # 2. 텍스트가 거의 없다면 OCR 시도
+        if len(text.strip()) < 50: # 텍스트가 거의 없는 경우 이미지로 간주
+            print("텍스트가 거의 없어 OCR을 시도합니다.")
+            text = ""
+            doc = fitz.open(stream=pdf_bytes, filetype="pdf") # 바이트 스트림으로 다시 문서를 엽니다.
+            for page_num in range(len(doc)):
+                page = doc.load_page(page_num)
+                pix = page.get_pixmap()
+                img_bytes = pix.tobytes("png")
+                img = Image.open(io.BytesIO(img_bytes))
+                # 한국어와 영어를 포함하여 OCR 수행
+                text += pytesseract.image_to_string(img, lang='kor+eng')
+
+        # 3. 최종 텍스트 정규화
+        return re.sub(r'\s+', '', text).lower()
+
+    except Exception as e:
+        print(f"PDF 처리 중 오류 발생: {e}")
+        return ""
 
 # --- 2. DB 모델(테이블) 정의 (farmer 기준으로 통합) ---
 class User(db.Model):
@@ -494,8 +530,29 @@ def farmer_register(item_id=None):
 
         if cert_pdf_file and cert_pdf_file.filename != '':
             if allowed_file(cert_pdf_file.filename):
-                cert_pdf_filename = secure_filename(f"cert_pdf_{item_id or 'new'}_{cert_pdf_file.filename}")
-                cert_pdf_file.save(os.path.join(app.config['UPLOAD_FOLDER'], cert_pdf_filename))
+                sample_pdf_path = os.path.join(os.path.dirname(__file__), '신청서.pdf')
+                try:
+                    with open(sample_pdf_path, 'rb') as f:
+                        sample_text = extract_and_normalize_text_from_pdf(f.read())
+                    
+                    uploaded_text = extract_and_normalize_text_from_pdf(cert_pdf_file.read())
+                    cert_pdf_file.seek(0)
+
+                    print("--- 샘플 PDF 텍스트 ---")
+                    print(sample_text)
+                    print("--- 업로드 PDF 텍스트 ---")
+                    print(uploaded_text)
+
+                    if sample_text and uploaded_text and sample_text == uploaded_text:
+                        cert_pdf_filename = secure_filename(f"cert_pdf_{item_id or 'new'}_{cert_pdf_file.filename}")
+                        cert_pdf_file.save(os.path.join(app.config['UPLOAD_FOLDER'], cert_pdf_filename))
+                    else:
+                        flash("업로드된 농업인 확인서가 샘플과 일치하지 않습니다.", "danger")
+                        return render_template('farmer_register.html', item=item, form_data=request.form)
+                except FileNotFoundError:
+                    flash("샘플 농업인 확인서 파일을 찾을 수 없습니다.", "danger")
+                    return render_template('farmer_register.html', item=item, form_data=request.form)
+
         elif not ('has_cert' in request.form): # '인증서 등록' 체크 해제시
              cert_pdf_filename = None
 
@@ -589,6 +646,8 @@ def farmer_register(item_id=None):
         return redirect(url_for('index'))
 
     return render_template('farmer_register.html', item=item, form_data={})
+
+
 
 @app.route('/experience/delete/<int:item_id>', methods=['POST'])
 def delete_experience(item_id):

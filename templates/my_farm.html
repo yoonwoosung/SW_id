@@ -167,37 +167,39 @@
                     {% endfor %}
                 </ul>
             </div>
+
             <div class="dashboard-card">
                 <h5><i class="fa-solid fa-chart-line"></i> AI 후기 피드백 리포트</h5>
                 <div class="row mt-3">
-                <div class="col-md-6">
-                    <h6>칭찬 받은 점 Top 5</h6>
-                    <ul class="list-group">
-                        {% for keyword, count in strength_report[:5] %}
-                            <li class="list-group-item d-flex justify-content-between align-items-center">
-                                {{ keyword }}
-                                <span class="badge badge-primary badge-pill">{{ count }}회</span>
-                            </li>
-                        {% else %}
-                            <li class="list-group-item">분석된 데이터가 없습니다.</li>
-                        {% endfor %}
-                    </ul>
+                    <div class="col-6">
+                        <h6>칭찬 받은 점 Top 5</h6>
+                        <ul class="list-group list-group-flush">
+                            {% for keyword, count in strength_report[:5] %}
+                                <li class="list-group-item d-flex justify-content-between align-items-center" style="padding-left: 0; padding-right: 0;">
+                                    {{ keyword }}
+                                    <span class="badge badge-primary badge-pill">{{ count }}</span>
+                                </li>
+                            {% else %}
+                                <li class="list-group-item" style="padding-left: 0;">데이터가 부족합니다.</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    <div class="col-6">
+                        <h6>개선해야 할 점 Top 5</h6>
+                        <ul class="list-group list-group-flush">
+                            {% for keyword, count in improvement_report[:5] %}
+                                <li class="list-group-item d-flex justify-content-between align-items-center" style="padding-left: 0; padding-right: 0;">
+                                    {{ keyword }}
+                                    <span class="badge badge-warning badge-pill">{{ count }}</span>
+                                </li>
+                            {% else %}
+                                <li class="list-group-item" style="padding-left: 0;">데이터가 부족합니다.</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
                 </div>
-                <div class="col-md-6">
-                    <h6>개선해야 할 점 Top 5</h6>
-                    <ul class="list-group">
-                        {% for keyword, count in improvement_report[:5] %}
-                            <li class="list-group-item d-flex justify-content-between align-items-center">
-                                {{ keyword }}
-                                <span class="badge badge-warning badge-pill">{{ count }}회</span>
-                            </li>
-                        {% else %}
-                            <li class="list-group-item">분석된 데이터가 없습니다.</li>
-                        {% endfor %}
-                    </ul>
-                </div>
+                <small class="form-text text-muted mt-2">이 리포트는 사용자들이 남긴 후기를 AI가 분석하여 자동으로 생성됩니다.</small>
             </div>
-        </div>
         </div>
     </div>
 </div>
@@ -212,6 +214,7 @@
         </div>
     </div>
 </div>
+
 <script id="json-data" type="application/json">
     {
         "reservations": {{ reservations_data | tojson | safe }},
@@ -225,6 +228,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const jsonData = JSON.parse(dataElement.textContent || '{}');
     const reservationsData = jsonData.reservations || {};
     const experiencesData = jsonData.experiences || [];
+
     const calendarEl = document.getElementById('calendar');
 
     if (calendarEl) {
@@ -257,9 +261,21 @@ document.addEventListener('DOMContentLoaded', function() {
                     modalTitle.textContent = `${info.event.startStr} 예약자 목록`;
                     let bodyHtml = '<ul class="list-group">';
                     info.event.extendedProps.reservations.forEach(res => {
+                        let confirmButton = '';
+                        if (res.status === '예정') {
+                            confirmButton = `
+                                <form action="/application/confirm/${res.id}" method="POST" class="d-inline ml-2">
+                                    <button type="submit" class="btn btn-sm btn-success">예약 확정</button>
+                                </form>`;
+                        }
                         bodyHtml += `
-                            <li class="list-group-item">
-                                <strong>[${res.crop}]</strong> ${res.name} (${res.phone}) - ${res.adult}명 (성인), ${res.teen}명 (청소년), ${res.child}명 (아동) / ${res.time}
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <div>
+                                    <strong>[${res.crop}]</strong> ${res.name} (${res.phone}) - ${res.adult}명 (성인), ${res.teen}명 (청소년), ${res.child}명 (아동) / ${res.time}
+                                    <br>
+                                    <span class="badge badge-info">${res.status}</span>
+                                </div>
+                                ${confirmButton}
                             </li>`;
                     });
                     bodyHtml += '</ul>';
@@ -313,6 +329,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
+    // Visibility Toggle Switch
     const visibilityToggles = document.querySelectorAll('.visibility-toggle');
     visibilityToggles.forEach(toggle => {
         toggle.addEventListener('change', function() {

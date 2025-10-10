@@ -830,6 +830,21 @@ header.header-volunteer {
     z-index: 1;
 }
 
+.page-title-banner::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: inherit;
+    background-size: cover;
+    background-position: center;
+    filter: blur(5px);
+    transform: scale(1.1);
+    z-index: 0;
+}
+
 .page-title-banner h1,
 .page-title-banner p {
     position: relative;
@@ -983,14 +998,27 @@ header.header-volunteer {
     font-weight: 600;
 }
 
-.badge-specialty {
-    display: inline-block;
-    padding: 3px 8px;
-    margin-left: 8px;
-    font-size: 0.75rem;
-    font-weight: bold;
-    color: #fff;
-    background-color: #007BFF;
-    border-radius: 12px;
-    vertical-align: middle;
+/* --- 모든 모달 공통 최종 CSS (기존 모달 관련 코드 모두 삭제 후 교체) --- */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+    z-index: 1050;
+    display: none; /* JS로 제어 */
+
+    /* Flexbox를 이용한 중앙 정렬 */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.modal-content {
+    background: white;
+    padding: 2rem;
+    border-radius: 8px;
+    width: 90%;
+    max-width: 800px; /* 모든 모달에 공통으로 적용될 너비 */
 }

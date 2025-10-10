@@ -152,41 +152,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // --- 농장 등록 시간표 드래그 & 클릭 스크립트 (farmer 방식) ---
-    const timetable = document.querySelector('.timetable');
-    if (timetable) {
-        let isMouseDown = false;
-        let selectionMode = 'select';
-
-        const timeSlots = timetable.querySelectorAll('.time-slot');
-        timeSlots.forEach(slot => {
-            slot.addEventListener('mousedown', (e) => {
-                if (e.button !== 0) return;
-                e.preventDefault();
-                isMouseDown = true;
-                if (slot.classList.contains('selected')) {
-                    selectionMode = 'deselect';
-                    slot.classList.remove('selected');
-                } else {
-                    selectionMode = 'select';
-                    slot.classList.add('selected');
-                }
-            });
-            slot.addEventListener('mouseover', () => {
-                if (isMouseDown) {
-                    if (selectionMode === 'select') {
-                        slot.classList.add('selected');
-                    } else {
-                        slot.classList.remove('selected');
-                    }
-                }
-            });
-        });
-        document.addEventListener('mouseup', () => {
-            isMouseDown = false;
-        });
-    }
-
     // --- 농장 등록 페이지 (jQuery 사용 부분) ---
     $('#images').on('change', function() {
         var fileList = "선택된 파일: ";
@@ -284,25 +249,27 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
-
-    const recommendedSortLink = document.getElementById('sort-recommended');
-    if (recommendedSortLink && recommendedSortLink.classList.contains('active') && !window.location.search.includes('lat')) {
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(position => {
+    const recommendedSortLink = document.querySelector('.recommended-sort-link');
+    if (recommendedSortLink && recommendedSortLink.classList.contains('active')) {
+        const urlParams = new URLSearchParams(window.location.search);
+        if (!urlParams.has('lat') || !urlParams.has('lon')) {
+            navigator.geolocation.getCurrentPosition(function(position) {
                 const lat = position.coords.latitude;
                 const lon = position.coords.longitude;
-                const currentUrl = new URL(window.location.href);
-                currentUrl.searchParams.set('sort', 'recommended');
-                currentUrl.searchParams.set('lat', lat);
-                currentUrl.searchParams.set('lon', lon);
-                window.location.href = currentUrl.href;
-            }, () => {
-                // 위치 정보 거부 시 '모집 임박순'으로 이동
-                window.location.href = window.location.pathname + '?sort=deadline';
+                // 기존 쿼리 파라미터를 유지하면서 lat, lon 추가
+                urlParams.set('sort', 'recommended');
+                urlParams.set('lat', lat);
+                urlParams.set('lon', lon);
+                window.location.search = urlParams.toString();
+            }, function(error) {
+                console.error("Geolocation error: ", error);
+                alert("위치 정보를 허용해야 추천순 정렬을 이용할 수 있습니다. 모집 임박순으로 정렬합니다.");
+                // 위치 정보 거부 시, deadline으로 리디렉션
+                urlParams.set('sort', 'deadline');
+                urlParams.delete('lat');
+                urlParams.delete('lon');
+                window.location.search = urlParams.toString();
             });
-        } else {
-            // Geolocation API 미지원 시 '모집 임박순'으로 이동
-            window.location.href = window.location.pathname + '?sort=deadline';
         }
     }
 

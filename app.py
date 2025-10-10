@@ -10,8 +10,15 @@ from datetime import date, timedelta, datetime
 from sqlalchemy import or_
 from flask_apscheduler import APScheduler
 from PIL import Image
+import fitz  # PyMuPDF
+import re
+import pytesseract
+import io
 import json
 import math
+
+# Tesseract OCR 경로 설정
+pytesseract.pytesseract.tesseract_cmd = r'C:\python\vcodepy\sw_id\SW_id-hello\SW_id-hello\tesseract-ocr-w64-setup-5.4.0.20240606\tesseract.exe'
 
 # --- 1. 앱 및 DB 설정 ---
 app = Flask(__name__)
@@ -36,6 +43,11 @@ app.config['ALLOWED_EXTENSIONS'] = {'png', 'jpg', 'jpeg', 'gif', 'pdf'} # farmer
 app.config['KAKAO_API_KEY'] = os.environ.get('KAKAO_API_KEY', '432f80fcdc8239c7c87db2520e85597e') # farmer 기준
 
 db = SQLAlchemy(app, engine_options={"pool_pre_ping": True})
+
+# 스케줄러 설정 (farmer 기능)
+scheduler = APScheduler()
+scheduler.init_app(app)
+scheduler.start()
 
 REGIONAL_SPECIALTIES = {
     # 경기도
@@ -170,13 +182,47 @@ REGIONAL_SPECIALTIES = {
 
     # 광역시, 특별자치시
     '세종': ['복숭아', '배'],
-    '대전': ['포도'],
+    '대전': ['포도']
 }
 
-# 스케줄러 설정 (farmer 기능)
-scheduler = APScheduler()
-scheduler.init_app(app)
-scheduler.start()
+def haversine(lat1, lon1, lat2, lon2):
+    R = 6371
+    dLat = math.radians(lat2 - lat1)
+    dLon = math.radians(lon2 - lon1)
+    a = math.sin(dLat / 2) * math.sin(dLat / 2) + math.cos(math.radians(lat1)) \
+        * math.cos(math.radians(lat2)) * math.sin(dLon / 2) * math.sin(dLon / 2)
+    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+    distance = R * c
+    return distance
+
+# PDF 텍스트 추출 및 정규화 함수 (OCR 기능 포함)
+def extract_and_normalize_text_from_pdf(pdf_bytes):
+    text = ""
+    try:
+        # 1. 텍스트 기반 추출 시도
+        doc = fitz.open(stream=pdf_bytes, filetype="pdf")
+        for page in doc:
+            text += page.get_text()
+        
+        # 2. 텍스트가 거의 없다면 OCR 시도
+        if len(text.strip()) < 50: # 텍스트가 거의 없는 경우 이미지로 간주
+            print("텍스트가 거의 없어 OCR을 시도합니다.")
+            text = ""
+            doc = fitz.open(stream=pdf_bytes, filetype="pdf") # 바이트 스트림으로 다시 문서를 엽니다.
+            for page_num in range(len(doc)):
+                page = doc.load_page(page_num)
+                pix = page.get_pixmap()
+                img_bytes = pix.tobytes("png")
+                img = Image.open(io.BytesIO(img_bytes))
+                # 한국어와 영어를 포함하여 OCR 수행
+                text += pytesseract.image_to_string(img, lang='kor+eng')
+
+        # 3. 최종 텍스트 정규화
+        return re.sub(r'\s+', '', text).lower()
+
+    except Exception as e:
+        print(f"PDF 처리 중 오류 발생: {e}")
+        return ""
 
 # --- 2. DB 모델(테이블) 정의 (farmer 기준으로 통합) ---
 class User(db.Model):
@@ -287,24 +333,43 @@ class Notification(db.Model):
     is_read = db.Column(db.Boolean, default=False)
     user = db.relationship('User', backref=db.backref('notifications', lazy=True))
 
+# app.py의 analyze_review_with_clova 함수
+
 def analyze_review_with_clova(text):
     api_key = "nv-630074f1c8094226829c835d4a17284c09S4"
-
     host = "https://clovastudio.stream.ntruss.com"
     endpoint = "/v3/chat-completions/HCX-DASH-002"
     url = host + endpoint
-
-    headers = {
-        "Authorization": f"Bearer {api_key}",
-        "Content-Type": "application/json"
-    }
+    headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
     
     request_data = {
         "messages": [
-            {"role": "system", "content": "주어진 사용자 후기에서 칭찬하는 점과 개선이 필요한 점을 핵심 키워드 형태로 추출해줘. 결과는 반드시 JSON 형식으로 \"strengths\"와 \"improvements\" 키를 사용해서 정리해줘."},
-            {"role": "user", "content": text}
+            {
+                "role": "system",
+                "content": "너는 사용자 후기를 분석하여 긍정적인 점과 개선점을 추출하는 전문가야. 문장에 '좋은데', '아쉽지만', '하지만' 같은 연결어가 있어도 각 부분을 독립적으로 평가해서 키워드를 추출해야 해. 결과는 반드시 JSON 형식으로 \"strengths\"와 \"improvements\" 키를 사용해줘."
+            },
+            {
+                "role": "user",
+                "content": "거리가 가까워서 좋은데 체험이 좀 힘들었어요."
+            },
+            {
+                "role": "assistant",
+                "content": "```json\n{\n  \"strengths\": [\"가까운 거리\"],\n  \"improvements\": [\"체험 난이도 조절\"]\n}\n```"
+            },
+            {
+                "role": "user",
+                "content": "화장실이 아주 깨끗한 편은 아니었지만 이정도면 괜찮았구요."
+            },
+            {
+                "role": "assistant",
+                "content": "```json\n{\n  \"strengths\": [],\n  \"improvements\": [\"화장실 청결도\"]\n}\n```"
+            },
+            {
+                "role": "user",
+                "content": text
+            }
         ],
-        "temperature": 0.3,
+        "temperature": 0.1,
         "stream": False
     }
 
@@ -312,24 +377,26 @@ def analyze_review_with_clova(text):
         response = requests.post(url, headers=headers, json=request_data)
         response.raise_for_status()
         
-        result_json_str = response.json()['result']['message']['content']
-        analysis_result = json.loads(result_json_str)
+        response_data = response.json()
+        content_string = response_data['result']['message']['content']
         
-        return analysis_result
+        json_match = re.search(r'\{.*\}', content_string, re.DOTALL)
+        
+        if json_match:
+            json_string = json_match.group(0)
+            analysis_result = json.loads(json_string)
+            return analysis_result
+        else:
+            print(f"응답에서 JSON을 찾을 수 없음: {content_string}")
+            return None
 
     except Exception as e:
-        print(f"CLOVA API Error: {e}")
+        print(f"--- CLOVA API 에러 발생 ---")
+        print(f"에러 종류: {e}")
+        if 'response' in locals() and hasattr(response, 'text'):
+            print(f"서버 실제 응답 내용: {response.text}")
+        print("--------------------------")
         return None
-
-def haversine(lat1, lon1, lat2, lon2):
-    R = 6371  # 지구의 반경 (km)
-    dLat = math.radians(lat2 - lat1)
-    dLon = math.radians(lon2 - lon1)
-    a = math.sin(dLat / 2) * math.sin(dLat / 2) + math.cos(math.radians(lat1)) \
-        * math.cos(math.radians(lat2)) * math.sin(dLon / 2) * math.sin(dLon / 2)
-    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
-    distance = R * c
-    return distance
 
 @scheduler.task('interval', id='update_experience_status', minutes=1)
 def update_experience_status():
@@ -401,13 +468,13 @@ def index():
         
         experiences_json = [exp.to_dict() for exp in my_listings]
         experience_ids = [exp.id for exp in my_listings]
-        applications = Application.query.filter(Application.experience_id.in_(experience_ids)).all()
+        applications = Application.query.filter(Application.experience_id.in_(experience_ids), Application.status != '취소').all()
         reservations_by_date = defaultdict(list)
         for app in applications:
             reservations_by_date[app.apply_date.strftime('%Y-%m-%d')].append({
                 "id": app.id, "name": app.applicant_name, "phone": app.phone_number,
                 "adult": app.count_adult, "teen": app.count_teen, "child": app.count_child,
-                "time": app.apply_time, "crop": app.experience.crop
+                "time": app.apply_time, "crop": app.experience.crop, "status": app.status
             })
 
         avg_rating = 0
@@ -437,16 +504,28 @@ def index():
             if review.analysis_result:
                 try:
                     data = json.loads(review.analysis_result)
-                    for keyword in data.get('strengths', []):
-                        strength_keywords[keyword] = strength_keywords.get(keyword, 0) + 1
-                    for keyword in data.get('improvements', []):
-                        improvement_keywords[keyword] = improvement_keywords.get(keyword, 0) + 1
+                    strengths_data = data.get('strengths', [])
+                    if isinstance(strengths_data, str):
+                        strengths_data = [strengths_data]
+                    if isinstance(strengths_data, list):
+                        for keyword in strengths_data:
+                            if keyword:
+                                strength_keywords[keyword] = strength_keywords.get(keyword, 0) + 1
+                    
+                    improvements_data = data.get('improvements', [])
+
+                    if isinstance(improvements_data, str):
+                        improvements_data = [improvements_data]
+
+                    if isinstance(improvements_data, list):
+                        for keyword in improvements_data:
+                            if keyword:
+                                improvement_keywords[keyword] = improvement_keywords.get(keyword, 0) + 1
                 except (json.JSONDecodeError, TypeError):
                     continue # JSON 파싱 오류 시 건너뛰기
         
         sorted_strengths = sorted(strength_keywords.items(), key=lambda item: item[1], reverse=True)
         sorted_improvements = sorted(improvement_keywords.items(), key=lambda item: item[1], reverse=True)
-
 
         return render_template('my_farm.html',
                                user=user, experiences=my_listings, experiences_json=experiences_json,
@@ -454,28 +533,34 @@ def index():
                                reservations_data=reservations_by_date, notifications=notifications,
                                strength_report=sorted_strengths,
                                improvement_report=sorted_improvements)
-    else:
-        # --- 체험자에게 보여주는 페이지 로직 ---
+    else: # 체험자 또는 비로그인 사용자
         page = request.args.get('page', 1, type=int)
-        sort_by = request.args.get('sort', 'recommended', type=str)
-        
+        sort_by = request.args.get('sort', 'recommended', type=str) # 기본값을 'recommended'로 변경
+        region = request.args.get('region', type=str)
+        crop_query = request.args.get('crop_query', type=str)
+
+        user_lat = request.args.get('lat', type=float)
+        user_lon = request.args.get('lon', type=float)
+
         today = date.today()
         base_query = Experience.query.filter(Experience.status == 'recruiting', Experience.end_date >= today)
 
         items_on_page = []
         pagination = None
 
+        # 1. '추천순' 정렬 로직
         if sort_by == 'recommended':
             user_lat = request.args.get('lat', type=float)
             user_lon = request.args.get('lon', type=float)
 
+            # URL에 위치 정보가 없으면 빈 목록을 보여줌 (JS가 위치를 받아와 페이지를 새로고침)
             if user_lat and user_lon:
                 all_experiences = base_query.all()
                 
                 ranked_experiences = []
                 for exp in all_experiences:
                     distance = haversine(user_lat, user_lon, exp.lat, exp.lng)
-                    if distance > 50: continue
+                    if distance > 50: continue # 50km 초과 시 목록에서 제외
 
                     # 추천 점수 계산
                     distance_score = max(0, 1 - (distance / 50))
@@ -498,30 +583,31 @@ def index():
                     exp.distance = distance
                     ranked_experiences.append(exp)
 
+                # 추천 점수가 높은 순으로 정렬
                 sorted_items = sorted(ranked_experiences, key=lambda x: x.recommendation_score, reverse=True)
                 
+                # 페이지네이션 수동 처리
                 start = (page - 1) * 15
                 end = start + 15
                 items_on_page = sorted_items[start:end]
                 total_items = len(sorted_items)
                 
-                from flask_sqlalchemy.pagination import Pagination
+                from types import SimpleNamespace
                 total_pages = math.ceil(total_items / 15)
-
-                # 페이지네이션 객체 대신, 필요한 정보만 담은 딕셔너리를 직접 생성
-                pagination = {
-                    'page': page,
-                    'per_page': 15,
-                    'total': total_items,
-                    'pages': total_pages,
-                    'has_prev': page > 1,
-                    'has_next': page < total_pages,
-                    'prev_num': page - 1 if page > 1 else None,
-                    'next_num': page + 1 if page < total_pages else None,
-                    # iter_pages는 Jinja2에서 직접 구현하거나, 간단히 버튼만 표시
-                    'iter_pages': range(1, total_pages + 1) # 간단한 페이지 번호 목록
-                }
-
+                pagination = SimpleNamespace(
+                    items=items_on_page,
+                    page=page,
+                    per_page=15,
+                    total=total_items,
+                    pages=total_pages,
+                    has_prev=(page > 1),
+                    has_next=(page < total_pages),
+                    prev_num=page - 1,
+                    next_num=page + 1,
+                    iter_pages=range(1, total_pages + 1)
+                )
+        
+        # 2. '모집 임박순', '리뷰 많은순' 정렬 로직
         else:
             query = base_query
             region = request.args.get('region', type=str)
@@ -540,6 +626,7 @@ def index():
             pagination = query.paginate(page=page, per_page=15, error_out=False)
             items_on_page = sorted(pagination.items, key=lambda x: x.current_participants >= x.max_participants)
 
+        # 3. 화면에 '지역 특산물' 배지를 표시하기 위한 정보 추가
         for item in items_on_page:
             item.is_specialty = False
             for region, specialties in REGIONAL_SPECIALTIES.items():
@@ -664,21 +751,32 @@ def experience_detail(item_id):
         flash("현재 모집 중인 체험이 아닙니다.", "warning")
         return redirect(url_for('index'))
 
-    can_review = False
+    review_status = 'not_logged_in'
     if 'user_id' in session:
         user_id = session['user_id']
-        applications = Application.query.filter_by(user_id=user_id, experience_id=item_id).all()
-        has_attended = any(app.apply_date < date.today() for app in applications)
+        existing_review = Review.query.filter_by(user_id=user_id, experience_id=item_id).first()
+        if existing_review:
+            review_status = 'already_reviewed'
+        else:
+            application = Application.query.filter(
+                Application.user_id == user_id,
+                Application.experience_id == item_id
+            ).order_by(Application.id.desc()).first()
 
-        if has_attended:
-            existing_review = Review.query.filter_by(user_id=user_id, experience_id=item_id).first()
-            if not existing_review:
-                can_review = True
+            if application:
+                if application.status == '확정':
+                    review_status = 'allowed'
+                elif application.status == '예정':
+                    review_status = 'pending_confirmation'
+                else: # 취소 또는 다른 상태
+                    review_status = 'not_applicable'
+            else:
+                review_status = 'not_applied'
 
     reviews = Review.query.filter_by(experience_id=item_id).order_by(Review.timestamp.desc()).all()
     inquiries = Inquiry.query.filter_by(experience_id=item_id).order_by(Inquiry.timestamp.desc()).all()
     item_data_for_js = {'lat': item.lat, 'lng': item.lng}
-    return render_template('detail_experience.html', item=item, item_data_for_js=item_data_for_js, reviews=reviews, inquiries=inquiries, can_review=can_review)
+    return render_template('detail_experience.html', item=item, item_data_for_js=item_data_for_js, reviews=reviews, inquiries=inquiries, review_status=review_status)
 
 @app.route('/experience/apply/<int:item_id>', methods=['GET', 'POST'])
 def experience_apply(item_id):
@@ -759,8 +857,29 @@ def farmer_register(item_id=None):
 
         if cert_pdf_file and cert_pdf_file.filename != '':
             if allowed_file(cert_pdf_file.filename):
-                cert_pdf_filename = secure_filename(f"cert_pdf_{item_id or 'new'}_{cert_pdf_file.filename}")
-                cert_pdf_file.save(os.path.join(app.config['UPLOAD_FOLDER'], cert_pdf_filename))
+                sample_pdf_path = os.path.join(os.path.dirname(__file__), '신청서.pdf')
+                try:
+                    with open(sample_pdf_path, 'rb') as f:
+                        sample_text = extract_and_normalize_text_from_pdf(f.read())
+                    
+                    uploaded_text = extract_and_normalize_text_from_pdf(cert_pdf_file.read())
+                    cert_pdf_file.seek(0)
+
+                    print("--- 샘플 PDF 텍스트 ---")
+                    print(sample_text)
+                    print("--- 업로드 PDF 텍스트 ---")
+                    print(uploaded_text)
+
+                    if sample_text and uploaded_text and sample_text == uploaded_text:
+                        cert_pdf_filename = secure_filename(f"cert_pdf_{item_id or 'new'}_{cert_pdf_file.filename}")
+                        cert_pdf_file.save(os.path.join(app.config['UPLOAD_FOLDER'], cert_pdf_filename))
+                    else:
+                        flash("업로드된 농업인 확인서가 샘플과 일치하지 않습니다.", "danger")
+                        return render_template('farmer_register.html', item=item, form_data=request.form)
+                except FileNotFoundError:
+                    flash("샘플 농업인 확인서 파일을 찾을 수 없습니다.", "danger")
+                    return render_template('farmer_register.html', item=item, form_data=request.form)
+
         elif not ('has_cert' in request.form): # '인증서 등록' 체크 해제시
              cert_pdf_filename = None
 
@@ -855,6 +974,8 @@ def farmer_register(item_id=None):
 
     return render_template('farmer_register.html', item=item, form_data={})
 
+
+
 @app.route('/experience/delete/<int:item_id>', methods=['POST'])
 def delete_experience(item_id):
     if 'user_id' not in session or session['role'] != 'farmer': abort(403)
@@ -889,22 +1010,43 @@ def toggle_visibility(item_id):
 
 @app.route('/experience/<int:item_id>/review', methods=['POST'])
 def add_review(item_id):
-    if 'user_id' not in session: 
-        return redirect(url_for('login_page'))
+    if 'user_id' not in session: return redirect(url_for('login_page'))
+    
+    user_id = session['user_id']
+    has_confirmed_app = Application.query.filter(
+        Application.user_id == user_id,
+        Application.experience_id == item_id,
+        Application.status == '확정'
+    ).first()
 
-    existing_review = Review.query.filter_by(user_id=session['user_id'], experience_id=item_id).first()
+    if not has_confirmed_app:
+        flash("후기를 작성할 권한이 없습니다. 예약이 확정된 체험에만 후기를 남길 수 있습니다.", "warning")
+        return redirect(url_for('experience_detail', item_id=item_id))
+
+    existing_review = Review.query.filter_by(user_id=user_id, experience_id=item_id).first()
     if existing_review:
         flash("이미 이 체험에 대한 후기를 작성하셨습니다.", "warning")
         return redirect(url_for('experience_detail', item_id=item_id))
 
     review_content = request.form.get('content')
-    analysis_json = analyze_review_with_clova(review_content)
+    analysis_json = None  # 기본값을 None으로 설정
+    try:
+        # AI 분석 함수를 try-except 블록으로 감싸서 에러를 포착합니다.
+        analysis_json = analyze_review_with_clova(review_content) 
+        if analysis_json is None:
+            # API에서 정상 응답을 받았지만, 내용이 비어있는 경우
+            flash("AI 후기 분석에 실패했습니다. (API 응답 없음)", "warning")
+    except Exception as e:
+        # API 호출 중 네트워크 오류 등 예외가 발생한 경우
+        print(f"CLOVA API 호출 중 에러 발생: {e}") # 서버 로그에 에러 기록
+        flash(f"AI 후기 분석 중 오류가 발생했습니다. 관리자에게 문의하세요.", "danger")
 
     new_review = Review(
         rating=int(request.form.get('rating')),
-        content=review_content,
+        content=review_content, # review_content 변수 사용
         user_id=session['user_id'],
         experience_id=item_id,
+        # AI 분석 결과를 JSON 문자열 형태로 저장
         analysis_result=json.dumps(analysis_json) if analysis_json else None
     )
     db.session.add(new_review)
@@ -924,6 +1066,28 @@ def add_inquiry(item_id):
     db.session.commit()
     flash("문의가 등록되었습니다.", "success")
     return redirect(url_for('experience_detail', item_id=item_id))
+
+@app.route('/application/confirm/<int:app_id>', methods=['POST'])
+def confirm_application(app_id):
+    if 'user_id' not in session or session.get('role') != 'farmer':
+        flash("권한이 없습니다.", "danger")
+        return redirect(url_for('login_page'))
+
+    application = Application.query.get_or_404(app_id)
+    experience = Experience.query.get_or_404(application.experience_id)
+
+    if experience.farmer_id != session.get('user_id'):
+        flash("자신의 체험에 대한 예약만 확정할 수 있습니다.", "danger")
+        return redirect(url_for('index'))
+
+    if application.status == '예정':
+        application.status = '확정'
+        db.session.commit()
+        flash(f"{application.applicant_name}님의 예약을 확정했습니다.", "success")
+    else:
+        flash("이미 처리된 예약입니다.", "warning")
+
+    return redirect(url_for('index'))
 
 # --- 파일 업로드 관련 ---
 def allowed_file(filename):
@@ -1005,10 +1169,19 @@ def delete_application(app_id):
     if application.user_id != session['user_id']: abort(403)
 
     experience = Experience.query.get(application.experience_id)
-    if experience:
+    if experience and application.status != '취소': # 이미 취소된 건은 인원수 복구 안함
         experience.current_participants = max(0, experience.current_participants - application.participants_count)
 
-    db.session.delete(application)
+    application.status = '취소'
+    
+    # Delete the associated review
+    existing_review = Review.query.filter_by(
+        user_id=application.user_id,
+        experience_id=application.experience_id
+    ).first()
+    if existing_review:
+        db.session.delete(existing_review)
+
     db.session.commit()
 
     flash("체험 신청이 취소되었습니다.", "success")

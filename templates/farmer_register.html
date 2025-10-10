@@ -18,13 +18,50 @@
                                 <input type="text" class="form-control" id="phone" name="phone" value="{{ item.phone if item else form_data.get('phone', '') }}" required>
                             </div>
                             <div class="form-group col-md-6">
-                                <label for="farm_size">농장 크기 (e.g., 100평)</label>
+                                <label for="farm_size">농장 크기(*ex. 100)</label>
                                 <input type="text" class="form-control" id="farm_size" name="farm_size" value="{{ item.farm_size if item else form_data.get('farm_size', '') }}">
                             </div>
                         </div>
                         <div class="form-group">
                             <label for="address">상세 주소 (체험 장소)</label>
                             <input type="text" class="form-control" id="address" name="address" value="{{ item.address_detail if item else form_data.get('address', '') }}" required>
+                        </div>
+                        <hr>
+                        <div class="form-check mb-3">
+                            <input type="checkbox" class="form-check-input" id="has_parking" name="has_parking" {% if (item and item.has_parking) or form_data.get('has_parking') %}checked{% endif %}>
+                            <label class="form-check-label" for="has_parking">주차장 제공</label>
+                        </div>
+                        <hr>
+                        <div class="form-check mb-3">
+                            <input type="checkbox" class="form-check-input" id="is_organic" name="is_organic" {% if (item and item.pesticade_free) or form_data.get('is_organic') %}checked{% endif %}>
+                            <label class="form-check-label" for="is_organic">친환경 농법 인증</label>
+                        </div>
+                        <div id="organic-cert-fields" style="display: {% if (item and item.pesticide_free) or form_data.get('is_organic') %}block{% else %}none{% endif %};">
+                            <div class="form-group">
+                                <label for="organic_certification_type">친환경 인증 종류</label>
+                                <input type="text" class="form-control" id="organic_certification_type" name="organic_certification_type" value="{{ item.organic_certification_type if item else form_data.get('organic_certification_type', '') }}">
+                            </div>
+                            <div class="form-group">
+                                <label for="organic_certification_image">인증서 이미지</label>
+                                <div class="custom-file">
+                                    <input type="file" class="custom-file-input" id="organic_certification_image" name="organic_certification_image">
+                                    <label class="custom-file-label" for="organic_certification_image">파일 선택...</label>
+                                </div>
+                                {% if item and item.organic_certification_image %}
+                                <small class="form-text text-muted">현재 파일: {{ item.organic_certification_image }}</small>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <hr>
+                        <div class="form-group">
+                            <label for="organic_certification_pdf">농업인 확인서</label>
+                            <div class="custom-file">
+                                <input type="file" class="custom-file-input" id="organic_certification_pdf" name="organic_certification_pdf" accept=".pdf" required>
+                                <label class="custom-file-label" for="organic_certification_pdf">PDF 파일 선택...</label>
+                            </div>
+                            {% if item and item.organic_certification_pdf %}
+                            <small class="form-text text-muted">현재 파일: {{ item.organic_certification_pdf }}</small>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
@@ -113,54 +150,6 @@
                 </div>
 
                 <div class="card mb-4">
-                    <div class="card-header">부가 정보</div>
-                    <div class="card-body">
-                        <div class="form-check mb-3">
-                            <input type="checkbox" class="form-check-input" id="has_parking" name="has_parking" {% if (item and item.has_parking) or form_data.get('has_parking') %}checked{% endif %}>
-                            <label class="form-check-label" for="has_parking">주차장 제공</label>
-                        </div>
-                        <hr>
-                        <div class="form-check mb-3">
-                            <input type="checkbox" class="form-check-input" id="is_organic" name="is_organic" {% if (item and item.pesticide_free) or form_data.get('is_organic') %}checked{% endif %}>
-                            <label class="form-check-label" for="is_organic">친환경 농법 인증</label>
-                        </div>
-                        <div id="organic-cert-fields" style="display: {% if (item and item.pesticide_free) or form_data.get('is_organic') %}block{% else %}none{% endif %};">
-                            <div class="form-group">
-                                <label for="organic_certification_type">친환경 인증 종류</label>
-                                <input type="text" class="form-control" id="organic_certification_type" name="organic_certification_type" value="{{ item.organic_certification_type if item else form_data.get('organic_certification_type', '') }}">
-                            </div>
-                            <div class="form-group">
-                                <label for="organic_certification_image">인증서 이미지</label>
-                                <div class="custom-file">
-                                    <input type="file" class="custom-file-input" id="organic_certification_image" name="organic_certification_image">
-                                    <label class="custom-file-label" for="organic_certification_image">파일 선택...</label>
-                                </div>
-                                {% if item and item.organic_certification_image %}
-                                <small class="form-text text-muted">현재 파일: {{ item.organic_certification_image }}</small>
-                                {% endif %}
-                            </div>
-                        </div>
-                        <hr>
-                        <div class="form-check mb-3">
-                            <input type="checkbox" class="form-check-input" id="has_cert" name="has_cert" {% if (item and item.organic_certification_pdf) or form_data.get('has_cert') %}checked{% endif %}>
-                            <label class="form-check-label" for="has_cert">기타 인증서 등록 (PDF)</label>
-                        </div>
-                        <div id="pdf-cert-fields" style="display: {% if (item and item.organic_certification_pdf) or form_data.get('has_cert') %}block{% else %}none{% endif %};">
-                            <div class="form-group">
-                                <label for="organic_certification_pdf">인증서 PDF 파일</label>
-                                <div class="custom-file">
-                                    <input type="file" class="custom-file-input" id="organic_certification_pdf" name="organic_certification_pdf">
-                                    <label class="custom-file-label" for="organic_certification_pdf">파일 선택...</label>
-                                </div>
-                                {% if item and item.organic_certification_pdf %}
-                                <small class="form-text text-muted">현재 파일: {{ item.organic_certification_pdf }}</small>
-                                {% endif %}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="card mb-4">
                     <div class="card-header">봉사활동 모집 (선택)</div>
                     <div class="card-body">
                         <div class="form-group">
@@ -174,19 +163,39 @@
                     </div>
                 </div>
                 
-
-
                 <div class="form-group form-check">
                     <input type="checkbox" class="form-check-input" id="terms" required>
-                    <label class="form-check-label" for="terms">서비스 이용 약관에 동의합니다.</label>
+                    <label class="form-check-label" for="terms">
+                        서비스 이용 약관에 동의합니다.
+                        <a href="#" id="viewTermsLink">(내용 보기)</a>
+                    </label>
                 </div>
-
                 <button type="submit" class="btn btn-primary btn-block">{% if item %}체험 수정하기{% else %}체험 등록하기{% endif %}</button>
             </form>
         </div>
     </div>
 </div>
-
+<div id="termsModalOverlay" class="modal-overlay" style="display: none;">
+    <div class="modal-content">
+        <h5 style="margin-bottom: 1rem; font-weight: bold;">서비스 이용 약관</h5>
+        <div class="terms-content" style="max-height: 60vh; overflow-y: auto; border: 1px solid #eee; padding: 1rem; background-color: #f9f9f9;">
+            <p><strong>제1조 (목적)</strong> 이 약관은 FarmLink(이하 "회사")가 제공하는 농장 체험 중개 및 관련 제반 서비스의 이용과 관련하여 회사와 회원 간의 권리, 의무 및 책임사항, 기타 필요한 사항을 규정함을 목적으로 합니다.</p>
+            <p><strong>제2조 (용어의 정의)</strong> 본 약관에서 사용하는 용어의 정의는 다음과 같습니다.</p>
+            <ul>
+                <li>"서비스"라 함은 구현되는 단말기와 상관없이 "회원"이 이용할 수 있는 FarmLink 및 관련 제반 서비스를 의미합니다.</li>
+                <li>"회원"이라 함은 회사의 "서비스"에 접속하여 이 약관에 따라 "회사"와 이용계약을 체결하고 "회사"가 제공하는 "서비스"를 이용하는 고객을 말합니다.</li>
+                <li>"농장주"라 함은 "회원" 중 농장 체험 프로그램을 등록하고 제공하는 자를 의미합니다.</li>
+                <li>"체험자"라 함은 "회원" 중 "농장주"가 등록한 체험 프로그램에 참여하는 자를 의미합니다.</li>
+            </ul>
+            <p><strong>제3조 (정보의 제공 및 변경)</strong> 회사는 다음 각 호의 사항을 서비스 초기 화면에 게시하여 회원이 이를 쉽게 알 수 있도록 합니다. 다만, 약관의 내용은 이용자가 연결화면을 통하여 볼 수 있도록 할 수 있습니다.</p>
+            <p>...</p>
+            <p><strong>제15조 (책임제한)</strong> 회사는 천재지변 또는 이에 준하는 불가항력으로 인하여 서비스를 제공할 수 없는 경우에는 서비스 제공에 관한 책임이 면제됩니다. 회사는 회원의 귀책사유로 인한 서비스 이용의 장애에 대하여는 책임을 지지 않습니다.</p>
+        </div>
+        <div class="modal-buttons" style="margin-top: 1.5rem; text-align: right;">
+            <button id="farmer-modal-close" class="btn btn-secondary">닫기</button>
+        </div>
+    </div>
+</div>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // Bootstrap custom file input
@@ -198,76 +207,92 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Organic certification fields toggle
     $('#is_organic').on('change', function() {
-        $('#organic-cert-fields').toggle(this.checked);
-    });
+        const isChecked = this.checked;
+        $('#organic-cert-fields').toggle(isChecked);
+        $('#organic_certification_type').prop('required', isChecked);
+        // 이미지가 있는 경우에만 required 속성을 추가하는 로직 보완
+        if (isChecked && !$('small:contains("현재 파일:")').length) {
+            $('#organic_certification_image').prop('required', true);
+        } else {
+             $('#organic_certification_image').prop('required', false);
+        }
+    }).trigger('change'); // Trigger on page load to set initial state
 
-    // PDF certification fields toggle
-    $('#has_cert').on('change', function() {
-        $('#pdf-cert-fields').toggle(this.checked);
-    });
-
-    // Timetable selection logic
-    const timetable = document.querySelector('.timetable');
-    if (timetable) {
+    // Timetable selection logic (jQuery version)
+    const $timetable = $('.timetable');
+    if ($timetable.length) {
         let isMouseDown = false;
         let selectionMode = 'select';
 
-        const timeSlots = timetable.querySelectorAll('.time-slot');
-        
-        // 이전에 선택된 데이터 복원
-        const existingTimetableData = document.getElementById('timetable-data').value;
+        const $timeSlots = $timetable.find('.time-slot');
+
+        // Restore existing data
+        const existingTimetableData = $('#timetable-data').val();
         if (existingTimetableData) {
             const selections = existingTimetableData.split(',');
             selections.forEach(sel => {
                 const [day, time] = sel.split('-');
-                const slot = timetable.querySelector(`[data-day="${day}"][data-time="${time}"]`);
-                if (slot) {
-                    slot.classList.add('selected');
+                if (day && time) {
+                    $timetable.find(`[data-day="${day}"][data-time="${time}"]`).addClass('selected');
                 }
             });
         }
 
-        timeSlots.forEach(slot => {
-            slot.addEventListener('mousedown', (e) => {
-                if (e.button !== 0) return;
-                e.preventDefault();
-                isMouseDown = true;
-                if (slot.classList.contains('selected')) {
-                    selectionMode = 'deselect';
-                    slot.classList.remove('selected');
+        $timeSlots.on('mousedown', function(e) {
+            if (e.button !== 0) return;
+            e.preventDefault();
+            isMouseDown = true;
+            const $slot = $(this);
+            if ($slot.hasClass('selected')) {
+                selectionMode = 'deselect';
+                $slot.removeClass('selected');
+            } else {
+                selectionMode = 'select';
+                $slot.addClass('selected');
+            }
+        }).on('mouseover', function() {
+            if (isMouseDown) {
+                const $slot = $(this);
+                if (selectionMode === 'select') {
+                    $slot.addClass('selected');
                 } else {
-                    selectionMode = 'select';
-                    slot.classList.add('selected');
+                    $slot.removeClass('selected');
                 }
-            });
-            slot.addEventListener('mouseover', () => {
-                if (isMouseDown) {
-                    if (selectionMode === 'select') {
-                        slot.classList.add('selected');
-                    } else {
-                        slot.classList.remove('selected');
-                    }
-                }
-            });
+            }
         });
-        document.addEventListener('mouseup', () => {
+
+        $(document).on('mouseup', function() {
             isMouseDown = false;
         });
     }
 
-    // Form submission: gather timetable data
-    $('#farm-register-form').on('submit', function() {
-        const selectedSlots = [];
-        document.querySelectorAll('.timetable .time-slot.selected').forEach(slot => {
-            selectedSlots.push(`${slot.dataset.day}-${slot.dataset.time}`);
+    // --- farmer_register.html의 기존 모달 스크립트를 이걸로 교체 ---
+    const viewTermsLink = document.getElementById('viewTermsLink');
+    const termsModalOverlay = document.getElementById('termsModalOverlay');
+    const modalCloseBtn = document.getElementById('farmer-modal-close'); // 1단계에서 새로 만든 버튼 ID
+
+    function closeModal() {
+        if (termsModalOverlay) termsModalOverlay.style.display = 'none';
+    }
+
+    if (viewTermsLink) {
+        viewTermsLink.addEventListener('click', function(event) {
+            event.preventDefault();
+            if (termsModalOverlay) termsModalOverlay.style.display = 'flex';
         });
-        document.getElementById('timetable-data').value = selectedSlots.join(',');
-        
-        if (!$('#terms').is(':checked')) {
-            alert("서비스 이용 약관에 동의해주세요.");
-            e.preventDefault();
-        }
-    });
+    }
+
+    if (modalCloseBtn) {
+        modalCloseBtn.addEventListener('click', closeModal);
+    }
+
+    if (termsModalOverlay) {
+        termsModalOverlay.addEventListener('click', function(event) {
+            if (event.target === termsModalOverlay) {
+                closeModal();
+            }
+        });
+    }
 });
 </script>
 {% endblock %}

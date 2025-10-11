@@ -50,6 +50,31 @@
         font-size: 0.9rem;
         color: #6c757d;
     }
+    .slider-container {
+        position: relative;
+        overflow: hidden;
+    }
+    .feedback-slides {
+        display: flex;
+        transition: transform 0.5s ease-in-out;
+    }
+    .feedback-slide {
+        min-width: 100%;
+        box-sizing: border-box;
+    }
+    .slider-container {
+        position: relative;
+        overflow: hidden;
+    }
+    .feedback-slides {
+        display: flex;
+        transition: transform 0.5s ease-in-out;
+    }
+    .feedback-slide {
+        min-width: 100%;
+        box-sizing: border-box;
+        padding-top: 1rem; /* 헤더와 컨텐츠 사이 간격 */
+    }
 </style>
 
 <div class="container dashboard-container">
@@ -170,34 +195,44 @@
 
             <div class="dashboard-card">
                 <h5><i class="fa-solid fa-chart-line"></i> AI 후기 피드백 리포트</h5>
-                <div class="row mt-3">
-                    <div class="col-6">
-                        <h6>칭찬 받은 점 Top 5</h6>
-                        <ul class="list-group list-group-flush">
-                            {% for keyword, count in strength_report[:5] %}
-                                <li class="list-group-item d-flex justify-content-between align-items-center" style="padding-left: 0; padding-right: 0;">
-                                    {{ keyword }}
-                                    <span class="badge badge-primary badge-pill">{{ count }}</span>
-                                </li>
-                            {% else %}
-                                <li class="list-group-item" style="padding-left: 0;">데이터가 부족합니다.</li>
-                            {% endfor %}
-                        </ul>
+                <div id="feedback-header" class="mt-3">
                     </div>
-                    <div class="col-6">
-                        <h6>개선해야 할 점 Top 5</h6>
-                        <ul class="list-group list-group-flush">
-                            {% for keyword, count in improvement_report[:5] %}
-                                <li class="list-group-item d-flex justify-content-between align-items-center" style="padding-left: 0; padding-right: 0;">
-                                    {{ keyword }}
-                                    <span class="badge badge-warning badge-pill">{{ count }}</span>
-                                </li>
-                            {% else %}
-                                <li class="list-group-item" style="padding-left: 0;">데이터가 부족합니다.</li>
+                    <div id="feedback-slider" class="slider-container">
+                        <div class="feedback-slides">
+                            {% for exp_id, feedback in feedback_report.items() %}
+                                <div class="feedback-slide" data-title="{{ feedback.name }}">
+                                    <div class="row">
+                                        <div class="col-6">
+                                            <h6>칭찬 받은 점</h6>
+                                            <ul class="list-group list-group-flush">
+                                                {% for keyword, count in feedback.strengths[:5] %}
+                                                    <li class="list-group-item d-flex justify-content-between align-items-center" style="padding-left: 0; padding-right: 0;">
+                                                        {{ keyword }}
+                                                        <span class="badge badge-primary badge-pill">{{ count }}</span>
+                                                    </li>
+                                                {% else %}
+                                                    <li class="list-group-item" style="padding-left: 0;">데이터가 부족합니다.</li>
+                                                {% endfor %}
+                                            </ul>
+                                        </div>
+                                        <div class="col-6">
+                                            <h6>개선해야 할 점</h6>
+                                            <ul class="list-group list-group-flush">
+                                                {% for keyword, count in feedback.improvements[:5] %}
+                                                    <li class="list-group-item d-flex justify-content-between align-items-center" style="padding-left: 0; padding-right: 0;">
+                                                        {{ keyword }}
+                                                        <span class="badge badge-warning badge-pill">{{ count }}</span>
+                                                    </li>
+                                                {% else %}
+                                                    <li class="list-group-item" style="padding-left: 0;">데이터가 부족합니다.</li>
+                                                {% endfor %}
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
                             {% endfor %}
-                        </ul>
+                        </div>
                     </div>
-                </div>
                 <small class="form-text text-muted mt-2">이 리포트는 사용자들이 남긴 후기를 AI가 분석하여 자동으로 생성됩니다.</small>
             </div>
         </div>
@@ -356,6 +391,53 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
     });
+
+    const feedbackSlider = document.getElementById('feedback-slider');
+    if (feedbackSlider) {
+        const slidesContainer = feedbackSlider.querySelector('.feedback-slides');
+        const slides = feedbackSlider.querySelectorAll('.feedback-slide');
+        const header = document.getElementById('feedback-header');
+        let currentIndex = 0;
+        if (slides.length > 0) {
+            let headerHTML = `
+                <div style="display: flex; justify-content: center; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 0.75rem;">
+                    <button id="feedback-prev-btn" class="btn btn-sm btn-light" style="width: 30px;">&lt;</button>
+                    <h6 id="current-feedback-title" class="text-center font-weight-bold mx-3 my-0" style="flex-grow: 1;"></h6>
+                    <button id="feedback-next-btn" class="btn btn-sm btn-light" style="width: 30px;">&gt;</button>
+                </div>
+            `;
+            header.innerHTML = headerHTML;
+
+            const prevBtn = document.getElementById('feedback-prev-btn');
+            const nextBtn = document.getElementById('feedback-next-btn');
+            const titleElement = document.getElementById('current-feedback-title');
+
+            function showSlide(index) {
+                slidesContainer.style.transform = `translateX(-${index * 100}%)`;
+                titleElement.textContent = slides[index].dataset.title;
+            }
+
+            prevBtn.addEventListener('click', function() {
+                currentIndex = (currentIndex > 0) ? currentIndex - 1 : slides.length - 1;
+                showSlide(currentIndex);
+            });
+
+            nextBtn.addEventListener('click', function() {
+                currentIndex = (currentIndex < slides.length - 1) ? currentIndex + 1 : 0;
+                showSlide(currentIndex);
+            });
+        
+            if (slides.length <= 1) {
+                prevBtn.style.visibility = 'hidden';
+                nextBtn.style.visibility = 'hidden';
+            }
+
+            showSlide(0);
+
+        } else {
+            slidesContainer.innerHTML = '<p class="text-muted text-center my-5">분석할 후기 데이터가 없습니다.</p>';
+        }
+    }
 });
 </script>
 {% endblock %}

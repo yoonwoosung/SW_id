@@ -493,46 +493,51 @@ def index():
             'average_rating': avg_rating if avg_rating > 0 else "N/A",
             'total_visitors': total_visitors
         }
-
-        my_experience_ids = [exp.id for exp in my_listings]
-        all_reviews = Review.query.filter(Review.experience_id.in_(my_experience_ids)).order_by(Review.timestamp.desc()).all()
         
-        strength_keywords = {}
-        improvement_keywords = {}
+        feedback_by_experience = {}
+        my_listings_with_reviews = Experience.query.filter(
+            Experience.farmer_id == farmer_id
+        ).options(db.joinedload(Experience.reviews)).all()
 
-        for review in all_reviews:
-            if review.analysis_result:
-                try:
-                    data = json.loads(review.analysis_result)
-                    strengths_data = data.get('strengths', [])
-                    if isinstance(strengths_data, str):
-                        strengths_data = [strengths_data]
-                    if isinstance(strengths_data, list):
-                        for keyword in strengths_data:
-                            if keyword:
-                                strength_keywords[keyword] = strength_keywords.get(keyword, 0) + 1
-                    
-                    improvements_data = data.get('improvements', [])
+        for exp in my_listings_with_reviews:
+            if not exp.reviews:
+                continue
 
-                    if isinstance(improvements_data, str):
-                        improvements_data = [improvements_data]
+            strength_keywords = defaultdict(int)
+            improvement_keywords = defaultdict(int)
 
-                    if isinstance(improvements_data, list):
-                        for keyword in improvements_data:
-                            if keyword:
-                                improvement_keywords[keyword] = improvement_keywords.get(keyword, 0) + 1
-                except (json.JSONDecodeError, TypeError):
-                    continue # JSON 파싱 오류 시 건너뛰기
+            for review in exp.reviews:
+                if review.analysis_result:
+                    try:
+                        data = json.loads(review.analysis_result)
+                        strengths_data = data.get('strengths', [])
+                        if isinstance(strengths_data, list):
+                            for keyword in strengths_data:
+                                if keyword: strength_keywords[keyword] += 1
+                
+                        improvements_data = data.get('improvements', [])
+                        if isinstance(improvements_data, list):
+                            for keyword in improvements_data:
+                                if keyword: improvement_keywords[keyword] += 1
+                    except (json.JSONDecodeError, TypeError):
+                        continue
+
+            if strength_keywords or improvement_keywords:
+                sorted_strengths = sorted(strength_keywords.items(), key=lambda item: item[1], reverse=True)
+                sorted_improvements = sorted(improvement_keywords.items(), key=lambda item: item[1], reverse=True)
         
-        sorted_strengths = sorted(strength_keywords.items(), key=lambda item: item[1], reverse=True)
-        sorted_improvements = sorted(improvement_keywords.items(), key=lambda item: item[1], reverse=True)
+                feedback_by_experience[exp.id] = {
+                    'name': exp.crop,
+                    'strengths': sorted_strengths,
+                    'improvements': sorted_improvements
+                }
 
         return render_template('my_farm.html',
                                user=user, experiences=my_listings, experiences_json=experiences_json,
                                stats=stats, inquiries=latest_inquiries,
                                reservations_data=reservations_by_date, notifications=notifications,
-                               strength_report=sorted_strengths,
-                               improvement_report=sorted_improvements)
+                               feedback_report=feedback_by_experience)
+    
     else: # 체험자 또는 비로그인 사용자
         page = request.args.get('page', 1, type=int)
         sort_by = request.args.get('sort', 'recommended', type=str) # 기본값을 'recommended'로 변경

@@ -13,7 +13,7 @@
     </div>
 
     <div class="tab-content-wrapper">
-        <div class="list-title-header">
+        <div class="list-title-header" id="experience-list-section">
             <h2>현재 진행 중 체험</h2>
             <div class="sort-links">
                 <a href="{{ url_for('index', sort='recommended', region=request.args.get('region'), crop_query=request.args.get('crop_query')) }}" class="sort-link recommended-sort-link {% if sort_by == 'recommended' %}active{% endif %}">추천순</a>
@@ -46,34 +46,45 @@
             </div>
         </div>
 
-        <div class="experience-list-container">
+        <div class="experience-list-container {% if sort_by == 'recommended' %}recommended-view{% endif %}">
             <div class="list-header-row">
                 <span class="col-crop">작물명</span>
-                <span class="col-location">위치</span>
-                <span class="col-d-day">{% if sort_by == 'recommended' %}예상 거리{% else %}마감까지{% endif %}</span>
+                <span class="col-location">위치</span>        
+                {% if sort_by == 'recommended' %}
+                    <span class="col-distance text-center">예상 거리</span>
+                {% endif %}        
+                <span class="col-d-day">마감까지</span>
                 <span class="col-cost">비용</span>
                 <span class="col-status">모집현황</span>
                 <span class="col-action">신청</span>
             </div>
-
             {% if items %}
                 {% for item in items %}
                 <a href="{{ url_for('experience_detail', item_id=item.id) }}" class="list-item-row {% if item.current_participants >= item.max_participants %}closed{% endif %}">
                     <span class="col-crop">
                         <strong>{{ item.crop }}</strong>
-                        {% if item.is_specialty %}
-                            <span class="badge-specialty">지역 특산물</span>
-                        {% endif %}
                         <span class="review-count ml-2 text-muted">후기({{ item.reviews|length }})</span>
-                        <div class="tag">#{{ "친환경" if item.pesticide_free else "일반" }}</div>
+                        <div>
+                            <span class="tag" style="margin-right: 5px;">#{{ "친환경" if item.pesticide_free else "일반" }}</span>
+                            {% if item.is_specialty %}
+                                <span class="tag">#지역특산물</span>
+                            {% endif %}
+                        </div>
                     </span>
                     <span class="col-location">{{ item.address_detail }}</span>
-                    <span class="col-d-day">
-                        {% if sort_by == 'recommended' and item.distance is defined %}
+                    {% if sort_by == 'recommended' %}
+                    <span class="col-distance text-center">
+                        {% if item.distance is defined %}
                             <span class="font-weight-bold">
                                 약 {{ "%.1f"|format(item.distance) }}km
                             </span>
-                        {% elif item.d_day >= 0 and item.d_day < 999 %}
+                        {% else %}
+                            -
+                        {% endif %}
+                    </span>
+                    {% endif %}
+                    <span class="col-d-day">
+                        {% if item.d_day >= 0 and item.d_day < 999 %}
                             <span class="{{ 'text-danger font-weight-bold' if item.d_day <= 3 else '' }}">
                                 D-{{ item.d_day }}
                             </span>
@@ -81,7 +92,6 @@
                             -
                         {% endif %}
                     </span>
-
                     <span class="col-cost">{{ "{:,}".format(item.cost) }}원</span>
                     <span class="col-status">{{ item.current_participants }} / {{ item.max_participants }}명</span>
                     <span class="col-action">

@@ -1,6 +1,10 @@
 /* static/css/style.css (최종 수정본) */
 
 /* --- 1. 기본 및 공통 스타일 --- */
+html {
+    scroll-behavior: smooth;
+}
+
 body {
     background-color: #f9f9f9;
 }
@@ -105,6 +109,11 @@ header.header-volunteer {
     align-items: center;
     padding: 1rem 1.5rem;
     gap: 1rem;
+}
+
+.experience-list-container.recommended-view .list-header-row,
+.experience-list-container.recommended-view .list-item-row {
+    grid-template-columns: 2.5fr 1.5fr 1fr 1fr 1fr 1fr 1fr;
 }
 
 .col-d-day {
@@ -503,10 +512,95 @@ header.header-volunteer {
 .timetable-display thead th { background-color: #f8f9fa; }
 .timetable-display td.selected { background-color: #28a745; color: white; }
 
+
+@media (max-width: 992px) {
+    .experience-list-container .list-header-row,
+    .experience-list-container .list-item-row {
+
+        grid-template-columns: 2fr 1.5fr 1fr;
+        gap: 0.5rem;
+        padding: 0.8rem 1rem;
+        font-size: 0.9rem;
+    }
+    .experience-list-container .list-header-row,
+    .experience-list-container .list-item-row {
+        grid-template-areas:
+            "crop crop crop"
+            "loc dday cost"
+            "status status action";
+        grid-template-columns: 1fr 1fr 1fr;
+    }
+    .list-item-row .col-crop    { grid-area: crop; font-size: 1.1rem; }
+    .list-item-row .col-location { grid-area: loc; }
+    .list-item-row .col-d-day    { grid-area: dday; }
+    .list-item-row .col-cost     { grid-area: cost; }
+    .list-item-row .col-status   { grid-area: status; }
+    .list-item-row .col-action   { grid-area: action; text-align: right; }
+    
+    .page-volunteer .list-header-row,
+    .page-volunteer .list-item-row {
+        grid-template-columns: 1fr 1fr;
+        grid-template-areas:
+            "crop status"
+            "loc action";
+        font-size: 1rem;
+    }
+    .page-volunteer .list-item-row .col-crop { grid-area: crop; }
+    .page-volunteer .list-item-row .col-location { grid-area: loc; }
+    .page-volunteer .list-item-row .col-status { grid-area: status; text-align: right; }
+    .page-volunteer .list-item-row .col-action { grid-area: action; text-align: right; }
+}
+
+
+@media (max-width: 576px) {
+    .list-header-row {
+        display: none;
+    }
+
+    .list-item-row {
+        display: block;
+        border-bottom: 1px solid #e9ecef;
+    }
+    .list-item-row > span {
+        display: block;
+        padding-top: 5px;
+    }
+    .list-item-row .col-crop {
+        font-size: 1.2rem !important;
+        padding-bottom: 8px;
+        border-bottom: 1px dashed #eee;
+        margin-bottom: 8px;
+    }
+}
+
 @media (max-width: 1200px) {
     .dashboard-grid {
-        grid-template-columns: 1fr; /* 화면이 작아지면 1단 레이아웃으로 변경 */
+        grid-template-columns: 1fr;
     }
+}
+
+@media (max-width: 576px) {
+    .dashboard-card {
+        padding: 15px;
+        margin-bottom: 15px;
+    }
+}
+
+@media (max-width: 767px) {
+    .detail-map {
+        order: -1;
+    }
+    .detail-image {
+        height: 300px;
+    }
+    .detail-info .card-body {
+        padding: 1rem;
+    }
+}
+
+.btn-block {
+    padding: 12px 10px; 
+    font-size: 1.1rem;
 }
 
 .detail-container .carousel-control-prev,

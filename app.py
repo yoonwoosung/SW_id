@@ -18,8 +18,7 @@ import json
 import math
 
 # Tesseract OCR 경로 설정
-pytesseract.pytesseract.tesseract_cmd = r'C:\python\vcodepy\sw_id\SW_id-hello\SW_id-hello\tesseract-ocr-w64-setup-5.4.0.20240606\tesseract.exe'
-
+pytesseract.pytesseract.tesseract_cmd = r'C:\ Program Files\Tesseract-OCR\tesseract.exe'
 # --- 1. 앱 및 DB 설정 ---
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'mysql-secret-key-for-production')
@@ -238,6 +237,7 @@ class User(db.Model):
     profile_image = db.Column(db.String(255), nullable=False, default='shd.png')
     farm_image = db.Column(db.String(255), nullable=True)
     profile_bio = db.Column(db.String(150), nullable=True)
+    farmer_certificate_pdf = db.Column(db.String(255), nullable=True) # 농업인 증명서 PDF
     applications = db.relationship('Application', back_populates='user', cascade="all, delete-orphan")
     experiences = db.relationship('Experience', back_populates='farmer', cascade="all, delete-orphan")
 
@@ -272,7 +272,6 @@ class Experience(db.Model):
     has_parking = db.Column(db.Boolean, default=False, nullable=False)
     organic_certification_image = db.Column(db.String(255), nullable=True)
     organic_certification_type = db.Column(db.String(100), nullable=True)
-    organic_certification_pdf = db.Column(db.String(255), nullable=True)
     farmer = db.relationship('User', back_populates='experiences')
 
     def to_dict(self):
@@ -460,7 +459,12 @@ def index():
             flash("세션 정보가 유효하지 않습니다.", "warning")
             return redirect(url_for('login_page'))
         
-        notifications = Notification.query.filter_by(user_id=farmer_id).order_by(Notification.timestamp.desc()).limit(5).all()
+        notifications = Notification.query.filter_by(user_id=farmer_id).order_by(Notification.timestamp.desc()).limit(3).all()
+        all_notifications = Notification.query.filter_by(user_id=farmer_id).order_by(Notification.timestamp.desc()).all()
+        notifications_json = [
+            {"id": n.id, "message": n.message, "timestamp": n.timestamp.isoformat()} for n in all_notifications
+        ]
+
         my_listings = Experience.query.filter(
             Experience.farmer_id == farmer_id,
             Experience.status.in_(['recruiting', 'hidden'])
@@ -535,7 +539,7 @@ def index():
         return render_template('my_farm.html',
                                user=user, experiences=my_listings, experiences_json=experiences_json,
                                stats=stats, inquiries=latest_inquiries,
-                               reservations_data=reservations_by_date, notifications=notifications,
+                               reservations_data=reservations_by_date, notifications=notifications, notifications_json=notifications_json,
                                feedback_report=feedback_by_experience)
     
     else: # 체험자 또는 비로그인 사용자
@@ -687,13 +691,43 @@ def register_page():
             flash("이미 가입된 이메일입니다.", "danger")
             return render_template('register.html', form_data=request.form)
         
+        cert_pdf_filename = None
+        if role == 'farmer':
+            cert_pdf_file = request.files.get('farmer_certificate_pdf')
+            if not cert_pdf_file or cert_pdf_file.filename == '':
+                flash("농장주 회원은 농업인 확인서 PDF 파일을 반드시 제출해야 합니다.", "danger")
+                return render_template('register.html', form_data=request.form)
+
+            if allowed_file(cert_pdf_file.filename):
+                try:
+                    sample_pdf_path = os.path.join(os.path.dirname(__file__), 'SW_id', '신청서.pdf')
+                    with open(sample_pdf_path, 'rb') as f:
+                        sample_text = extract_and_normalize_text_from_pdf(f.read())
+                    
+                    uploaded_text = extract_and_normalize_text_from_pdf(cert_pdf_file.read())
+                    cert_pdf_file.seek(0) # 중요: 스트림 위치 초기화
+
+                    if sample_text and uploaded_text and sample_text in uploaded_text:
+                        cert_pdf_filename = secure_filename(f"farmer_cert_{email}_{cert_pdf_file.filename}")
+                        cert_pdf_file.save(os.path.join(app.config['UPLOAD_FOLDER'], cert_pdf_filename))
+                    else:
+                        flash("업로드된 농업인 확인서가 유효하지 않습니다.", "danger")
+                        return render_template('register.html', form_data=request.form)
+                except FileNotFoundError:
+                    flash("샘플 농업인 확인서 파일을 찾을 수 없습니다. 시스템 관리자에게 문의하세요.", "danger")
+                    return render_template('register.html', form_data=request.form)
+            else:
+                flash("허용되지 않는 파일 형식입니다. PDF 파일만 업로드 가능합니다.", "danger")
+                return render_template('register.html', form_data=request.form)
+
         hashed_password = generate_password_hash(password)
         new_user = User(
             email=email, nickname=nickname, password=hashed_password,
             role=role, name=name, phone=phone, 
             farm_address=request.form.get('farm_address'),
             farm_size=request.form.get('farm_size'),
-            profile_bio=request.form.get('profile_bio')
+            profile_bio=request.form.get('profile_bio'),
+            farmer_certificate_pdf=cert_pdf_filename
         )
         db.session.add(new_user)
         db.session.commit()
@@ -829,6 +863,12 @@ def experience_apply(item_id):
 
         item.current_participants += total_participants
         db.session.add(new_application)
+        
+        # 알림 추가
+        notification_message = f"'{new_application.applicant_name}'님이 '{item.crop}' 체험을 신청했습니다."
+        new_notification = Notification(user_id=item.farmer_id, message=notification_message)
+        db.session.add(new_notification)
+        
         db.session.commit()
 
         return render_template('apply_complete.html', item=item, name=new_application.applicant_name)
@@ -850,8 +890,6 @@ def farmer_register(item_id=None):
         has_parking = 'has_parking' in request.form
         cert_filename = item.organic_certification_image if item and item.organic_certification_image else None
         cert_file = request.files.get('organic_certification_image')
-        cert_pdf_filename = item.organic_certification_pdf if item and item.organic_certification_pdf else None
-        cert_pdf_file = request.files.get('organic_certification_pdf')
 
         if cert_file and cert_file.filename != '':
             if allowed_file(cert_file.filename):
@@ -859,35 +897,6 @@ def farmer_register(item_id=None):
                 cert_file.save(os.path.join(app.config['UPLOAD_FOLDER'], cert_filename))
         elif not is_organic:
             cert_filename = None
-
-        if cert_pdf_file and cert_pdf_file.filename != '':
-            if allowed_file(cert_pdf_file.filename):
-                sample_pdf_path = os.path.join(os.path.dirname(__file__), '신청서.pdf')
-                try:
-                    with open(sample_pdf_path, 'rb') as f:
-                        sample_text = extract_and_normalize_text_from_pdf(f.read())
-                    
-                    uploaded_text = extract_and_normalize_text_from_pdf(cert_pdf_file.read())
-                    cert_pdf_file.seek(0)
-
-                    print("--- 샘플 PDF 텍스트 ---")
-                    print(sample_text)
-                    print("--- 업로드 PDF 텍스트 ---")
-                    print(uploaded_text)
-
-                    if sample_text and uploaded_text and sample_text == uploaded_text:
-                        cert_pdf_filename = secure_filename(f"cert_pdf_{item_id or 'new'}_{cert_pdf_file.filename}")
-                        cert_pdf_file.save(os.path.join(app.config['UPLOAD_FOLDER'], cert_pdf_filename))
-                    else:
-                        flash("업로드된 농업인 확인서가 샘플과 일치하지 않습니다.", "danger")
-                        return render_template('farmer_register.html', item=item, form_data=request.form)
-                except FileNotFoundError:
-                    flash("샘플 농업인 확인서 파일을 찾을 수 없습니다.", "danger")
-                    return render_template('farmer_register.html', item=item, form_data=request.form)
-
-        elif not ('has_cert' in request.form): # '인증서 등록' 체크 해제시
-             cert_pdf_filename = None
-
 
         if is_organic and not cert_filename:
             flash("친환경 인증을 선택한 경우, 인증 이미지를 반드시 업로드해야 합니다.", "danger")
@@ -935,7 +944,6 @@ def farmer_register(item_id=None):
             item.pesticide_free = is_organic
             item.organic_certification_image = cert_filename
             item.organic_certification_type = request.form.get('organic_certification_type')
-            item.organic_certification_pdf = cert_pdf_filename
             item.lat = lat
             item.lng = lng
             item.volunteer_needed = volunteer_needed
@@ -962,7 +970,6 @@ def farmer_register(item_id=None):
                 pesticide_free=is_organic,
                 organic_certification_image=cert_filename,
                 organic_certification_type=request.form.get('organic_certification_type'),
-                organic_certification_pdf=cert_pdf_filename,
                 lat=lat,
                 lng=lng,
                 farmer_id=session['user_id'],
@@ -1055,6 +1062,13 @@ def add_review(item_id):
         analysis_result=json.dumps(analysis_json) if analysis_json else None
     )
     db.session.add(new_review)
+    
+    # 알림 추가
+    experience = Experience.query.get_or_404(item_id)
+    notification_message = f"'{new_review.user.nickname}'님이 '{experience.crop}' 체험에 새로운 후기를 작성했습니다."
+    new_notification = Notification(user_id=experience.farmer_id, message=notification_message)
+    db.session.add(new_notification)
+
     db.session.commit()
     flash("후기가 등록되었습니다.", "success")
     return redirect(url_for('experience_detail', item_id=item_id))
@@ -1068,6 +1082,13 @@ def add_inquiry(item_id):
         content=request.form.get('content'), user_id=session['user_id'], experience_id=item_id
     )
     db.session.add(new_inquiry)
+
+    # 알림 추가
+    experience = Experience.query.get_or_404(item_id)
+    notification_message = f"'{new_inquiry.user.nickname}'님이 '{experience.crop}' 체험에 새로운 문의를 남겼습니다."
+    new_notification = Notification(user_id=experience.farmer_id, message=notification_message)
+    db.session.add(new_notification)
+
     db.session.commit()
     flash("문의가 등록되었습니다.", "success")
     return redirect(url_for('experience_detail', item_id=item_id))
@@ -1093,6 +1114,21 @@ def confirm_application(app_id):
         flash("이미 처리된 예약입니다.", "warning")
 
     return redirect(url_for('index'))
+
+@app.route('/notifications/delete/<int:notification_id>', methods=['POST'])
+def delete_notification(notification_id):
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'message': '로그인이 필요합니다.'}), 401
+
+    notification = Notification.query.get_or_404(notification_id)
+
+    if notification.user_id != session.get('user_id'):
+        return jsonify({'success': False, 'message': '권한이 없습니다.'}), 403
+
+    db.session.delete(notification)
+    db.session.commit()
+
+    return jsonify({'success': True, 'message': '알림이 삭제되었습니다.'})
 
 # --- 파일 업로드 관련 ---
 def allowed_file(filename):
@@ -1179,6 +1215,11 @@ def delete_application(app_id):
 
     application.status = '취소'
     
+    # 알림 추가
+    notification_message = f"'{application.applicant_name}'님이 '{experience.crop}' 체험 신청을 취소했습니다."
+    new_notification = Notification(user_id=experience.farmer_id, message=notification_message)
+    db.session.add(new_notification)
+
     # Delete the associated review
     existing_review = Review.query.filter_by(
         user_id=application.user_id,

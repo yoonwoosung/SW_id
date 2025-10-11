@@ -1,0 +1,52 @@
+{% extends 'layout.html' %}
+
+{% block title %}만료된 체험 목록 - FarmLink{% endblock %}
+
+{% block content %}
+<style>
+    .card-img-top {
+        height: 200px;
+        object-fit: cover;
+    }
+    .no-image {
+        height: 200px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: #f8f9fa;
+        color: #6c757d;
+        font-size: 1.5rem;
+    }
+</style>
+<div class="container mt-5">
+    <h2 class="mb-4">만료된 체험</h2>
+
+    {% if experiences %}
+        <div class="row">
+            {% for item in experiences %}
+                <div class="col-md-4 mb-4">
+                    <div class="card h-100">
+                        {% if item.images %}
+                            <img src="{{ url_for('static', filename='uploads/' + item.images.split(',')[0]) }}" class="card-img-top" alt="{{ item.crop }}">
+                        {% else %}
+                            <div class="no-image">사진 없음</div>
+                        {% endif %}
+                        <div class="card-body">
+                            <h5 class="card-title">{{ item.crop }}</h5>
+                            <p class="card-text">{{ item.location }}</p>
+                            <p class="card-text"><small class="text-muted">종료일: {{ item.end_date.strftime('%Y-%m-%d') }}</small></p>
+                            <a href="{{ url_for('experience_detail', item_id=item.id) }}" class="btn btn-secondary">상세보기</a>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="alert alert-info" role="alert">
+            만료된 체험이 없습니다.
+        </div>
+    {% endif %}
+
+    <a href="{{ url_for('index') }}" class="btn btn-primary mt-3">내 농장으로 돌아가기</a>
+</div>
+{% endblock %}

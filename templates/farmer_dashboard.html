@@ -1,0 +1,32 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="container">
+    <div class="dashboard-header">
+        <h2>나의 농장 목록 🧑‍🌾</h2>
+        <a href="{{ url_for('farmer_register') }}" class="btn-register">새 체험 등록하기 +</a>
+    </div>
+
+    {% if listings %}
+    <div class="item-list">
+        <div class="list-header">
+            <span>작물명</span><span>위치</span><span>가격</span><span>모집현황</span>
+        </div>
+        {% for item in listings %}
+        <a href="#" class="list-item">  <span><strong>{{ item.crop }}</strong><br>#{{ "친환경" if item.pesticide_free else "일반" }}</span>
+            <span>{{ item.location }}</span>
+            <span>{{ "{:,}".format(item.cost) }}원</span>
+            <span class="d-day {% if item.d_day < 5 %}imminent{% endif %}">
+                D-{{ item.d_day }}<br>
+                <span>모집중</span>
+            </span>
+        </a>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="no-items">
+        <p>아직 등록된 농장 체험이 없습니다.</p>
+        <p>'새 체험 등록하기' 버튼을 눌러 첫 체험을 등록해보세요!</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

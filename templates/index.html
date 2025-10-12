@@ -123,15 +123,15 @@
 
     {% if sort_by == 'recommended' %}
         <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
-            <a class="page-link" href="{{ url_for('index', page=pagination.prev_num, sort='recommended', lat=request.args.get('lat'), lon=request.args.get('lon')) }}">&laquo;</a>
+            <a class="page-link" href="{{ url_for('index', page=pagination.prev_num, sort='recommended', lat=request.args.get('lat'), lon=request.args.get('lon'), region=request.args.get('region'), crop_query=request.args.get('crop_query')) }}">&laquo;</a>
         </li>
         {% for page_num in pagination.iter_pages %}
             <li class="page-item {% if page_num == pagination.page %}active{% endif %}">
-                <a class="page-link" href="{{ url_for('index', page=page_num, sort='recommended', lat=request.args.get('lat'), lon=request.args.get('lon')) }}">{{ page_num }}</a>
+                <a class="page-link" href="{{ url_for('index', page=page_num, sort='recommended', lat=request.args.get('lat'), lon=request.args.get('lon'), region=request.args.get('region'), crop_query=request.args.get('crop_query')) }}">{{ page_num }}</a>
             </li>
         {% endfor %}
         <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
-            <a class="page-link" href="{{ url_for('index', page=pagination.next_num, sort='recommended', lat=request.args.get('lat'), lon=request.args.get('lon')) }}">&raquo;</a>
+            <a class="page-link" href="{{ url_for('index', page=pagination.next_num, sort='recommended', lat=request.args.get('lat'), lon=request.args.get('lon'), region=request.args.get('region'), crop_query=request.args.get('crop_query')) }}">&raquo;</a>
         </li>
 
     {% else %}

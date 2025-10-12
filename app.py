@@ -700,7 +700,7 @@ def register_page():
 
             if allowed_file(cert_pdf_file.filename):
                 try:
-                    sample_pdf_path = os.path.join(os.path.dirname(__file__), 'SW_id', '신청서.pdf')
+                    sample_pdf_path = os.path.join(os.path.dirname(__file__), '신청서.pdf')
                     with open(sample_pdf_path, 'rb') as f:
                         sample_text = extract_and_normalize_text_from_pdf(f.read())
 

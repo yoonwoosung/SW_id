@@ -575,6 +575,11 @@ def index():
         today = date.today()
         base_query = Experience.query.filter(Experience.status == 'recruiting', Experience.end_date >= today)
 
+        if region:
+            base_query = base_query.filter(Experience.address_detail.like(f"%{region}%"))
+        if crop_query:
+            base_query = base_query.filter(Experience.crop.like(f"%{crop_query}%"))
+
         items_on_page = []
         pagination = None
 
@@ -640,13 +645,6 @@ def index():
         # 2. '모집 임박순', '리뷰 많은순' 정렬 로직
         else:
             query = base_query
-            region = request.args.get('region', type=str)
-            crop_query = request.args.get('crop_query', type=str)
-
-            if region:
-                query = query.filter(Experience.address_detail.like(f"%{region}%"))
-            if crop_query:
-                query = query.filter(Experience.crop.like(f"%{crop_query}%"))
 
             if sort_by == 'reviews':
                 query = query.outerjoin(Review).group_by(Experience.id).order_by(func.count(Review.id).desc())

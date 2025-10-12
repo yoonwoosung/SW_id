@@ -23,13 +23,13 @@ pytesseract.pytesseract.tesseract_cmd = '/usr/bin/tesseract'
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'mysql-secret-key-for-production')
 
-# DB 접속 정보: farmer 기준 로컬 DB 사용. 배포 시 주석을 변경하세요.
-# db_username = 'kevin4201'
-# db_password = 'farmLink'
-# db_hostname = 'kevin4201.mysql.pythonanywhere-services.com'
-# db_name     = 'kevin4201$default'
-# DATABASE_URI = f"mysql+mysqlconnector://{db_username}:{db_password}@{db_hostname}/{db_name}"
-DATABASE_URI = r"sqlite:///local_db.sqlite" # farmer 기준
+# DB 접속 정보: farmer 기준 로컬 DB 사용.
+db_username = 'kevin4201'
+db_password = 'farmLink'
+db_hostname = 'kevin4201.mysql.pythonanywhere-services.com'
+db_name     = 'kevin4201$default'
+DATABASE_URI = f"mysql+mysqlconnector://{db_username}:{db_password}@{db_hostname}/{db_name}"
+
 
 app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_URI
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -75,7 +75,7 @@ REGIONAL_SPECIALTIES = {
     '영월': ['포도', '사과', '고추'],
     '원주': ['복숭아', '배'],
     '삼척': ['마늘', '감자'],
-    
+
     # 충청북도
     '충주': ['사과', '복숭아'],
     '제천': ['사과', '복숭아'],
@@ -202,7 +202,7 @@ def extract_and_normalize_text_from_pdf(pdf_bytes):
         doc = fitz.open(stream=pdf_bytes, filetype="pdf")
         for page in doc:
             text += page.get_text()
-        
+
         # 2. 텍스트가 거의 없다면 OCR 시도
         if len(text.strip()) < 50: # 텍스트가 거의 없는 경우 이미지로 간주
             print("텍스트가 거의 없어 OCR을 시도합니다.")
@@ -340,7 +340,7 @@ def analyze_review_with_clova(text):
     endpoint = "/v3/chat-completions/HCX-DASH-002"
     url = host + endpoint
     headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
-    
+
     request_data = {
         "messages": [
             {
@@ -375,12 +375,12 @@ def analyze_review_with_clova(text):
     try:
         response = requests.post(url, headers=headers, json=request_data)
         response.raise_for_status()
-        
+
         response_data = response.json()
         content_string = response_data['result']['message']['content']
-        
+
         json_match = re.search(r'\{.*\}', content_string, re.DOTALL)
-        
+
         if json_match:
             json_string = json_match.group(0)
             analysis_result = json.loads(json_string)
@@ -426,7 +426,7 @@ def update_experience_status():
             exp.status = 'expired'
             notification = Notification(user_id=exp.farmer_id, message=f"'{exp.crop}' 체험의 모집 기간이 만료되었습니다.")
             db.session.add(notification)
-        
+
         if expired_experiences:
             db.session.commit()
             print(f"[{datetime.now()}] {len(expired_experiences)}개의 체험을 '기간 만료'로 업데이트했습니다.")
@@ -458,7 +458,7 @@ def index():
             session.clear()
             flash("세션 정보가 유효하지 않습니다.", "warning")
             return redirect(url_for('login_page'))
-        
+
         notifications = Notification.query.filter_by(user_id=farmer_id).order_by(Notification.timestamp.desc()).limit(3).all()
         all_notifications = Notification.query.filter_by(user_id=farmer_id).order_by(Notification.timestamp.desc()).all()
         notifications_json = [
@@ -469,7 +469,7 @@ def index():
             Experience.farmer_id == farmer_id,
             Experience.status.in_(['recruiting', 'hidden'])
         ).all()
-        
+
         experiences_json = [exp.to_dict() for exp in my_listings]
         experience_ids = [exp.id for exp in my_listings]
         applications = Application.query.filter(Application.experience_id.in_(experience_ids), Application.status != '취소').all()
@@ -486,7 +486,7 @@ def index():
             avg_result = db.session.query(func.avg(Review.rating)).filter(Review.experience_id.in_(experience_ids)).scalar()
             if avg_result is not None:
                 avg_rating = round(avg_result, 1)
-        
+
         latest_inquiries = []
         if experience_ids:
             latest_inquiries = Inquiry.query.filter(Inquiry.experience_id.in_(experience_ids)).order_by(Inquiry.timestamp.desc()).limit(5).all()
@@ -497,7 +497,7 @@ def index():
             'average_rating': avg_rating if avg_rating > 0 else "N/A",
             'total_visitors': total_visitors
         }
-        
+
         feedback_by_experience = {}
         my_listings_with_reviews = Experience.query.filter(
             Experience.farmer_id == farmer_id
@@ -518,7 +518,7 @@ def index():
                         if isinstance(strengths_data, list):
                             for keyword in strengths_data:
                                 if keyword: strength_keywords[keyword] += 1
-                
+
                         improvements_data = data.get('improvements', [])
                         if isinstance(improvements_data, list):
                             for keyword in improvements_data:
@@ -529,7 +529,7 @@ def index():
             if strength_keywords or improvement_keywords:
                 sorted_strengths = sorted(strength_keywords.items(), key=lambda item: item[1], reverse=True)
                 sorted_improvements = sorted(improvement_keywords.items(), key=lambda item: item[1], reverse=True)
-        
+
                 feedback_by_experience[exp.id] = {
                     'name': exp.crop,
                     'strengths': sorted_strengths,
@@ -541,7 +541,7 @@ def index():
                                stats=stats, inquiries=latest_inquiries,
                                reservations_data=reservations_by_date, notifications=notifications, notifications_json=notifications_json,
                                feedback_report=feedback_by_experience)
-    
+
     else: # 체험자 또는 비로그인 사용자
         page = request.args.get('page', 1, type=int)
         sort_by = request.args.get('sort', 'recommended', type=str) # 기본값을 'recommended'로 변경
@@ -565,7 +565,7 @@ def index():
             # URL에 위치 정보가 없으면 빈 목록을 보여줌 (JS가 위치를 받아와 페이지를 새로고침)
             if user_lat and user_lon:
                 all_experiences = base_query.all()
-                
+
                 ranked_experiences = []
                 for exp in all_experiences:
                     distance = haversine(user_lat, user_lon, exp.lat, exp.lng)
@@ -574,7 +574,7 @@ def index():
                     # 추천 점수 계산
                     distance_score = max(0, 1 - (distance / 50))
                     availability_score = (exp.max_participants - exp.current_participants) / exp.max_participants
-                    
+
                     specialty_score = 0
                     for region, specialties in REGIONAL_SPECIALTIES.items():
                         if region in exp.address_detail:
@@ -584,23 +584,23 @@ def index():
                                     break
                         if specialty_score > 0:
                             break
-                    
+
                     w1, w2, w3 = 0.5, 0.3, 0.2 # 가중치
                     recommendation_score = (w1 * distance_score) + (w2 * specialty_score) + (w3 * availability_score)
-                    
+
                     exp.recommendation_score = recommendation_score
                     exp.distance = distance
                     ranked_experiences.append(exp)
 
                 # 추천 점수가 높은 순으로 정렬
                 sorted_items = sorted(ranked_experiences, key=lambda x: x.recommendation_score, reverse=True)
-                
+
                 # 페이지네이션 수동 처리
                 start = (page - 1) * 15
                 end = start + 15
                 items_on_page = sorted_items[start:end]
                 total_items = len(sorted_items)
-                
+
                 from types import SimpleNamespace
                 total_pages = math.ceil(total_items / 15)
                 pagination = SimpleNamespace(
@@ -615,7 +615,7 @@ def index():
                     next_num=page + 1,
                     iter_pages=range(1, total_pages + 1)
                 )
-        
+
         # 2. '모집 임박순', '리뷰 많은순' 정렬 로직
         else:
             query = base_query
@@ -631,7 +631,7 @@ def index():
                 query = query.outerjoin(Review).group_by(Experience.id).order_by(func.count(Review.id).desc())
             else: # 'deadline'
                 query = query.order_by(Experience.end_date.asc())
-            
+
             pagination = query.paginate(page=page, per_page=15, error_out=False)
             items_on_page = sorted(pagination.items, key=lambda x: x.current_participants >= x.max_participants)
 
@@ -642,10 +642,10 @@ def index():
                 if region in item.address_detail and any(sc in item.crop for sc in specialties):
                     item.is_specialty = True
                     break
-        
-        return render_template('index.html', 
-                               items=items_on_page, 
-                               pagination=pagination, 
+
+        return render_template('index.html',
+                               items=items_on_page,
+                               pagination=pagination,
                                sort_by=sort_by)
 
 # ... (이하 모든 라우트는 farmer 기준으로 유지하되, e-sibal의 고유 기능 추가) ...
@@ -660,11 +660,11 @@ def expired_experiences():
     if session.get('role') != 'farmer':
         flash("농장주만 접근 가능합니다.", "warning")
         return redirect(url_for('index'))
-    
+
     farmer_id = session.get('user_id')
     user = User.query.get(farmer_id)
     expired_list = Experience.query.filter_by(farmer_id=farmer_id, status='expired').order_by(Experience.end_date.desc()).all()
-    
+
     return render_template('expired_experiences.html', user=user, experiences=expired_list)
 
 
@@ -690,7 +690,7 @@ def register_page():
         if User.query.filter_by(email=email).first():
             flash("이미 가입된 이메일입니다.", "danger")
             return render_template('register.html', form_data=request.form)
-        
+
         cert_pdf_filename = None
         if role == 'farmer':
             cert_pdf_file = request.files.get('farmer_certificate_pdf')
@@ -703,7 +703,7 @@ def register_page():
                     sample_pdf_path = os.path.join(os.path.dirname(__file__), 'SW_id', '신청서.pdf')
                     with open(sample_pdf_path, 'rb') as f:
                         sample_text = extract_and_normalize_text_from_pdf(f.read())
-                    
+
                     uploaded_text = extract_and_normalize_text_from_pdf(cert_pdf_file.read())
                     cert_pdf_file.seek(0) # 중요: 스트림 위치 초기화
 
@@ -723,7 +723,7 @@ def register_page():
         hashed_password = generate_password_hash(password)
         new_user = User(
             email=email, nickname=nickname, password=hashed_password,
-            role=role, name=name, phone=phone, 
+            role=role, name=name, phone=phone,
             farm_address=request.form.get('farm_address'),
             farm_size=request.form.get('farm_size'),
             profile_bio=request.form.get('profile_bio'),
@@ -770,16 +770,16 @@ def update_bio():
     user = User.query.get(session['user_id'])
     if not user:
         return jsonify({'success': False, 'message': '사용자를 찾을 수 없습니다.'}), 404
-    
+
     data = request.get_json()
     new_bio = data.get('profile_bio')
-    
+
     if new_bio is None:
         return jsonify({'success': False, 'message': '소개 내용이 없습니다.'}), 400
-        
+
     user.profile_bio = new_bio
     db.session.commit()
-    
+
     return jsonify({'success': True, 'message': '한 줄 소개가 업데이트되었습니다.'})
 
 # --- 체험 관련 라우트 ---
@@ -863,12 +863,12 @@ def experience_apply(item_id):
 
         item.current_participants += total_participants
         db.session.add(new_application)
-        
+
         # 알림 추가
         notification_message = f"'{new_application.applicant_name}'님이 '{item.crop}' 체험을 신청했습니다."
         new_notification = Notification(user_id=item.farmer_id, message=notification_message)
         db.session.add(new_notification)
-        
+
         db.session.commit()
 
         return render_template('apply_complete.html', item=item, name=new_application.applicant_name)
@@ -920,10 +920,10 @@ def farmer_register(item_id=None):
                 img.save(filepath)
                 if filename not in filenames: filenames.append(filename)
         image_string = ",".join(filter(None, filenames))
-        
+
         address_detail = request.form.get('address')
         lat, lng = get_coords_from_address(address_detail)
-        
+
         volunteer_needed_str = request.form.get('volunteer_needed')
         volunteer_needed = int(volunteer_needed_str) if volunteer_needed_str else 0
 
@@ -980,7 +980,7 @@ def farmer_register(item_id=None):
             )
             db.session.add(new_experience)
             flash("새로운 체험이 성공적으로 등록되었습니다!", "success")
-            
+
         db.session.commit()
         return redirect(url_for('index'))
 
@@ -1015,7 +1015,7 @@ def toggle_visibility(item_id):
         message = '체험을 공개로 전환했습니다.'
     else:
         return jsonify({'success': False, 'message': '상태를 변경할 수 없는 체험입니다.'}), 400
-    
+
     db.session.commit()
     return jsonify({'success': True, 'message': message, 'new_status': item.status})
 
@@ -1023,7 +1023,7 @@ def toggle_visibility(item_id):
 @app.route('/experience/<int:item_id>/review', methods=['POST'])
 def add_review(item_id):
     if 'user_id' not in session: return redirect(url_for('login_page'))
-    
+
     user_id = session['user_id']
     has_confirmed_app = Application.query.filter(
         Application.user_id == user_id,
@@ -1044,7 +1044,7 @@ def add_review(item_id):
     analysis_json = None  # 기본값을 None으로 설정
     try:
         # AI 분석 함수를 try-except 블록으로 감싸서 에러를 포착합니다.
-        analysis_json = analyze_review_with_clova(review_content) 
+        analysis_json = analyze_review_with_clova(review_content)
         if analysis_json is None:
             # API에서 정상 응답을 받았지만, 내용이 비어있는 경우
             flash("AI 후기 분석에 실패했습니다. (API 응답 없음)", "warning")
@@ -1062,7 +1062,7 @@ def add_review(item_id):
         analysis_result=json.dumps(analysis_json) if analysis_json else None
     )
     db.session.add(new_review)
-    
+
     # 알림 추가
     experience = Experience.query.get_or_404(item_id)
     notification_message = f"'{new_review.user.nickname}'님이 '{experience.crop}' 체험에 새로운 후기를 작성했습니다."
@@ -1214,7 +1214,7 @@ def delete_application(app_id):
         experience.current_participants = max(0, experience.current_participants - application.participants_count)
 
     application.status = '취소'
-    
+
     # 알림 추가
     notification_message = f"'{application.applicant_name}'님이 '{experience.crop}' 체험 신청을 취소했습니다."
     new_notification = Notification(user_id=experience.farmer_id, message=notification_message)
@@ -1255,9 +1255,9 @@ def volunteer_apply():
 
     pagination = query.paginate(page=page, per_page=15, error_out=False)
     items_on_page = pagination.items
-    
-    return render_template('volunteer_apply.html', 
-                           items=items_on_page, 
+
+    return render_template('volunteer_apply.html',
+                           items=items_on_page,
                            pagination=pagination,
                            sort_by=sort_by)
 

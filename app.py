@@ -43,24 +43,7 @@ app.config['KAKAO_API_KEY'] = os.environ.get('KAKAO_API_KEY', '432f80fcdc8239c7c
 
 db = SQLAlchemy(app, engine_options={"pool_pre_ping": True})
 
-# --- Pre-load and process the sample certificate PDF for performance ---
-SAMPLE_CERT_TEXT = ""
-try:
-    # Use the corrected path
-    sample_pdf_path = os.path.join(os.path.dirname(__file__), '신청서.pdf')
-    with open(sample_pdf_path, 'rb') as f:
-        # Use the existing OCR function to process the sample file
-        SAMPLE_CERT_TEXT = extract_and_normalize_text_from_pdf(f.read())
-    
-    if not SAMPLE_CERT_TEXT:
-        print("Warning: Could not extract text from the sample certificate PDF on startup.")
-    else:
-        print("Successfully pre-loaded and processed the sample certificate PDF.")
-        
-except FileNotFoundError:
-    print("CRITICAL ERROR: Sample certificate PDF ('신청서.pdf') not found on startup. Verification will fail.")
-except Exception as e:
-    print(f"CRITICAL ERROR processing sample certificate PDF on startup: {e}")
+
 
 # 스케줄러 설정 (farmer 기능)
 scheduler = APScheduler()
@@ -241,6 +224,25 @@ def extract_and_normalize_text_from_pdf(pdf_bytes):
     except Exception as e:
         print(f"PDF 처리 중 오류 발생: {e}")
         return ""
+
+# --- Pre-load and process the sample certificate PDF for performance ---
+SAMPLE_CERT_TEXT = ""
+try:
+    # Use the corrected path
+    sample_pdf_path = os.path.join(os.path.dirname(__file__), '신청서.pdf')
+    with open(sample_pdf_path, 'rb') as f:
+        # Use the existing OCR function to process the sample file
+        SAMPLE_CERT_TEXT = extract_and_normalize_text_from_pdf(f.read())
+    
+    if not SAMPLE_CERT_TEXT:
+        print("Warning: Could not extract text from the sample certificate PDF on startup.")
+    else:
+        print("Successfully pre-loaded and processed the sample certificate PDF.")
+        
+except FileNotFoundError:
+    print("CRITICAL ERROR: Sample certificate PDF ('신청서.pdf') not found on startup. Verification will fail.")
+except Exception as e:
+    print(f"CRITICAL ERROR processing sample certificate PDF on startup: {e}")
 
 # --- 2. DB 모델(테이블) 정의 (farmer 기준으로 통합) ---
 class User(db.Model):

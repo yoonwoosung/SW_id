@@ -590,7 +590,7 @@ def index():
                 ranked_experiences = []
                 for exp in all_experiences:
                     distance = haversine(user_lat, user_lon, exp.lat, exp.lng)
-                    if distance > 50: continue # 50km 초과 시 목록에서 제외
+                    if distance > 150: continue # 150km 초과 시 목록에서 제외
 
                     # 추천 점수 계산
                     distance_score = max(0, 1 - (distance / 50))

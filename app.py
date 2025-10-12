@@ -718,26 +718,27 @@ def register_page():
                 return render_template('register.html', form_data=request.form)
 
             if allowed_file(cert_pdf_file.filename):
-                                try:
-                                    # Check if the pre-loaded sample text is available
-                                    if not SAMPLE_CERT_TEXT:
-                                        flash("시스템 오류: 샘플 인증서를 처리할 수 없습니다. 관리자에게 문의하세요.", "danger")
-                                        return render_template('register.html', form_data=request.form)
-                
-                                    uploaded_text = extract_and_normalize_text_from_pdf(cert_pdf_file.read())
-                                    cert_pdf_file.seek(0)  # Reset stream position after reading
-                
-                                    # Compare with the pre-loaded text
-                                    if uploaded_text and SAMPLE_CERT_TEXT in uploaded_text:
-                                        cert_pdf_filename = secure_filename(f"farmer_cert_{email}_{cert_pdf_file.filename}")
-                                        cert_pdf_file.save(os.path.join(app.config['UPLOAD_FOLDER'], cert_pdf_filename))
-                                    else:
-                                        flash("업로드된 농업인 확인서가 유효하지 않습니다.", "danger")
-                                        return render_template('register.html', form_data=request.form)
-                                except Exception as e:
-                                    # A more general exception to catch any PDF processing errors
-                                    flash(f"인증서 파일 처리 중 오류가 발생했습니다: {e}", "danger")
-                                    return render_template('register.html', form_data=request.form)            else:
+                try:
+                    # Check if the pre-loaded sample text is available
+                    if not SAMPLE_CERT_TEXT:
+                        flash("시스템 오류: 샘플 인증서를 처리할 수 없습니다. 관리자에게 문의하세요.", "danger")
+                        return render_template('register.html', form_data=request.form)
+
+                    uploaded_text = extract_and_normalize_text_from_pdf(cert_pdf_file.read())
+                    cert_pdf_file.seek(0)  # Reset stream position after reading
+
+                    # Compare with the pre-loaded text
+                    if uploaded_text and SAMPLE_CERT_TEXT in uploaded_text:
+                        cert_pdf_filename = secure_filename(f"farmer_cert_{email}_{cert_pdf_file.filename}")
+                        cert_pdf_file.save(os.path.join(app.config['UPLOAD_FOLDER'], cert_pdf_filename))
+                    else:
+                        flash("업로드된 농업인 확인서가 유효하지 않습니다.", "danger")
+                        return render_template('register.html', form_data=request.form)
+                except Exception as e:
+                    # A more general exception to catch any PDF processing errors
+                    flash(f"인증서 파일 처리 중 오류가 발생했습니다: {e}", "danger")
+                    return render_template('register.html', form_data=request.form)
+            else:
                 flash("허용되지 않는 파일 형식입니다. PDF 파일만 업로드 가능합니다.", "danger")
                 return render_template('register.html', form_data=request.form)
 

@@ -18,7 +18,7 @@ import json
 import math
 
 # Tesseract OCR 경로 설정
-pytesseract.pytesseract.tesseract_cmd = r'C:\ Program Files\Tesseract-OCR\tesseract.exe'
+pytesseract.pytesseract.tesseract_cmd = '/usr/bin/tesseract'
 # --- 1. 앱 및 DB 설정 ---
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'mysql-secret-key-for-production')

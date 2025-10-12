@@ -513,87 +513,12 @@ header.header-volunteer {
 .timetable-display td.selected { background-color: #28a745; color: white; }
 
 
-@media (max-width: 992px) {
-    .experience-list-container .list-header-row,
-    .experience-list-container .list-item-row {
-
-        grid-template-columns: 2fr 1.5fr 1fr;
-        gap: 0.5rem;
-        padding: 0.8rem 1rem;
-        font-size: 0.9rem;
-    }
-    .experience-list-container .list-header-row,
-    .experience-list-container .list-item-row {
-        grid-template-areas:
-            "crop crop crop"
-            "loc dday cost"
-            "status status action";
-        grid-template-columns: 1fr 1fr 1fr;
-    }
-    .list-item-row .col-crop    { grid-area: crop; font-size: 1.1rem; }
-    .list-item-row .col-location { grid-area: loc; }
-    .list-item-row .col-d-day    { grid-area: dday; }
-    .list-item-row .col-cost     { grid-area: cost; }
-    .list-item-row .col-status   { grid-area: status; }
-    .list-item-row .col-action   { grid-area: action; text-align: right; }
-    
-    .page-volunteer .list-header-row,
-    .page-volunteer .list-item-row {
-        grid-template-columns: 1fr 1fr;
-        grid-template-areas:
-            "crop status"
-            "loc action";
-        font-size: 1rem;
-    }
-    .page-volunteer .list-item-row .col-crop { grid-area: crop; }
-    .page-volunteer .list-item-row .col-location { grid-area: loc; }
-    .page-volunteer .list-item-row .col-status { grid-area: status; text-align: right; }
-    .page-volunteer .list-item-row .col-action { grid-area: action; text-align: right; }
+body.scroll-lock {
+    overflow: hidden;
 }
 
-
-@media (max-width: 576px) {
-    .list-header-row {
-        display: none;
-    }
-    .list-item-row {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 0.5rem 1rem;
-        padding: 1rem;
-        border-bottom: 1px solid #e9ecef;
-    }
-
-    .list-item-row > span {
-        display: block;
-        padding-top: 0;
-        text-align: left;
-    }
-
-    .list-item-row .col-crop {
-        grid-column: 1 / -1;
-        font-size: 1.2rem;
-        padding-bottom: 0.75rem;
-        border-bottom: 1px solid #f1f3f5;
-        margin-bottom: 0.5rem;
-    }
-    
-    .list-item-row .col-cost {
-        text-align: left;
-    }
-    .list-item-row .col-status {
-        text-align: right;
-    }
-    
-    .list-item-row .col-action {
-        grid-column: 1 / -1;
-        margin-top: 0.75rem;
-        text-align: center;
-    }
-    
-    .list-item-row .col-action .btn {
-        width: 100%;
-    }
+.hamburger-btn {
+    display: none;
 }
 
 @media (max-width: 1200px) {
@@ -602,24 +527,51 @@ header.header-volunteer {
     }
 }
 
-@media (max-width: 576px) {
-    .dashboard-card {
-        padding: 15px;
-        margin-bottom: 15px;
-    }
-}
+@media (max-width: 992px) {
 
-@media (max-width: 767px) {
-    .detail-map {
-        order: -1;
+    .list-header-row {
+        display: none;
     }
-    .detail-image {
-        height: 300px;
-    }
-    .detail-info .card-body {
+    .list-item-row {
+        display: block;
         padding: 1rem;
+        border-bottom: 1px solid #e9ecef;
     }
-
+    .list-item-row > span {
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        width: 100% !important;
+        text-align: left !important;
+        padding: 0.4rem 0;
+        border-bottom: 1px solid #f8f9fa;
+        margin-bottom: 0;
+    }
+    .list-item-row > span::before {
+        font-weight: 600;
+        color: #495057;
+    }
+    .list-item-row .col-location::before { content: '📍 위치'; }
+    .list-item-row .col-distance::before { content: '🚗 예상 거리'; }
+    .list-item-row .col-d-day::before { content: '🗓️ 마감까지'; }
+    .list-item-row .col-cost::before { content: '💰 비용'; }
+    .list-item-row .col-status::before { content: '👥 모집현황'; }
+    .list-item-row .col-crop {
+        display: block !important;
+        border-bottom: 1px solid #eee;
+        margin-bottom: 0.5rem;
+        padding-bottom: 0.5rem;
+    }
+    .list-item-row .col-crop::before { content: none; }
+    .list-item-row .col-action {
+        display: block !important;
+        margin-top: 1rem;
+        padding: 0;
+        border-bottom: none;
+    }
+    .list-item-row .col-action::before { content: none; }
+    .list-item-row .col-action .btn { width: 100%; }
+    
     .list-title-header {
         flex-direction: column;
         align-items: flex-start;
@@ -632,6 +584,97 @@ header.header-volunteer {
         padding: 6px 12px;
         font-size: 0.85rem;
     }
+
+    .page-volunteer .list-item-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        grid-template-areas:
+            "crop status"
+            "loc action";
+        font-size: 1rem;
+    }
+    .page-volunteer .list-item-row > span { display: block !important; }
+    .page-volunteer .list-item-row > span::before { content: none; }
+    .page-volunteer .list-item-row .col-crop { grid-area: crop; border: none; }
+    .page-volunteer .list-item-row .col-location { grid-area: loc; }
+    .page-volunteer .list-item-row .col-status { grid-area: status; text-align: right; }
+    .page-volunteer .list-item-row .col-action { grid-area: action; text-align: right; margin-top: 0; }
+    
+    .detail-map {
+        order: -1;
+    }
+    .detail-image {
+        height: 300px;
+    }
+    .detail-info .card-body {
+        padding: 1rem;
+    }
+    
+    .dashboard-card {
+        padding: 15px;
+        margin-bottom: 15px;
+    }
+
+
+    .hamburger-btn {
+        display: block;
+        z-index: 1031;
+        background: none;
+        border: none;
+        font-size: 1.5rem;
+        cursor: pointer;
+        color: #333;
+    }
+
+    .hamburger-btn .fa-xmark { display: none; }
+    .hamburger-btn.is-open .fa-xmark { display: block; }
+    .hamburger-btn.is-open .fa-bars { display: none; }
+
+
+    .user-menu {
+        position: fixed;
+        top: 0;
+        right: -100%;
+        width: 70%;
+        max-width: 300px;
+        height: 100vh;
+        background-color: white;
+        box-shadow: -2px 0 5px rgba(0,0,0,0.1);
+        z-index: 1000;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        opacity: 0;
+        pointer-events: none;
+        transition: right 0.3s ease-in-out, opacity 0.3s ease-in-out;
+    }
+
+    .user-menu.is-open {
+        display: flex;
+        right: 0;
+        opacity: 1;
+        pointer-events: auto;
+    }
+
+    .user-menu a, .user-menu .menu-item-user {
+        display: block;
+        text-align: right;
+        margin: 0;
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid #f0f0f0;
+        color: #555;
+        text-decoration: none;
+    }
+}
+
+.user-menu {
+    display: flex;
+    align-items: center;
+    white-space: nowrap;
+}
+.user-menu > * {
+    margin-left: 16px;
 }
 
 

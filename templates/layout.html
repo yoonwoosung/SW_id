@@ -20,7 +20,10 @@
     <div class="container header-content">
         <a href="/" class="logo">FarmLink</a>
 
-        <nav class="user-menu">
+        <button class="hamburger-btn" type="button" aria-label="메뉴 토글">
+            <i class="fa-solid fa-bars"></i> <i class="fa-solid fa-xmark"></i> </button>
+        
+        <nav class="user-menu" id="user-menu">
             {% if session.get('role') == 'farmer' %}
                 <a href="#" data-toggle="modal" data-target="#guide-modal">이용 가이드</a>
             {% endif %}
@@ -129,6 +132,28 @@
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // 1. 올바른 요소 선택
+            const hamburgerBtn = document.querySelector('.hamburger-btn');
+            const userMenu = document.getElementById('user-menu');
+            const body = document.body;
+
+            // 2. 햄버거 버튼이 존재하는지 확인
+            if (hamburgerBtn && userMenu) {
+                // 3. 버튼 클릭 이벤트 리스너 추가
+                hamburgerBtn.addEventListener('click', function() {
+                    // 'is-open' 클래스를 토글하여 아이콘 모양과 메뉴 표시 여부 제어
+                    hamburgerBtn.classList.toggle('is-open');
+                    userMenu.classList.toggle('is-open');
+                    // 스크롤 방지 클래스 토글
+                    body.classList.toggle('scroll-lock');
+                });
+            }
+        });
+    </script>
+
     {% block scripts %}{% endblock %}
 </body>
 </html>

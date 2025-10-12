@@ -470,6 +470,7 @@ def get_coords_from_address(address):
 # --- 3. 핵심 라우트 ---
 @app.route('/')
 def index():
+    print(f"Request args: {request.args}")
     role = session.get('role', 'experiencer')
     if role == 'farmer':
         farmer_id = session.get('user_id')

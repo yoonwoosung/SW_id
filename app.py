@@ -229,36 +229,20 @@ def extract_and_normalize_text_from_pdf(pdf_bytes):
 
 # --- Pre-load and process the sample certificate PDF for performance ---
 SAMPLE_CERT_TEXT = ""
-# Define paths for the PDF and its cache
-sample_pdf_path = os.path.join(os.path.dirname(__file__), '신청서.pdf')
-cache_path = os.path.join(os.path.dirname(__file__), 'sample_cert.cache')
-
 try:
-    # 1. Try to load from cache first
-    if os.path.exists(cache_path):
-        with open(cache_path, 'r', encoding='utf-8') as f:
-            SAMPLE_CERT_TEXT = f.read()
-        if SAMPLE_CERT_TEXT:
-            print("Successfully loaded sample certificate text from cache.")
-
-    # 2. If cache was not loaded, run OCR and create cache
+    # Use the corrected path
+    sample_pdf_path = os.path.join(os.path.dirname(__file__), '신청서.pdf')
+    with open(sample_pdf_path, 'rb') as f:
+        # Use the existing OCR function to process the sample file
+        SAMPLE_CERT_TEXT = extract_and_normalize_text_from_pdf(f.read())
+    
     if not SAMPLE_CERT_TEXT:
-        print("Cache not found or empty. Processing sample certificate PDF with OCR...")
-        if not os.path.exists(sample_pdf_path):
-            raise FileNotFoundError("Sample certificate PDF ('신청서.pdf') not found.")
+        print("Warning: Could not extract text from the sample certificate PDF on startup.")
+    else:
+        print("Successfully pre-loaded and processed the sample certificate PDF.")
         
-        with open(sample_pdf_path, 'rb') as f:
-            SAMPLE_CERT_TEXT = extract_and_normalize_text_from_pdf(f.read())
-        
-        if SAMPLE_CERT_TEXT:
-            # Save the result to cache for the next startup
-            with open(cache_path, 'w', encoding='utf-8') as f:
-                f.write(SAMPLE_CERT_TEXT)
-            print("Successfully processed and cached the sample certificate text.")
-        else:
-            # This case happens if OCR fails
-            print("Warning: Could not extract text from the sample certificate PDF.")
-
+except FileNotFoundError:
+    print("CRITICAL ERROR: Sample certificate PDF ('신청서.pdf') not found on startup. Verification will fail.")
 except Exception as e:
     print(f"CRITICAL ERROR processing sample certificate PDF on startup: {e}")
 

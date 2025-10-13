@@ -41,7 +41,7 @@ openai==1.102.0
 packaging==25.0
 passlib==1.7.4
 peewee==3.18.2
-pillow==10.3.0
+pillow==9.5.0
 platformdirs==4.4.0
 postgrest==1.1.1
 protobuf==6.32.0

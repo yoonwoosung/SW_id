@@ -44,7 +44,6 @@ peewee
 pillow
 platformdirs
 postgrest
-# psycopg2-binary  # MySQL만 사용한다면 이 줄은 삭제하거나 #으로 주석 처리하세요.
 pyasn1
 pycparser
 pydantic

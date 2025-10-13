@@ -25,6 +25,8 @@
         <div class="search-filter-box card mb-3">
             <div class="card-body">
             <form method="GET" action="{{ url_for('index') }}" class="row align-items-end">
+                <input type="hidden" name="sort" value="{{ sort_by }}">
+                <div class="col-md-4">
                 <div class="col-md-4">
                     <label for="region-select">지역 선택</label>
                     <select id="region-select" name="region" class="form-control">

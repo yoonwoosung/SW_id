@@ -8,7 +8,7 @@ from sqlalchemy.sql import func
 from collections import defaultdict
 from datetime import date, timedelta, datetime
 from sqlalchemy import or_
-# from flask_apscheduler import APScheduler
+from flask_apscheduler import APScheduler
 from PIL import Image
 import fitz  # PyMuPDF
 import re

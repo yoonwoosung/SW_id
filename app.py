@@ -10,17 +10,15 @@ from datetime import date, timedelta, datetime
 from sqlalchemy import or_
 from flask_apscheduler import APScheduler
 from PIL import Image
-import fitz  # PyMuPDF
 import re
-import pytesseract
-import io
 import json
 import math
 from sqlalchemy import case
 from types import SimpleNamespace
 
-# Tesseract OCR 경로 설정
-pytesseract.pytesseract.tesseract_cmd = '/usr/bin/tesseract'
+print("--- GEMINI AGENT: STARTUP DIAGNOSTIC v2 ---") # This is a test line to confirm the latest code is running.
+
+# fitz, pytesseract, io are now lazy-loaded.
 # --- 1. 앱 및 DB 설정 ---
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'mysql-secret-key-for-production')
@@ -200,6 +198,13 @@ def haversine(lat1, lon1, lat2, lon2):
 
 # PDF 텍스트 추출 및 정규화 함수 (OCR 기능 포함)
 def extract_and_normalize_text_from_pdf(pdf_bytes):
+    import fitz  # PyMuPDF
+    import pytesseract
+    import io
+
+    # Tesseract OCR 경로 설정
+    pytesseract.pytesseract.tesseract_cmd = '/usr/bin/tesseract'
+    
     text = ""
     try:
         # 1. 텍스트 기반 추출 시도
@@ -227,24 +232,24 @@ def extract_and_normalize_text_from_pdf(pdf_bytes):
         print(f"PDF 처리 중 오류 발생: {e}")
         return ""
 
-# --- Pre-load and process the sample certificate PDF for performance ---
+# --- Pre-load the sample certificate text from the pre-processed file ---
 SAMPLE_CERT_TEXT = ""
 try:
-    # Use the corrected path
-    sample_pdf_path = os.path.join(os.path.dirname(__file__), '신청서.pdf')
-    with open(sample_pdf_path, 'rb') as f:
-        # Use the existing OCR function to process the sample file
-        SAMPLE_CERT_TEXT = extract_and_normalize_text_from_pdf(f.read())
+    # Instantly load the pre-processed text from the cache file.
+    cache_path = os.path.join(os.path.dirname(__file__), 'sample_cert_text.txt')
+    with open(cache_path, 'r', encoding='utf-8') as f:
+        SAMPLE_CERT_TEXT = f.read().strip()
     
     if not SAMPLE_CERT_TEXT:
-        print("Warning: Could not extract text from the sample certificate PDF on startup.")
+        print("Warning: The pre-processed certificate text file ('sample_cert_text.txt') is empty.")
     else:
-        print("Successfully pre-loaded and processed the sample certificate PDF.")
-        
+        print("Successfully loaded pre-processed certificate text from 'sample_cert_text.txt'.")
+
 except FileNotFoundError:
-    print("CRITICAL ERROR: Sample certificate PDF ('신청서.pdf') not found on startup. Verification will fail.")
+    print("CRITICAL ERROR: The pre-processed certificate text file ('sample_cert_text.txt') was not found.")
+    print("Please run 'preprocess_sample_cert.py' first to generate it.")
 except Exception as e:
-    print(f"CRITICAL ERROR processing sample certificate PDF on startup: {e}")
+    print(f"CRITICAL ERROR loading pre-processed certificate text: {e}")
 
 # --- 2. DB 모델(테이블) 정의 (farmer 기준으로 통합) ---
 class User(db.Model):
@@ -420,7 +425,7 @@ def analyze_review_with_clova(text):
         print("--------------------------")
         return None
 
-@scheduler.task('interval', id='update_experience_status', minutes=1)
+# @scheduler.task('interval', id='update_experience_status', minutes=1)
 def update_experience_status():
     with app.app_context():
         now = datetime.now()

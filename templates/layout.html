@@ -20,10 +20,7 @@
     <div class="container header-content">
         <a href="/" class="logo">FarmLink</a>
 
-        <button class="hamburger-btn" type="button" aria-label="메뉴 토글">
-            <i class="fa-solid fa-bars"></i> <i class="fa-solid fa-xmark"></i> </button>
-        
-        <nav class="user-menu" id="user-menu">
+        <nav class="user-menu">
             {% if session.get('role') == 'farmer' %}
                 <a href="#" data-toggle="modal" data-target="#guide-modal">이용 가이드</a>
             {% endif %}
@@ -78,7 +75,7 @@
                      <div class="carousel-caption">
                         <h2>지금 가장 맛있는 제철 수확물! ✨</h2>
                         <p>가장 신선하고 맛있는 시기, 제철 농장 체험을 놓치지 마세요.</p>
-                        <a href="{{ url_for('index', sort='deadline') }}#experience-list-section" class="btn btn-lg btn-success">체험 보기</a>
+                        <a href="{{ url_for('index', sort='deadline') }}#experience-list-section" class="btn btn-lg btn-success">추천 체험 보기</a>
                     </div>
                 </div>
                 <div class="carousel-item" style="background-image: url('https://plus.unsplash.com/premium_photo-1661963071176-efd5f5ec65d6?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop');">
@@ -132,28 +129,5 @@
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
-    
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // 1. 올바른 요소 선택
-            const hamburgerBtn = document.querySelector('.hamburger-btn');
-            const userMenu = document.getElementById('user-menu');
-            const body = document.body;
-
-            // 2. 햄버거 버튼이 존재하는지 확인
-            if (hamburgerBtn && userMenu) {
-                // 3. 버튼 클릭 이벤트 리스너 추가
-                hamburgerBtn.addEventListener('click', function() {
-                    // 'is-open' 클래스를 토글하여 아이콘 모양과 메뉴 표시 여부 제어
-                    hamburgerBtn.classList.toggle('is-open');
-                    userMenu.classList.toggle('is-open');
-                    // 스크롤 방지 클래스 토글
-                    body.classList.toggle('scroll-lock');
-                });
-            }
-        });
-    </script>
-
-    {% block scripts %}{% endblock %}
 </body>
 </html>

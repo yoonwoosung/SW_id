@@ -1,5 +1,4 @@
 {% extends "layout.html" %}
-
 {% block content %}
 <style>
     .switch {
@@ -76,17 +75,9 @@
         box-sizing: border-box;
         padding-top: 1rem; /* 헤더와 컨텐츠 사이 간격 */
     }
-    .notification-delete-btn {
-        color: rgba(0,0,0,0.2);
-        cursor: pointer;
-        font-weight: bold;
-    }
-    .notification-delete-btn:hover {
-        color: rgba(0,0,0,0.5);
-    }
 </style>
 
-<div class="container dashboard-container mt-3">
+<div class="container dashboard-container">
     <div class="dashboard-grid">
         <aside class="dashboard-sidebar">
             <div class="dashboard-card profile-card">
@@ -114,12 +105,11 @@
             </div>
              <div class="dashboard-card">
                 <h5>최신 알림</h5>
-                <ul class="inquiry-list" id="notification-list">
+                <ul class="inquiry-list">
                     {% for notification in notifications %}
-                    <li data-notification-id="{{ notification.id }}">
-                        <div class="d-flex justify-content-between">
+                    <li>
+                        <div>
                             <p style="margin: 4px 0 0; font-size: 0.9rem; color: #555;">{{ notification.message }}</p>
-                            <span class="notification-delete-btn" data-id="{{ notification.id }}">&times;</span>
                         </div>
                         <small class="text-muted">{{ notification.timestamp.strftime('%m-%d %H:%M') }}</small>
                     </li>
@@ -127,11 +117,6 @@
                     <li>새로운 알림이 없습니다.</li>
                     {% endfor %}
                 </ul>
-                {% if notifications_json|length > 3 %}
-                <div id="notification-see-more-container" class="text-center mt-2">
-                    <a href="#" id="notification-see-more">더보기</a>
-                </div>
-                {% endif %}
             </div>
         </aside>
 
@@ -268,13 +253,9 @@
 <script id="json-data" type="application/json">
     {
         "reservations": {{ reservations_data | tojson | safe }},
-        "experiences": {{ experiences_json | tojson | safe }},
-        "notifications": {{ notifications_json | tojson | safe }}
+        "experiences": {{ experiences_json | tojson | safe }}
     }
 </script>
-{% endblock %}
-
-{% block scripts %}
 <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
@@ -282,7 +263,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const jsonData = JSON.parse(dataElement.textContent || '{}');
     const reservationsData = jsonData.reservations || {};
     const experiencesData = jsonData.experiences || [];
-    const allNotifications = jsonData.notifications || [];
 
     const calendarEl = document.getElementById('calendar');
 
@@ -458,47 +438,6 @@ document.addEventListener('DOMContentLoaded', function() {
             slidesContainer.innerHTML = '<p class="text-muted text-center my-5">분석할 후기 데이터가 없습니다.</p>';
         }
     }
-
-    const notificationList = document.getElementById('notification-list');
-    const seeMoreContainer = document.getElementById('notification-see-more-container');
-    const seeMoreButton = document.getElementById('notification-see-more');
-
-    if (seeMoreButton) {
-        seeMoreButton.addEventListener('click', function(e) {
-            e.preventDefault();
-            notificationList.innerHTML = ''; // Clear the list
-            allNotifications.forEach(notification => {
-                const li = document.createElement('li');
-                li.dataset.notificationId = notification.id;
-                li.innerHTML = `
-                    <div class="d-flex justify-content-between">
-                        <p style="margin: 4px 0 0; font-size: 0.9rem; color: #555;">${notification.message}</p>
-                        <span class="notification-delete-btn" data-id="${notification.id}">&times;</span>
-                    </div>
-                    <small class="text-muted">${new Date(notification.timestamp).toLocaleString('ko-KR', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}</small>
-                `;
-                notificationList.appendChild(li);
-            });
-            seeMoreContainer.style.display = 'none';
-        });
-    }
-
-    notificationList.addEventListener('click', function(e) {
-        if (e.target.classList.contains('notification-delete-btn')) {
-            const notificationId = e.target.dataset.id;
-            const listItem = e.target.closest('li');
-
-            fetch(`/notifications/delete/${notificationId}`, { method: 'POST' })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        listItem.remove();
-                    } else {
-                        alert('알림 삭제에 실패했습니다.');
-                    }
-                });
-        }
-    });
 });
 </script>
 {% endblock %}

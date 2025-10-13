@@ -79,7 +79,8 @@
     .notification-delete-btn {
         color: rgba(0,0,0,0.2);
         cursor: pointer;
-        font-weight: bold;
+        font-size: 1.5rem;
+        line-height: 1;
     }
     .notification-delete-btn:hover {
         color: rgba(0,0,0,0.5);
@@ -116,12 +117,12 @@
                 <h5>최신 알림</h5>
                 <ul class="inquiry-list" id="notification-list">
                     {% for notification in notifications %}
-                    <li data-notification-id="{{ notification.id }}">
-                        <div class="d-flex justify-content-between">
-                            <p style="margin: 4px 0 0; font-size: 0.9rem; color: #555;">{{ notification.message }}</p>
-                            <span class="notification-delete-btn" data-id="{{ notification.id }}">&times;</span>
+                    <li data-notification-id="{{ notification.id }}" class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <p style="margin: 0; font-size: 0.9rem; color: #555;">{{ notification.message }}</p>
+                            <small class="text-muted">{{ notification.timestamp.strftime('%m-%d %H:%M') }}</small>
                         </div>
-                        <small class="text-muted">{{ notification.timestamp.strftime('%m-%d %H:%M') }}</small>
+                        <span class="notification-delete-btn" data-id="{{ notification.id }}">&times;</span>
                     </li>
                     {% else %}
                     <li>새로운 알림이 없습니다.</li>

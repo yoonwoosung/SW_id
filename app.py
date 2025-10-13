@@ -49,8 +49,8 @@ db = SQLAlchemy(app, engine_options={"pool_pre_ping": True})
 
 # 스케줄러 설정 (farmer 기능)
 scheduler = APScheduler()
-# scheduler.init_app(app) # 느린 리로드 원인 진단을 위해 임시 비활성화
-# scheduler.start() # 느린 리로드 원인 진단을 위해 임시 비활성화
+scheduler.init_app(app)
+scheduler.start()
 
 REGIONAL_SPECIALTIES = {
     # 경기도
@@ -420,7 +420,7 @@ def analyze_review_with_clova(text):
         print("--------------------------")
         return None
 
-# #@scheduler.task('interval', id='update_experience_status', minutes=1) # 느린 리로드 원인 진단을 위해 임시 비활성화
+# @scheduler.task('interval', id='update_experience_status', minutes=1)
 def update_experience_status():
     with app.app_context():
         now = datetime.now()

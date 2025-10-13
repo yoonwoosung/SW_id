@@ -564,16 +564,14 @@ def index():
                                reservations_data=reservations_by_date, notifications=notifications, notifications_json=notifications_json,
                                feedback_report=feedback_by_experience)
 
-    else: # 체험자 또는 비로그인 사용자
+    else: # 체험자 또는 비로그-인 사용자
         page = request.args.get('page', 1, type=int)
-        sort_by = request.args.get('sort', 'recommended', type=str) # 기본값을 'recommended'로 변경
+        sort_by = request.args.get('sort', 'recommended', type=str)
         region = request.args.get('region', type=str)
         crop_query = request.args.get('crop_query', type=str)
 
-        user_lat = request.args.get('lat', type=float)
-        user_lon = request.args.get('lon', type=float)
-
         today = date.today()
+    # 1. 기본 쿼리 및 필터링
         base_query = Experience.query.filter(Experience.status == 'recruiting', Experience.end_date >= today)
 
         if region:
@@ -584,84 +582,82 @@ def index():
         items_on_page = []
         pagination = None
 
-        # 1. '추천순' 정렬 로직
+    # [수정] 마감된 체험을 목록 맨 뒤로 보내기 위한 공통 정렬 기준
+        is_closed = case(
+            (Experience.current_participants >= Experience.max_participants, 1),
+            else_=0
+        ).label("is_closed")
+
+    # [핵심 수정] sort_by 값을 먼저 확인하도록 로직 순서 변경
         if sort_by == 'recommended':
             user_lat = request.args.get('lat', type=float)
             user_lon = request.args.get('lon', type=float)
 
-            # URL에 위치 정보가 없으면 빈 목록을 보여줌 (JS가 위치를 받아와 페이지를 새로고침)
             if user_lat and user_lon:
-                all_experiences = base_query.all()
-
+                query = base_query.filter(Experience.current_participants < Experience.max_participants)
+                all_experiences = query.all()
+            
                 ranked_experiences = []
                 for exp in all_experiences:
                     distance = haversine(user_lat, user_lon, exp.lat, exp.lng)
-                    if distance > 150: continue # 150km 초과 시 목록에서 제외
+                    if distance > 150: continue
 
-                    # 추천 점수 계산
                     distance_score = max(0, 1 - (distance / 50))
                     availability_score = (exp.max_participants - exp.current_participants) / exp.max_participants
-
+                
                     specialty_score = 0
-                    for region, specialties in REGIONAL_SPECIALTIES.items():
-                        if region in exp.address_detail:
-                            for specialty_crop in specialties:
-                                if specialty_crop in exp.crop:
-                                    specialty_score = 1.0
-                                    break
-                        if specialty_score > 0:
+                    for r, specialties in REGIONAL_SPECIALTIES.items():
+                        if r in exp.address_detail and any(sc in exp.crop for sc in specialties):
+                            specialty_score = 1.0
                             break
-
-                    w1, w2, w3 = 0.5, 0.3, 0.2 # 가중치
+                
+                    w1, w2, w3 = 0.5, 0.3, 0.2
                     recommendation_score = (w1 * distance_score) + (w2 * specialty_score) + (w3 * availability_score)
 
                     exp.recommendation_score = recommendation_score
                     exp.distance = distance
                     ranked_experiences.append(exp)
 
-                # 추천 점수가 높은 순으로 정렬
                 sorted_items = sorted(ranked_experiences, key=lambda x: x.recommendation_score, reverse=True)
 
-                # 페이지네이션 수동 처리
                 start = (page - 1) * 15
                 end = start + 15
                 items_on_page = sorted_items[start:end]
                 total_items = len(sorted_items)
-
-                from types import SimpleNamespace
-                total_pages = math.ceil(total_items / 15)
+            
+                total_pages = math.ceil(total_items / 15) if total_items > 0 else 1
                 pagination = SimpleNamespace(
-                    items=items_on_page,
-                    page=page,
-                    per_page=15,
-                    total=total_items,
-                    pages=total_pages,
-                    has_prev=(page > 1),
-                    has_next=(page < total_pages),
-                    prev_num=page - 1,
-                    next_num=page + 1,
-                    iter_pages=range(1, total_pages + 1)
+                    items=items_on_page, page=page, per_page=15, total=total_items,
+                    pages=total_pages, has_prev=(page > 1), has_next=(page < total_pages),
+                    prev_num=page - 1, next_num=page + 1,
+                    iter_pages=lambda **kwargs: range(1, total_pages + 1)
                 )
+        # 추천순인데 lat, lon 값이 없으면 빈 화면을 보여주는 기존 로직은 유지
+            else:
+                items_on_page = []
+                pagination = None
 
-        # 2. '모집 임박순', '리뷰 많은순' 정렬 로직
-        else:
-            query = base_query
 
-            if sort_by == 'reviews':
-                query = query.outerjoin(Review).group_by(Experience.id).order_by(func.count(Review.id).desc())
-            else: # 'deadline'
-                query = query.order_by(Experience.end_date.asc())
-
+        elif sort_by == 'reviews':
+            review_count = func.count(Review.id).label('review_count')
+            query = base_query.outerjoin(Review).group_by(Experience.id).order_by(is_closed.asc(), review_count.desc())
             pagination = query.paginate(page=page, per_page=15, error_out=False)
-            items_on_page = sorted(pagination.items, key=lambda x: x.current_participants >= x.max_participants)
+            items_on_page = pagination.items
 
-        # 3. 화면에 '지역 특산물' 배지를 표시하기 위한 정보 추가
-        for item in items_on_page:
-            item.is_specialty = False
-            for region, specialties in REGIONAL_SPECIALTIES.items():
-                if region in item.address_detail and any(sc in item.crop for sc in specialties):
-                    item.is_specialty = True
-                    break
+        else: # 'deadline' (모집 임박순) 및 기타
+            query = base_query.order_by(is_closed.asc(), Experience.end_date.asc())
+            pagination = query.paginate(page=page, per_page=15, error_out=False)
+            items_on_page = pagination.items
+
+
+    # '지역 특산물' 배지 표시 로직
+        if items_on_page: # items_on_page가 None이 아닐 때만 실행
+            for item in items_on_page:
+                item.is_specialty = False
+                for r, specialties in REGIONAL_SPECIALTIES.items():
+                    if r in item.address_detail and any(sc in item.crop for sc in specialties):
+                        item.is_specialty = True
+                        break
 
         return render_template('index.html',
                                items=items_on_page,

@@ -16,7 +16,6 @@ import math
 from sqlalchemy import case
 from types import SimpleNamespace
 
-print("--- GEMINI AGENT: STARTUP DIAGNOSTIC v2 ---") # This is a test line to confirm the latest code is running.
 
 # fitz, pytesseract, io are now lazy-loaded.
 # --- 1. 앱 및 DB 설정 ---
@@ -477,7 +476,6 @@ def get_coords_from_address(address):
 # --- 3. 핵심 라우트 ---
 @app.route('/')
 def index():
-    print(f"Request args: {request.args}")
     role = session.get('role', 'experiencer')
     if role == 'farmer':
         farmer_id = session.get('user_id')

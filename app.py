@@ -19,6 +19,8 @@ import math
 from sqlalchemy import case
 from types import SimpleNamespace
 
+print(f"--- DIAG: App starting at {datetime.now()} ---")
+
 print("--- GEMINI AGENT: STARTUP DIAGNOSTIC v2 ---") # This is a test line to confirm the latest code is running.
 
 # Tesseract OCR 경로 설정
@@ -45,7 +47,9 @@ app.config['UPLOAD_FOLDER'] = os.path.join(app.static_folder, 'uploads')
 app.config['ALLOWED_EXTENSIONS'] = {'png', 'jpg', 'jpeg', 'gif', 'pdf'} # farmer 기준
 app.config['KAKAO_API_KEY'] = os.environ.get('KAKAO_API_KEY', '432f80fcdc8239c7c87db2520e85597e') # farmer 기준
 
+print(f"--- DIAG: Initializing SQLAlchemy at {datetime.now()} ---")
 db = SQLAlchemy(app, engine_options={"pool_pre_ping": True})
+print(f"--- DIAG: SQLAlchemy initialized at {datetime.now()} ---")
 
 
 
@@ -1293,6 +1297,8 @@ def get_experiences_json():
 @app.route('/guide') # e-sibal 기능 추가
 def guide_page():
     return render_template('guide.html')
+
+print(f"--- DIAG: App setup complete, ready to serve at {datetime.now()} ---")
 
 # --- 앱 실행 ---
 if __name__ == '__main__':

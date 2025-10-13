@@ -235,21 +235,6 @@ def extract_and_normalize_text_from_pdf(pdf_bytes):
 # --- Pre-load the sample certificate text from the pre-processed file ---
 SAMPLE_CERT_TEXT = ""
 try:
-<<<<<<< HEAD
-    # Use the corrected path
-    sample_pdf_path = os.path.join(os.path.dirname(__file__), '신청서.pdf')
-    with open(sample_pdf_path, 'rb') as f:
-        # Use the existing OCR function to process the sample file
-        SAMPLE_CERT_TEXT = extract_and_normalize_text_from_pdf(f.read())
-    
-    if not SAMPLE_CERT_TEXT:
-        print("Warning: Could not extract text from the sample certificate PDF on startup.")
-    else:
-        print("Successfully pre-loaded and processed the sample certificate PDF.")
-        
-except FileNotFoundError:
-    print("CRITICAL ERROR: Sample certificate PDF ('신청서.pdf') not found on startup. Verification will fail.")
-=======
     # Instantly load the pre-processed text from the cache file.
     cache_path = os.path.join(os.path.dirname(__file__), 'sample_cert_text.txt')
     with open(cache_path, 'r', encoding='utf-8') as f:
@@ -263,7 +248,6 @@ except FileNotFoundError:
 except FileNotFoundError:
     print("CRITICAL ERROR: The pre-processed certificate text file ('sample_cert_text.txt') was not found.")
     print("Please run 'preprocess_sample_cert.py' first to generate it.")
->>>>>>> da881bf07b9be8a7ed30d91a13d272b205c7d2c7
 except Exception as e:
     print(f"CRITICAL ERROR loading pre-processed certificate text: {e}")
 

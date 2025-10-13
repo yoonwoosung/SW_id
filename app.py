@@ -19,6 +19,8 @@ import math
 from sqlalchemy import case
 from types import SimpleNamespace
 
+print("--- GEMINI AGENT: STARTUP DIAGNOSTIC v2 ---") # This is a test line to confirm the latest code is running.
+
 # Tesseract OCR 경로 설정
 pytesseract.pytesseract.tesseract_cmd = '/usr/bin/tesseract'
 # --- 1. 앱 및 DB 설정 ---

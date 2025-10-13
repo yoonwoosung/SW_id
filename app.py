@@ -17,6 +17,7 @@ import io
 import json
 import math
 from sqlalchemy import case
+from types import SimpleNamespace
 
 # Tesseract OCR 경로 설정
 pytesseract.pytesseract.tesseract_cmd = '/usr/bin/tesseract'

@@ -43,6 +43,7 @@
             <div class="card mt-4">
                 <div class="card-body">
                     <h3 class="card-title">운영 시간표 🗓️</h3>
+                    <p class="text-muted small mb-2">녹색 칸이 신청 가능한 시간입니다</p>
                     <table class="timetable-display">
                         <thead>
                             <tr><th>시간</th><th>월</th><th>화</th><th>수</th><th>목</th><th>금</th><th>토</th><th>일</th></tr>
@@ -126,7 +127,21 @@
         </div>
         <!-- 오른쪽 사이드바 정보 -->
         <div class="col-md-5">
-            <div class="detail-map card mt-1 ">
+            <div class="detail-info card mb-4">
+                <div class="card-header">농장주 프로필</div>
+                <div class="card-body">
+                    <div class="d-flex align-items-start">
+                        <div class="text-center mr-4" style="width: 90px;">
+                            <img src="{{ url_for('static', filename='uploads/' + item.farmer.profile_image) }}" alt="{{ item.farmer.nickname }}" class="img-fluid rounded-circle mb-2" style="width: 80px; height: 80px; object-fit: cover;">
+                            <h6 class="mb-0" style="font-weight: bold;">{{ item.farmer.nickname }}</h6>
+                        </div>
+                        <div class="flex-grow-1" style="padding-top: 10px;">
+                            <p class="text-muted" style="font-size: 0.9rem; margin-bottom: 5px;">"{{ item.farmer.profile_bio | default('한 줄 소개가 없습니다.', true) }}"</p>
+                        </div>
+                    </div>
+                </div>
+            </div>            
+            <div class="detail-map card mt-4">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <span>농장 위치</span>
                     <a href="https://map.kakao.com/?q={{ item.address_detail }} 주변 편의시설" target="_blank" class="btn btn-sm btn-outline-success">주변시설 검색</a>

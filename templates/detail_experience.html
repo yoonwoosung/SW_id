@@ -2,9 +2,10 @@
 {% block content %}
 <div class="container detail-container mt-3">
     
-    {% set first_image = item.images.split(',')[0] if item.images else 'default_banner.jpg' %}
-    <div class="page-title-banner mb-4" style="background-image: url('{{ url_for('static', filename='uploads/' + first_image) }}');">
+{% set first_image = item.images.split(',')[0] if item.images else 'default_banner.jpg' %}
+    <div class="page-title-banner mb-4" style="background-image: url({{ url_for('static', filename='uploads/' + first_image) }});">
         <h1 class="font-weight-bold mb-1 text-white">{{ item.crop }} 체험</h1>
+        <p class="mb-0 text-white-50"><i class="fa-solid fa-location-dot mr-2"></i>{{ item.address_detail }}</p>
     </div>
 
     <div class="row">
@@ -38,10 +39,33 @@
                 {% endif %}
             </div>
 
+            {% if item.timetable_data %}
+            <div class="card mt-4">
+                <div class="card-body">
+                    <h3 class="card-title">운영 시간표 🗓️</h3>
+                    <table class="timetable-display">
+                        <thead>
+                            <tr><th>시간</th><th>월</th><th>화</th><th>수</th><th>목</th><th>금</th><th>토</th><th>일</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>09:00 - 10:00</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                            <tr><td>10:00 - 11:00</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                            <tr><td>11:00 - 12:00</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                            <tr><td>12:00 - 13:00</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                            <tr><td>13:00 - 14:00</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                            <tr><td>14:00 - 15:00</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                            <tr><td>15:00 - 16:00</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                            <tr><td>16:00 - 17:00</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% endif %}
+    
             <div class="card mt-4">
                 <div class="card-body">
                     <h3 class="card-title">방문자 후기 🌟</h3>
-                    {% if review_status == 'allowed' %}
+                    {% if session.get('user_id') %}
                     <form action="{{ url_for('add_review', item_id=item.id) }}" method="POST" class="mb-4">
                         <div class="form-group">
                             <label for="rating">별점</label>
@@ -54,12 +78,8 @@
                         </div>
                         <button type="submit" class="btn btn-primary mt-2">후기 등록</button>
                     </form>
-                    {% elif review_status == 'already_reviewed' %}
-                    <p class="text-muted small">이미 이 체험에 대한 후기를 작성하셨습니다.</p>
-                    {% elif review_status == 'pending_confirmation' %}
-                    <p class="text-muted small">농장주가 예약을 확정하면 후기를 작성할 수 있습니다.</p>
-                    {% elif review_status == 'not_logged_in' %}
-                    <p class="text-muted small">후기를 남기시려면 <a href="{{ url_for('login_page') }}">로그인</a>이 필요합니다.</p>
+                    {% else %}
+                     <p class="text-muted small">후기를 남기시려면 <a href="{{ url_for('login_page') }}">로그인</a>이 필요합니다.</p>
                     {% endif %}
                     
                     <div class="review-list">
@@ -104,17 +124,18 @@
                 </div>
             </div>
         </div>
+        <!-- 오른쪽 사이드바 정보 -->
         <div class="col-md-5">
-            <div class="detail-map card mb-4">
+            <div class="detail-map card mt-1 ">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <span>농장 위치</span>
                     <a href="https://map.kakao.com/?q={{ item.address_detail }} 주변 편의시설" target="_blank" class="btn btn-sm btn-outline-success">주변시설 검색</a>
                 </div>
                 <div class="card-body">
-                    <div id="map" style="width:100%;height:250px;"></div>
+                    <div id="map" style="width:100%;height:300px;"></div>
                 </div>
             </div>
-            <div id="nearby-distances" class="card mb-4">
+            <div id="nearby-distances" class="card mt-3">
                 <div class="card-body">
                     <h6 class="card-title mb-0">주요 시설까지의 직선거리</h6>
                     <div id="distance-list" class="mt-2">
@@ -122,23 +143,8 @@
                     </div>
                 </div>
             </div>
-
-            <div class="detail-info card mt-1">
-                <div class="card-header">농장주 프로필</div>
-                <div class="card-body">
-                    <div class="d-flex align-items-start">
-                        <div class="text-center mr-4" style="width: 90px;">
-                            <img src="{{ url_for('static', filename='uploads/' + item.farmer.profile_image) }}" alt="{{ item.farmer.nickname }}" class="img-fluid rounded-circle mb-2" style="width: 80px; height: 80px; object-fit: cover;">
-                            <h6 class="mb-0" style="font-weight: bold;">{{ item.farmer.nickname }}</h6>
-                        </div>
-                        <div class="flex-grow-1" style="padding-top: 10px;">
-                            <p class="text-muted" style="font-size: 0.9rem; margin-bottom: 5px;">"{{ item.farmer.profile_bio | default('한 줄 소개가 없습니다.', true) }}"</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="detail-info card mt-4">
+            
+            <div class="detail-info card">
                 <div class="card-body">
                     <p><strong>📍 위치:</strong> {{ item.address_detail }}</p>
                     <p><strong>🌿 친환경:</strong> {{ "예" if item.pesticide_free else "아니오" }}</p>
@@ -148,7 +154,6 @@
                     <p><strong>🚗 주차 가능:</strong> {{ "예" if item.has_parking else "아니오" }}</p>
                 </div>
             </div>
-            
             <div class="detail-info card mt-4">
                 <div class="card-header">체험 상세정보</div>
                 <div class="card-body">
@@ -163,32 +168,7 @@
                     {% endif %}
                 </div>
             </div>
-
-            {% if item.timetable_data %}
-            <div class="detail-info card mt-4">
-                <div class="card-header">운영 시간표</div>
-                <div class="card-body">
-                    <p class="text-muted small mb-2">녹색 칸이 신청 가능한 시간입니다</p>
-                    <table class="timetable-display">
-                        <thead>
-                            <tr><th>시간</th><th>월</th><th>화</th><th>수</th><th>목</th><th>금</th><th>토</th><th>일</th></tr>
-                        </thead>
-                        <tbody>
-                            <tr><td>09:00 - 10:00</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-                            <tr><td>10:00 - 11:00</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-                            <tr><td>11:00 - 12:00</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-                            <tr><td>12:00 - 13:00</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-                            <tr><td>13:00 - 14:00</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-                            <tr><td>14:00 - 15:00</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-                            <tr><td>15:00 - 16:00</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-                            <tr><td>16:00 - 17:00</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-            {% endif %}
-
-            <a href="{{ url_for('experience_apply', item_id=item.id) }}" class="btn btn-success btn-lg btn-block my-3">체험 예약하기</a>
+            <a href="{{ url_for('experience_apply', item_id=item.id) }}" class="btn btn-success btn-lg btn-block mb-3">체험 예약하기</a>
         </div>
     </div>
 </div>
@@ -204,7 +184,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const mapContainer = document.getElementById('map');
     const mapOption = {
         center: new kakao.maps.LatLng(itemData.lat, itemData.lng),
-        level: 3
+        level: 3 // 확대 레벨 조정
     };
     const map = new kakao.maps.Map(mapContainer, mapOption);
     const marker = new kakao.maps.Marker({
@@ -212,45 +192,63 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     marker.setMap(map);
 
-    // --- 주변 시설 거리 자동 계산 기능 ---
+    // --- ▼▼▼▼▼ 페이지 로딩 시 주변 시설 거리 자동 계산 기능 ▼▼▼▼▼ ---
+
+    // 1. 검색할 카테고리 목록 정의
     const categoriesToSearch = [
         { code: 'CS2', name: '편의점', emoji: '🏪' },
         { code: 'PM9', name: '약국', emoji: '💊' },
         { code: 'HP8', name: '병원', emoji: '🏥' },
         { code: 'PK6', name: '공용주차장', emoji: '🅿️' }
     ];
+
+    // 2. 장소 검색 객체 및 결과 표시 영역 찾기
     const ps = new kakao.maps.services.Places();
     const listContainer = document.getElementById('distance-list');
     const farmLatLng = new kakao.maps.LatLng(itemData.lat, itemData.lng);
-    listContainer.innerHTML = ''; 
+    listContainer.innerHTML = ''; // '검색 중' 메시지 초기화
 
+    // 3. 각 카테고리별로 가장 가까운 장소 검색 실행
     categoriesToSearch.forEach(category => {
         const searchOptions = {
             location: farmLatLng,
-            radius: 20000,
-            size: 1,
+            radius: 20000, // 20km 반경
+            size: 1,      // 가장 가까운 1개만
             sort: kakao.maps.services.SortBy.DISTANCE
         };
 
+        // 검색 콜백 함수
+// 검색 콜백 함수
         const callback = function(result, status) {
             const p = document.createElement('p');
             p.className = 'mb-1';
-            if (status === kakao.maps.services.Status.OK && result.length > 0) {
-                const place = result[0];
-                const placeLatLng = new kakao.maps.LatLng(place.y, place.x);
-                const polyline = new kakao.maps.Polyline({ path: [farmLatLng, placeLatLng] });
-                const distance = Math.round(polyline.getLength());
-                let distanceText = (distance > 1000) ? `약 ${(distance / 1000).toFixed(1)} km` : `약 ${distance} m`;
-                p.innerHTML = `${category.emoji} ${category.name}: <strong>${distanceText}</strong> <small class="text-muted">(${place.place_name})</small>`;
+
+            if (status === kakao.maps.services.Status.OK) {
+                // 검색 결과가 있을 경우
+                if (result.length > 0) {
+                    const place = result[0];
+                    const placeLatLng = new kakao.maps.LatLng(place.y, place.x);
+                    const polyline = new kakao.maps.Polyline({ path: [farmLatLng, placeLatLng] });
+                    const distance = Math.round(polyline.getLength());
+                    let distanceText = (distance > 1000) ? `약 ${(distance / 1000).toFixed(1)} km` : `약 ${distance} m`;
+                    p.innerHTML = `${category.emoji} ${category.name}: <strong>${distanceText}</strong> <small class="text-muted">(${place.place_name})</small>`;
+                } else {
+                // 검색 결과가 없을 경우
+                    p.innerHTML = `${category.emoji} ${category.name}: <span class="text-muted">주변에 없음</span>`;
+                }
             } else {
-                p.innerHTML = `${category.emoji} ${category.name}: <span class="text-muted">주변에 없음</span>`;
+                // API 검색 자체가 실패했을 경우
+                p.innerHTML = `${category.emoji} ${category.name}: <span class="text-danger">검색 실패</span>`;
             }
             listContainer.appendChild(p);
         };
+
+        // 카테고리 검색 실행
         ps.categorySearch(category.code, callback, searchOptions);
     });
 
-    // --- 시간표 렌더링 ---
+    // --- ▲▲▲▲▲ 여기까지 ▲▲▲▲▲ ---
+
     const timetableData = "{{ item.timetable_data or '' }}";
     if (timetableData) {
         const selectedSlots = timetableData.split(',');

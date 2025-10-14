@@ -16,6 +16,7 @@ import pytesseract
 import io
 import json
 import math
+import uuid
 from sqlalchemy import case
 from types import SimpleNamespace
 
@@ -728,7 +729,8 @@ def register_page():
 
                     # Compare with the pre-loaded text
                     if uploaded_text and SAMPLE_CERT_TEXT in uploaded_text:
-                        cert_pdf_filename = secure_filename(f"farmer_cert_{email}_{cert_pdf_file.filename}")
+                        ext = cert_pdf_file.filename.rsplit('.', 1)[1].lower()
+                        cert_pdf_filename = f"farmer_cert_{email}_{uuid.uuid4().hex}.{ext}"
                         cert_pdf_file.save(os.path.join(app.config['UPLOAD_FOLDER'], cert_pdf_filename))
                     else:
                         flash("업로드된 농업인 확인서가 유효하지 않습니다.", "danger")
@@ -914,7 +916,8 @@ def farmer_register(item_id=None):
 
         if cert_file and cert_file.filename != '':
             if allowed_file(cert_file.filename):
-                cert_filename = secure_filename(f"cert_{item_id or 'new'}_{cert_file.filename}")
+                ext = cert_file.filename.rsplit('.', 1)[1].lower()
+                cert_filename = f"cert_{session['user_id']}_{uuid.uuid4().hex}.{ext}"
                 cert_file.save(os.path.join(app.config['UPLOAD_FOLDER'], cert_filename))
         elif not is_organic:
             cert_filename = None
@@ -934,7 +937,8 @@ def farmer_register(item_id=None):
             filenames = []
         for file in uploaded_files:
             if file and allowed_file(file.filename):
-                filename = secure_filename(file.filename)
+                ext = file.filename.rsplit('.', 1)[1].lower()
+                filename = f"exp_{session['user_id']}_{uuid.uuid4().hex}.{ext}"
                 filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
                 img = Image.open(file.stream)
                 img.thumbnail((800, 600))
@@ -1163,7 +1167,8 @@ def upload_profile():
         return redirect(url_for('my_info'))
     file = request.files['profile_pic']
     if file and allowed_file(file.filename):
-        filename = secure_filename(file.filename)
+        ext = file.filename.rsplit('.', 1)[1].lower()
+        filename = f"profile_{session['user_id']}_{uuid.uuid4().hex}.{ext}"
         filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
         img = Image.open(file.stream)
         img.thumbnail((400, 400))
@@ -1185,7 +1190,8 @@ def upload_farm_photo():
         return redirect(url_for('index'))
     file = request.files['farm_photo']
     if file and allowed_file(file.filename):
-        filename = secure_filename(file.filename)
+        ext = file.filename.rsplit('.', 1)[1].lower()
+        filename = f"farm_{session['user_id']}_{uuid.uuid4().hex}.{ext}"
         filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
 
         img = Image.open(file.stream)

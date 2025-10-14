@@ -934,13 +934,25 @@ def farmer_register(item_id=None):
             filenames = []
         for file in uploaded_files:
             if file and allowed_file(file.filename):
-                filename = secure_filename(file.filename)
-                filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+                # 1. 원본 파일에서 확장자를 가져옵니다. (예: '.jpg')
+                _, file_extension = os.path.splitext(file.filename)
+
+                # 2. 고유한 파일 이름을 만듭니다. (예: 현재 시간 + 랜덤 문자열)
+                #    이렇게 하면 다른 사용자가 같은 이름의 파일을 올려도 덮어쓰지 않습니다.
+                import uuid
+                unique_filename = str(uuid.uuid4()) + file_extension
+        
+                # 3. 안전한 최종 파일 경로를 생성합니다.
+                filepath = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
+
+                # 4. 이미지 처리 및 저장
                 img = Image.open(file.stream)
                 img.thumbnail((800, 600))
-                img.save(filepath)
-                if filename not in filenames: filenames.append(filename)
-        image_string = ",".join(filter(None, filenames))
+                img.save(filepath) # 이제 Pillow가 확장자를 보고 알아서 저장합니다.
+
+                # DB에 저장할 파일 이름
+                if unique_filename not in filenames:
+                    filenames.append(unique_filename)
 
         address_detail = request.form.get('address')
         lat, lng = get_coords_from_address(address_detail)

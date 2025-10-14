@@ -24,13 +24,7 @@ app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'mysql-secret-key-for-production')
 
 # DB 접속 정보: farmer 기준 로컬 DB 사용.
-db_username = 'kevin4201'
-db_password = 'farmLink'
-db_hostname = 'kevin4201.mysql.pythonanywhere-services.com'
-db_name     = 'kevin4201$default'
-DATABASE_URI = f"mysql+mysqlconnector://{db_username}:{db_password}@{db_hostname}/{db_name}"
-
-
+DATABASE_URI = r"sqlite:///local_db.sqlite"
 app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_URI
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SQLALCHEMY_POOL_RECYCLE'] = 280
@@ -714,46 +708,13 @@ def register_page():
             flash("이미 가입된 이메일입니다.", "danger")
             return render_template('register.html', form_data=request.form)
 
-        cert_pdf_filename = None
-        if role == 'farmer':
-            cert_pdf_file = request.files.get('farmer_certificate_pdf')
-            if not cert_pdf_file or cert_pdf_file.filename == '':
-                flash("농장주 회원은 농업인 확인서 PDF 파일을 반드시 제출해야 합니다.", "danger")
-                return render_template('register.html', form_data=request.form)
-
-            if allowed_file(cert_pdf_file.filename):
-                try:
-                    # Check if the pre-loaded sample text is available
-                    if not SAMPLE_CERT_TEXT:
-                        flash("시스템 오류: 샘플 인증서를 처리할 수 없습니다. 관리자에게 문의하세요.", "danger")
-                        return render_template('register.html', form_data=request.form)
-
-                    uploaded_text = extract_and_normalize_text_from_pdf(cert_pdf_file.read())
-                    cert_pdf_file.seek(0)  # Reset stream position after reading
-
-                    # Compare with the pre-loaded text
-                    if uploaded_text and SAMPLE_CERT_TEXT in uploaded_text:
-                        cert_pdf_filename = secure_filename(f"farmer_cert_{email}_{cert_pdf_file.filename}")
-                        cert_pdf_file.save(os.path.join(app.config['UPLOAD_FOLDER'], cert_pdf_filename))
-                    else:
-                        flash("업로드된 농업인 확인서가 유효하지 않습니다.", "danger")
-                        return render_template('register.html', form_data=request.form)
-                except Exception as e:
-                    # A more general exception to catch any PDF processing errors
-                    flash(f"인증서 파일 처리 중 오류가 발생했습니다: {e}", "danger")
-                    return render_template('register.html', form_data=request.form)
-            else:
-                flash("허용되지 않는 파일 형식입니다. PDF 파일만 업로드 가능합니다.", "danger")
-                return render_template('register.html', form_data=request.form)
-
         hashed_password = generate_password_hash(password)
         new_user = User(
             email=email, nickname=nickname, password=hashed_password,
             role=role, name=name, phone=phone,
             farm_address=request.form.get('farm_address'),
             farm_size=request.form.get('farm_size'),
-            profile_bio=request.form.get('profile_bio'),
-            farmer_certificate_pdf=cert_pdf_filename
+            profile_bio=request.form.get('profile_bio')
         )
         db.session.add(new_user)
         db.session.commit()
@@ -1228,6 +1189,49 @@ def my_info():
 
     applications = Application.query.filter_by(user_id=user.id).order_by(Application.apply_date.desc()).all()
     return render_template('my_info.html', user=user, applications=applications)
+
+@app.route('/certify_farmer', methods=['POST'])
+def certify_farmer():
+    if 'user_id' not in session or session['role'] != 'farmer':
+        flash("농장주로 로그인해야만 접근할 수 있습니다.", "warning")
+        return redirect(url_for('login_page'))
+
+    user = User.query.get(session['user_id'])
+    if not user:
+        flash("사용자 정보를 찾을 수 없습니다.", "danger")
+        return redirect(url_for('login_page'))
+
+    cert_pdf_file = request.files.get('farmer_certificate_pdf')
+    if not cert_pdf_file or cert_pdf_file.filename == '':
+        flash("농업인 확인서 PDF 파일을 제출해야 합니다.", "danger")
+        return redirect(url_for('my_info'))
+
+    if allowed_file(cert_pdf_file.filename):
+        try:
+            if not SAMPLE_CERT_TEXT:
+                flash("시스템 오류: 샘플 인증서를 처리할 수 없습니다. 관리자에게 문의하세요.", "danger")
+                return redirect(url_for('my_info'))
+
+            uploaded_text = extract_and_normalize_text_from_pdf(cert_pdf_file.read())
+            cert_pdf_file.seek(0)
+
+            if uploaded_text and SAMPLE_CERT_TEXT in uploaded_text:
+                cert_pdf_filename = secure_filename(f"farmer_cert_{user.email}_{cert_pdf_file.filename}")
+                cert_pdf_file.save(os.path.join(app.config['UPLOAD_FOLDER'], cert_pdf_filename))
+                
+                user.farmer_certificate_pdf = cert_pdf_filename
+                db.session.commit()
+                flash("농장주 인증이 완료되었습니다.", "success")
+            else:
+                flash("업로드된 농업인 확인서가 유효하지 않습니다.", "danger")
+        except Exception as e:
+            flash(f"인증서 파일 처리 중 오류가 발생했습니다: {e}", "danger")
+    else:
+        flash("허용되지 않는 파일 형식입니다. PDF 파일만 업로드 가능합니다.", "danger")
+
+    return redirect(url_for('my_info'))
+
+
 
 @app.route('/application/delete/<int:app_id>', methods=['POST'])
 def delete_application(app_id):

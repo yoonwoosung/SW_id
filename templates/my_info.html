@@ -68,6 +68,33 @@
         </div>
     </div>
 
+    {% if user.role == 'farmer' and not user.farmer_certificate_pdf %}
+    <div class="card mt-4">
+        <div class="card-header">
+            농장주 인증
+        </div>
+        <div class="card-body">
+            <p>농장주 인증을 위해 농업인 확인서를 제출해주세요.</p>
+            <form method="POST" action="{{ url_for('certify_farmer') }}" enctype="multipart/form-data">
+                <div class="form-group">
+                    <label for="farmer_certificate_pdf">농업인 확인서 (PDF)</label>
+                    <input type="file" class="form-control-file" id="farmer_certificate_pdf" name="farmer_certificate_pdf" accept=".pdf" required>
+                </div>
+                <button type="submit" class="btn btn-primary">인증하기</button>
+            </form>
+        </div>
+    </div>
+    {% elif user.role == 'farmer' and user.farmer_certificate_pdf %}
+    <div class="card mt-4">
+        <div class="card-header">
+            농장주 인증
+        </div>
+        <div class="card-body">
+            <p class="text-success">농장주 인증이 완료되었습니다.</p>
+        </div>
+    </div>
+    {% endif %}
+
     <h3 class="mt-5 mb-3">신청한 체험 목록</h3>
     <div class="list-group">
         {% for app in applications %}

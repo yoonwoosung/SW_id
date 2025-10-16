@@ -555,6 +555,12 @@ def detailed_farmer_dashboard():
     
     farmer_id = session.get('user_id')
     user = User.query.get(farmer_id)
+
+    if user is None:
+        session.clear()
+        flash("사용자 정보가 올바르지 않아 로그아웃되었습니다. 다시 로그인해주세요.", "warning")
+        return redirect(url_for('login_page'))
+
     notifications = Notification.query.filter_by(user_id=farmer_id).order_by(Notification.timestamp.desc()).limit(3).all()
     all_notifications = Notification.query.filter_by(user_id=farmer_id).order_by(Notification.timestamp.desc()).all()
     notifications_json = [{"id": n.id, "message": n.message, "timestamp": n.timestamp.isoformat()} for n in all_notifications]

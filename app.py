@@ -373,8 +373,7 @@ def analyze_review_with_clova(text):
             },
             {
                 "role": "assistant",
-                "content": "```json\n{\n  \"strengths\": [],\n  \"improvements\": [\"화장실 청결도\"]\n}
-```"
+                "content": "```json\n{\n  \"strengths\": [],\n  \"improvements\": [\"화장실 청결도\"]\n}\n```"
             },
             {
                 "role": "user",

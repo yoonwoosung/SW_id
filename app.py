@@ -847,7 +847,10 @@ def update_bio():
 # --- 체험 관련 라우트 ---
 @app.route('/experience/<int:item_id>')
 def experience_detail(item_id):
+    print(f"[DEBUG] Start: experience_detail(item_id={item_id}) at {datetime.now()}")
     item = Experience.query.get_or_404(item_id)
+    print(f"[DEBUG] Got Experience item at {datetime.now()}")
+
     if item.status != 'recruiting' and session.get('user_id') != item.farmer_id:
         flash("현재 모집 중인 체험이 아닙니다.", "warning")
         return redirect(url_for('index'))
@@ -873,10 +876,17 @@ def experience_detail(item_id):
                     review_status = 'not_applicable'
             else:
                 review_status = 'not_applied'
+    print(f"[DEBUG] Calculated review_status at {datetime.now()}")
 
     reviews = Review.query.filter_by(experience_id=item_id).order_by(Review.timestamp.desc()).all()
+    print(f"[DEBUG] Got {len(reviews)} reviews at {datetime.now()}")
+
     inquiries = Inquiry.query.filter_by(experience_id=item_id).order_by(Inquiry.timestamp.desc()).all()
+    print(f"[DEBUG] Got {len(inquiries)} inquiries at {datetime.now()}")
+
     item_data_for_js = {'lat': item.lat, 'lng': item.lng}
+    
+    print(f"[DEBUG] Before rendering template at {datetime.now()}")
     return render_template('detail_experience.html', item=item, item_data_for_js=item_data_for_js, reviews=reviews, inquiries=inquiries, review_status=review_status)
 
 @app.route('/experience/apply/<int:item_id>', methods=['GET', 'POST'])

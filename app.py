@@ -222,7 +222,7 @@ def extract_and_normalize_text_from_pdf(pdf_bytes):
             doc = fitz.open(stream=pdf_bytes, filetype="pdf") # 바이트 스트림으로 다시 문서를 엽니다.
             for page_num in range(len(doc)):
                 page = doc.load_page(page_num)
-                pix = page.get_pixmap()
+                pix = page.get_pixmap(dpi=150)
                 img_bytes = pix.tobytes("png")
                 img = Image.open(io.BytesIO(img_bytes))
                 # 한국어와 영어를 포함하여 OCR 수행
@@ -464,6 +464,14 @@ def index():
             user_lon = request.args.get('lon', type=float)
 
             if user_lat and user_lon:
+                # Bounding box filter to reduce items before expensive calculation
+                lat_range = 1.5
+                lon_range = 1.5
+                base_query = base_query.filter(
+                    Experience.lat.between(user_lat - lat_range, user_lat + lat_range),
+                    Experience.lng.between(user_lon - lon_range, user_lon + lon_range)
+                )
+
                 # --- ▼ 여기가 생략되었던 추천순 정렬 로직입니다. ▼ ---
                 query = base_query.filter(Experience.current_participants < Experience.max_participants)
                 all_experiences = query.all()

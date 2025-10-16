@@ -1,0 +1,50 @@
+{% raw %}{% extends "layout.html" %}
+{% block page_class %}easy-mode-page{% endblock %}
+{% block content %}
+<div class="container easy-mode-container">
+    <div class="easy-header">
+        <h1>{% if item %}✏️ 체험 수정하기{% else %}➕ 체험 만들기{% endif %}</h1>
+        <p>어떤 즐거운 체험을 만드시겠어요?<br>천천히 입력해 주세요.</p>
+    </div>
+
+    <!-- 수정 시, 어떤 체험을 수정할지 알려주는 안내문 추가 -->
+    {% if item %}
+        <div class="alert alert-info easy-alert">
+            현재 '<strong>{{ item.crop }}</strong>' 체험을 수정하고 있습니다.
+        </div>
+    {% endif %}
+
+    <form method="POST" enctype="multipart/form-data" class="easy-form">
+        <div class="form-group">
+            <label for="crop">체험 이름 (작물명)</label>
+            <input type="text" id="crop" name="crop" class="form-control" placeholder="예) 달콤한 딸기 따기" value="{{ item.crop if item else '' }}" required>
+        </div>
+        <div class="form-group">
+            <label for="price">가격 (1명 기준)</label>
+            <input type="number" id="price" name="price" class="form-control" placeholder="숫자만 입력 (예: 15000)" value="{{ item.cost if item else '' }}" required>
+        </div>
+        <div class="form-group">
+            <label for="max_participants">하루 최대 인원</label>
+            <input type="number" id="max_participants" name="max_participants" class="form-control" placeholder="숫자만 입력 (예: 20)" value="{{ item.max_participants if item else '' }}" required>
+        </div>
+        <div class="form-group">
+            <label for="duration_start">체험 시작하는 날짜</label>
+            <input type="date" id="duration_start" name="duration_start" class="form-control" value="{{ item.duration_start.strftime('%Y-%m-%d') if item else '' }}" required>
+        </div>
+        <div class="form-group">
+            <label for="duration_end">체험 끝나는 날짜</label>
+            <input type="date" id="duration_end" name="duration_end" class="form-control" value="{{ item.end_date.strftime('%Y-%m-%d') if item else '' }}" required>
+        </div>
+        <div class="form-group">
+            <label for="images">체험 사진 올리기 (선택)</label>
+            <input type="file" id="images" name="images" class="form-control-file" multiple>
+            {% if item and item.images %}
+            <small class="form-text text-muted">현재 등록된 사진: {{ item.images }}</small>
+            {% endif %}
+        </div>
+        
+        <button type="submit" class="easy-submit-button">{% if item %}이 내용으로 수정하기{% else %}새 체험 만들기{% endif %}</button>
+        <a href="{{ url_for('farmer_easy_mode') }}" class="easy-back-button">처음으로 돌아가기</a>
+    </form>
+</div>
+{% endblock %}{% endraw %}

@@ -1,0 +1,48 @@
+{% raw %}{% extends "layout.html" %}
+{% block page_class %}easy-mode-page{% endblock %}
+{% block content %}
+<div class="container easy-mode-container">
+    <div class="easy-header">
+        <h1>🗓️ 예약 살펴보기</h1>
+        <p>날짜별로 예약 현황을 보여드릴게요.</p>
+    </div>
+
+    <div class="easy-reservation-list">
+    {% for date, reservations in reservations_by_date.items() %}
+        <div class="easy-reservation-card">
+            <div class="easy-card-header">
+                {{ date }} (총 {{ reservations|length }}건)
+            </div>
+            <div class="easy-card-body">
+                {% for res in reservations %}
+                <div class="reservation-item">
+                    <h4>{{ res.applicant_name }} 님 ({{ res.phone_number }})</h4>
+                    <p><strong>체험:</strong> {{ res.experience.crop }}</p>
+                    <p><strong>인원:</strong> 총 {{ res.participants_count }}명 (어른 {{res.count_adult}}, 청소년 {{res.count_teen}}, 아동 {{res.count_child}})</p>
+                    <p><strong>시간:</strong> {{ res.apply_time }}</p>
+                    <p><strong>상태:</strong> 
+                        <span class="badge {% if res.status == '확정' %}badge-success{% else %}badge-warning{% endif %}">
+                            {{ res.status }}
+                        </span>
+                    </p>
+                     {% if res.status == '예정' %}
+                        <form action="{{ url_for('confirm_application', app_id=res.id) }}?easy_mode=true" method="POST" class="mt-2">
+                            <button type="submit" class="btn btn-primary btn-block easy-confirm-button">예약 확정해주기</button>
+                        </form>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    {% else %}
+        <div class="easy-no-item">
+            <div class="easy-no-item-icon">📭</div>
+            <h2>아직 예약이 없어요</h2>
+            <p>새로운 체험을 만들고 손님을 기다려보세요!</p>
+        </div>
+    {% endfor %}
+    </div>
+
+    <a href="{{ url_for('farmer_easy_mode') }}" class="easy-back-button mt-4">처음으로 돌아가기</a>
+</div>
+{% endblock %}{% endraw %}

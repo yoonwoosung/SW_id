@@ -31,6 +31,11 @@
                 <strong>{{ session.get('nickname') }}</strong>님
                 {% if session.get('role') == 'farmer' %}
                     <a href="{{ url_for('index') }}">내 농장</a>
+                    {% if session.get('easy_mode') == 'true' %}
+                        <a href="{{ url_for('toggle_view_mode') }}" class="view-mode-link">상세 보기</a>
+                    {% else %}
+                        <a href="{{ url_for('toggle_view_mode') }}" class="view-mode-link">크게 보기</a>
+                    {% endif %}
                 {% endif %}
                 <a href="{{ url_for('my_info') }}">내 정보</a>
                 <a href="{{ url_for('logout') }}">로그아웃</a>

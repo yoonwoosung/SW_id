@@ -915,15 +915,14 @@ body.scroll-lock {
     color: #28a745;
 }
 
-/* 메인 슬라이드 배너(캐러셀) 스타일 */
 #main-carousel {
-    margin-bottom: 0.5rem; /* 배너와 아래 컨텐츠 사이 간격 */
+    margin-bottom: 0.5rem;
     border-radius: 20px;
     overflow: hidden;
 }
 
 #main-carousel .carousel-item {
-    height: 430px; /* 배너의 높이를 키웁니다. */
+    height: 430px;
     background-size: cover;
     background-position: center center;
     position: relative;
@@ -982,7 +981,6 @@ body.scroll-lock {
     display: none;
 }
 
-/* 체험 상세 페이지 제목 배너 스타일 */
 .page-title-banner {
     position: relative;
     padding: 1.5rem 2rem;
@@ -1095,8 +1093,6 @@ body.scroll-lock {
 .pagination-dot.active {
     background-color: #717171;
 }
-
-/* --- 6. 이용 가이드 팝업 스타일 --- */
 #guide-modal.modal {
     position: fixed;
     top: 50%;
@@ -1140,8 +1136,6 @@ body.scroll-lock {
 .modal-backdrop {
     display: none;
 }
-
-/* --- 7. 체험 상세 페이지 프로필 스타일 --- */
 .farmer-profile {
     text-align: center;
 }
@@ -1172,7 +1166,6 @@ body.scroll-lock {
     font-weight: 600;
 }
 
-/* --- 모든 모달 공통 최종 CSS (기존 모달 관련 코드 모두 삭제 후 교체) --- */
 .modal-overlay {
     position: fixed;
     top: 0;
@@ -1181,9 +1174,8 @@ body.scroll-lock {
     height: 100%;
     background-color: rgba(0, 0, 0, 0.6);
     z-index: 1050;
-    display: none; /* JS로 제어 */
+    display: none;
 
-    /* Flexbox를 이용한 중앙 정렬 */
     display: flex;
     justify-content: center;
     align-items: center;
@@ -1194,5 +1186,345 @@ body.scroll-lock {
     padding: 2rem;
     border-radius: 8px;
     width: 90%;
-    max-width: 800px; /* 모든 모달에 공통으로 적용될 너비 */
+    max-width: 800px;
+}
+
+.buy-box-card {
+    background-color: #fff;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 1.5rem;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.buy-box-title {
+    font-size: 1.8rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+}
+
+.buy-box-info {
+    font-size: 0.95rem;
+    color: #495057;
+    border-bottom: 1px solid #f1f3f5;
+    padding-bottom: 1rem;
+    margin-bottom: 1rem;
+}
+
+.buy-box-info p {
+    margin-bottom: 0.5rem;
+}
+
+.buy-box-price {
+    margin-top: auto;
+    margin-bottom: 1rem;
+}
+
+.detail-section-card .card-body {
+    padding: 2rem;
+}
+
+.detail-section-card .card-title {
+    font-weight: 600;
+    margin-bottom: 1.5rem;
+}
+
+#reviewInquiryTab.nav-tabs {
+    border-bottom: 1px solid #dee2e6;
+}
+
+#reviewInquiryTab .nav-link {
+    border: none;
+    border-bottom: 3px solid transparent;
+    color: #6c757d;
+    font-size: 1.1rem;
+    font-weight: 500;
+    padding: 0.8rem 1.2rem;
+}
+
+#reviewInquiryTab .nav-link.active,
+#reviewInquiryTab .nav-item.show .nav-link {
+    color: #4CAF50;
+    border-color: #4CAF50;
+    background-color: transparent;
+}
+
+#reviewInquiryTab .nav-link:hover {
+    border-color: #e9ecef;
+}
+
+#reviewInquiryTabContent .tab-pane {
+    padding-top: 1rem;
+}
+.easy-mode-page body {
+    background-color: #F0F4F8;
+}
+
+.easy-mode-container {
+    max-width: 900px;
+    padding-top: 2rem;
+    padding-bottom: 4rem;
+}
+
+.easy-header {
+    text-align: center;
+    margin-bottom: 3rem;
+}
+
+.easy-header h1 {
+    font-size: 2.8rem;
+    font-weight: 800;
+    line-height: 1.3;
+    margin-bottom: 1rem;
+    color: #333;
+}
+
+.easy-header p {
+    font-size: 1.2rem;
+    color: #555;
+    line-height: 1.6;
+}
+
+.easy-menu-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
+}
+
+.easy-menu-button {
+    display: flex;
+    align-items: center;
+    background-color: #ffffff;
+    border: 2px solid #ddd;
+    border-radius: 16px;
+    padding: 1.5rem;
+    text-decoration: none;
+    color: #333;
+    transition: all 0.2s ease-in-out;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+}
+
+.easy-menu-button:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 12px rgba(0,0,0,0.1);
+    border-color: #4CAF50;
+    text-decoration: none;
+    color: #333;
+}
+
+.easy-menu-button.disabled {
+    background-color: #f8f9fa;
+    opacity: 0.7;
+    pointer-events: none;
+}
+
+.easy-button-icon {
+    font-size: 3rem;
+    margin-right: 1.5rem;
+}
+
+.easy-button-text h2 {
+    font-size: 1.8rem;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+    line-height: 1.2;
+}
+
+.easy-button-text p {
+    font-size: 1rem;
+    color: #666;
+    margin: 0;
+}
+.easy-form {
+    background: #fff;
+    padding: 2.5rem;
+    border-radius: 16px;
+}
+.easy-form .form-group {
+    margin-bottom: 2rem;
+}
+.easy-form label {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    display: block;
+}
+.easy-form .form-control,
+.easy-form .form-control-file {
+    font-size: 1.5rem;
+    padding: 1.5rem;
+    height: auto;
+    border-radius: 12px;
+    border: 2px solid #ccc;
+}
+.easy-form .form-control:focus {
+    border-color: #4CAF50;
+    box-shadow: 0 0 0 0.2rem rgba(76, 175, 80, 0.25);
+}
+.easy-form textarea.form-control {
+    line-height: 1.6;
+}
+
+.easy-submit-button,
+.easy-back-button {
+    display: block;
+    width: 100%;
+    text-align: center;
+    font-size: 1.5rem;
+    font-weight: 700;
+    padding: 1.2rem;
+    border-radius: 12px;
+    text-decoration: none;
+    transition: background-color 0.2s;
+}
+
+.easy-submit-button {
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    margin-bottom: 1rem;
+}
+.easy-submit-button:hover {
+    background-color: #45a049;
+}
+
+.easy-back-button {
+    background-color: #6c757d;
+    color: white;
+}
+.easy-back-button:hover {
+    background-color: #5a6268;
+    color: white;
+    text-decoration: none;
+}
+.easy-reservation-card {
+    background: #fff;
+    border-radius: 16px;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+    overflow: hidden;
+}
+.easy-card-header {
+    background-color: #4CAF50;
+    color: white;
+    font-size: 1.5rem;
+    font-weight: 700;
+    padding: 1rem 1.5rem;
+}
+.easy-card-body {
+    padding: 1.5rem;
+}
+.reservation-item {
+    border-bottom: 2px dashed #eee;
+    padding-bottom: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+.reservation-item:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
+.reservation-item h4 {
+    font-size: 1.4rem;
+    font-weight: 700;
+}
+.reservation-item p {
+    font-size: 1.2rem;
+    margin-bottom: 0.5rem;
+}
+.reservation-item .badge {
+    font-size: 1.1rem;
+    padding: 0.5em 0.8em;
+}
+.easy-confirm-button {
+    font-size: 1.2rem;
+    padding: 0.8rem;
+    font-weight: bold;
+}
+.easy-no-item {
+    text-align: center;
+    padding: 4rem 1rem;
+    background: #fff;
+    border-radius: 16px;
+}
+.easy-no-item-icon {
+    font-size: 5rem;
+    margin-bottom: 1rem;
+}
+.easy-no-item-small {
+    background: #fff;
+    padding: 2rem;
+    border-radius: 12px;
+    text-align: center;
+    font-size: 1.2rem;
+}
+.easy-communication-section {
+    margin-bottom: 3rem;
+}
+.easy-section-title {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 3px solid #ddd;
+}
+.easy-inquiry-card, .easy-feedback-card {
+    background: #fff;
+    border-radius: 16px;
+    padding: 2rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+}
+.easy-inquiry-content {
+    background-color: #f8f9fa;
+    padding: 1rem;
+    border-radius: 8px;
+    margin: 1rem 0;
+    font-size: 1.2rem;
+    font-style: italic;
+    border-left: 5px solid #4CAF50;
+}
+.easy-feedback-list {
+    font-size: 1.3rem;
+    list-style: none;
+    padding-left: 0;
+}
+.easy-feedback-list li {
+    margin-bottom: 0.8rem;
+    padding-left: 1.5rem;
+    position: relative;
+}
+.easy-feedback-list li::before {
+    content: '✓';
+    color: #4CAF50;
+    position: absolute;
+    left: 0;
+    font-weight: bold;
+}
+.easy-modify-list .easy-modify-item {
+    display: block;
+    background: #fff;
+    padding: 1.5rem;
+    border-radius: 12px;
+    margin-bottom: 1rem;
+    text-decoration: none;
+    color: #333;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    transition: all 0.2s ease;
+}
+.easy-modify-list .easy-modify-item:hover {
+    text-decoration: none;
+    transform: translateY(-3px);
+    box-shadow: 0 6px 10px rgba(0,0,0,0.08);
+    border-left: 5px solid #4CAF50;
+}
+.easy-modify-list .easy-modify-item h3 {
+    font-size: 1.5rem;
+    font-weight: bold;
+}
+.easy-alert {
+    font-size: 1.2rem;
+    padding: 1.5rem;
 }

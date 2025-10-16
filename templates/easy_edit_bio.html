@@ -1,0 +1,19 @@
+{% raw %}{% extends "layout.html" %}
+{% block page_class %}easy-mode-page{% endblock %}
+{% block content %}
+<div class="container easy-mode-container">
+    <div class="easy-header">
+        <h1>✍️ 소개 글 고치기</h1>
+        <p>농장을 방문하는 손님들에게 보여질<br>농장주님의 한 줄 소개를 수정해 주세요.</p>
+    </div>
+
+    <form method="POST" action="{{ url_for('easy_edit_bio') }}" class="easy-form">
+        <div class="form-group">
+            <label for="profile_bio">내 소개 글</label>
+            <textarea id="profile_bio" name="profile_bio" class="form-control" rows="5" placeholder="예) 3대째 이어온 사과 농장입니다. 친절하게 안내해 드릴게요.">{{ user.profile_bio or '' }}</textarea>
+        </div>
+        <button type="submit" class="easy-submit-button">이 내용으로 저장하기</button>
+        <a href="{{ url_for('farmer_easy_mode') }}" class="easy-back-button">처음으로 돌아가기</a>
+    </form>
+</div>
+{% endblock %}{% endraw %}

@@ -105,15 +105,23 @@
                 </div>
             </div>
             <div class="dashboard-card">
+                <h5>내 농장 통계</h5>
+                <div class="stats-grid">
+                    <span>총 등록 체험</span><span>{{ stats.total_experiences }}</span>
+                    <span>평균 별점</span><span>{{ stats.average_rating }} / 5.0</span>
+                    <span>총 방문자 수</span><span>{{ stats.total_visitors }}</span>
+                </div>
+            </div>
+             <div class="dashboard-card">
                 <h5>최신 알림</h5>
                 <ul class="inquiry-list" id="notification-list">
                     {% for notification in notifications %}
-                    <li data-notification-id="{{ notification.id }}" class="d-flex justify-content-between align-items-start">
-                        <div>
-                            <p style="margin: 0; font-size: 0.9rem; color: #555;">{{ notification.message }}</p>
-                            <small class="text-muted">{{ notification.timestamp.strftime('%m-%d %H:%M') }}</small>
+                    <li data-notification-id="{{ notification.id }}">
+                        <div class="d-flex justify-content-between">
+                            <p style="margin: 4px 0 0; font-size: 0.9rem; color: #555;">{{ notification.message }}</p>
+                            <span class="notification-delete-btn" data-id="{{ notification.id }}">&times;</span>
                         </div>
-                        <span class="notification-delete-btn" data-id="{{ notification.id }}">&times;</span>
+                        <small class="text-muted">{{ notification.timestamp.strftime('%m-%d %H:%M') }}</small>
                     </li>
                     {% else %}
                     <li>새로운 알림이 없습니다.</li>
@@ -126,6 +134,7 @@
                 {% endif %}
             </div>
         </aside>
+
         <main class="dashboard-main">
             <div class="dashboard-card">
                 <h5>내 농장</h5>

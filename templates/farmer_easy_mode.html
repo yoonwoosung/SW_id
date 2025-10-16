@@ -1,0 +1,55 @@
+{% raw %}{% extends "layout.html" %}
+{% block page_class %}easy-mode-page{% endblock %}
+{% block content %}
+<div class="container easy-mode-container">
+    <div class="easy-header">
+        <h1>어르신을 위한 <br>쉬운 농장 관리</h1>
+        <p>{{ session.get('nickname') }} 농장주님, 환영합니다. <br>무엇을 도와드릴까요?</p>
+    </div>
+
+    <div class="easy-menu-grid">
+        <a href="{{ url_for('easy_edit_bio') }}" class="easy-menu-button">
+            <div class="easy-button-icon">✍️</div>
+            <div class="easy-button-text">
+                <h2>소개 글<br>고치기</h2>
+                <p>농장과 농장주님을 소개해요</p>
+            </div>
+        </a>
+        <a href="{{ url_for('easy_create_experience') }}" class="easy-menu-button">
+            <div class="easy-button-icon">➕</div>
+            <div class="easy-button-text">
+                <h2>체험<br>만들기</h2>
+                <p>새로운 체험을 등록해요</p>
+            </div>
+        </a>
+        <a href="{{ url_for('easy_modify_experience_list') }}" class="easy-menu-button">
+            <div class="easy-button-icon">✏️</div>
+            <div class="easy-button-text">
+                <h2>체험<br>수정하기</h2>
+                <p>기존 체험 내용을 고쳐요</p>
+            </div>
+        </a>
+        <a href="{{ url_for('easy_reservations') }}" class="easy-menu-button">
+            <div class="easy-button-icon">🗓️</div>
+            <div class="easy-button-text">
+                <h2>예약<br>살펴보기</h2>
+                <p>예약 현황을 확인해요</p>
+            </div>
+        </a>
+        <a href="{{ url_for('easy_communication') }}" class="easy-menu-button">
+            <div class="easy-button-icon">💬</div>
+            <div class="easy-button-text">
+                <h2>소통<br>창구</h2>
+                <p>손님들 이야기들 듣고 답해요</p>
+            </div>
+        </a>
+        <a href="#" class="easy-menu-button disabled">
+            <div class="easy-button-icon">❓</div>
+            <div class="easy-button-text">
+                <h2>이용<br>방법</h2>
+                <p>사용법을 안내해 드려요</p>
+            </div>
+        </a>
+    </div>
+</div>
+{% endblock %}{% endraw %}

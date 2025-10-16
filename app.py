@@ -473,6 +473,17 @@ def get_coords_from_address(address):
 # --- 3. 핵심 라우트 ---
 @app.route('/')
 def index():
+    # 나중에 지우기
+    print("--- index 함수 시작 ---", file=sys.stderr)
+
+    # 여기에 오래 걸릴 만한 작업이 있나요? (DB 조회, 파일 처리 등)
+    db_result = get_data_from_database()
+
+    print("--- DB 조회 완료, 템플릿 렌더링 시작 전 ---", file=sys.stderr)
+
+    return render_template('index.html', data=db_result)
+    ## 이거 위에까지
+    
     print(f"Request args: {request.args}")
     role = session.get('role', 'experiencer')
     if role == 'farmer':

@@ -250,13 +250,8 @@ try:
     if not SAMPLE_CERT_TEXT:
         print("[DEBUG] WARNING: Could not extract text from sample PDF on startup.")
     else:
-<<<<<<< HEAD
         print("[DEBUG] SUCCESS: Pre-loaded and processed sample certificate PDF.")
         
-=======
-        print("Successfully pre-loaded and processed the sample certificate PDF.")
-
->>>>>>> d07bdef55c4963400a20fa55fc8994359c2afd0d
 except FileNotFoundError:
     print("[DEBUG] CRITICAL ERROR: Sample certificate PDF ('신청서.pdf') not found on startup.")
 except Exception as e:

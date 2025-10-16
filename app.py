@@ -9,11 +9,6 @@ from collections import defaultdict
 from datetime import date, timedelta, datetime
 from sqlalchemy import or_
 from flask_apscheduler import APScheduler
-from PIL import Image
-import fitz  # PyMuPDF
-import re
-import pytesseract
-import io
 import json
 import math
 import uuid
@@ -21,13 +16,6 @@ from sqlalchemy import case
 from types import SimpleNamespace
 import platform
 
-# Tesseract OCR 경로 설정
-if platform.system() == "Windows":
-    # Windows용 Tesseract 경로
-    pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
-else:
-    # Linux/macOS용 Tesseract 경로
-    pytesseract.pytesseract.tesseract_cmd = '/usr/bin/tesseract'
 
 # --- 1. 앱 및 DB 설정 ---
 app = Flask(__name__)
@@ -206,34 +194,6 @@ def haversine(lat1, lon1, lat2, lon2):
     distance = R * c
     return distance
 
-# PDF 텍스트 추출 및 정규화 함수 (OCR 기능 포함)
-def extract_and_normalize_text_from_pdf(pdf_bytes):
-    text = ""
-    try:
-        # 1. 텍스트 기반 추출 시도
-        doc = fitz.open(stream=pdf_bytes, filetype="pdf")
-        for page in doc:
-            text += page.get_text()
-
-        # 2. 텍스트가 거의 없다면 OCR 시도
-        if len(text.strip()) < 50: # 텍스트가 거의 없는 경우 이미지로 간주
-            print("텍스트가 거의 없어 OCR을 시도합니다.")
-            text = ""
-            doc = fitz.open(stream=pdf_bytes, filetype="pdf") # 바이트 스트림으로 다시 문서를 엽니다.
-            for page_num in range(len(doc)):
-                page = doc.load_page(page_num)
-                pix = page.get_pixmap(dpi=150)
-                img_bytes = pix.tobytes("png")
-                img = Image.open(io.BytesIO(img_bytes))
-                # 한국어와 영어를 포함하여 OCR 수행
-                text += pytesseract.image_to_string(img, lang='kor+eng')
-
-        # 3. 최종 텍스트 정규화
-        return re.sub(r'\s+', '', text).lower()
-
-    except Exception as e:
-        print(f"PDF 처리 중 오류 발생: {e}")
-        return ""
 
 # --- 2. DB 모델(테이블) 정의 (farmer 기준으로 통합) ---
 class User(db.Model):
@@ -695,45 +655,19 @@ def register_page():
             if not cert_pdf_file or cert_pdf_file.filename == '':
                 flash("농장주 회원은 농업인 확인서 PDF 파일을 반드시 제출해야 합니다.", "danger")
                 return render_template('register.html', form_data=request.form)
-
+            # highlight-start
+            # OCR 실행 로직을 완전히 제거하고, 파일 저장 및 상태 변경으로 대체합니다.
             if allowed_file(cert_pdf_file.filename):
-                try:
-                    print(f"[{datetime.now()}] FARMER REGISTRATION: Starting verification for {email}")
-                    
-                    # Read the pre-processed sample text file for fast comparison
-                    start_time = datetime.now()
-                    sample_txt_path = os.path.join(os.path.dirname(__file__), 'sample_cert_text.txt')
-                    with open(sample_txt_path, 'r', encoding='utf-8') as f:
-                        sample_cert_text = f.read()
-                    print(f"[{datetime.now()}] FARMER REGISTRATION: Reading sample text took {datetime.now() - start_time}")
+                ext = cert_pdf_file.filename.rsplit('.', 1)[1].lower()
+                cert_pdf_filename = f"farmer_cert_{email}_{uuid.uuid4().hex}.{ext}"
+                cert_pdf_file.save(os.path.join(app.config['UPLOAD_FOLDER'], cert_pdf_filename))
 
-                    if not sample_cert_text:
-                        flash("시스템 오류: 샘플 인증서 텍스트 파일을 찾을 수 없습니다. 관리자에게 문의하세요.", "danger")
-                        return render_template('register.html', form_data=request.form)
-
-                    # Perform OCR only on the uploaded file
-                    start_time = datetime.now()
-                    uploaded_text = extract_and_normalize_text_from_pdf(cert_pdf_file.read())
-                    cert_pdf_file.seek(0)
-                    print(f"[{datetime.now()}] FARMER REGISTRATION: OCR on uploaded PDF took {datetime.now() - start_time}")
-
-                    if uploaded_text and sample_cert_text in uploaded_text:
-                        ext = cert_pdf_file.filename.rsplit('.', 1)[1].lower()
-                        cert_pdf_filename = f"farmer_cert_{email}_{uuid.uuid4().hex}.{ext}"
-                        cert_pdf_file.save(os.path.join(app.config['UPLOAD_FOLDER'], cert_pdf_filename))
-                    else:
-                        flash("업로드된 농업인 확인서가 유효하지 않습니다.", "danger")
-                        return render_template('register.html', form_data=request.form)
-                except FileNotFoundError:
-                    flash("시스템 오류: 샘플 인증서 텍스트 파일('sample_cert_text.txt')을 찾을 수 없습니다. 관리자에게 문의하세요.", "danger")
-                    return render_template('register.html', form_data=request.form)
-                except Exception as e:
-                    flash(f"인증서 파일 처리 중 오류가 발생했습니다: {e}", "danger")
-                    return render_template('register.html', form_data=request.form)
+                new_user.farmer_certificate_pdf = cert_pdf_filename
+                new_user.verification_status = 'pending' # 상태를 '인증 대기중'으로 설정
             else:
                 flash("허용되지 않는 파일 형식입니다. PDF 파일만 업로드 가능합니다.", "danger")
                 return render_template('register.html', form_data=request.form)
-
+            # highlight-end
         hashed_password = generate_password_hash(password)
         new_user = User(
             email=email, nickname=nickname, password=hashed_password,
@@ -746,6 +680,13 @@ def register_page():
         db.session.add(new_user)
         start_time = datetime.now()
         db.session.commit()
+        # highlight-start
+        # 농장주에게는 다른 안내 메시지를 보여줍니다.
+        if role == 'farmer':
+            flash("농장주 가입 신청이 완료되었습니다. 서류 검토는 1~2일 소요될 수 있습니다.", "success")
+        else:
+            flash("회원가입이 완료되었습니다! 로그인해주세요.", "success")
+        # highlight-end
         print(f"[{datetime.now()}] USER REGISTRATION: DB commit took {datetime.now() - start_time}")
 
         flash("회원가입이 완료되었습니다! 로그인해주세요.", "success")
@@ -760,18 +701,24 @@ def check_email():
 
 @app.route('/login', methods=['GET', 'POST'])
 def login_page():
-    if request.method == 'POST':
-        email = request.form.get('email')
-        password = request.form.get('password')
-        user = User.query.filter_by(email=email).first()
-        if user and check_password_hash(user.password, password):
-            session['user_id'] = user.id
-            session['nickname'] = user.nickname
-            session['role'] = user.role
-            flash(f"{user.nickname}님, 환영합니다!", "success")
-            return redirect(url_for('index'))
-        else:
-            flash("이메일 또는 비밀번호가 올바르지 않습니다.", "danger")
+    if user and check_password_hash(user.password, password):
+        # highlight-start
+        if user.role == 'farmer' and user.verification_status == 'pending':
+            flash("가입 승인 대기 중인 계정입니다. 서류 검토 후 결과를 알려드리겠습니다.", "warning")
+            return redirect(url_for('login_page'))
+    
+        if user.role == 'farmer' and user.verification_status in ['rejected', 'error']:
+            flash("가입이 거절되었거나 인증 중 오류가 발생했습니다. 관리자에게 문의하세요.", "danger")
+            return redirect(url_for('login_page'))
+        # highlight-end
+
+        session['user_id'] = user.id
+        session['nickname'] = user.nickname
+        session['role'] = user.role
+        flash(f"{user.nickname}님, 환영합니다!", "success")
+        return redirect(url_for('index'))
+    else:
+        flash("이메일 또는 비밀번호가 올바르지 않습니다.", "danger")
     return render_template('login.html')
 
 @app.route('/logout')

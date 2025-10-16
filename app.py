@@ -202,50 +202,60 @@ def haversine(lat1, lon1, lat2, lon2):
 # PDF 텍스트 추출 및 정규화 함수 (OCR 기능 포함)
 def extract_and_normalize_text_from_pdf(pdf_bytes):
     text = ""
+    print("[DEBUG] Start: extract_and_normalize_text_from_pdf")
     try:
         # 1. 텍스트 기반 추출 시도
+        print("[DEBUG] Attempting text-based extraction from PDF.")
         doc = fitz.open(stream=pdf_bytes, filetype="pdf")
         for page in doc:
             text += page.get_text()
+        print(f"[DEBUG] Text-based extraction found {len(text)} characters.")
 
         # 2. 텍스트가 거의 없다면 OCR 시도
         if len(text.strip()) < 50: # 텍스트가 거의 없는 경우 이미지로 간주
-            print("텍스트가 거의 없어 OCR을 시도합니다.")
+            print("[DEBUG] Text is sparse, attempting OCR.")
             text = ""
             doc = fitz.open(stream=pdf_bytes, filetype="pdf") # 바이트 스트림으로 다시 문서를 엽니다.
             for page_num in range(len(doc)):
+                print(f"[DEBUG] OCR on page {page_num + 1}/{len(doc)}")
                 page = doc.load_page(page_num)
                 pix = page.get_pixmap()
                 img_bytes = pix.tobytes("png")
                 img = Image.open(io.BytesIO(img_bytes))
                 # 한국어와 영어를 포함하여 OCR 수행
                 text += pytesseract.image_to_string(img, lang='kor+eng')
+            print("[DEBUG] OCR finished.")
 
         # 3. 최종 텍스트 정규화
-        return re.sub(r'\s+', '', text).lower()
+        normalized_text = re.sub(r'\s+', '', text).lower()
+        print("[DEBUG] End: extract_and_normalize_text_from_pdf")
+        return normalized_text
 
     except Exception as e:
-        print(f"PDF 처리 중 오류 발생: {e}")
+        print(f"[DEBUG] CRITICAL ERROR in extract_and_normalize_text_from_pdf: {e}")
         return ""
 
 # --- Pre-load and process the sample certificate PDF for performance ---
 SAMPLE_CERT_TEXT = ""
+print("[DEBUG] Starting pre-load of sample certificate PDF.")
 try:
     # Use the corrected path
     sample_pdf_path = os.path.join(os.path.dirname(__file__), '신청서.pdf')
+    print(f"[DEBUG] Sample PDF path: {sample_pdf_path}")
     with open(sample_pdf_path, 'rb') as f:
         # Use the existing OCR function to process the sample file
+        print("[DEBUG] Reading and processing sample PDF file.")
         SAMPLE_CERT_TEXT = extract_and_normalize_text_from_pdf(f.read())
     
     if not SAMPLE_CERT_TEXT:
-        print("Warning: Could not extract text from the sample certificate PDF on startup.")
+        print("[DEBUG] WARNING: Could not extract text from sample PDF on startup.")
     else:
-        print("Successfully pre-loaded and processed the sample certificate PDF.")
+        print("[DEBUG] SUCCESS: Pre-loaded and processed sample certificate PDF.")
         
 except FileNotFoundError:
-    print("CRITICAL ERROR: Sample certificate PDF ('신청서.pdf') not found on startup. Verification will fail.")
+    print("[DEBUG] CRITICAL ERROR: Sample certificate PDF ('신청서.pdf') not found on startup.")
 except Exception as e:
-    print(f"CRITICAL ERROR processing sample certificate PDF on startup: {e}")
+    print(f"[DEBUG] CRITICAL ERROR processing sample PDF on startup: {e}")
 
 # --- 2. DB 모델(테이블) 정의 (farmer 기준으로 통합) ---
 class User(db.Model):
@@ -473,20 +483,15 @@ def get_coords_from_address(address):
 # --- 3. 핵심 라우트 ---
 @app.route('/')
 def index():
-    # 나중에 지우기
-    print("--- index 함수 시작 ---", file=sys.stderr)
-
-    # 여기에 오래 걸릴 만한 작업이 있나요? (DB 조회, 파일 처리 등)
-    db_result = get_data_from_database()
-
-    print("--- DB 조회 완료, 템플릿 렌더링 시작 전 ---", file=sys.stderr)
-
-    return render_template('index.html', data=db_result)
-    ## 이거 위에까지
+    print("[DEBUG] --------------------------------")
+    print("[DEBUG] Start: index()")
+    print(f"[DEBUG] Request args: {request.args}")
     
-    print(f"Request args: {request.args}")
     role = session.get('role', 'experiencer')
+    print(f"[DEBUG] User role: {role}")
+
     if role == 'farmer':
+        print("[DEBUG] Role is 'farmer'. Executing farmer dashboard logic.")
         farmer_id = session.get('user_id')
         if not farmer_id: return redirect(url_for('login_page'))
         user = User.query.get(farmer_id)
@@ -579,19 +584,24 @@ def index():
                                feedback_report=feedback_by_experience)
 
     else: # 체험자 또는 비로그-인 사용자
+        print("[DEBUG] Role is 'experiencer' or guest. Executing experience list logic.")
         page = request.args.get('page', 1, type=int)
         sort_by = request.args.get('sort', 'recommended', type=str)
         region = request.args.get('region', type=str)
         crop_query = request.args.get('crop_query', type=str)
+        print(f"[DEBUG] Sorting by: {sort_by}, Page: {page}, Region: {region}, Crop: {crop_query}")
 
         today = date.today()
     # 1. 기본 쿼리 및 필터링
         base_query = Experience.query.filter(Experience.status == 'recruiting', Experience.end_date >= today)
+        print("[DEBUG] Base query created.")
 
         if region:
             base_query = base_query.filter(Experience.address_detail.like(f"%{region}%"))
+            print(f"[DEBUG] Filtered by region: {region}")
         if crop_query:
             base_query = base_query.filter(Experience.crop.like(f"%{crop_query}%"))
+            print(f"[DEBUG] Filtered by crop: {crop_query}")
 
         items_on_page = []
         pagination = None
@@ -604,12 +614,16 @@ def index():
 
     # [핵심 수정] sort_by 값을 먼저 확인하도록 로직 순서 변경
         if sort_by == 'recommended':
+            print("[DEBUG] Sorting by 'recommended'.")
             user_lat = request.args.get('lat', type=float)
             user_lon = request.args.get('lon', type=float)
+            print(f"[DEBUG] User coordinates: lat={user_lat}, lon={user_lon}")
 
             if user_lat and user_lon:
+                print("[DEBUG] User coordinates found. Processing recommendation logic.")
                 query = base_query.filter(Experience.current_participants < Experience.max_participants)
                 all_experiences = query.all()
+                print(f"[DEBUG] Found {len(all_experiences)} experiences for recommendation.")
             
                 ranked_experiences = []
                 for exp in all_experiences:
@@ -631,7 +645,8 @@ def index():
                     exp.recommendation_score = recommendation_score
                     exp.distance = distance
                     ranked_experiences.append(exp)
-
+                
+                print("[DEBUG] Finished calculating recommendation scores.")
                 sorted_items = sorted(ranked_experiences, key=lambda x: x.recommendation_score, reverse=True)
 
                 start = (page - 1) * 15
@@ -646,33 +661,41 @@ def index():
                     prev_num=page - 1, next_num=page + 1,
                     iter_pages=lambda **kwargs: range(1, total_pages + 1)
                 )
+                print("[DEBUG] Pagination created for recommended items.")
         # 추천순인데 lat, lon 값이 없으면 빈 화면을 보여주는 기존 로직은 유지
             else:
+                print("[DEBUG] User coordinates NOT found. Showing empty list for 'recommended'.")
                 items_on_page = []
                 pagination = None
 
 
         elif sort_by == 'reviews':
+            print("[DEBUG] Sorting by 'reviews'.")
             review_count = func.count(Review.id).label('review_count')
             query = base_query.outerjoin(Review).group_by(Experience.id).order_by(is_closed.asc(), review_count.desc())
             pagination = query.paginate(page=page, per_page=15, error_out=False)
             items_on_page = pagination.items
+            print("[DEBUG] Pagination created for 'reviews' sort.")
 
         else: # 'deadline' (모집 임박순) 및 기타
+            print("[DEBUG] Sorting by 'deadline' or default.")
             query = base_query.order_by(is_closed.asc(), Experience.end_date.asc())
             pagination = query.paginate(page=page, per_page=15, error_out=False)
             items_on_page = pagination.items
+            print("[DEBUG] Pagination created for 'deadline' sort.")
 
 
     # '지역 특산물' 배지 표시 로직
         if items_on_page: # items_on_page가 None이 아닐 때만 실행
+            print("[DEBUG] Adding specialty badges to items.")
             for item in items_on_page:
                 item.is_specialty = False
                 for r, specialties in REGIONAL_SPECIALTIES.items():
                     if r in item.address_detail and any(sc in item.crop for sc in specialties):
                         item.is_specialty = True
                         break
-
+        
+        print("[DEBUG] End of index() logic. Rendering template 'index.html'.")
         return render_template('index.html',
                                items=items_on_page,
                                pagination=pagination,
@@ -723,35 +746,49 @@ def register_page():
 
         cert_pdf_filename = None
         if role == 'farmer':
+            print("[DEBUG] Role is 'farmer'. Starting certificate validation.")
             cert_pdf_file = request.files.get('farmer_certificate_pdf')
             if not cert_pdf_file or cert_pdf_file.filename == '':
                 flash("농장주 회원은 농업인 확인서 PDF 파일을 반드시 제출해야 합니다.", "danger")
+                print("[DEBUG] Farmer certificate PDF not found in request.")
                 return render_template('register.html', form_data=request.form)
 
             if allowed_file(cert_pdf_file.filename):
+                print(f"[DEBUG] Certificate file '{cert_pdf_file.filename}' is allowed.")
                 try:
                     # Check if the pre-loaded sample text is available
                     if not SAMPLE_CERT_TEXT:
                         flash("시스템 오류: 샘플 인증서를 처리할 수 없습니다. 관리자에게 문의하세요.", "danger")
+                        print("[DEBUG] CRITICAL: SAMPLE_CERT_TEXT is empty. Cannot validate.")
                         return render_template('register.html', form_data=request.form)
 
+                    print("[DEBUG] Reading and processing uploaded PDF for validation.")
                     uploaded_text = extract_and_normalize_text_from_pdf(cert_pdf_file.read())
                     cert_pdf_file.seek(0)  # Reset stream position after reading
+                    print("[DEBUG] Finished processing uploaded PDF.")
 
                     # Compare with the pre-loaded text
                     if uploaded_text and SAMPLE_CERT_TEXT in uploaded_text:
+                        print("[DEBUG] PDF validation SUCCESS.")
                         ext = cert_pdf_file.filename.rsplit('.', 1)[1].lower()
                         cert_pdf_filename = f"farmer_cert_{email}_{uuid.uuid4().hex}.{ext}"
                         cert_pdf_file.save(os.path.join(app.config['UPLOAD_FOLDER'], cert_pdf_filename))
+                        print(f"[DEBUG] Saved certificate as '{cert_pdf_filename}'.")
                     else:
                         flash("업로드된 농업인 확인서가 유효하지 않습니다.", "danger")
+                        print("[DEBUG] PDF validation FAILED. Uploaded text does not match sample.")
+                        # For debugging, print the texts
+                        # print(f"[DEBUG] Sample Text: {SAMPLE_CERT_TEXT[:200]}...")
+                        # print(f"[DEBUG] Uploaded Text: {uploaded_text[:200]}...")
                         return render_template('register.html', form_data=request.form)
                 except Exception as e:
                     # A more general exception to catch any PDF processing errors
                     flash(f"인증서 파일 처리 중 오류가 발생했습니다: {e}", "danger")
+                    print(f"[DEBUG] Exception during PDF processing: {e}")
                     return render_template('register.html', form_data=request.form)
             else:
                 flash("허용되지 않는 파일 형식입니다. PDF 파일만 업로드 가능합니다.", "danger")
+                print(f"[DEBUG] File type not allowed: {cert_pdf_file.filename}")
                 return render_template('register.html', form_data=request.form)
 
         hashed_password = generate_password_hash(password)

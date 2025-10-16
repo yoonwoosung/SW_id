@@ -658,15 +658,16 @@ def register_page():
 
             if allowed_file(cert_pdf_file.filename):
                 try:
-                    # Load the sample certificate on-demand
-                    sample_pdf_path = os.path.join(os.path.dirname(__file__), '신청서.pdf')
-                    with open(sample_pdf_path, 'rb') as f:
-                        sample_cert_text = extract_and_normalize_text_from_pdf(f.read())
+                    # Read the pre-processed sample text file for fast comparison
+                    sample_txt_path = os.path.join(os.path.dirname(__file__), 'sample_cert_text.txt')
+                    with open(sample_txt_path, 'r', encoding='utf-8') as f:
+                        sample_cert_text = f.read()
 
                     if not sample_cert_text:
-                        flash("시스템 오류: 샘플 인증서를 처리할 수 없습니다. 관리자에게 문의하세요.", "danger")
+                        flash("시스템 오류: 샘플 인증서 텍스트 파일을 찾을 수 없습니다. 관리자에게 문의하세요.", "danger")
                         return render_template('register.html', form_data=request.form)
 
+                    # Perform OCR only on the uploaded file
                     uploaded_text = extract_and_normalize_text_from_pdf(cert_pdf_file.read())
                     cert_pdf_file.seek(0)
 
@@ -677,6 +678,9 @@ def register_page():
                     else:
                         flash("업로드된 농업인 확인서가 유효하지 않습니다.", "danger")
                         return render_template('register.html', form_data=request.form)
+                except FileNotFoundError:
+                    flash("시스템 오류: 샘플 인증서 텍스트 파일('sample_cert_text.txt')을 찾을 수 없습니다. 관리자에게 문의하세요.", "danger")
+                    return render_template('register.html', form_data=request.form)
                 except Exception as e:
                     flash(f"인증서 파일 처리 중 오류가 발생했습니다: {e}", "danger")
                     return render_template('register.html', form_data=request.form)

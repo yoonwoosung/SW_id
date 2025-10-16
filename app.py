@@ -237,27 +237,6 @@ def extract_and_normalize_text_from_pdf(pdf_bytes):
         print(f"[DEBUG] CRITICAL ERROR in extract_and_normalize_text_from_pdf: {e}")
         return ""
 
-# --- Pre-load and process the sample certificate PDF for performance ---
-SAMPLE_CERT_TEXT = ""
-print("[DEBUG] Starting pre-load of sample certificate PDF.")
-try:
-    # Use the corrected path
-    sample_pdf_path = os.path.join(os.path.dirname(__file__), '신청서.pdf')
-    print(f"[DEBUG] Sample PDF path: {sample_pdf_path}")
-    with open(sample_pdf_path, 'rb') as f:
-        # Use the existing OCR function to process the sample file
-        print("[DEBUG] Reading and processing sample PDF file.")
-        SAMPLE_CERT_TEXT = extract_and_normalize_text_from_pdf(f.read())
-
-    if not SAMPLE_CERT_TEXT:
-        print("[DEBUG] WARNING: Could not extract text from sample PDF on startup.")
-    else:
-        print("[DEBUG] SUCCESS: Pre-loaded and processed sample certificate PDF.")
-        
-except FileNotFoundError:
-    print("[DEBUG] CRITICAL ERROR: Sample certificate PDF ('신청서.pdf') not found on startup.")
-except Exception as e:
-    print(f"[DEBUG] CRITICAL ERROR processing sample PDF on startup: {e}")
 
 # --- 2. DB 모델(테이블) 정의 (farmer 기준으로 통합) ---
 class User(db.Model):
@@ -761,19 +740,25 @@ def register_page():
             if allowed_file(cert_pdf_file.filename):
                 print(f"[DEBUG] Certificate file '{cert_pdf_file.filename}' is allowed.")
                 try:
-                    # Check if the pre-loaded sample text is available
-                    if not SAMPLE_CERT_TEXT:
-                        flash("시스템 오류: 샘플 인증서를 처리할 수 없습니다. 관리자에게 문의하세요.", "danger")
-                        print("[DEBUG] CRITICAL: SAMPLE_CERT_TEXT is empty. Cannot validate.")
+                    # 1. 실시간으로 기준 인증서 파일(신청서.pdf)을 읽고 처리합니다.
+                    print("[DEBUG] On-demand: Reading and processing sample PDF for comparison.")
+                    sample_pdf_path = os.path.join(os.path.dirname(__file__), '신청서.pdf')
+                    with open(sample_pdf_path, 'rb') as f:
+                        sample_cert_text = extract_and_normalize_text_from_pdf(f.read())
+
+                    if not sample_cert_text:
+                        flash("시스템 오류: 기준 인증서 파일을 처리할 수 없습니다. 관리자에게 문의하세요.", "danger")
+                        print("[DEBUG] CRITICAL: Could not process sample_cert.pdf during registration.")
                         return render_template('register.html', form_data=request.form)
 
+                    # 2. 사용자가 업로드한 인증서 파일을 읽고 처리합니다.
                     print("[DEBUG] Reading and processing uploaded PDF for validation.")
                     uploaded_text = extract_and_normalize_text_from_pdf(cert_pdf_file.read())
-                    cert_pdf_file.seek(0)  # Reset stream position after reading
+                    cert_pdf_file.seek(0)  # 스트림 위치 초기화
                     print("[DEBUG] Finished processing uploaded PDF.")
 
-                    # Compare with the pre-loaded text
-                    if uploaded_text and SAMPLE_CERT_TEXT in uploaded_text:
+                    # 3. 두 텍스트를 비교합니다.
+                    if uploaded_text and sample_cert_text in uploaded_text:
                         print("[DEBUG] PDF validation SUCCESS.")
                         ext = cert_pdf_file.filename.rsplit('.', 1)[1].lower()
                         cert_pdf_filename = f"farmer_cert_{email}_{uuid.uuid4().hex}.{ext}"
@@ -782,12 +767,13 @@ def register_page():
                     else:
                         flash("업로드된 농업인 확인서가 유효하지 않습니다.", "danger")
                         print("[DEBUG] PDF validation FAILED. Uploaded text does not match sample.")
-                        # For debugging, print the texts
-                        # print(f"[DEBUG] Sample Text: {SAMPLE_CERT_TEXT[:200]}...")
-                        # print(f"[DEBUG] Uploaded Text: {uploaded_text[:200]}...")
                         return render_template('register.html', form_data=request.form)
+
+                except FileNotFoundError:
+                    flash("시스템 오류: 기준 인증서 파일('신청서.pdf')을 찾을 수 없습니다.", "danger")
+                    print("[DEBUG] CRITICAL: '신청서.pdf' not found during registration.")
+                    return render_template('register.html', form_data=request.form)
                 except Exception as e:
-                    # A more general exception to catch any PDF processing errors
                     flash(f"인증서 파일 처리 중 오류가 발생했습니다: {e}", "danger")
                     print(f"[DEBUG] Exception during PDF processing: {e}")
                     return render_template('register.html', form_data=request.form)

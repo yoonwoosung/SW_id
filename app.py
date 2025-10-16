@@ -427,21 +427,19 @@ def get_coords_from_address(address):
 # --- 3. 핵심 라우트 ---
 @app.route('/')
 def index():
-    role = session.get('role', 'experiencer')
+    # A user is only a farmer if they are logged in and their role is 'farmer'.
+    is_farmer = 'user_id' in session and session.get('role') == 'farmer'
 
-    # --- ▼ 1. 농장주인 경우, 모드에 따라 다른 페이지로 안내하는 부분 (수정된 로직) ▼ ---
-    if role == 'farmer':
+    if is_farmer:
         if 'easy_mode' not in session:
-            session['easy_mode'] = 'true'
+            session['easy_mode'] = 'false' 
 
         if session.get('easy_mode') == 'true':
             return redirect(url_for('farmer_easy_mode'))
         else:
             return redirect(url_for('detailed_farmer_dashboard'))
-    # --- ▲ 1. 여기까지가 농장주를 위한 로직입니다 ▲ ---
-
-    # --- ▼ 2. 농장주가 아닌 경우(체험자, 비로그인), 체험 목록과 정렬 기능을 보여주는 부분 (기존 로직) ▼ ---
     else: 
+        # This block now correctly handles non-farmers AND non-logged-in users
         page = request.args.get('page', 1, type=int)
         sort_by = request.args.get('sort', 'recommended', type=str)
         region = request.args.get('region', type=str)

@@ -878,10 +878,10 @@ def experience_detail(item_id):
                 review_status = 'not_applied'
     print(f"[DEBUG] Calculated review_status at {datetime.now()}")
 
-    reviews = Review.query.filter_by(experience_id=item_id).order_by(Review.timestamp.desc()).all()
+    reviews = Review.query.options(db.joinedload(Review.user)).filter_by(experience_id=item_id).order_by(Review.timestamp.desc()).all()
     print(f"[DEBUG] Got {len(reviews)} reviews at {datetime.now()}")
 
-    inquiries = Inquiry.query.filter_by(experience_id=item_id).order_by(Inquiry.timestamp.desc()).all()
+    inquiries = Inquiry.query.options(db.joinedload(Inquiry.user)).filter_by(experience_id=item_id).order_by(Inquiry.timestamp.desc()).all()
     print(f"[DEBUG] Got {len(inquiries)} inquiries at {datetime.now()}")
 
     item_data_for_js = {'lat': item.lat, 'lng': item.lng}

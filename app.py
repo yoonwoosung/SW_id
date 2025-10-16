@@ -53,7 +53,7 @@ db = SQLAlchemy(app, engine_options={"pool_pre_ping": True})
 # 스케줄러 설정 (farmer 기능)
 scheduler = APScheduler()
 scheduler.init_app(app)
-    scheduler.start()
+scheduler.start()
 
 REGIONAL_SPECIALTIES = {
     # 경기도

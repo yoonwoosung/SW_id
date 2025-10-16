@@ -19,9 +19,16 @@ import math
 import uuid
 from sqlalchemy import case
 from types import SimpleNamespace
+import platform
 
 # Tesseract OCR 경로 설정
-pytesseract.pytesseract.tesseract_cmd = '/usr/bin/tesseract'
+if platform.system() == "Windows":
+    # Windows용 Tesseract 경로
+    pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
+else:
+    # Linux/macOS용 Tesseract 경로
+    pytesseract.pytesseract.tesseract_cmd = '/usr/bin/tesseract'
+
 # --- 1. 앱 및 DB 설정 ---
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'mysql-secret-key-for-production')
@@ -227,25 +234,6 @@ def extract_and_normalize_text_from_pdf(pdf_bytes):
     except Exception as e:
         print(f"PDF 처리 중 오류 발생: {e}")
         return ""
-
-# --- Pre-load and process the sample certificate PDF for performance ---
-SAMPLE_CERT_TEXT = ""
-try:
-    # Use the corrected path
-    sample_pdf_path = os.path.join(os.path.dirname(__file__), '신청서.pdf')
-    with open(sample_pdf_path, 'rb') as f:
-        # Use the existing OCR function to process the sample file
-        SAMPLE_CERT_TEXT = extract_and_normalize_text_from_pdf(f.read())
-    
-    if not SAMPLE_CERT_TEXT:
-        print("Warning: Could not extract text from the sample certificate PDF on startup.")
-    else:
-        print("Successfully pre-loaded and processed the sample certificate PDF.")
-        
-except FileNotFoundError:
-    print("CRITICAL ERROR: Sample certificate PDF ('신청서.pdf') not found on startup. Verification will fail.")
-except Exception as e:
-    print(f"CRITICAL ERROR processing sample certificate PDF on startup: {e}")
 
 # --- 2. DB 모델(테이블) 정의 (farmer 기준으로 통합) ---
 class User(db.Model):
@@ -669,14 +657,19 @@ def register_page():
 
             if allowed_file(cert_pdf_file.filename):
                 try:
-                    if not SAMPLE_CERT_TEXT:
+                    # Load the sample certificate on-demand
+                    sample_pdf_path = os.path.join(os.path.dirname(__file__), '신청서.pdf')
+                    with open(sample_pdf_path, 'rb') as f:
+                        sample_cert_text = extract_and_normalize_text_from_pdf(f.read())
+
+                    if not sample_cert_text:
                         flash("시스템 오류: 샘플 인증서를 처리할 수 없습니다. 관리자에게 문의하세요.", "danger")
                         return render_template('register.html', form_data=request.form)
 
                     uploaded_text = extract_and_normalize_text_from_pdf(cert_pdf_file.read())
                     cert_pdf_file.seek(0)
 
-                    if uploaded_text and SAMPLE_CERT_TEXT in uploaded_text:
+                    if uploaded_text and sample_cert_text in uploaded_text:
                         ext = cert_pdf_file.filename.rsplit('.', 1)[1].lower()
                         cert_pdf_filename = f"farmer_cert_{email}_{uuid.uuid4().hex}.{ext}"
                         cert_pdf_file.save(os.path.join(app.config['UPLOAD_FOLDER'], cert_pdf_filename))

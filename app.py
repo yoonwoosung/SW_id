@@ -464,6 +464,9 @@ def index():
             user_lon = request.args.get('lon', type=float)
 
             if user_lat and user_lon:
+                print(f"[{datetime.now()}] RECOMMENDATION: Starting sort for user at ({user_lat}, {user_lon})")
+                db_query_start_time = datetime.now()
+
                 # Bounding box filter to reduce items before expensive calculation
                 lat_range = 1.5
                 lon_range = 1.5
@@ -472,9 +475,35 @@ def index():
                     Experience.lng.between(user_lon - lon_range, user_lon + lon_range)
                 )
 
-                # --- ▼ 여기가 생략되었던 추천순 정렬 로직입니다. ▼ ---
                 query = base_query.filter(Experience.current_participants < Experience.max_participants)
                 all_experiences = query.all()
+                print(f"[{datetime.now()}] RECOMMENDATION: DB query took {datetime.now() - db_query_start_time}")
+
+                # --- ▼ 여기가 생략되었던 추천순 정렬 로직입니다. ▼ ---
+                ranking_start_time = datetime.now()
+                ranked_experiences = []
+                for exp in all_experiences:
+                    distance = haversine(user_lat, user_lon, exp.lat, exp.lng)
+                    if distance > 150: continue
+
+                    distance_score = max(0, 1 - (distance / 50))
+                    availability_score = (exp.max_participants - exp.current_participants) / exp.max_participants
+                
+                    specialty_score = 0
+                    for r, specialties in REGIONAL_SPECIALTIES.items():
+                        if r in exp.address_detail and any(sc in exp.crop for sc in specialties):
+                            specialty_score = 1.0
+                            break
+                
+                    w1, w2, w3 = 0.5, 0.3, 0.2
+                    recommendation_score = (w1 * distance_score) + (w2 * specialty_score) + (w3 * availability_score)
+
+                    exp.recommendation_score = recommendation_score
+                    exp.distance = distance
+                    ranked_experiences.append(exp)
+
+                sorted_items = sorted(ranked_experiences, key=lambda x: x.recommendation_score, reverse=True)
+                print(f"[{datetime.now()}] RECOMMENDATION: Ranking logic took {datetime.now() - ranking_start_time}")
             
                 ranked_experiences = []
                 for exp in all_experiences:
@@ -666,18 +695,24 @@ def register_page():
 
             if allowed_file(cert_pdf_file.filename):
                 try:
+                    print(f"[{datetime.now()}] FARMER REGISTRATION: Starting verification for {email}")
+                    
                     # Read the pre-processed sample text file for fast comparison
+                    start_time = datetime.now()
                     sample_txt_path = os.path.join(os.path.dirname(__file__), 'sample_cert_text.txt')
                     with open(sample_txt_path, 'r', encoding='utf-8') as f:
                         sample_cert_text = f.read()
+                    print(f"[{datetime.now()}] FARMER REGISTRATION: Reading sample text took {datetime.now() - start_time}")
 
                     if not sample_cert_text:
                         flash("시스템 오류: 샘플 인증서 텍스트 파일을 찾을 수 없습니다. 관리자에게 문의하세요.", "danger")
                         return render_template('register.html', form_data=request.form)
 
                     # Perform OCR only on the uploaded file
+                    start_time = datetime.now()
                     uploaded_text = extract_and_normalize_text_from_pdf(cert_pdf_file.read())
                     cert_pdf_file.seek(0)
+                    print(f"[{datetime.now()}] FARMER REGISTRATION: OCR on uploaded PDF took {datetime.now() - start_time}")
 
                     if uploaded_text and sample_cert_text in uploaded_text:
                         ext = cert_pdf_file.filename.rsplit('.', 1)[1].lower()
@@ -706,7 +741,10 @@ def register_page():
             farmer_certificate_pdf=cert_pdf_filename
         )
         db.session.add(new_user)
+        start_time = datetime.now()
         db.session.commit()
+        print(f"[{datetime.now()}] USER REGISTRATION: DB commit took {datetime.now() - start_time}")
+
         flash("회원가입이 완료되었습니다! 로그인해주세요.", "success")
         return redirect(url_for('login_page'))
     return render_template('register.html', form_data={})

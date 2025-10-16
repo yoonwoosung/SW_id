@@ -236,12 +236,12 @@ try:
     with open(sample_pdf_path, 'rb') as f:
         # Use the existing OCR function to process the sample file
         SAMPLE_CERT_TEXT = extract_and_normalize_text_from_pdf(f.read())
-    
+
     if not SAMPLE_CERT_TEXT:
         print("Warning: Could not extract text from the sample certificate PDF on startup.")
     else:
         print("Successfully pre-loaded and processed the sample certificate PDF.")
-        
+
 except FileNotFoundError:
     print("CRITICAL ERROR: Sample certificate PDF ('신청서.pdf') not found on startup. Verification will fail.")
 except Exception as e:
@@ -473,6 +473,17 @@ def get_coords_from_address(address):
 # --- 3. 핵심 라우트 ---
 @app.route('/')
 def index():
+    # 나중에 지우기
+    print("--- index 함수 시작 ---", file=sys.stderr)
+
+    # 여기에 오래 걸릴 만한 작업이 있나요? (DB 조회, 파일 처리 등)
+    db_result = get_data_from_database()
+
+    print("--- DB 조회 완료, 템플릿 렌더링 시작 전 ---", file=sys.stderr)
+
+    return render_template('index.html', data=db_result)
+    ## 이거 위에까지
+
     print(f"Request args: {request.args}")
     role = session.get('role', 'experiencer')
     if role == 'farmer':
@@ -599,7 +610,7 @@ def index():
             if user_lat and user_lon:
                 query = base_query.filter(Experience.current_participants < Experience.max_participants)
                 all_experiences = query.all()
-            
+
                 ranked_experiences = []
                 for exp in all_experiences:
                     distance = haversine(user_lat, user_lon, exp.lat, exp.lng)
@@ -607,13 +618,13 @@ def index():
 
                     distance_score = max(0, 1 - (distance / 50))
                     availability_score = (exp.max_participants - exp.current_participants) / exp.max_participants
-                
+
                     specialty_score = 0
                     for r, specialties in REGIONAL_SPECIALTIES.items():
                         if r in exp.address_detail and any(sc in exp.crop for sc in specialties):
                             specialty_score = 1.0
                             break
-                
+
                     w1, w2, w3 = 0.5, 0.3, 0.2
                     recommendation_score = (w1 * distance_score) + (w2 * specialty_score) + (w3 * availability_score)
 
@@ -627,7 +638,7 @@ def index():
                 end = start + 15
                 items_on_page = sorted_items[start:end]
                 total_items = len(sorted_items)
-            
+
                 total_pages = math.ceil(total_items / 15) if total_items > 0 else 1
                 pagination = SimpleNamespace(
                     items=items_on_page, page=page, per_page=15, total=total_items,
@@ -1302,4 +1313,3 @@ def guide_page():
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
-    app.run(debug=True)

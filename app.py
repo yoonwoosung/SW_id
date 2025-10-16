@@ -385,7 +385,8 @@ def analyze_review_with_clova(text):
             },
             {
                 "role": "assistant",
-                "content": "```json\n{\n  \"strengths\": [],\n  \"improvements\": [\"화장실 청결도\"]\n}\n```"
+                "content": "```json\n{\n  \"strengths\": [],\n  \"improvements\": [\"화장실 청결도\"]\n}
+```"
             },
             {
                 "role": "user",
@@ -420,40 +421,6 @@ def analyze_review_with_clova(text):
             print(f"서버 실제 응답 내용: {response.text}")
         print("--------------------------")
         return None
-
-@scheduler.task('interval', id='update_experience_status', minutes=1)
-def update_experience_status():
-    with app.app_context():
-        now = datetime.now()
-        recruiting_experiences = Experience.query.filter_by(status='recruiting').all()
-        expired_experiences = []
-        days_map = {0: '월', 1: '화', 2: '수', 3: '목', 4: '금', 5: '토', 6: '일'}
-
-        for exp in recruiting_experiences:
-            if exp.end_date < now.date():
-                expired_experiences.append(exp)
-            elif exp.end_date == now.date():
-                if exp.timetable_data:
-                    day_of_week = days_map[exp.end_date.weekday()]
-                    slots = exp.timetable_data.split(',')
-                    last_time = None
-                    for slot in slots:
-                        day, time_str = slot.split('-')
-                        if day == day_of_week:
-                            slot_time = datetime.strptime(time_str, '%H:%M').time()
-                            if last_time is None or slot_time > last_time:
-                                last_time = slot_time
-                    if last_time and now.time() > last_time:
-                        expired_experiences.append(exp)
-
-        for exp in expired_experiences:
-            exp.status = 'expired'
-            notification = Notification(user_id=exp.farmer_id, message=f"'{exp.crop}' 체험의 모집 기간이 만료되었습니다.")
-            db.session.add(notification)
-
-        if expired_experiences:
-            db.session.commit()
-            print(f"[{datetime.now()}] {len(expired_experiences)}개의 체험을 '기간 만료'로 업데이트했습니다.")
 
 def get_coords_from_address(address):
     KAKAO_API_KEY = app.config['KAKAO_API_KEY']

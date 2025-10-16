@@ -250,6 +250,9 @@ class User(db.Model):
     farm_image = db.Column(db.String(255), nullable=True)
     profile_bio = db.Column(db.String(150), nullable=True)
     farmer_certificate_pdf = db.Column(db.String(255), nullable=True) # 농업인 증명서 PDF
+    # highlight-start
+    verification_status = db.Column(db.String(50), nullable=False, default='verified') # 인증 상태 컬럼 추가
+    # highlight-end
     applications = db.relationship('Application', back_populates='user', cascade="all, delete-orphan")
     experiences = db.relationship('Experience', back_populates='farmer', cascade="all, delete-orphan")
 

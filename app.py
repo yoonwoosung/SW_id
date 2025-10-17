@@ -23,7 +23,7 @@ app.secret_key = os.environ.get('SECRET_KEY', 'mysql-secret-key-for-production')
 
 # DB 접속 정보: farmer 기준 로컬 DB 사용.
 db_username = 'kevin4201'
-db_password = 'FarmLink'
+db_password = 'ict_farmLink'
 db_hostname = 'kevin4201.mysql.pythonanywhere-services.com'
 db_name     = 'kevin4201$default'
 DATABASE_URI = f"mysql+mysqlconnector://{db_username}:{db_password}@{db_hostname}/{db_name}"

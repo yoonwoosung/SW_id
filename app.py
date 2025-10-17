@@ -1320,6 +1320,10 @@ def easy_create_experience():
             else:
                 flash("친환경 농법 사용 시 인증서 이미지를 반드시 등록해야 합니다.", "warning")
                 return render_template('easy_create_experience.html', item=None, form_data=request.form)
+
+        address_detail = request.form.get('address')
+        lat, lng = get_coords_from_address(address_detail)
+        farmer = User.query.get(session['user_id'])
             
         new_experience = Experience(
             crop=request.form.get('crop'),
@@ -1328,7 +1332,8 @@ def easy_create_experience():
             duration_start=datetime.strptime(request.form.get('duration_start'), '%Y-%m-%d').date(),
             end_date=datetime.strptime(request.form.get('duration_end'), '%Y-%m-%d').date(),
             farmer_id=session['user_id'],
-            address_detail=request.form.get('address'),
+            location=farmer.farm_address,
+            address_detail=address_detail,
             phone=request.form.get('phone'),
             notes=request.form.get('notes'),
             includes=request.form.get('includes'),
@@ -1340,6 +1345,8 @@ def easy_create_experience():
             pesticide_free=is_organic,
             organic_certification_type=cert_type,
             organic_certification_image=cert_filename,
+            lat=lat,
+            lng=lng,
             status='recruiting'
         )
         

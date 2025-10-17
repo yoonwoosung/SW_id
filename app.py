@@ -1288,6 +1288,38 @@ def easy_create_experience():
         return redirect(url_for('login_page'))
 
     if request.method == 'POST':
+
+        if 'terms' not in request.form:
+            flash("서비스 이용 약관에 동의해야 합니다.", "warning")
+            return render_template('easy_create_experience.html', item=None, form_data=request.form)
+        
+        required_fields = {
+            'crop': '체험 이름', 'address': '상세 주소', 'phone': '농장 연락처',
+            'price': '가격', 'max_participants': '하루 최대 인원',
+            'duration_start': '체험 시작 날짜', 'duration_end': '체험 끝나는 날짜',
+            'timetable_data': '체험 가능 시간', 'notes': '상세 설명',
+            'includes': '포함 내역', 'excludes': '불포함 내역'
+        }
+        for field, name in required_fields.items():
+            if not request.form.get(field):
+                flash(f"'{name}' 항목을 입력해주세요. 모든 항목은 필수입니다.", "warning")
+                return render_template('easy_create_experience.html', item=None, form_data=request.form)
+            
+        is_organic = 'is_organic' in request.form
+        cert_filename = None
+        cert_type = None
+
+        if is_organic:
+            cert_type = request.form.get('organic_certification_type')
+            cert_file = request.files.get('organic_certification_image')
+            if cert_file and cert_file.filename and allowed_file(cert_file.filename):
+                ext = cert_file.filename.rsplit('.', 1)[1].lower()
+                cert_filename = f"cert_{session['user_id']}_{uuid.uuid4().hex}.{ext}"
+                cert_file.save(os.path.join(app.config['UPLOAD_FOLDER'], cert_filename))
+            else:
+                flash("친환경 농법 사용 시 인증서 이미지를 반드시 등록해야 합니다.", "warning")
+                return render_template('easy_create_experience.html', item=None, form_data=request.form)
+            
         new_experience = Experience(
             crop=request.form.get('crop'),
             cost=int(request.form.get('price')),
@@ -1302,9 +1334,11 @@ def easy_create_experience():
             excludes=request.form.get('excludes'),
             timetable_data=request.form.get('timetable_data'),
             has_parking='has_parking' in request.form,
-            pesticide_free='is_organic' in request.form,
             volunteer_needed=int(request.form.get('volunteer_needed', 0)),
             volunteer_duties=request.form.get('volunteer_duties'),
+            pesticide_free=is_organic,
+            organic_certification_type=cert_type,
+            organic_certification_image=cert_filename,
             status='recruiting'
         )
         
@@ -1326,8 +1360,7 @@ def easy_create_experience():
         flash(f"'{new_experience.crop}' 체험이 성공적으로 만들어졌습니다.", 'success')
         return redirect(url_for('farmer_easy_mode'))
         
-    return render_template('easy_create_experience.html', item=None)
-
+    return render_template('easy_create_experience.html', item=None, form_data={})
 @app.route('/easy_mode/modify_experience_list')
 def easy_modify_experience_list():
     if 'user_id' not in session or session.get('role') != 'farmer':
@@ -1349,6 +1382,42 @@ def easy_modify_experience(item_id):
         abort(403)
 
     if request.method == 'POST':
+        if 'terms' not in request.form:
+            flash("서비스 이용 약관에 동의해야 합니다.", "warning")
+            return render_template('easy_create_experience.html', item=item, form_data=request.form)
+        
+        required_fields = {
+            'crop': '체험 이름', 'address': '상세 주소', 'phone': '농장 연락처',
+            'price': '가격', 'max_participants': '하루 최대 인원',
+            'duration_start': '체험 시작 날짜', 'duration_end': '체험 끝나는 날짜',
+            'timetable_data': '체험 가능 시간', 'notes': '상세 설명',
+            'includes': '포함 내역', 'excludes': '불포함 내역'
+        }
+
+        for field, name in required_fields.items():
+            if not request.form.get(field):
+                flash(f"'{name}' 항목을 입력해주세요. 모든 항목은 필수입니다.", "warning")
+                return render_template('easy_create_experience.html', item=item, form_data=request.form)
+        
+        is_organic = 'is_organic' in request.form
+        if is_organic:
+            item.pesticide_free = True
+            item.organic_certification_type = request.form.get('organic_certification_type')
+            cert_file = request.files.get('organic_certification_image')
+
+            if cert_file and cert_file.filename and allowed_file(cert_file.filename):
+                ext = cert_file.filename.rsplit('.', 1)[1].lower()
+                new_cert_filename = f"cert_{session['user_id']}_{uuid.uuid4().hex}.{ext}"
+                cert_file.save(os.path.join(app.config['UPLOAD_FOLDER'], new_cert_filename))
+                item.organic_certification_image = new_cert_filename
+            elif not item.organic_certification_image:
+                flash("친환경 농법 사용 시 인증서 이미지를 등록해야 합니다.", "warning")
+                return render_template('easy_create_experience.html', item=item, form_data=request.form)
+        else:
+            item.pesticide_free = False
+            item.organic_certification_type = None
+            item.organic_certification_image = None
+
         item.crop = request.form.get('crop')
         item.cost = int(request.form.get('price'))
         item.max_participants = int(request.form.get('max_participants'))
@@ -1361,7 +1430,6 @@ def easy_modify_experience(item_id):
         item.excludes = request.form.get('excludes')
         item.timetable_data = request.form.get('timetable_data')
         item.has_parking = 'has_parking' in request.form
-        item.pesticide_free = 'is_organic' in request.form
         item.volunteer_needed = int(request.form.get('volunteer_needed', 0))
         item.volunteer_duties = request.form.get('volunteer_duties')
 
@@ -1378,12 +1446,12 @@ def easy_modify_experience(item_id):
                     img.save(filepath)
                     filenames.append(filename)
             item.images = ",".join(filenames)
-            
+
         db.session.commit()
         flash(f"'{item.crop}' 체험이 성공적으로 수정되었습니다.", "success")
         return redirect(url_for('easy_modify_experience_list'))
 
-    return render_template('easy_create_experience.html', item=item)
+    return render_template('easy_create_experience.html', item=item, form_data={})
 
 @app.route('/easy_mode/reservations')
 def easy_reservations():

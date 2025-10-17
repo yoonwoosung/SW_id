@@ -8,7 +8,6 @@ from sqlalchemy.sql import func
 from collections import defaultdict
 from datetime import date, timedelta, datetime
 from sqlalchemy import or_
-from flask_apscheduler import APScheduler
 import json
 import math
 import uuid
@@ -42,11 +41,6 @@ app.config['KAKAO_API_KEY'] = os.environ.get('KAKAO_API_KEY', '432f80fcdc8239c7c
 db = SQLAlchemy(app, engine_options={"pool_pre_ping": True})
 
 
-
-# 스케줄러 설정 (farmer 기능)
-scheduler = APScheduler()
-scheduler.init_app(app)
-scheduler.start()
 
 REGIONAL_SPECIALTIES = {
     # 경기도

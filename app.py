@@ -388,8 +388,8 @@ def index():
     is_farmer = 'user_id' in session and session.get('role') == 'farmer'
 
     if is_farmer:
-        session['view_mode'] = 'detailed'
-        return redirect(url_for('detailed_farmer_dashboard'))
+        session['view_mode'] = 'easy' 
+        return redirect(url_for('farmer_easy_mode'))
     else: 
         page = request.args.get('page', 1, type=int)
         sort_by = request.args.get('sort', 'recommended', type=str)
@@ -1295,7 +1295,16 @@ def easy_create_experience():
             duration_start=datetime.strptime(request.form.get('duration_start'), '%Y-%m-%d').date(),
             end_date=datetime.strptime(request.form.get('duration_end'), '%Y-%m-%d').date(),
             farmer_id=session['user_id'],
-            address_detail=User.query.get(session['user_id']).farm_address or "주소 미입력",
+            address_detail=request.form.get('address'),
+            phone=request.form.get('phone'),
+            notes=request.form.get('notes'),
+            includes=request.form.get('includes'),
+            excludes=request.form.get('excludes'),
+            timetable_data=request.form.get('timetable_data'),
+            has_parking='has_parking' in request.form,
+            pesticide_free='is_organic' in request.form,
+            volunteer_needed=int(request.form.get('volunteer_needed', 0)),
+            volunteer_duties=request.form.get('volunteer_duties'),
             status='recruiting'
         )
         
@@ -1345,6 +1354,31 @@ def easy_modify_experience(item_id):
         item.max_participants = int(request.form.get('max_participants'))
         item.duration_start = datetime.strptime(request.form.get('duration_start'), '%Y-%m-%d').date()
         item.end_date = datetime.strptime(request.form.get('duration_end'), '%Y-%m-%d').date()
+        item.address_detail = request.form.get('address')
+        item.phone = request.form.get('phone')
+        item.notes = request.form.get('notes')
+        item.includes = request.form.get('includes')
+        item.excludes = request.form.get('excludes')
+        item.timetable_data = request.form.get('timetable_data')
+        item.has_parking = 'has_parking' in request.form
+        item.pesticide_free = 'is_organic' in request.form
+        item.volunteer_needed = int(request.form.get('volunteer_needed', 0))
+        item.volunteer_duties = request.form.get('volunteer_duties')
+
+        uploaded_files = request.files.getlist('images')
+        if uploaded_files and uploaded_files[0].filename:
+            filenames = []
+            for file in uploaded_files:
+                if file and allowed_file(file.filename):
+                    ext = file.filename.rsplit('.', 1)[1].lower()
+                    filename = f"exp_{session['user_id']}_{uuid.uuid4().hex}.{ext}"
+                    filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+                    img = Image.open(file.stream)
+                    img.thumbnail((800, 600))
+                    img.save(filepath)
+                    filenames.append(filename)
+            item.images = ",".join(filenames)
+            
         db.session.commit()
         flash(f"'{item.crop}' 체험이 성공적으로 수정되었습니다.", "success")
         return redirect(url_for('easy_modify_experience_list'))

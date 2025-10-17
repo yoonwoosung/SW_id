@@ -7,7 +7,6 @@
         <p>어떤 즐거운 체험을 만드시겠어요?<br>천천히 입력해 주세요.</p>
     </div>
 
-    <!-- 수정 시, 어떤 체험을 수정할지 알려주는 안내문 추가 -->
     {% if item %}
         <div class="alert alert-info easy-alert">
             현재 '<strong>{{ item.crop }}</strong>' 체험을 수정하고 있습니다.
@@ -19,6 +18,15 @@
             <label for="crop">체험 이름 (작물명)</label>
             <input type="text" id="crop" name="crop" class="form-control" placeholder="예) 달콤한 딸기 따기" value="{{ item.crop if item else '' }}" required>
         </div>
+        <div class="form-group">
+            <label for="address">상세 주소 (체험 장소)</label>
+            <input type="text" id="address" name="address" class="form-control" placeholder="예) 충남 천안시 동남구 농부로 123" value="{{ item.address_detail if item else '' }}" required>
+        </div>
+        <div class="form-group">
+            <label for="phone">농장 연락처</label>
+            <input type="tel" id="phone" name="phone" class="form-control" placeholder="예) 010-1234-5678" value="{{ item.phone if item else '' }}" required>
+        </div>
+
         <div class="form-group">
             <label for="price">가격 (1명 기준)</label>
             <input type="number" id="price" name="price" class="form-control" placeholder="숫자만 입력 (예: 15000)" value="{{ item.cost if item else '' }}" required>
@@ -35,12 +43,72 @@
             <label for="duration_end">체험 끝나는 날짜</label>
             <input type="date" id="duration_end" name="duration_end" class="form-control" value="{{ item.end_date.strftime('%Y-%m-%d') if item else '' }}" required>
         </div>
+
+        <div class="form-group">
+            <label>체험 가능한 시간 선택</label>
+            <p class="text-muted small" style="font-size: 1.2rem;">손님이 예약할 수 있는 요일과 시간을 모두 선택해주세요.</p>
+            <div class="timetable-wrapper">
+                <table class="table table-bordered timetable text-center">
+                    <thead>
+                        <tr>
+                            <th>시간</th>
+                            <th>월</th><th>화</th><th>수</th><th>목</th><th>금</th><th>토</th><th>일</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for time in ['09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00'] %}
+                        <tr>
+                            <td>{{ time }}</td>
+                            {% for day in ['월', '화', '수', '목', '금', '토', '일'] %}
+                            <td class="time-slot" data-day="{{ day }}" data-time="{{ time }}"></td>
+                            {% endfor %}
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <input type="hidden" id="timetable-data" name="timetable_data" value="{{ item.timetable_data if item else '' }}">
+        </div>
+
         <div class="form-group">
             <label for="images">체험 사진 올리기 (선택)</label>
             <input type="file" id="images" name="images" class="form-control-file" multiple>
             {% if item and item.images %}
             <small class="form-text text-muted">현재 등록된 사진: {{ item.images }}</small>
             {% endif %}
+        </div>
+        <div class="form-group">
+            <label for="notes">상세 설명 (준비물 등)</label>
+            <textarea class="form-control" id="notes" name="notes" rows="4" placeholder="예) 편한 옷차림과 운동화를 추천합니다.">{{ item.notes if item else '' }}</textarea>
+        </div>
+        <div class="form-group">
+            <label for="includes">포함 내역 (쉼표로 구분)</label>
+            <input type="text" class="form-control" id="includes" name="includes" value="{{ item.includes if item else '' }}" placeholder="예) 수확 체험, 시식, 기념품">
+        </div>
+        <div class="form-group">
+            <label for="excludes">불포함 내역 (쉼표로 구분)</label>
+            <input type="text" class="form-control" id="excludes" name="excludes" value="{{ item.excludes if item else '' }}" placeholder="예) 개인 준비물, 교통비">
+        </div>
+
+        <div class="form-group">
+            <label>추가 옵션</label>
+            <div class="form-check" style="padding-left: 0;">
+                <input type="checkbox" class="form-check-input" id="has_parking" name="has_parking" {% if item and item.has_parking %}checked{% endif %}>
+                <label class="form-check-label" for="has_parking">주차장 제공</label>
+            </div>
+            <div class="form-check" style="padding-left: 0;">
+                <input type="checkbox" class="form-check-input" id="is_organic" name="is_organic" {% if item and item.pesticide_free %}checked{% endif %}>
+                <label class="form-check-label" for="is_organic">친환경 농법 사용</label>
+            </div>
+        </div>
+        
+        <div class="form-group">
+            <label for="volunteer_needed">필요 봉사자 수 (모집 안하면 0)</label>
+            <input type="number" class="form-control" id="volunteer_needed" name="volunteer_needed" value="{{ item.volunteer_needed if item else 0 }}">
+        </div>
+        <div class="form-group">
+            <label for="volunteer_duties">봉사자 주요 업무</label>
+            <textarea class="form-control" id="volunteer_duties" name="volunteer_duties" rows="3" placeholder="예) 잡초 제거, 수확 보조">{{ item.volunteer_duties if item else '' }}</textarea>
         </div>
         
         <button type="submit" class="easy-submit-button">{% if item %}이 내용으로 수정하기{% else %}새 체험 만들기{% endif %}</button>

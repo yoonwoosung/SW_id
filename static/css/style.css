@@ -1266,6 +1266,9 @@ body.scroll-lock {
     max-width: 900px;
     padding-top: 2rem;
     padding-bottom: 4rem;
+    min-height: calc(100vh - 120px);
+    display: flex;
+    flex-direction: column;
 }
 
 .easy-header {
@@ -1291,6 +1294,7 @@ body.scroll-lock {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
     gap: 1.5rem;
+    flex-grow: 1;
 }
 
 .easy-menu-button {
@@ -1304,6 +1308,9 @@ body.scroll-lock {
     color: #333;
     transition: all 0.2s ease-in-out;
     box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+    flex-direction: column;
+    justify-content: center;
+    text-align: center;
 }
 
 .easy-menu-button:hover {
@@ -1322,7 +1329,8 @@ body.scroll-lock {
 
 .easy-button-icon {
     font-size: 3rem;
-    margin-right: 1.5rem;
+    margin-right: 0;
+    margin-bottom: 1rem;
 }
 
 .easy-button-text h2 {

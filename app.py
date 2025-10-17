@@ -551,19 +551,24 @@ def detailed_farmer_dashboard():
     
     farmer_id = session.get('user_id')
     user = User.query.get(farmer_id)
-
-    if user is None:
+    if not user:
         session.clear()
-        flash("사용자 정보가 올바르지 않아 로그아웃되었습니다. 다시 로그인해주세요.", "warning")
+        flash("세션 정보가 유효하지 않습니다.", "warning")
         return redirect(url_for('login_page'))
 
     notifications = Notification.query.filter_by(user_id=farmer_id).order_by(Notification.timestamp.desc()).limit(3).all()
     all_notifications = Notification.query.filter_by(user_id=farmer_id).order_by(Notification.timestamp.desc()).all()
     notifications_json = [{"id": n.id, "message": n.message, "timestamp": n.timestamp.isoformat()} for n in all_notifications]
-    my_listings = Experience.query.filter(Experience.farmer_id == farmer_id, Experience.status.in_(['recruiting', 'hidden'])).all()
+
+    my_listings = Experience.query.filter(
+        Experience.farmer_id == farmer_id,
+        Experience.status.in_(['recruiting', 'hidden'])
+    ).all()
+
     experiences_json = [exp.to_dict() for exp in my_listings]
     experience_ids = [exp.id for exp in my_listings]
     applications = Application.query.filter(Application.experience_id.in_(experience_ids), Application.status != '취소').all()
+    
     reservations_by_date = defaultdict(list)
     for app in applications:
         reservations_by_date[app.apply_date.strftime('%Y-%m-%d')].append({
@@ -571,7 +576,24 @@ def detailed_farmer_dashboard():
             "adult": app.count_adult, "teen": app.count_teen, "child": app.count_child,
             "time": app.apply_time, "crop": app.experience.crop, "status": app.status
         })
-    latest_inquiries = Inquiry.query.filter(Inquiry.experience_id.in_(experience_ids)).order_by(Inquiry.timestamp.desc()).limit(5).all()
+
+    avg_rating = 0
+    if experience_ids:
+        avg_result = db.session.query(func.avg(Review.rating)).filter(Review.experience_id.in_(experience_ids)).scalar()
+        if avg_result is not None:
+            avg_rating = round(avg_result, 1)
+
+    latest_inquiries = []
+    if experience_ids:
+        latest_inquiries = Inquiry.query.filter(Inquiry.experience_id.in_(experience_ids)).order_by(Inquiry.timestamp.desc()).limit(5).all()
+
+    total_visitors = sum(exp.current_participants for exp in my_listings)
+    stats = {
+        'total_experiences': len(my_listings),
+        'average_rating': avg_rating if avg_rating > 0 else "N/A",
+        'total_visitors': total_visitors
+    }
+
     feedback_by_experience = {}
     my_listings_with_reviews = Experience.query.filter(
         Experience.farmer_id == farmer_id
@@ -580,10 +602,8 @@ def detailed_farmer_dashboard():
     for exp in my_listings_with_reviews:
         if not exp.reviews:
             continue
-
         strength_keywords = defaultdict(int)
         improvement_keywords = defaultdict(int)
-
         for review in exp.reviews:
             if review.analysis_result:
                 try:
@@ -594,18 +614,18 @@ def detailed_farmer_dashboard():
                         if keyword: improvement_keywords[keyword] += 1
                 except (json.JSONDecodeError, TypeError):
                     continue
-
         if strength_keywords or improvement_keywords:
             feedback_by_experience[exp.id] = {
                 'name': exp.crop,
                 'strengths': sorted(strength_keywords.items(), key=lambda item: item[1], reverse=True),
                 'improvements': sorted(improvement_keywords.items(), key=lambda item: item[1], reverse=True)
             }
-    
+
     return render_template('my_farm.html',
                            user=user, experiences=my_listings, experiences_json=experiences_json,
-                           inquiries=latest_inquiries, reservations_data=reservations_by_date, 
-                           notifications=notifications, notifications_json=notifications_json,
+                           stats=stats,
+                           inquiries=latest_inquiries,
+                           reservations_data=reservations_by_date, notifications=notifications, notifications_json=notifications_json,
                            feedback_report=feedback_by_experience)
 
 @app.route('/easy_mode')

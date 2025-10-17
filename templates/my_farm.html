@@ -77,14 +77,12 @@
         padding-top: 1rem; /* 헤더와 컨텐츠 사이 간격 */
     }
     .notification-delete-btn {
-        color: rgba(0,0,0,0.3);
+        color: rgba(0,0,0,0.2);
         cursor: pointer;
-        font-size: 1.2rem; /* Make it bigger */
         font-weight: bold;
-        line-height: 1; /* Adjust line height for better alignment */
     }
     .notification-delete-btn:hover {
-        color: rgba(0,0,0,0.6);
+        color: rgba(0,0,0,0.5);
     }
 </style>
 
@@ -119,13 +117,11 @@
                 <ul class="inquiry-list" id="notification-list">
                     {% for notification in notifications %}
                     <li data-notification-id="{{ notification.id }}">
-                        <div class="d-flex justify-content-between">
-                            <div style="flex-grow: 1;">
-                                <p style="margin: 0; font-size: 0.9rem; color: #555;">{{ notification.message }}</p>
-                                <small class="text-muted d-block mt-1">{{ notification.timestamp.strftime('%m-%d %H:%M') }}</small>
-                            </div>
+                        <div class="d-flex justify-content-between align-items-start">
+                            <p style="margin: 0; font-size: 0.9rem; color: #555; flex-grow: 1;">{{ notification.message }}</p>
                             <span class="notification-delete-btn" data-id="{{ notification.id }}" style="margin-left: 10px;">&times;</span>
                         </div>
+                        <small class="text-muted d-block mt-1">{{ notification.timestamp.strftime('%m-%d %H:%M') }}</small>
                     </li>
                     {% else %}
                     <li>새로운 알림이 없습니다.</li>
@@ -475,13 +471,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 const li = document.createElement('li');
                 li.dataset.notificationId = notification.id;
                 li.innerHTML = `
-                    <div class="d-flex justify-content-between">
-                        <div style="flex-grow: 1;">
-                            <p style="margin: 0; font-size: 0.9rem; color: #555;">${notification.message}</p>
-                            <small class="text-muted d-block mt-1">${new Date(notification.timestamp).toLocaleString('ko-KR', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}</small>
-                        </div>
+                    <div class="d-flex justify-content-between align-items-start">
+                        <p style="margin: 0; font-size: 0.9rem; color: #555; flex-grow: 1;">${notification.message}</p>
                         <span class="notification-delete-btn" data-id="${notification.id}" style="margin-left: 10px;">&times;</span>
                     </div>
+                    <small class="text-muted d-block mt-1">${new Date(notification.timestamp).toLocaleString('ko-KR', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}</small>
                 `;
                 notificationList.appendChild(li);
             });

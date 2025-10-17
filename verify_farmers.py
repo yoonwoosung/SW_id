@@ -9,7 +9,7 @@ if project_home not in sys.path:
     sys.path.insert(0, project_home)
 
 # 이제 app의 구성 요소를 import 할 수 있습니다.
-from app import app, db, User, extract_and_normalize_text_from_pdf, pytesseract, fitz, Image, re
+from app import app, db, User
 
 # 성능 개선을 위한 OpenCV 전처리 기능이 포함된 OCR 함수
 def enhanced_ocr_from_pdf(pdf_bytes):

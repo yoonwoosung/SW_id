@@ -4,7 +4,7 @@ import cv2 # OpenCV 라이브러리
 import numpy as np
 
 # 현재 스크립트 경로를 기준으로 프로젝트 경로 추가 (PythonAnywhere에서 필요)
-project_home = '/home/kevin4201/FarmLink' # 본인의 PythonAnywhere 프로젝트 경로로 수정하세요.
+project_home = '/home/kevin4201/SW_id'
 if project_home not in sys.path:
     sys.path.insert(0, project_home)
 

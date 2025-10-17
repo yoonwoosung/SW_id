@@ -1534,3 +1534,23 @@ body.scroll-lock {
     font-size: 1.2rem;
     padding: 1.5rem;
 }
+
+.easy-form .form-check {
+    display: flex;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding-left: 0; 
+}
+
+.easy-form .form-check-input {
+    transform: scale(1.8);
+    margin-left: 0.5rem;
+    margin-right: 1.2rem;
+    float: none;
+    position: static;
+}
+
+.easy-form .form-check-label {
+    font-size: 1.3rem;
+    font-weight: 600;
+}

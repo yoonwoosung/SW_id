@@ -650,6 +650,17 @@ def register_page():
             return render_template('register.html', form_data=request.form)
 
         cert_pdf_filename = None
+
+        hashed_password = generate_password_hash(password)
+        new_user = User(
+            email=email, nickname=nickname, password=hashed_password,
+            role=role, name=name, phone=phone,
+            farm_address=request.form.get('farm_address'),
+            farm_size=request.form.get('farm_size'),
+            profile_bio=request.form.get('profile_bio'),
+            farmer_certificate_pdf=cert_pdf_filename
+        )
+        
         if role == 'farmer':
             cert_pdf_file = request.files.get('farmer_certificate_pdf')
             if not cert_pdf_file or cert_pdf_file.filename == '':
@@ -668,15 +679,7 @@ def register_page():
                 flash("허용되지 않는 파일 형식입니다. PDF 파일만 업로드 가능합니다.", "danger")
                 return render_template('register.html', form_data=request.form)
             # highlight-end
-        hashed_password = generate_password_hash(password)
-        new_user = User(
-            email=email, nickname=nickname, password=hashed_password,
-            role=role, name=name, phone=phone,
-            farm_address=request.form.get('farm_address'),
-            farm_size=request.form.get('farm_size'),
-            profile_bio=request.form.get('profile_bio'),
-            farmer_certificate_pdf=cert_pdf_filename
-        )
+        
         db.session.add(new_user)
         start_time = datetime.now()
         db.session.commit()

@@ -652,6 +652,7 @@ def register_page():
         cert_pdf_filename = None
 
         hashed_password = generate_password_hash(password)
+
         new_user = User(
             email=email, nickname=nickname, password=hashed_password,
             role=role, name=name, phone=phone,
@@ -704,24 +705,33 @@ def check_email():
 
 @app.route('/login', methods=['GET', 'POST'])
 def login_page():
-    if user and check_password_hash(user.password, password):
-        # highlight-start
-        if user.role == 'farmer' and user.verification_status == 'pending':
-            flash("가입 승인 대기 중인 계정입니다. 서류 검토 후 결과를 알려드리겠습니다.", "warning")
-            return redirect(url_for('login_page'))
-    
-        if user.role == 'farmer' and user.verification_status in ['rejected', 'error']:
-            flash("가입이 거절되었거나 인증 중 오류가 발생했습니다. 관리자에게 문의하세요.", "danger")
-            return redirect(url_for('login_page'))
-        # highlight-end
+    # 1. 사용자가 '로그인' 버튼을 눌렀을 때만 아래 코드를 실행합니다.
+    if request.method == 'POST':
+        email = request.form.get('email')
+        password = request.form.get('password')
+        user = User.query.filter_by(email=email).first()
 
-        session['user_id'] = user.id
-        session['nickname'] = user.nickname
-        session['role'] = user.role
-        flash(f"{user.nickname}님, 환영합니다!", "success")
-        return redirect(url_for('index'))
-    else:
-        flash("이메일 또는 비밀번호가 올바르지 않습니다.", "danger")
+        # 2. 사용자 정보 확인 및 로그인 처리 로직 전체를 POST 블록 안으로 옮깁니다.
+        if user and check_password_hash(user.password, password):
+            if user.role == 'farmer' and user.verification_status == 'pending':
+                flash("가입 승인 대기 중인 계정입니다. 서류 검토 후 결과를 알려드리겠습니다.", "warning")
+                return redirect(url_for('login_page'))
+        
+            if user.role == 'farmer' and user.verification_status in ['rejected', 'error']:
+                flash("가입이 거절되었거나 인증 중 오류가 발생했습니다. 관리자에게 문의하세요.", "danger")
+                return redirect(url_for('login_page'))
+    
+            session['user_id'] = user.id
+            session['nickname'] = user.nickname
+            session['role'] = user.role
+            flash(f"{user.nickname}님, 환영합니다!", "success")
+            return redirect(url_for('index'))
+        else:
+            flash("이메일 또는 비밀번호가 올바르지 않습니다.", "danger")
+            # POST 요청 실패 시에도 로그인 페이지를 다시 보여줍니다.
+            return redirect(url_for('login_page'))
+
+    # GET 요청일 경우 (그냥 페이지 방문)에는 아무 작업도 하지 않고 페이지만 보여줍니다.
     return render_template('login.html')
 
 @app.route('/logout')

@@ -14,7 +14,7 @@ import uuid
 from sqlalchemy import case
 from types import SimpleNamespace
 import platform
-
+from PIL import Image
 
 # --- 1. 앱 및 DB 설정 ---
 app = Flask(__name__)
@@ -39,6 +39,7 @@ app.config['ALLOWED_EXTENSIONS'] = {'png', 'jpg', 'jpeg', 'gif', 'pdf'} # farmer
 app.config['KAKAO_API_KEY'] = os.environ.get('KAKAO_API_KEY', '432f80fcdc8239c7c87db2520e85597e') # farmer 기준
 
 db = SQLAlchemy(app, engine_options={"pool_pre_ping": True})
+
 
 
 

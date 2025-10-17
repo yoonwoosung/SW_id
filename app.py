@@ -713,14 +713,17 @@ def login_page():
 
         # 2. 사용자 정보 확인 및 로그인 처리 로직 전체를 POST 블록 안으로 옮깁니다.
         if user and check_password_hash(user.password, password):
-            if user.role == 'farmer' and user.verification_status == 'pending':
-                flash("가입 승인 대기 중인 계정입니다. 서류 검토 후 결과를 알려드리겠습니다.", "warning")
-                return redirect(url_for('login_page'))
+            
+            ## 인증서 인증 임시 비활성화(나중에 주석 지우기)
+            # if user.role == 'farmer' and user.verification_status == 'pending':
+            #     flash("가입 승인 대기 중인 계정입니다. 서류 검토 후 결과를 알려드리겠습니다.", "warning")
+            #     return redirect(url_for('login_page'))
         
-            if user.role == 'farmer' and user.verification_status in ['rejected', 'error']:
-                flash("가입이 거절되었거나 인증 중 오류가 발생했습니다. 관리자에게 문의하세요.", "danger")
-                return redirect(url_for('login_page'))
-    
+            # if user.role == 'farmer' and user.verification_status in ['rejected', 'error']:
+            #     flash("가입이 거절되었거나 인증 중 오류가 발생했습니다. 관리자에게 문의하세요.", "danger")
+            #     return redirect(url_for('login_page'))
+            
+
             session['user_id'] = user.id
             session['nickname'] = user.nickname
             session['role'] = user.role

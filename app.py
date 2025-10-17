@@ -387,13 +387,8 @@ def index():
     is_farmer = 'user_id' in session and session.get('role') == 'farmer'
 
     if is_farmer:
-        if 'view_mode' not in session:
-            session['view_mode'] = 'detailed'
-
-        if session.get('view_mode') == 'easy':
-            return redirect(url_for('farmer_easy_mode'))
-        else:
-            return redirect(url_for('detailed_farmer_dashboard'))
+        session['view_mode'] = 'detailed'
+        return redirect(url_for('detailed_farmer_dashboard'))
     else: 
         page = request.args.get('page', 1, type=int)
         sort_by = request.args.get('sort', 'recommended', type=str)
@@ -533,10 +528,10 @@ def toggle_view_mode():
 
     if session.get('view_mode') == 'easy':
         session['view_mode'] = 'detailed'
+        return redirect(url_for('detailed_farmer_dashboard'))
     else:
         session['view_mode'] = 'easy'
-    
-    return redirect(url_for('index'))
+        return redirect(url_for('farmer_easy_mode'))
 
 @app.route('/my_farm_detailed')
 def detailed_farmer_dashboard():

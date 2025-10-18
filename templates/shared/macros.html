@@ -15,7 +15,11 @@
             <div class="carousel-inner h-100">
                 {% for image in images %}
                 <div class="carousel-item h-100 {% if loop.first %}active{% endif %}">
-                    <img src="{{ url_for('static', filename=image) }}" class="d-block w-100 h-100" style="object-fit: contain;">
+                    {% if image is mapping %}
+                        <img src="{{ url_for('static', filename=image.src) }}" class="d-block w-100 h-100" style="object-fit: contain;">
+                    {% else %}
+                        <img src="{{ url_for('static', filename=image) }}" class="d-block w-100 h-100" style="object-fit: contain;">
+                    {% endif %}
                 </div>
                 {% endfor %}
             </div>

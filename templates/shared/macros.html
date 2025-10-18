@@ -12,7 +12,7 @@
     <div class="modal-content modal-fullscreen">
         <span class="close-btn" id="{{ close_btn_id }}" data-dismiss="modal" style="z-index: 1060; top: 20px; right: 20px; color: white; text-shadow: 0 0 5px black;">&times;</span>
         
-        <div id="{{ carousel_id }}" class="carousel slide h-100" data-ride="carousel" data-interval="false">
+        <div id="{{ carousel_id }}" class="carousel slide h-100" data-interval="false">
             <div class="carousel-inner h-100">
                 {% for image in images %}
                 <div class="carousel-item h-100 {% if loop.first %}active{% endif %}">

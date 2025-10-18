@@ -21,7 +21,7 @@
                         <h5 class="mb-0">{{ image.title }}</h5>
                     </div>
                     {% endif %}
-                    <img src="{{ url_for('static', filename=image.src) }}" class="d-block" style="object-fit: contain; max-height: 80vh; margin: 0 auto;">
+                    <img src="{{ url_for('static', filename=image.src) }}" class="d-block">
 
                 </div>
                 {% endfor %}

@@ -133,47 +133,47 @@
             <div class="carousel-inner">
                 <div class="carousel-item active">
                     <h3 class="carousel-title">소개글 가이드</h3>
-                    <img src="{{ url_for('static', filename='이용 확정 가이드 사진/소개글 가이드 1.png') }}" class="d-block w-100">
+                    <img src="{{ url_for('static', filename='main photo/소개글 가이드 1.png') }}" class="d-block w-100">
                 </div>
                 <div class="carousel-item">
                     <h3 class="carousel-title">소개글 가이드</h3>
-                    <img src="{{ url_for('static', filename='이용 확정 가이드 사진/소개글 가이드 2.jpg') }}" class="d-block w-100">
+                    <img src="{{ url_for('static', filename='main photo/소개글 가이드 2.jpg') }}" class="d-block w-100">
                 </div>
                 <div class="carousel-item">
                     <h3 class="carousel-title">체험 만들기</h3>
-                    <img src="{{ url_for('static', filename='이용 확정 가이드 사진/체험 만들기 1.png') }}" class="d-block w-100">
+                    <img src="{{ url_for('static', filename='main photo/체험 만들기 1.png') }}" class="d-block w-100">
                 </div>
                 <div class="carousel-item">
                     <h3 class="carousel-title">체험 만들기</h3>
-                    <img src="{{ url_for('static', filename='이용 확정 가이드 사진/체험 만들기 2.png') }}" class="d-block w-100">
+                    <img src="{{ url_for('static', filename='main photo/체험 만들기 2.png') }}" class="d-block w-100">
                 </div>
                 <div class="carousel-item">
                     <h3 class="carousel-title">체험 만들기</h3>
-                    <img src="{{ url_for('static', filename='이용 확정 가이드 사진/체험 만들기 3.png') }}" class="d-block w-100">
+                    <img src="{{ url_for('static', filename='main photo/체험 만들기 3.png') }}" class="d-block w-100">
                 </div>
                 <div class="carousel-item">
                     <h3 class="carousel-title">체험 만들기</h3>
-                    <img src="{{ url_for('static', filename='이용 확정 가이드 사진/체험 만들기 4.png') }}" class="d-block w-100">
+                    <img src="{{ url_for('static', filename='main photo/체험 만들기 4.png') }}" class="d-block w-100">
                 </div>
                 <div class="carousel-item">
                     <h3 class="carousel-title">체험 만들기</h3>
-                    <img src="{{ url_for('static', filename='이용 확정 가이드 사진/체험 만들기 5.png') }}" class="d-block w-100">
+                    <img src="{{ url_for('static', filename='main photo/체험 만들기 5.png') }}" class="d-block w-100">
                 </div>
                 <div class="carousel-item">
                     <h3 class="carousel-title">체험 만들기</h3>
-                    <img src="{{ url_for('static', filename='이용 확정 가이드 사진/체험 만들기 6.png') }}" class="d-block w-100">
+                    <img src="{{ url_for('static', filename='main photo/체험 만들기 6.png') }}" class="d-block w-100">
                 </div>
                 <div class="carousel-item">
                     <h3 class="carousel-title">체험 수정</h3>
-                    <img src="{{ url_for('static', filename='이용 확정 가이드 사진/체험 수정 1.png') }}" class="d-block w-100">
+                    <img src="{{ url_for('static', filename='main photo/체험 수정 1.png') }}" class="d-block w-100">
                 </div>
                 <div class="carousel-item">
                     <h3 class="carousel-title">예약 확정</h3>
-                    <img src="{{ url_for('static', filename='이용 확정 가이드 사진/예약확정 1.png') }}" class="d-block w-100">
+                    <img src="{{ url_for('static', filename='main photo/예약확정 1.png') }}" class="d-block w-100">
                 </div>
                 <div class="carousel-item">
                     <h3 class="carousel-title">문의사항</h3>
-                    <img src="{{ url_for('static', filename='이용 확정 가이드 사진/문의사항 1.png') }}" class="d-block w-100">
+                    <img src="{{ url_for('static', filename='main photo/문의사항 1.png') }}" class="d-block w-100">
                 </div>
             </div>
             <a class="carousel-control-prev" href="#how-to-use-carousel" role="button" data-slide="prev">
@@ -185,4 +185,37 @@
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Modal functionality
+    function setupModal(btnId, modalId, closeBtnId) {
+        const modal = document.getElementById(modalId);
+        const btn = document.getElementById(btnId);
+        const closeBtn = document.getElementById(closeBtnId);
+
+        if (btn) {
+            btn.onclick = function() {
+                modal.style.display = "block";
+            }
+        }
+
+        if (closeBtn) {
+            closeBtn.onclick = function() {
+                modal.style.display = "none";
+            }
+        }
+
+        window.onclick = function(event) {
+            if (event.target == modal) {
+                modal.style.display = "none";
+            }
+        }
+    }
+
+    // Setup for the two modals
+    setupModal('farmer-guide-popup-btn', 'farmer-guide-popup-modal', 'farmer-guide-popup-close');
+    setupModal('farmer-how-to-use-btn', 'farmer-how-to-use-modal', 'farmer-how-to-use-close');
+});
+</script>
 {% endblock %}

@@ -76,3 +76,21 @@
     images=carousel_images
 ) }}
 {% endblock %}
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var modalElement = document.getElementById('easy-how-to-use-modal');
+    
+    if (modalElement) {
+        
+        $(modalElement).on('shown.bs.modal', function () {
+            var carouselElement = document.getElementById('guide-carousel-modal');
+            
+            if (carouselElement) {
+                $(carouselElement).carousel(0); 
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

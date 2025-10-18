@@ -42,7 +42,7 @@
                     <p><strong>📍 위치:</strong> {{ item.address_detail }}</p>
                     <p><strong>🌿 친환경:</strong> {{ "예" if item.pesticide_free else "아니오" }}</p>
                     <p><strong>👥 모집 인원:</strong> {{ item.current_participants }} / {{ item.max_participants }}명</p>
-                    <p><strong>⏳ 모집 마감:</strong> D-{{ item.d_day }} ({{ item.end_date.strftime('%Y-%m-%d') }})</p>
+                    <p><strong>⏳ 모집 마감:</strong> D-{{ item.d_day }} {% if item.end_date %}({{ item.end_date.strftime('%Y-%m-%d') }}){% endif %}</p>
                 </div>
                 <div class="buy-box-price">
                     <h2 class="font-weight-bold">{{ "{:,}".format(item.cost) }}원 <small class="text-muted">/ 1인</small></h2>

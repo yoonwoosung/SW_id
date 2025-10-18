@@ -6,23 +6,34 @@ document.addEventListener('DOMContentLoaded', function() {
         const modal = document.getElementById(modalId);
         const btn = document.getElementById(btnId);
         const closeBtn = document.getElementById(closeBtnId);
+        const carousel = modal ? modal.querySelector('.carousel') : null;
 
         if (btn && modal) {
             btn.onclick = function(e) {
                 e.preventDefault();
                 modal.style.display = "block";
+                if (carousel) {
+                    $(carousel).carousel('cycle');
+                }
             }
         }
 
-        if (closeBtn && modal) {
-            closeBtn.onclick = function() {
+        function closeModal() {
+            if (modal) {
                 modal.style.display = "none";
+                if (carousel) {
+                    $(carousel).carousel('pause');
+                }
             }
+        }
+
+        if (closeBtn) {
+            closeBtn.onclick = closeModal;
         }
 
         window.addEventListener('click', function(event) {
             if (event.target == modal) {
-                modal.style.display = "none";
+                closeModal();
             }
         });
     }

@@ -1,0 +1,32 @@
+{% macro guide_popup_modal(modal_id, close_btn_id, image_filename, alt_text='이용가이드') %}
+<div id="{{ modal_id }}" class="modal">
+    <div class="modal-content" style="max-width: 800px; text-align: center;">
+        <span class="close-btn" id="{{ close_btn_id }}">&times;</span>
+        <img src="{{ url_for('static', filename=image_filename) }}" class="img-fluid" alt="{{ alt_text }}">
+    </div>
+</div>
+{% endmacro %}
+
+{% macro how_to_use_carousel_modal(modal_id, close_btn_id, carousel_id, images) %}
+<div id="{{ modal_id }}" class="modal">
+    <div class="modal-content modal-fullscreen">
+        <span class="close-btn" id="{{ close_btn_id }}">&times;</span>
+        <div id="{{ carousel_id }}" class="carousel slide h-100" data-ride="carousel" data-interval="false">
+            <div class="carousel-inner">
+                {% for image in images %}
+                <div class="carousel-item {% if loop.first %}active{% endif %}">
+                    <h3 class="carousel-title">{{ image.title }}</h3>
+                    <img src="{{ url_for('static', filename=image.src) }}" class="d-block w-100">
+                </div>
+                {% endfor %}
+            </div>
+            <a class="carousel-control-prev" href="#{{ carousel_id }}" role="button" data-slide="prev">
+                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+            </a>
+            <a class="carousel-control-next" href="#{{ carousel_id }}" role="button" data-slide="next">
+                <span class="carousel-control-next-icon" aria-hidden="true"></span>
+            </a>
+        </div>
+    </div>
+</div>
+{% endmacro %}

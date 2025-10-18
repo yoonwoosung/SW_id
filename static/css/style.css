@@ -1519,7 +1519,7 @@ body.scroll-lock {
     flex-direction: column;
 }
 
-.modal-fullscreen .carousel-item {
+.modal-fullscreen .carousel-item.active {
     display: flex;
     justify-content: center;
     align-items: center;

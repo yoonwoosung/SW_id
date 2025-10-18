@@ -1558,7 +1558,11 @@ body.scroll-lock {
 /* --- 6. '쉬운 농장 관리' 이용방법 모달 수정 --- */
 /* 레이아웃 깨짐 방지: 캡션의 기준이 되도록 position: relative 추가 */
 #easy-how-to-use-modal .carousel-item {
-    position: relative;
+    position: relative; /* 캡션 위치 기준 */
+}
+
+/* 활성화된 슬라이드만 flex를 이용해 중앙 정렬 (슬라이드 기능 유지) */
+#easy-how-to-use-modal .carousel-item.active {
     display: flex;
     justify-content: center;
     align-items: center;

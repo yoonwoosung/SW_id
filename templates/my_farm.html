@@ -278,6 +278,20 @@
 <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // 다른 페이지에서 열린 '쉬운 이용방법' 모달이 남아있는 경우 강제로 닫습니다.
+    const easyModeModal = document.getElementById('easy-how-to-use-modal');
+    if (easyModeModal) {
+        easyModeModal.style.display = 'none';
+    }
+
+    const farmPhotoLabel = document.querySelector('.farm-photo-label');
+    if (farmPhotoLabel) {
+        farmPhotoLabel.addEventListener('click', function(e) {
+            e.preventDefault();
+            alert('사진을 변경하려면 '사진 바꾸기' 버튼을 이용해주세요.');
+        });
+    }
+
     const dataElement = document.getElementById('json-data');
     const jsonData = JSON.parse(dataElement.textContent || '{}');
     const reservationsData = jsonData.reservations || {};

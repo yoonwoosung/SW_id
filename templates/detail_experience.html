@@ -174,7 +174,7 @@
                             <div class="review-list">
                                 {% for review in reviews %}
                                 <div class="review-item">
-                                    <strong>{{ review.user.nickname }}</strong> <span class="text-muted">| {{ review.rating }}점</span>
+                                    <strong>{{ review.user.nickname if review.user else '알 수 없는 사용자' }}</strong> <span class="text-muted">| {{ review.rating }}점</span>
                                     <p>{{ review.content }}</p>
                                     <small class="text-muted">{{ review.timestamp.strftime('%Y-%m-%d') }}</small>
                                 </div>
@@ -199,7 +199,7 @@
                             <div class="review-list">
                                 {% for inquiry in inquiries %}
                                 <div class="review-item">
-                                    <strong>{{ inquiry.user.nickname }}</strong>
+                                    <strong>{{ inquiry.user.nickname if inquiry.user else '알 수 없는 사용자' }}</strong>
                                     <p>{{ inquiry.content }}</p>
                                     <small class="text-muted">{{ inquiry.timestamp.strftime('%Y-%m-%d') }}</small>
                                 </div>
@@ -301,17 +301,17 @@
     });
 </script>
 {% set carousel_images = [
-    'main photo/체험 만들기 1.png',
-    'main photo/체험 만들기 2.png',
-    'main photo/체험 만들기 3.png',
-    'main photo/체험 만들기 4.png',
-    'main photo/체험 만들기 5.png',
-    'main photo/체험 만들기 6.png',
-    'main photo/소개글 가이드 1.png',
-    'main photo/소개글 가이드 2.jpg',
-    'main photo/체험 수정 1.png',
-    'main photo/예약확정 1.png',
-    'main photo/문의사항 1.png'
+    'guide_images/1.png',
+    'guide_images/2.png',
+    'guide_images/3.png',
+    'guide_images/4.png',
+    'guide_images/5.png',
+    'guide_images/6.png',
+    'guide_images/7.png',
+    'guide_images/8.jpg',
+    'guide_images/9.png',
+    'guide_images/10.png',
+    'guide_images/11.png'
 ] %}
 {{ how_to_use_carousel_modal(modal_id='guide-modal', close_btn_id='guide-modal-close', carousel_id='guide-carousel-modal', title='확대보기에서 이용방법', images=carousel_images) }}
 

@@ -273,6 +273,93 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    // --- Guide Modal for detail_experience.html ---
+    const guideModal = document.getElementById('guide-modal');
+    const guideModalBtn = document.getElementById('guide-modal-btn');
+    const guideModalClose = document.getElementById('guide-modal-close');
+
+    if (guideModalBtn) {
+        guideModalBtn.addEventListener('click', function() {
+            if (guideModal) guideModal.style.display = 'block';
+        });
+    }
+
+    if (guideModalClose) {
+        guideModalClose.addEventListener('click', function() {
+            if (guideModal) guideModal.style.display = 'none';
+        });
+    }
+
+    // --- Guide Popup Modal for detail_experience.html ---
+    const guidePopupModal = document.getElementById('guide-popup-modal');
+    const guidePopupBtn = document.getElementById('guide-popup-btn');
+    const guidePopupModalClose = document.getElementById('guide-popup-modal-close');
+
+    if (guidePopupBtn) {
+        guidePopupBtn.addEventListener('click', function() {
+            if (guidePopupModal) guidePopupModal.style.display = 'block';
+        });
+    }
+
+    if (guidePopupModalClose) {
+        guidePopupModalClose.addEventListener('click', function() {
+            if (guidePopupModal) guidePopupModal.style.display = 'none';
+        });
+    }
+
+    // --- Farmer Dashboard Modals ---
+    const farmerGuidePopupModal = document.getElementById('farmer-guide-popup-modal');
+    const farmerGuidePopupBtn = document.getElementById('farmer-guide-popup-btn');
+    const farmerGuidePopupClose = document.getElementById('farmer-guide-popup-close');
+
+    if (farmerGuidePopupBtn) {
+        farmerGuidePopupBtn.addEventListener('click', function() {
+            if (farmerGuidePopupModal) farmerGuidePopupModal.style.display = 'block';
+        });
+    }
+
+    if (farmerGuidePopupClose) {
+        farmerGuidePopupClose.addEventListener('click', function() {
+            if (farmerGuidePopupModal) farmerGuidePopupModal.style.display = 'none';
+        });
+    }
+
+    const farmerHowToUseModal = document.getElementById('farmer-how-to-use-modal');
+    const farmerHowToUseBtn = document.getElementById('farmer-how-to-use-btn');
+    const farmerHowToUseClose = document.getElementById('farmer-how-to-use-close');
+
+    if (farmerHowToUseBtn) {
+        farmerHowToUseBtn.addEventListener('click', function() {
+            if (farmerHowToUseModal) farmerHowToUseModal.style.display = 'block';
+        });
+    }
+
+    if (farmerHowToUseClose) {
+        farmerHowToUseClose.addEventListener('click', function() {
+            if (farmerHowToUseModal) {
+                farmerHowToUseModal.style.display = 'none';
+                // Stop carousel video from playing in the background if any
+                $('#how-to-use-carousel').carousel('pause');
+            }
+        });
+    }
+
+    window.addEventListener('click', function(event) {
+        if (event.target == guideModal) {
+            guideModal.style.display = 'none';
+        }
+        if (event.target == guidePopupModal) {
+            guidePopupModal.style.display = 'none';
+        }
+        if (event.target == farmerGuidePopupModal) {
+            farmerGuidePopupModal.style.display = 'none';
+        }
+        if (event.target == farmerHowToUseModal) {
+            farmerHowToUseModal.style.display = 'none';
+            $('#how-to-use-carousel').carousel('pause');
+        }
+    });
+
 }); // DOMContentLoaded end
 
 // --- 체험 삭제 확인 함수 ---

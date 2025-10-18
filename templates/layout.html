@@ -25,7 +25,7 @@
             <i class="fa-solid fa-bars"></i> <i class="fa-solid fa-xmark"></i> </button>
         
         <nav class="user-menu" id="user-menu">
-            {% if session.get('role') == 'farmer' %}
+            {% if session.get('role') == 'farmer' and session.get('view_mode') != 'easy' %}
                 <a href="#" data-toggle="modal" data-target="#guide-modal">이용 가이드</a>
             {% endif %}
             {% if session.get('user_id') %}

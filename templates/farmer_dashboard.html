@@ -1,9 +1,95 @@
 {% extends "layout.html" %}
 {% block content %}
+<style>
+    .dashboard-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+    }
+    .dashboard-header .btn-group {
+        display: flex;
+        gap: 10px;
+    }
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 1050;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        overflow: auto;
+        background-color: rgba(0,0,0,0.8);
+    }
+    .modal-content {
+        background-color: #fefefe;
+        margin: 5% auto;
+        padding: 25px;
+        border: 1px solid #888;
+        width: 90%;
+        max-width: 900px;
+        position: relative;
+        border-radius: 10px;
+    }
+    .modal-content.modal-fullscreen {
+        max-width: 95%;
+        height: 90%;
+        display: flex;
+        flex-direction: column;
+    }
+    .close-btn {
+        color: #555;
+        position: absolute;
+        top: 15px;
+        right: 30px;
+        font-size: 40px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: color 0.3s;
+    }
+    .close-btn:hover,
+    .close-btn:focus {
+        color: #000;
+    }
+    #farmer-how-to-use-modal .carousel-item {
+        text-align: center;
+    }
+    #farmer-how-to-use-modal .carousel-title {
+        font-size: 2.5rem;
+        font-weight: bold;
+        margin-bottom: 1rem;
+        color: #333;
+    }
+    #farmer-how-to-use-modal .carousel-inner {
+        height: 100%;
+    }
+    #farmer-how-to-use-modal .carousel-item img {
+        max-height: 65vh;
+        object-fit: contain;
+        margin: 0 auto;
+    }
+    #farmer-how-to-use-modal .carousel-control-prev,
+    #farmer-how-to-use-modal .carousel-control-next {
+        width: 5%;
+        background-color: rgba(0, 0, 0, 0.3);
+    }
+    #farmer-how-to-use-modal .carousel-control-prev-icon,
+    #farmer-how-to-use-modal .carousel-control-next-icon {
+        width: 50px;
+        height: 50px;
+        background-size: 100%, 100%;
+    }
+</style>
+
 <div class="container">
     <div class="dashboard-header">
         <h2>나의 농장 목록 🧑‍🌾</h2>
-        <a href="{{ url_for('farmer_register') }}" class="btn-register">새 체험 등록하기 +</a>
+        <div class="btn-group">
+            <button type="button" class="btn btn-info" id="farmer-guide-popup-btn">이용가이드</button>
+            <button type="button" class="btn btn-primary" id="farmer-how-to-use-btn">이용방법</button>
+            <a href="{{ url_for('farmer_register') }}" class="btn btn-success">새 체험 등록하기 +</a>
+        </div>
     </div>
 
     {% if listings %}
@@ -12,7 +98,8 @@
             <span>작물명</span><span>위치</span><span>가격</span><span>모집현황</span>
         </div>
         {% for item in listings %}
-        <a href="#" class="list-item">  <span><strong>{{ item.crop }}</strong><br>#{{ "친환경" if item.pesticide_free else "일반" }}</span>
+        <a href="{{ url_for('detail_experience', item_id=item.id) }}" class="list-item">
+            <span><strong>{{ item.crop }}</strong><br>#{{ "친환경" if item.pesticide_free else "일반" }}</span>
             <span>{{ item.location }}</span>
             <span>{{ "{:,}".format(item.cost) }}원</span>
             <span class="d-day {% if item.d_day < 5 %}imminent{% endif %}">
@@ -28,5 +115,74 @@
         <p>'새 체험 등록하기' 버튼을 눌러 첫 체험을 등록해보세요!</p>
     </div>
     {% endif %}
+</div>
+
+<!-- Usage Guide Modal -->
+<div id="farmer-guide-popup-modal" class="modal">
+    <div class="modal-content" style="max-width: 800px; text-align: center;">
+        <span class="close-btn" id="farmer-guide-popup-close">&times;</span>
+        <img src="{{ url_for('static', filename='이용가이드 이미지.png') }}" class="img-fluid" alt="이용가이드">
+    </div>
+</div>
+
+<!-- How to Use Modal -->
+<div id="farmer-how-to-use-modal" class="modal">
+    <div class="modal-content modal-fullscreen">
+        <span class="close-btn" id="farmer-how-to-use-close">&times;</span>
+        <div id="how-to-use-carousel" class="carousel slide h-100" data-ride="carousel" data-interval="false">
+            <div class="carousel-inner">
+                <div class="carousel-item active">
+                    <h3 class="carousel-title">소개글 가이드</h3>
+                    <img src="{{ url_for('static', filename='이용 확정 가이드 사진/소개글 가이드 1.png') }}" class="d-block w-100">
+                </div>
+                <div class="carousel-item">
+                    <h3 class="carousel-title">소개글 가이드</h3>
+                    <img src="{{ url_for('static', filename='이용 확정 가이드 사진/소개글 가이드 2.jpg') }}" class="d-block w-100">
+                </div>
+                <div class="carousel-item">
+                    <h3 class="carousel-title">체험 만들기</h3>
+                    <img src="{{ url_for('static', filename='이용 확정 가이드 사진/체험 만들기 1.png') }}" class="d-block w-100">
+                </div>
+                <div class="carousel-item">
+                    <h3 class="carousel-title">체험 만들기</h3>
+                    <img src="{{ url_for('static', filename='이용 확정 가이드 사진/체험 만들기 2.png') }}" class="d-block w-100">
+                </div>
+                <div class="carousel-item">
+                    <h3 class="carousel-title">체험 만들기</h3>
+                    <img src="{{ url_for('static', filename='이용 확정 가이드 사진/체험 만들기 3.png') }}" class="d-block w-100">
+                </div>
+                <div class="carousel-item">
+                    <h3 class="carousel-title">체험 만들기</h3>
+                    <img src="{{ url_for('static', filename='이용 확정 가이드 사진/체험 만들기 4.png') }}" class="d-block w-100">
+                </div>
+                <div class="carousel-item">
+                    <h3 class="carousel-title">체험 만들기</h3>
+                    <img src="{{ url_for('static', filename='이용 확정 가이드 사진/체험 만들기 5.png') }}" class="d-block w-100">
+                </div>
+                <div class="carousel-item">
+                    <h3 class="carousel-title">체험 만들기</h3>
+                    <img src="{{ url_for('static', filename='이용 확정 가이드 사진/체험 만들기 6.png') }}" class="d-block w-100">
+                </div>
+                <div class="carousel-item">
+                    <h3 class="carousel-title">체험 수정</h3>
+                    <img src="{{ url_for('static', filename='이용 확정 가이드 사진/체험 수정 1.png') }}" class="d-block w-100">
+                </div>
+                <div class="carousel-item">
+                    <h3 class="carousel-title">예약 확정</h3>
+                    <img src="{{ url_for('static', filename='이용 확정 가이드 사진/예약확정 1.png') }}" class="d-block w-100">
+                </div>
+                <div class="carousel-item">
+                    <h3 class="carousel-title">문의사항</h3>
+                    <img src="{{ url_for('static', filename='이용 확정 가이드 사진/문의사항 1.png') }}" class="d-block w-100">
+                </div>
+            </div>
+            <a class="carousel-control-prev" href="#how-to-use-carousel" role="button" data-slide="prev">
+                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+            </a>
+            <a class="carousel-control-next" href="#how-to-use-carousel" role="button" data-slide="next">
+                <span class="carousel-control-next-icon" aria-hidden="true"></span>
+            </a>
+        </div>
+    </div>
 </div>
 {% endblock %}

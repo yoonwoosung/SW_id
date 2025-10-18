@@ -45,30 +45,7 @@
                 <p>손님들 이야기들 듣고 답해요</p>
             </div>
         </a>
-        <a href="javascript:void(0)" id="easy-how-to-use-btn" class="easy-menu-button">
-            <div class="easy-button-icon">❓</div>
-            <div class="easy-button-text">
-                <h2>이용<br>방법</h2>
-                <p>사용법을 안내해 드려요</p>
-            </div>
-        </a>
     </div>
 </div>
-
-{% set carousel_images = [
-
-    {'title': '소개글 가이드', 'src': 'guide_images/7.png'},
-    {'title': '소개글 가이드', 'src': 'guide_images/8.jpg'},
-    {'title': '체험 만들기', 'src': 'guide_images/1.png'},
-    {'title': '체험 만들기', 'src': 'guide_images/2.png'},
-    {'title': '체험 만들기', 'src': 'guide_images/3.png'},
-    {'title': '체험 만들기', 'src': 'guide_images/4.png'},
-    {'title': '체험 만들기', 'src': 'guide_images/5.png'},
-    {'title': '체험 만들기', 'src': 'guide_images/6.png'},
-    {'title': '체험 수정', 'src': 'guide_images/9.png'},
-    {'title': '예약 확정', 'src': 'guide_images/10.png'},
-    {'title': '문의사항', 'src': 'guide_images/11.png'}
-] %}
-{{ how_to_use_carousel_modal(modal_id='easy-how-to-use-modal', close_btn_id='easy-how-to-use-close', carousel_id='easy-how-to-use-carousel', images=carousel_images) }}
 
 {% endblock %}

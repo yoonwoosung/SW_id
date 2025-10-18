@@ -13,7 +13,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 e.preventDefault();
                 modal.style.display = "block";
                 if (carousel) {
-                    $(carousel).carousel('pause');
+                    $(carousel).carousel(0);
+                    $(carousel).carousel({
+                        interval: false
+                    });
                 }
             }
         }

@@ -110,6 +110,7 @@
                 <div class="card-body">
                     <h3 class="card-title">농장주 프로필 🧑‍🌾</h3>
                      <div class="d-flex align-items-start">
+                        {% if item.farmer %}
                         <div class="text-center mr-4" style="width: 90px;">
                             <img src="{{ url_for('static', filename='uploads/' + item.farmer.profile_image) }}" alt="{{ item.farmer.nickname }}" class="img-fluid rounded-circle mb-2" style="width: 80px; height: 80px; object-fit: cover;">
                             <h6 class="mb-0" style="font-weight: bold;">{{ item.farmer.nickname }}</h6>
@@ -117,6 +118,15 @@
                         <div class="flex-grow-1" style="padding-top: 10px;">
                             <p class="text-muted" style="font-size: 0.9rem; margin-bottom: 5px;">"{{ item.farmer.profile_bio | default('한 줄 소개가 없습니다.', true) }}"</p>
                         </div>
+                        {% else %}
+                        <div class="text-center mr-4" style="width: 90px;">
+                            <img src="{{ url_for('static', filename='uploads/shd.png') }}" alt="탈퇴한 사용자" class="img-fluid rounded-circle mb-2" style="width: 80px; height: 80px; object-fit: cover;">
+                            <h6 class="mb-0" style="font-weight: bold;">탈퇴한 사용자</h6>
+                        </div>
+                        <div class="flex-grow-1" style="padding-top: 10px;">
+                            <p class="text-muted" style="font-size: 0.9rem; margin-bottom: 5px;">"사용자 정보를 찾을 수 없습니다."</p>
+                        </div>
+                        {% endif %}
                     </div>
                 </div>
             </div>
@@ -291,17 +301,17 @@
     });
 </script>
 {% set carousel_images = [
-    '이용 확정 가이드 사진/체험 만들기 1.png',
-    '이용 확정 가이드 사진/체험 만들기 2.png',
-    '이용 확정 가이드 사진/체험 만들기 3.png',
-    '이용 확정 가이드 사진/체험 만들기 4.png',
-    '이용 확정 가이드 사진/체험 만들기 5.png',
-    '이용 확정 가이드 사진/체험 만들기 6.png',
-    '이용 확정 가이드 사진/소개글 가이드 1.png',
-    '이용 확정 가이드 사진/소개글 가이드 2.jpg',
-    '이용 확정 가이드 사진/체험 수정 1.png',
-    '이용 확정 가이드 사진/예약확정 1.png',
-    '이용 확정 가이드 사진/문의사항 1.png'
+    'main photo/체험 만들기 1.png',
+    'main photo/체험 만들기 2.png',
+    'main photo/체험 만들기 3.png',
+    'main photo/체험 만들기 4.png',
+    'main photo/체험 만들기 5.png',
+    'main photo/체험 만들기 6.png',
+    'main photo/소개글 가이드 1.png',
+    'main photo/소개글 가이드 2.jpg',
+    'main photo/체험 수정 1.png',
+    'main photo/예약확정 1.png',
+    'main photo/문의사항 1.png'
 ] %}
 {{ how_to_use_carousel_modal(modal_id='guide-modal', close_btn_id='guide-modal-close', carousel_id='guide-carousel-modal', title='확대보기에서 이용방법', images=carousel_images) }}
 

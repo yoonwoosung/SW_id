@@ -17,6 +17,13 @@
                 <p>농장과 농장주님을 소개해요</p>
             </div>
         </a>
+        <a href="#" class="easy-menu-button" data-toggle="modal" data-target="#easy-how-to-use-modal">
+            <div class="easy-button-icon">❓</div>
+            <div class="easy-button-text">
+                <h2>이용<br>방법</h2>
+                <p>쉬운 농장 관리 사용법</p>
+            </div>
+        </a>
         <a href="{{ url_for('easy_create_experience') }}" class="easy-menu-button">
             <div class="easy-button-icon">➕</div>
             <div class="easy-button-text">
@@ -45,13 +52,7 @@
                 <p>손님들 이야기들 듣고 답해요</p>
             </div>
         </a>
-        <a href="#" class="easy-menu-button" data-toggle="modal" data-target="#guide-modal">
-            <div class="easy-button-icon">❓</div>
-            <div class="easy-button-text">
-                <h2>이용<br>방법</h2>
-                <p>쉬운 농장 관리 사용법</p>
-            </div>
-        </a>
+        
     </div>
 </div>
 
@@ -68,7 +69,12 @@
     {'src': 'guide_images/10.png'},
     {'src': 'guide_images/11.png'}
 ] %}
-{{ how_to_use_carousel_modal(modal_id='guide-modal', close_btn_id='guide-modal-close', carousel_id='guide-carousel-modal', images=carousel_images) }}
+{{ how_to_use_carousel_modal(
+    modal_id='easy-how-to-use-modal',
+    close_btn_id='easy-how-to-use-close',
+    carousel_id='guide-carousel-modal', 
+    images=carousel_images
+) }}
 
 <style>
 .modal-fullscreen .modal-content {

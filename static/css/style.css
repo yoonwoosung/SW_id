@@ -1517,7 +1517,7 @@ body.scroll-lock {
     font-weight: 600;
 }
 
-/* --- 쉬운 모드 가이드 모달 스타일 (modal.css 덮어쓰기) --- */
+/* --- 쉬운 모d드 가이드 모달 스타일 (modal.css 덮어쓰기) --- */
 
 /* 1. 모달 배경 (하얀 박스 제거 -> 어두운 전체 화면) */
 #easy-how-to-use-modal .modal-content.modal-fullscreen {
@@ -1528,17 +1528,22 @@ body.scroll-lock {
     max-width: 100%; /* modal.css 95% 덮어쓰기 */
     border: none;
     border-radius: 0;
-    background-color: #2c2c2c; /* 어두운 배경색 */
+    background-color: transparent; /* 이미지 뒤 어두운 배경 제거 */
     box-shadow: none;
     position: relative; 
 }
 
-/* 2. 캐러셀 배경 (하얀색 제거) */
+/* 2. 캐러셀 아이템 (중요!) */
 #easy-how-to-use-modal .carousel-item {
     background-color: transparent; /* modal.css 흰색 배경 덮어쓰기 */
     height: 100%;
-    
-    /* 3. 이미지 중앙 정렬 (가장 중요) */
+    /* [수정] 여기서 display: flex를 제거합니다.
+       Bootstrap이 슬라이드마다 display: block/none을 제어해야 합니다.
+    */
+}
+
+/* 3. [수정] '활성화된' 캐러셀 아이템만 flex로 중앙 정렬 */
+#easy-how-to-use-modal .carousel-item.active {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1551,7 +1556,7 @@ body.scroll-lock {
     max-width: 90vw;  /* 화면 너비의 90% */
     max-height: 90vh; /* 화면 높이의 90% */
     object-fit: contain;
-    display: inline-block; /* d-block(block) 속성 덮어쓰기 */
+    display: inline-block; 
 }
 
 /* 5. X 닫기 버튼 (오른쪽 위, 크고 하얗게) */

@@ -25,6 +25,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     $(carousel).carousel('pause');
                 }
             }
+            document.body.classList.remove('scroll-lock');
         }
 
         if (closeBtn) {

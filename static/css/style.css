@@ -1554,25 +1554,3 @@ body.scroll-lock {
     font-size: 1.3rem;
     font-weight: 600;
 }
-
-/* --- 6. '쉬운 농장 관리' 이용방법 모달 수정 --- */
-/* 레이아웃 깨짐 방지: 캡션의 기준이 되도록 position: relative 추가 */
-#easy-how-to-use-modal .carousel-item {
-    position: relative; /* 캡션 위치 기준 */
-}
-
-/* 활성화된 슬라이드만 flex를 이용해 중앙 정렬 (슬라이드 기능 유지) */
-#easy-how-to-use-modal .carousel-item.active {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
-/* 이미지 흐림 방지: 이미지가 컨테이너에 맞춰지되 원본 크기를 넘지 않도록 설정 */
-#easy-how-to-use-modal .carousel-item img {
-    max-width: 100%;
-    max-height: 100%;
-    width: auto;
-    height: auto;
-    object-fit: contain; /* 이미지 비율을 유지하며 컨테이너 안에 맞춤 */
-}

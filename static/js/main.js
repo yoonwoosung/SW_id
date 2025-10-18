@@ -44,7 +44,6 @@ document.addEventListener('DOMContentLoaded', function() {
     setupModal('guide-popup-btn', 'guide-popup-modal', 'guide-popup-modal-close');
     setupModal('farmer-guide-popup-btn', 'farmer-guide-popup-modal', 'farmer-guide-popup-close');
     setupModal('farmer-how-to-use-btn', 'farmer-how-to-use-modal', 'farmer-how-to-use-close');
-    setupModal('easy-how-to-use-btn', 'easy-how-to-use-modal', 'easy-how-to-use-close');
     setupModal('view-terms-link', 'terms-modal', 'modal-close');
 
 

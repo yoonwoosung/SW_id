@@ -342,26 +342,6 @@ header.header-volunteer {
     border: 1px solid #dee2e6;
 }
 
-.modal-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.5);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
-}
-
-.modal-content {
-    background: white;
-    padding: 2rem;
-    border-radius: 8px;
-    width: 400px;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-}
 
 #modal-summary p {
     margin: 0.5rem 0;
@@ -1164,29 +1144,6 @@ body.scroll-lock {
 .profile-nickname strong {
     font-size: 1.5rem;
     font-weight: 600;
-}
-
-.modal-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.6);
-    z-index: 1050;
-    display: none;
-
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
-.modal-content {
-    background: white;
-    padding: 2rem;
-    border-radius: 8px;
-    width: 90%;
-    max-width: 800px;
 }
 
 .buy-box-card {

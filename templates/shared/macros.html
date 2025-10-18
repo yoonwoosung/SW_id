@@ -11,16 +11,12 @@
 <div id="{{ modal_id }}" class="modal">
     <div class="modal-content modal-fullscreen">
         <span class="close-btn" id="{{ close_btn_id }}" data-dismiss="modal" style="z-index: 1060; top: 20px; right: 20px; color: white; text-shadow: 0 0 5px black;">&times;</span>
+        
         <div id="{{ carousel_id }}" class="carousel slide h-100" data-ride="carousel" data-interval="false">
             <div class="carousel-inner h-100">
                 {% for image in images %}
                 <div class="carousel-item h-100 {% if loop.first %}active{% endif %}">
 
-                    {% if image.title %}
-                    <div class="carousel-caption d-none d-md-block" style="position: absolute; top: 10px; color: black; background-color: rgba(255, 255, 255, 0.7); border-radius: 5px; padding: 5px 10px;">
-                        <h5 class="mb-0">{{ image.title }}</h5>
-                    </div>
-                    {% endif %}
                     <img src="{{ url_for('static', filename=image.src) }}" class="d-block">
 
                 </div>

@@ -1,5 +1,8 @@
 {% extends "layout.html" %}
+{% from 'shared/macros.html' import guide_popup_modal, how_to_use_carousel_modal %}
+
 {% block content %}
+
 <div class="container detail-container mt-4">
 
     <div class="row mb-5">
@@ -39,7 +42,7 @@
                     <p><strong>📍 위치:</strong> {{ item.address_detail }}</p>
                     <p><strong>🌿 친환경:</strong> {{ "예" if item.pesticide_free else "아니오" }}</p>
                     <p><strong>👥 모집 인원:</strong> {{ item.current_participants }} / {{ item.max_participants }}명</p>
-                    <p><strong>⏳ 모집 마감:</strong> D-{{ item.d_day }} ({{ item.end_date.strftime('%Y-%m-%d') }})</p>
+                    <p><strong>⏳ 모집 마감:</strong> D-{{ item.d_day }} {% if item.end_date %}({{ item.end_date.strftime('%Y-%m-%d') }}){% endif %}</p>
                 </div>
                 <div class="buy-box-price">
                     <h2 class="font-weight-bold">{{ "{:,}".format(item.cost) }}원 <small class="text-muted">/ 1인</small></h2>
@@ -107,6 +110,7 @@
                 <div class="card-body">
                     <h3 class="card-title">농장주 프로필 🧑‍🌾</h3>
                      <div class="d-flex align-items-start">
+                        {% if item.farmer %}
                         <div class="text-center mr-4" style="width: 90px;">
                             <img src="{{ url_for('static', filename='uploads/' + item.farmer.profile_image) }}" alt="{{ item.farmer.nickname }}" class="img-fluid rounded-circle mb-2" style="width: 80px; height: 80px; object-fit: cover;">
                             <h6 class="mb-0" style="font-weight: bold;">{{ item.farmer.nickname }}</h6>
@@ -114,6 +118,15 @@
                         <div class="flex-grow-1" style="padding-top: 10px;">
                             <p class="text-muted" style="font-size: 0.9rem; margin-bottom: 5px;">"{{ item.farmer.profile_bio | default('한 줄 소개가 없습니다.', true) }}"</p>
                         </div>
+                        {% else %}
+                        <div class="text-center mr-4" style="width: 90px;">
+                            <img src="{{ url_for('static', filename='uploads/shd.png') }}" alt="탈퇴한 사용자" class="img-fluid rounded-circle mb-2" style="width: 80px; height: 80px; object-fit: cover;">
+                            <h6 class="mb-0" style="font-weight: bold;">탈퇴한 사용자</h6>
+                        </div>
+                        <div class="flex-grow-1" style="padding-top: 10px;">
+                            <p class="text-muted" style="font-size: 0.9rem; margin-bottom: 5px;">"사용자 정보를 찾을 수 없습니다."</p>
+                        </div>
+                        {% endif %}
                     </div>
                 </div>
             </div>
@@ -161,7 +174,7 @@
                             <div class="review-list">
                                 {% for review in reviews %}
                                 <div class="review-item">
-                                    <strong>{{ review.user.nickname }}</strong> <span class="text-muted">| {{ review.rating }}점</span>
+                                    <strong>{{ review.user.nickname if review.user else '알 수 없는 사용자' }}</strong> <span class="text-muted">| {{ review.rating }}점</span>
                                     <p>{{ review.content }}</p>
                                     <small class="text-muted">{{ review.timestamp.strftime('%Y-%m-%d') }}</small>
                                 </div>
@@ -186,7 +199,7 @@
                             <div class="review-list">
                                 {% for inquiry in inquiries %}
                                 <div class="review-item">
-                                    <strong>{{ inquiry.user.nickname }}</strong>
+                                    <strong>{{ inquiry.user.nickname if inquiry.user else '알 수 없는 사용자' }}</strong>
                                     <p>{{ inquiry.content }}</p>
                                     <small class="text-muted">{{ inquiry.timestamp.strftime('%Y-%m-%d') }}</small>
                                 </div>
@@ -287,4 +300,21 @@
         }
     });
 </script>
+{% set carousel_images = [
+    'guide_images/1.png',
+    'guide_images/2.png',
+    'guide_images/3.png',
+    'guide_images/4.png',
+    'guide_images/5.png',
+    'guide_images/6.png',
+    'guide_images/7.png',
+    'guide_images/8.jpg',
+    'guide_images/9.png',
+    'guide_images/10.png',
+    'guide_images/11.png'
+] %}
+{{ how_to_use_carousel_modal(modal_id='guide-modal', close_btn_id='guide-modal-close', carousel_id='guide-carousel-modal', title='확대보기에서 이용방법', images=carousel_images) }}
+
+{{ guide_popup_modal(modal_id='guide-popup-modal', close_btn_id='guide-popup-modal-close', image_filename='이용가이드 이미지.png') }}
+
 {% endblock %}

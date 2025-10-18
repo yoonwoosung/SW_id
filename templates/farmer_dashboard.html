@@ -1,9 +1,16 @@
 {% extends "layout.html" %}
+{% from 'shared/macros.html' import guide_popup_modal %}
+
 {% block content %}
+
 <div class="container">
     <div class="dashboard-header">
         <h2>나의 농장 목록 🧑‍🌾</h2>
-        <a href="{{ url_for('farmer_register') }}" class="btn-register">새 체험 등록하기 +</a>
+        <div class="btn-group">
+            <button type="button" class="btn btn-info" id="farmer-guide-popup-btn">이용가이드</button>
+            <button type="button" class="btn btn-primary" id="farmer-how-to-use-btn">이용방법</button>
+            <a href="{{ url_for('farmer_register') }}" class="btn btn-success">새 체험 등록하기 +</a>
+        </div>
     </div>
 
     {% if listings %}
@@ -12,7 +19,8 @@
             <span>작물명</span><span>위치</span><span>가격</span><span>모집현황</span>
         </div>
         {% for item in listings %}
-        <a href="#" class="list-item">  <span><strong>{{ item.crop }}</strong><br>#{{ "친환경" if item.pesticide_free else "일반" }}</span>
+        <a href="{{ url_for('detail_experience', item_id=item.id) }}" class="list-item">
+            <span><strong>{{ item.crop }}</strong><br>#{{ "친환경" if item.pesticide_free else "일반" }}</span>
             <span>{{ item.location }}</span>
             <span>{{ "{:,}".format(item.cost) }}원</span>
             <span class="d-day {% if item.d_day < 5 %}imminent{% endif %}">
@@ -29,4 +37,8 @@
     </div>
     {% endif %}
 </div>
+
+{{ guide_popup_modal(modal_id='farmer-guide-popup-modal', close_btn_id='farmer-guide-popup-close', image_filename='이용가이드 이미지.png') }}
+{{ guide_popup_modal(modal_id='farmer-how-to-use-modal', close_btn_id='farmer-how-to-use-close', image_filename='이용가이드 이미지.png', alt_text='이용방법') }}
+
 {% endblock %}

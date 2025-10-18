@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"/>
     <!-- <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}"> -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/modal.css') }}">
     <style>
         .timetable-wrapper {
             -webkit-user-select: none; /* Safari */
@@ -25,7 +26,7 @@
             <i class="fa-solid fa-bars"></i> <i class="fa-solid fa-xmark"></i> </button>
         
         <nav class="user-menu" id="user-menu">
-            {% if session.get('role') == 'farmer' %}
+            {% if session.get('role') == 'farmer' and session.get('view_mode') != 'easy' %}
                 <a href="#" data-toggle="modal" data-target="#guide-modal">이용 가이드</a>
             {% endif %}
             {% if session.get('user_id') %}
@@ -119,8 +120,15 @@
         <p class="mb-0">&copy; 2025 오늘의 밭. Farm to Link.</p>
     </footer>
     
+    {% set guide_images = [
+        ('1.png', '1. 체험 등록하기'),
+        ('2.png', '2. 체험 만들기'),
+        ('3.png', '3. 예약 확정'),
+        ('4.png', '4. 체험 수정'),
+        ('6.jpg', '5. 문의 확인')
+    ] %}
     <div id="guide-modal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="guideModalLabel" aria-hidden="true">
-        <div class="modal-dialog" role="document">
+        <div class="modal-dialog modal-lg" role="document">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="guideModalLabel">이용 가이드</h5>
@@ -129,7 +137,24 @@
                     </button>
                 </div>
                 <div class="modal-body">
-                    <img src="{{ url_for('static', filename='이용가이드 이미지.png') }}">
+                    <div id="guideCarousel" class="carousel slide" data-ride="carousel">
+                        <div class="carousel-inner">
+                            {% for image, title in guide_images %}
+                            <div class="carousel-item {% if loop.first %}active{% endif %}">
+                                <h5 class="text-center mb-3">{{ title }}</h5>
+                                <img src="{{ url_for('static', filename='uploads/' + image) }}" class="d-block w-100">
+                            </div>
+                            {% endfor %}
+                        </div>
+                        <a class="carousel-control-prev" href="#guideCarousel" role="button" data-slide="prev">
+                            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                            <span class="sr-only">Previous</span>
+                        </a>
+                        <a class="carousel-control-next" href="#guideCarousel" role="button" data-slide="next">
+                            <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                            <span class="sr-only">Next</span>
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>

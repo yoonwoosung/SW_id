@@ -7,12 +7,13 @@
 </div>
 {% endmacro %}
 
-{% macro how_to_use_carousel_modal(modal_id, close_btn_id, carousel_id, images) %}
+{% macro how_to_use_carousel_modal(modal_id, close_btn_id, carousel_id, images, title) %}
 <div id="{{ modal_id }}" class="modal">
     <div class="modal-content modal-fullscreen">
         <span class="close-btn" id="{{ close_btn_id }}" style="z-index: 1051;">&times;</span>
+        <h5 class="modal-title text-center my-3">{{ title }}</h5>
         <div id="{{ carousel_id }}" class="carousel slide h-100" data-ride="carousel" data-interval="false">
-            <div class="carousel-inner h-100">
+            <div class="carousel-inner h-100" style="height: calc(100% - 56px) !important;">
                 {% for image in images %}
                 <div class="carousel-item h-100 {% if loop.first %}active{% endif %}">
                     <img src="{{ url_for('static', filename=image) }}" class="d-block w-100 h-100" style="object-fit: contain;">

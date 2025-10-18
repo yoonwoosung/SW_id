@@ -18,9 +18,6 @@ document.addEventListener('DOMContentLoaded', function() {
         function closeModal() {
             if (modal) {
                 modal.style.display = "none";
-                if (carousel) {
-                    $(carousel).carousel('pause');
-                }
             }
             document.body.classList.remove('scroll-lock');
         }

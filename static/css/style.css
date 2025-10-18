@@ -1080,7 +1080,6 @@ body.scroll-lock {
     left: 0;
     width: 50%; /* 화면 전체 사용 */
     height: 50%; /* 화면 전체 사용 */
-    transform: none; /* 50% 변환 제거 */
     padding: 0 !important;
     margin: 0;
     overflow: hidden;

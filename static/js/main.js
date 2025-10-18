@@ -12,12 +12,6 @@ document.addEventListener('DOMContentLoaded', function() {
             btn.onclick = function(e) {
                 e.preventDefault();
                 modal.style.display = "block";
-                if (carousel) {
-                    $(carousel).carousel(0);
-                    $(carousel).carousel({
-                        interval: false
-                    });
-                }
             }
         }
 

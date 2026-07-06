@@ -444,9 +444,6 @@ def index():
             user_lon = request.args.get('lon', type=float)
 
             if user_lat and user_lon:
-                print(f"[{datetime.now()}] RECOMMENDATION: Starting sort for user at ({user_lat}, {user_lon})")
-                db_query_start_time = datetime.now()
-
                 # Bounding box filter to reduce items before expensive calculation
                 lat_range = 1.5
                 lon_range = 1.5
@@ -457,7 +454,6 @@ def index():
 
                 query = base_query.filter(Experience.current_participants < Experience.max_participants)
                 all_experiences = query.all()
-                print(f"[{datetime.now()}] RECOMMENDATION: DB query took {datetime.now() - db_query_start_time}")
 
                 # --- ▼ 여기가 생략되었던 추천순 정렬 로직입니다. ▼ ---
             

@@ -4,9 +4,9 @@
 - calculate_score(distance, max_p, current_p, is_specialty) -> float
 - matches_specialty(address_detail, crop) -> bool
 
-기존 공식을 확정(characterize)하는 테스트다. 지금 코드에 있는 동작을 "그대로"
-못박아, 이후 PR5에서 경계·예외를 고칠 때 무엇이 바뀌는지 드러나게 한다.
-(0 나눗셈·None 은 현재 '터지는' 동작을 문서화한다. PR5에서 '안전값'으로 바뀔 예정.)
+기존 공식을 확정(characterize)하는 테스트다.
+PR5 이후: max_p<=0 이면 availability_score 0, address_detail/crop None 이면 매칭 False 로
+방어하므로, 예전에 '터지던' 경계도 이제 안전값을 반환한다.
 """
 import pytest
 from app import calculate_score, matches_specialty
@@ -65,16 +65,16 @@ def test_weight_all_three():
 
 
 # --- 현재 '터지는' 경계 (PR5 이전 상태 문서화) ---
-def test_zero_max_participants_raises():
-    # max_participants=0 → (0-0)/0 → ZeroDivisionError (현재 동작). PR5에서 방어 예정.
-    with pytest.raises(ZeroDivisionError):
-        calculate_score(50, 0, 0, False)
+def test_zero_max_participants_returns_zero():
+    # PR5: max_p<=0 이면 availability_score를 0으로 방어 → 더 이상 터지지 않는다.
+    # distance=50 → distance_score 0, spec False → score 0.0
+    assert calculate_score(50, 0, 0, False) == pytest.approx(0.0)
 
 
-def test_none_address_detail_raises():
-    # address_detail=None → 'r in None' → TypeError (현재 동작). PR5에서 방어 예정.
-    with pytest.raises(TypeError):
-        matches_specialty(None, "쌀")
+def test_none_address_or_crop_returns_false():
+    # PR5: address_detail 또는 crop 이 None 이면 매칭 False 로 방어 → 더 이상 터지지 않는다.
+    assert matches_specialty(None, "쌀") is False
+    assert matches_specialty("이천", None) is False
 
 
 # --- matches_specialty 매칭 규칙 ---

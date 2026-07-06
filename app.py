@@ -192,6 +192,8 @@ def haversine(lat1, lon1, lat2, lon2):
 
 
 def matches_specialty(address_detail, crop):
+    if address_detail is None or crop is None:
+        return False
     for r, specialties in REGIONAL_SPECIALTIES.items():
         if r in address_detail and any(sc in crop for sc in specialties):
             return True
@@ -200,7 +202,10 @@ def matches_specialty(address_detail, crop):
 
 def calculate_score(distance, max_p, current_p, is_specialty):
     distance_score = max(0, 1 - (distance / 50))
-    availability_score = (max_p - current_p) / max_p
+    if max_p > 0:
+        availability_score = (max_p - current_p) / max_p
+    else:
+        availability_score = 0
     specialty_score = 1.0 if is_specialty else 0
     w1, w2, w3 = 0.5, 0.3, 0.2
     return (w1 * distance_score) + (w2 * specialty_score) + (w3 * availability_score)

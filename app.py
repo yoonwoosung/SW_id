@@ -191,6 +191,21 @@ def haversine(lat1, lon1, lat2, lon2):
     return distance
 
 
+def matches_specialty(address_detail, crop):
+    for r, specialties in REGIONAL_SPECIALTIES.items():
+        if r in address_detail and any(sc in crop for sc in specialties):
+            return True
+    return False
+
+
+def calculate_score(distance, max_p, current_p, is_specialty):
+    distance_score = max(0, 1 - (distance / 50))
+    availability_score = (max_p - current_p) / max_p
+    specialty_score = 1.0 if is_specialty else 0
+    w1, w2, w3 = 0.5, 0.3, 0.2
+    return (w1 * distance_score) + (w2 * specialty_score) + (w3 * availability_score)
+
+
 # --- 2. DB 모델(테이블) 정의 (farmer 기준으로 통합) ---
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -446,17 +461,8 @@ def index():
                     distance = haversine(user_lat, user_lon, exp.lat, exp.lng)
                     if distance > 150: continue
 
-                    distance_score = max(0, 1 - (distance / 50))
-                    availability_score = (exp.max_participants - exp.current_participants) / exp.max_participants
-                
-                    specialty_score = 0
-                    for r, specialties in REGIONAL_SPECIALTIES.items():
-                        if r in exp.address_detail and any(sc in exp.crop for sc in specialties):
-                            specialty_score = 1.0
-                            break
-                
-                    w1, w2, w3 = 0.5, 0.3, 0.2
-                    recommendation_score = (w1 * distance_score) + (w2 * specialty_score) + (w3 * availability_score)
+                    is_specialty = matches_specialty(exp.address_detail, exp.crop)
+                    recommendation_score = calculate_score(distance, exp.max_participants, exp.current_participants, is_specialty)
 
                     exp.recommendation_score = recommendation_score
                     exp.distance = distance

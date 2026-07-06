@@ -440,30 +440,6 @@ def index():
                 print(f"[{datetime.now()}] RECOMMENDATION: DB query took {datetime.now() - db_query_start_time}")
 
                 # --- ▼ 여기가 생략되었던 추천순 정렬 로직입니다. ▼ ---
-                ranking_start_time = datetime.now()
-                ranked_experiences = []
-                for exp in all_experiences:
-                    distance = haversine(user_lat, user_lon, exp.lat, exp.lng)
-                    if distance > 150: continue
-
-                    distance_score = max(0, 1 - (distance / 50))
-                    availability_score = (exp.max_participants - exp.current_participants) / exp.max_participants
-                
-                    specialty_score = 0
-                    for r, specialties in REGIONAL_SPECIALTIES.items():
-                        if r in exp.address_detail and any(sc in exp.crop for sc in specialties):
-                            specialty_score = 1.0
-                            break
-                
-                    w1, w2, w3 = 0.5, 0.3, 0.2
-                    recommendation_score = (w1 * distance_score) + (w2 * specialty_score) + (w3 * availability_score)
-
-                    exp.recommendation_score = recommendation_score
-                    exp.distance = distance
-                    ranked_experiences.append(exp)
-
-                sorted_items = sorted(ranked_experiences, key=lambda x: x.recommendation_score, reverse=True)
-                print(f"[{datetime.now()}] RECOMMENDATION: Ranking logic took {datetime.now() - ranking_start_time}")
             
                 ranked_experiences = []
                 for exp in all_experiences:

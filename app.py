@@ -651,7 +651,7 @@ def register_page():
 
         cert_pdf_filename = None
 
-        hashed_password = generate_password_hash(password)
+        hashed_password = generate_password_hash(password, method='pbkdf2:sha256')
 
         new_user = User(
             email=email, nickname=nickname, password=hashed_password,

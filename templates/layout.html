@@ -6,18 +6,37 @@
     <title>FarmLink</title>
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"/>
+    <!-- <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}"> -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/main.min.css" rel="stylesheet">
+    <style>
+        .timetable-wrapper {
+            -webkit-user-select: none; /* Safari */
+            -ms-user-select: none; /* IE 10+ */
+            user-select: none; /* Standard */
+        }
+    </style>
 </head>
 <body class="{% block page_class %}{% endblock %}">
     <header class="header-{{ session.get('role', 'experiencer') }}">
     <div class="container header-content">
         <a href="/" class="logo">FarmLink</a>
 
-        <nav class="user-menu">
+        <button class="hamburger-btn" type="button" aria-label="메뉴 토글">
+            <i class="fa-solid fa-bars"></i> <i class="fa-solid fa-xmark"></i> </button>
+        
+        <nav class="user-menu" id="user-menu">
+
             {% if session.get('user_id') %}
                 <strong>{{ session.get('nickname') }}</strong>님
                 {% if session.get('role') == 'farmer' %}
                     <a href="{{ url_for('index') }}">내 농장</a>
+                    <a href="{{ url_for('farmer_guide') }}">이용가이드</a>
+                    {% if session.get('view_mode') == 'easy' %}
+                        <a href="{{ url_for('toggle_view_mode') }}" class="view-mode-link">상세 보기</a>
+                    {% else %}
+                        <a href="{{ url_for('toggle_view_mode') }}" class="view-mode-link">크게 보기</a>
+                    {% endif %}
                 {% endif %}
                 <a href="{{ url_for('my_info') }}">내 정보</a>
                 <a href="{{ url_for('logout') }}">로그아웃</a>
@@ -54,7 +73,21 @@
                 <li data-target="#main-carousel" data-slide-to="2"></li>
             </ol>
             <div class="carousel-inner">
-                <div class="carousel-item active" style="background-image: url('https://images.unsplash.com/photo-1598512752271-33f913a53283?q=80&w=2070&auto=format&fit=crop');">
+                <div class="carousel-item active" style="background-image: url('https://images.unsplash.com/photo-1464226184884-fa280b87c399?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop');">
+                    <div class="carousel-caption">
+                        <h2>FarmLink가 처음이신가요? 🌱</h2>
+                        <p>농장 체험 예약부터 결제까지, 사이트 이용 방법을 알려드려요.</p>
+                        <a href="{{ url_for('guide_page') }}" class="btn btn-lg btn-success">가이드 보기</a>
+                    </div>
+                </div>
+                <div class="carousel-item" style="background-image: url('https://images.unsplash.com/photo-1461354464878-ad92f492a5a0?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop');">
+                     <div class="carousel-caption">
+                        <h2>지금 가장 맛있는 제철 수확물! ✨</h2>
+                        <p>가장 신선하고 맛있는 시기, 제철 농장 체험을 놓치지 마세요.</p>
+                        <a href="{{ url_for('index', sort='deadline') }}#experience-list-section" class="btn btn-lg btn-success">체험 보기</a>
+                    </div>
+                </div>
+                <div class="carousel-item" style="background-image: url('https://plus.unsplash.com/premium_photo-1661963071176-efd5f5ec65d6?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop');">
                     <div class="carousel-caption">
                         <h2>체험 후기를 남겨주세요! 📸</h2>
                         <p>매달 5분을 추첨해 신선한 농산물 꾸러미를 보내드립니다.</p>
@@ -64,20 +97,6 @@
                         data-login-url="{{ url_for('login_page') }}"
                         data-target-url="{{ url_for('index') }}"
                         class="btn btn-lg btn-success">후기 작성하기</a>
-                    </div>
-                </div>
-                <div class="carousel-item" style="background-image: url('https://images.unsplash.com/photo-1444464666168-49d633b86797?q=80&w=2069&auto=format&fit=crop');">
-                    <div class="carousel-caption">
-                        <h2>FarmLink가 처음이신가요? 🌱</h2>
-                        <p>농장 체험 예약부터 결제까지, 사이트 이용 방법을 알려드려요.</p>
-                        <a href="{{ url_for('guide_page') }}" class="btn btn-lg btn-success">가이드 보기</a>
-                    </div>
-                </div>
-                <div class="carousel-item" style="background-image: url('https://images.unsplash.com/photo-1622023535803-cb3913075253?q=80&w=2070&auto=format&fit=crop');">
-                     <div class="carousel-caption">
-                        <h2>제철 맞은 유기농 딸기! 🍓</h2>
-                        <p>지금이 가장 달콤할 때! 주말 농장 체험을 놓치지 마세요.</p>
-                        <a href="#" class="btn btn-lg btn-success">추천 체험 보기</a>
                     </div>
                 </div>
             </div>
@@ -100,8 +119,32 @@
         <p class="mb-0">&copy; 2025 오늘의 밭. Farm to Link.</p>
     </footer>
     
-    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // 1. 올바른 요소 선택
+            const hamburgerBtn = document.querySelector('.hamburger-btn');
+            const userMenu = document.getElementById('user-menu');
+            const body = document.body;
+
+            // 2. 햄버거 버튼이 존재하는지 확인
+            if (hamburgerBtn && userMenu) {
+                // 3. 버튼 클릭 이벤트 리스너 추가
+                hamburgerBtn.addEventListener('click', function() {
+                    // 'is-open' 클래스를 토글하여 아이콘 모양과 메뉴 표시 여부 제어
+                    hamburgerBtn.classList.toggle('is-open');
+                    userMenu.classList.toggle('is-open');
+                    // 스크롤 방지 클래스 토글
+                    body.classList.toggle('scroll-lock');
+                });
+            }
+        });
+    </script>
+
+    {% block scripts %}{% endblock %}
 </body>
 </html>

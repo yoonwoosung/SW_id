@@ -54,8 +54,9 @@
                 <div class="fl-section-head"><h2>나의 다음 여행</h2></div>
                 {% if next_trip %}
                 <div style="display:flex;gap:var(--fl-s4);flex-wrap:wrap;align-items:center;">
-                    {% if next_trip.experience.images %}
-                    <img src="{{ url_for('static', filename='uploads/' + next_trip.experience.images.split(',')[0]) }}" alt="{{ next_trip.experience.crop }}" style="width:180px;height:120px;object-fit:cover;border-radius:var(--fl-radius);">
+                    {% set nt_img = next_trip.experience.images.split(',')[0] if next_trip.experience.images else '' %}
+                    {% if nt_img %}
+                    <img src="{{ nt_img if nt_img.startswith('http') else url_for('static', filename='uploads/' + nt_img) }}" alt="{{ next_trip.experience.crop }}" style="width:180px;height:120px;object-fit:cover;border-radius:var(--fl-radius);">
                     {% else %}
                     <div style="width:180px;height:120px;border-radius:var(--fl-radius);background:var(--fl-green-100);display:flex;align-items:center;justify-content:center;font-size:2rem;">🍓</div>
                     {% endif %}
@@ -91,7 +92,7 @@
                             {% endfor %}
                         </div>
                     </div></div>
-                    <div class="fl-card"><div id="ai-course-map" class="fl-map"></div></div>
+                    <div class="fl-card"><div id="ai-course-map" class="fl-map"><div class="fl-map-ph"><i class="fa-solid fa-map-location-dot"></i><strong>추천 코스 지도</strong><small>KAKAO_JS_KEY 설정 시 동선이 지도에 표시됩니다</small></div></div></div>
                 </div>
             </section>
 
@@ -106,7 +107,8 @@
                     {% if photos %}
                     <div class="fl-rail">
                         {% for exp in photos %}
-                        <img src="{{ url_for('static', filename='uploads/' + exp.images.split(',')[0]) }}" alt="{{ exp.crop }}" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:var(--fl-radius);">
+                        {% set a_img = exp.images.split(',')[0] %}
+                        <img src="{{ a_img if a_img.startswith('http') else url_for('static', filename='uploads/' + a_img) }}" alt="{{ exp.crop }}" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:var(--fl-radius);">
                         {% endfor %}
                     </div>
                     {% else %}

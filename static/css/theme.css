@@ -84,8 +84,11 @@ body {
 
 /* ---- 그리드 ---- */
 .fl-grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: var(--fl-s4); }
-.fl-grid--2 { grid-template-columns: 1fr; gap: var(--fl-s4); }
+.fl-grid--2 { display:grid; grid-template-columns: 1fr; gap: var(--fl-s5); }
 @media (min-width:768px){ .fl-grid--2 { grid-template-columns: 1fr 1fr; } }
+.fl-grid--6 { display:grid; grid-template-columns: repeat(2,1fr); gap: var(--fl-s3); }
+@media (min-width:768px){ .fl-grid--6 { grid-template-columns: repeat(3,1fr); } }
+@media (min-width:992px){ .fl-grid--6 { grid-template-columns: repeat(6,1fr); } }
 
 /* ---- 가로 스크롤 레일 ---- */
 .fl-rail { display:grid; grid-auto-flow:column; grid-auto-columns: 78%; gap: var(--fl-s4); overflow-x:auto; scroll-snap-type:x mandatory; padding-bottom: var(--fl-s2); -webkit-overflow-scrolling:touch; }
@@ -149,3 +152,62 @@ body {
 .fl-stat .num { font-size:1.4rem; font-weight:800; color: var(--fl-green-700); }
 .fl-stat .lbl { font-size:.82rem; color: var(--fl-text-muted); }
 .fl-stat .ico { font-size:1.3rem; color: var(--fl-green-600); }
+
+/* ==========================================================================
+   헤더/네비 (목업형) — 기존 .header-* 대체
+   ========================================================================== */
+.fl-header { background: var(--fl-surface); border-bottom:1px solid var(--fl-border); position:sticky; top:0; z-index:100; }
+.fl-header-inner { max-width:1240px; margin:0 auto; padding:0 var(--fl-s5); height:66px; display:flex; align-items:center; gap:var(--fl-s5); }
+.fl-brand { display:flex; align-items:center; gap:10px; font-weight:800; font-size:1.25rem; color:var(--fl-green-700); letter-spacing:-.02em; }
+.fl-brand-ico { width:34px; height:34px; border-radius:10px; background:var(--fl-green-100); color:var(--fl-green-700); display:flex; align-items:center; justify-content:center; font-size:1.05rem; }
+.fl-brand b { color:var(--fl-orange); font-weight:800; }
+.fl-nav { display:flex; align-items:center; gap:var(--fl-s5); margin-left:auto; }
+.fl-nav-links { display:flex; align-items:center; gap:var(--fl-s6); }
+.fl-nav-links a { color:var(--fl-text); font-weight:600; font-size:.98rem; }
+.fl-nav-links a:hover, .fl-nav-links a.is-active { color:var(--fl-green-700); }
+.fl-login-pill { display:inline-flex; align-items:center; gap:8px; padding:9px 16px; border:1px solid var(--fl-border); border-radius:var(--fl-pill); font-weight:700; color:var(--fl-text); }
+.fl-login-pill:hover { border-color:var(--fl-green-600); color:var(--fl-green-700); }
+.fl-bell { position:relative; color:var(--fl-text-muted); font-size:1.15rem; }
+.fl-bell .dot { position:absolute; top:-4px; right:-4px; background:var(--fl-orange); color:#fff; font-size:.62rem; font-weight:700; border-radius:var(--fl-pill); padding:1px 5px; }
+.fl-user { position:relative; }
+.fl-user > summary { list-style:none; cursor:pointer; display:inline-flex; align-items:center; gap:8px; padding:6px 12px; border:1px solid var(--fl-border); border-radius:var(--fl-pill); font-weight:700; }
+.fl-user > summary::-webkit-details-marker { display:none; }
+.fl-user > summary .ava { width:26px; height:26px; border-radius:50%; background:var(--fl-green-100); color:var(--fl-green-700); display:flex; align-items:center; justify-content:center; font-size:.8rem; }
+.fl-user[open] > summary { border-color:var(--fl-green-600); }
+.fl-user-menu { position:absolute; right:0; top:calc(100% + 8px); background:var(--fl-surface); border:1px solid var(--fl-border); border-radius:var(--fl-radius); box-shadow:var(--fl-shadow); min-width:170px; padding:6px; z-index:200; }
+.fl-user-menu a { display:block; padding:9px 12px; border-radius:8px; color:var(--fl-text); font-weight:600; }
+.fl-user-menu a:hover { background:var(--fl-green-100); color:var(--fl-green-700); }
+.fl-nav-toggle { display:none; margin-left:auto; background:none; border:0; font-size:1.3rem; color:var(--fl-text); }
+@media (max-width:860px){
+  .fl-nav-toggle { display:block; }
+  .fl-nav { position:absolute; left:0; right:0; top:66px; background:var(--fl-surface); border-bottom:1px solid var(--fl-border); flex-direction:column; align-items:stretch; gap:0; padding:var(--fl-s3); box-shadow:var(--fl-shadow); display:none; }
+  .fl-nav.is-open { display:flex; }
+  .fl-nav-links { flex-direction:column; align-items:stretch; gap:0; }
+  .fl-nav-links a, .fl-login-pill, .fl-user > summary { padding:12px; border:0; border-radius:8px; }
+  .fl-user, .fl-user-menu { position:static; box-shadow:none; border:0; }
+}
+
+/* ==========================================================================
+   히어로 (밝은 이미지 + 딥그린 텍스트 + 검색카드 오버레이) — 재정의
+   ========================================================================== */
+.fl-hero { position:relative; border-radius:var(--fl-radius-lg); overflow:hidden; color:var(--fl-green-900);
+  background: linear-gradient(90deg, rgba(250,248,243,.95) 0%, rgba(250,248,243,.65) 38%, rgba(250,248,243,0) 68%), var(--_bg) right center/cover no-repeat;
+  min-height:380px; display:flex; flex-direction:column; padding:var(--fl-s6) var(--fl-s5); }
+.fl-hero h1 { color:var(--fl-green-900); font-size:2rem; font-weight:800; line-height:1.25; letter-spacing:-.03em; }
+.fl-hero p { color:var(--fl-green-700); font-weight:600; opacity:1; }
+@media (min-width:768px){ .fl-hero { padding:var(--fl-s8) var(--fl-s8); min-height:440px; } .fl-hero h1 { font-size:2.7rem; } }
+.fl-hero-search { background:var(--fl-surface); border-radius:var(--fl-radius-lg); box-shadow:var(--fl-shadow); padding:var(--fl-s4); margin-top:auto; max-width:920px; }
+.fl-hero-search .row-fields { display:grid; grid-template-columns:1fr; gap:var(--fl-s3); align-items:end; }
+@media (min-width:768px){ .fl-hero-search .row-fields { grid-template-columns:1fr 1fr 1fr auto; } }
+.fl-hero-search label { font-size:.8rem; color:var(--fl-text-muted); font-weight:700; display:block; margin-bottom:3px; }
+.fl-hero-search .form-control { border-radius:var(--fl-radius); border-color:var(--fl-border); height:44px; }
+
+/* ---- 지도 플레이스홀더 ---- */
+.fl-map { position:relative; width:100%; min-height:300px; height:100%; border-radius:var(--fl-radius); overflow:hidden;
+  background:
+   repeating-linear-gradient(0deg, rgba(45,99,64,.05) 0 1px, transparent 1px 28px),
+   repeating-linear-gradient(90deg, rgba(45,99,64,.05) 0 1px, transparent 1px 28px),
+   var(--fl-green-100); }
+.fl-map-ph { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; color:var(--fl-green-700); text-align:center; padding:var(--fl-s4); }
+.fl-map-ph i { font-size:1.8rem; }
+.fl-map-ph small { color:var(--fl-text-muted); }

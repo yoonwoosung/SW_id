@@ -6,7 +6,8 @@
 <a href="{{ url_for('experience_detail', item_id=item.id) }}" class="fl-card fl-card--hover">
     <div class="fl-exp-thumb">
         {% if item.images %}
-            <img src="{{ url_for('static', filename='uploads/' + item.images.split(',')[0]) }}" alt="{{ item.crop }}">
+            {% set img0 = item.images.split(',')[0] %}
+            <img src="{{ img0 if img0.startswith('http') else url_for('static', filename='uploads/' + img0) }}" alt="{{ item.crop }}">
         {% else %}
             <div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:var(--fl-green-100);font-size:2rem;">🌱</div>
         {% endif %}
@@ -46,38 +47,43 @@
 
     {# ===== 히어로 + 검색 ===== #}
     <section class="fl-section" style="margin-top:var(--fl-s5);">
-        <div class="fl-hero" style="--_bg:url('https://images.unsplash.com/photo-1464226184884-fa280b87c399?q=80&w=1600&auto=format&fit=crop');">
+        <div class="fl-hero" style="--_bg:url('https://images.unsplash.com/photo-1500937386664-56d1dfef3854?q=80&w=1600&auto=format&fit=crop');">
             <h1>제철 농촌 체험으로<br>떠나는 하루 여행</h1>
             <p>수확 체험부터 주변 관광지까지 한 번에 추천</p>
-        </div>
 
-        <div class="fl-search" style="margin-top:-32px;position:relative;z-index:2;">
-            <form method="GET" action="{{ url_for('index') }}" style="display:contents;">
-                <input type="hidden" name="sort" value="{{ sort_by }}">
-                <div>
-                    <label for="region-select">지역</label>
-                    <select id="region-select" name="region" class="form-control">
-                        <option value="">지역을 선택하세요</option>
-                        {% set regions = ["서울","경기","인천","강원","대전","세종","충북","충남","부산","대구","울산","경북","경남","광주","전북","전남","제주"] %}
-                        {% for r in regions %}
-                        <option value="{{ r }}" {% if request.args.get('region') == r %}selected{% endif %}>{{ r }}</option>
+            <div class="fl-hero-search">
+                <form method="GET" action="{{ url_for('index') }}">
+                    <input type="hidden" name="sort" value="{{ sort_by }}">
+                    <div class="row-fields">
+                        <div>
+                            <label for="region-select"><i class="fa-solid fa-location-dot"></i> 지역</label>
+                            <select id="region-select" name="region" class="form-control">
+                                <option value="">지역을 선택하세요</option>
+                                {% set regions = ["서울","경기","인천","강원","대전","세종","충북","충남","부산","대구","울산","경북","경남","광주","전북","전남","제주"] %}
+                                {% for r in regions %}
+                                <option value="{{ r }}" {% if request.args.get('region') == r %}selected{% endif %}>{{ r }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div>
+                            <label for="crop-search"><i class="fa-regular fa-calendar"></i> 작물 키워드</label>
+                            <input type="text" id="crop-search" name="crop_query" class="form-control" placeholder="예: 딸기, 상추" value="{{ request.args.get('crop_query', '') }}">
+                        </div>
+                        <div>
+                            <label><i class="fa-solid fa-user-group"></i> 인원</label>
+                            <select class="form-control" disabled><option>인원을 선택하세요</option></select>
+                        </div>
+                        <div>
+                            <button type="submit" class="fl-btn fl-btn-primary fl-btn-block" style="height:44px;"><i class="fa-solid fa-magnifying-glass"></i> 검색하기</button>
+                        </div>
+                    </div>
+                    <div class="fl-chips" style="margin-top:var(--fl-s3);">
+                        {% for chip in ["#아이와함께","#반려견가능","#당일치기","#주차가능","#유아차가능","#숙박가능"] %}
+                        <a href="#experience-list-section" class="fl-chip">{{ chip }}</a>
                         {% endfor %}
-                    </select>
-                </div>
-                <div>
-                    <label for="crop-search">작물 키워드</label>
-                    <input type="text" id="crop-search" name="crop_query" class="form-control" placeholder="예: 딸기, 상추" value="{{ request.args.get('crop_query', '') }}">
-                </div>
-                <div style="display:flex;align-items:flex-end;">
-                    <button type="submit" class="fl-btn fl-btn-primary fl-btn-block"><i class="fa-solid fa-magnifying-glass"></i> 검색하기</button>
-                </div>
-            </form>
-        </div>
-
-        <div class="fl-chips" style="margin-top:var(--fl-s4);">
-            {% for chip in ["#아이와함께","#반려견가능","#당일치기","#주차가능","#유아차가능","#숙박가능"] %}
-            <a href="#experience-list-section" class="fl-chip">{{ chip }}</a>
-            {% endfor %}
+                    </div>
+                </form>
+            </div>
         </div>
     </section>
 
@@ -99,7 +105,7 @@
     {# ===== 내 상황에 맞는 체험 찾기 ===== #}
     <section class="fl-section">
         <div class="fl-section-head"><h2>🌿 내 상황에 맞는 체험 찾기</h2></div>
-        <div class="fl-grid">
+        <div class="fl-grid--6">
             {% set situations = [
                 {"i":"fa-solid fa-children","t":"아이와 함께","d":"가족 맞춤 체험"},
                 {"i":"fa-solid fa-dog","t":"반려견과 함께","d":"펫 프렌들리"},
@@ -136,7 +142,7 @@
                     {% endfor %}
                 </div>
             </div></div>
-            <div class="fl-card"><div id="ai-course-map" class="fl-map"></div></div>
+            <div class="fl-card"><div id="ai-course-map" class="fl-map"><div class="fl-map-ph"><i class="fa-solid fa-map-location-dot"></i><strong>추천 코스 지도</strong><small>KAKAO_JS_KEY 설정 시 동선이 지도에 표시됩니다</small></div></div></div>
         </div>
     </section>
 

@@ -19,37 +19,54 @@
     </style>
 </head>
 <body class="{% block page_class %}{% endblock %}">
-    <header class="header-{{ session.get('role', 'experiencer') }}">
-    <div class="container header-content">
-        <a href="/" class="logo">FarmLink <span class="brand-sub">{{ 'Partner' if session.get('role') == 'farmer' else 'Travel' }}</span></a>
-
-        <button class="hamburger-btn" type="button" aria-label="메뉴 토글">
-            <i class="fa-solid fa-bars"></i> <i class="fa-solid fa-xmark"></i> </button>
-        
-        <nav class="user-menu" id="user-menu">
-
-            {% if session.get('user_id') %}
-                <strong>{{ session.get('nickname') }}</strong>님
-                {% if session.get('role') == 'farmer' %}
-                    <a href="{{ url_for('index') }}">내 농장</a>
-                    <a href="{{ url_for('farmer_guide') }}">이용가이드</a>
-                    {% if session.get('view_mode') == 'easy' %}
-                        <a href="{{ url_for('toggle_view_mode') }}" class="view-mode-link">상세 보기</a>
-                    {% else %}
-                        <a href="{{ url_for('toggle_view_mode') }}" class="view-mode-link">크게 보기</a>
-                    {% endif %}
+    {% set is_farmer = session.get('role') == 'farmer' %}
+    <header class="fl-header">
+        <div class="fl-header-inner">
+            <a href="/" class="fl-brand">
+                <span class="fl-brand-ico"><i class="fa-solid fa-house-chimney"></i></span>
+                <span>FarmLink <b>{{ 'Partner' if is_farmer else 'Travel' }}</b></span>
+            </a>
+            <button class="fl-nav-toggle" type="button" aria-label="메뉴 토글" onclick="document.getElementById('fl-nav').classList.toggle('is-open')">
+                <i class="fa-solid fa-bars"></i>
+            </button>
+            <nav class="fl-nav" id="fl-nav">
+                {% if is_farmer %}
+                    <div class="fl-nav-links">
+                        <a href="{{ url_for('farmer_easy_mode') }}" class="{{ 'is-active' if request.endpoint == 'farmer_easy_mode' }}">농장 프로필</a>
+                        <a href="{{ url_for('easy_reservations') }}">예약 관리</a>
+                        <a href="{{ url_for('farmer_guide') }}">이용가이드</a>
+                    </div>
+                    <a href="#" class="fl-bell"><i class="fa-regular fa-bell"></i></a>
+                    <details class="fl-user">
+                        <summary><span class="ava"><i class="fa-solid fa-user"></i></span>{{ session.get('nickname') }}<i class="fa-solid fa-chevron-down" style="font-size:.7rem;"></i></summary>
+                        <div class="fl-user-menu">
+                            <a href="{{ url_for('my_info') }}">내 정보</a>
+                            <a href="{{ url_for('logout') }}">로그아웃</a>
+                        </div>
+                    </details>
                 {% else %}
-                    <a href="{{ url_for('mypage') }}">마이페이지</a>
+                    <div class="fl-nav-links">
+                        <a href="{{ url_for('index') }}" class="{{ 'is-active' if request.endpoint == 'index' }}">체험 찾기</a>
+                        <a href="{{ url_for('index') }}#ai-course">AI 여행 추천</a>
+                        <a href="{{ url_for('mypage') if session.get('user_id') else url_for('login_page') }}">예약 내역</a>
+                        <a href="{{ url_for('login_page') }}">농장주 센터</a>
+                    </div>
+                    {% if session.get('user_id') %}
+                    <details class="fl-user">
+                        <summary><span class="ava"><i class="fa-solid fa-user"></i></span>{{ session.get('nickname') }}<i class="fa-solid fa-chevron-down" style="font-size:.7rem;"></i></summary>
+                        <div class="fl-user-menu">
+                            <a href="{{ url_for('mypage') }}">마이페이지</a>
+                            <a href="{{ url_for('my_info') }}">내 정보</a>
+                            <a href="{{ url_for('logout') }}">로그아웃</a>
+                        </div>
+                    </details>
+                    {% else %}
+                    <a href="{{ url_for('login_page') }}" class="fl-login-pill"><i class="fa-regular fa-user"></i> 로그인 <i class="fa-solid fa-chevron-down" style="font-size:.7rem;"></i></a>
+                    {% endif %}
                 {% endif %}
-                <a href="{{ url_for('my_info') }}">내 정보</a>
-                <a href="{{ url_for('logout') }}">로그아웃</a>
-            {% else %}
-                <a href="{{ url_for('login_page') }}">로그인</a>
-                <a href="{{ url_for('register_page') }}">회원가입</a>
-            {% endif %}
-        </nav>
-    </div>
-</header>
+            </nav>
+        </div>
+    </header>
 
 <main>
     {% with messages = get_flashed_messages(with_categories=true) %}

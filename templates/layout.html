@@ -3,11 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FarmLink</title>
+    <title>FarmLink {{ 'Partner' if session.get('role') == 'farmer' else 'Travel' }}</title>
+    <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css"/>
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"/>
-    <!-- <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}"> -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/theme.css') }}">
     <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/main.min.css" rel="stylesheet">
     <style>
         .timetable-wrapper {
@@ -20,7 +21,7 @@
 <body class="{% block page_class %}{% endblock %}">
     <header class="header-{{ session.get('role', 'experiencer') }}">
     <div class="container header-content">
-        <a href="/" class="logo">FarmLink</a>
+        <a href="/" class="logo">FarmLink <span class="brand-sub">{{ 'Partner' if session.get('role') == 'farmer' else 'Travel' }}</span></a>
 
         <button class="hamburger-btn" type="button" aria-label="메뉴 토글">
             <i class="fa-solid fa-bars"></i> <i class="fa-solid fa-xmark"></i> </button>
@@ -37,6 +38,8 @@
                     {% else %}
                         <a href="{{ url_for('toggle_view_mode') }}" class="view-mode-link">크게 보기</a>
                     {% endif %}
+                {% else %}
+                    <a href="{{ url_for('mypage') }}">마이페이지</a>
                 {% endif %}
                 <a href="{{ url_for('my_info') }}">내 정보</a>
                 <a href="{{ url_for('logout') }}">로그아웃</a>
@@ -64,7 +67,7 @@
         {% endif %}
     {% endwith %}
 
-    {% if (request.endpoint == 'index' and session.get('role') != 'farmer') or request.endpoint == 'volunteer_apply' %}
+    {% if request.endpoint == 'volunteer_apply' %}
     <div class="main-banner-container mt-3">
         <div id="main-carousel" class="carousel slide" data-ride="carousel" data-interval="7000">
             <ol class="carousel-indicators">

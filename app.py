@@ -42,6 +42,12 @@ app.config['KAKAO_API_KEY'] = os.environ.get('KAKAO_API_KEY', '65cb5346683883dc8
 db = SQLAlchemy(app, engine_options={"pool_pre_ping": True})
 
 
+@app.context_processor
+def inject_globals():
+    # 카카오 지도 키를 템플릿에 하드코딩하지 않고 환경변수로 주입한다.
+    return {'KAKAO_API_KEY': app.config['KAKAO_API_KEY']}
+
+
 
 
 REGIONAL_SPECIALTIES = {
@@ -200,7 +206,9 @@ def matches_specialty(address_detail, crop):
     return False
 
 
-def calculate_score(distance, max_p, current_p, is_specialty):
+def score_components(distance, max_p, current_p, is_specialty):
+    """추천 점수의 3요소별 가중 기여도를 반환한다.
+    calculate_score(합산)와 recommendation_reason(최대 기여 요소 선택)이 공유한다."""
     distance_score = max(0, 1 - (distance / 50))
     if max_p > 0:
         availability_score = (max_p - current_p) / max_p
@@ -208,7 +216,28 @@ def calculate_score(distance, max_p, current_p, is_specialty):
         availability_score = 0
     specialty_score = 1.0 if is_specialty else 0
     w1, w2, w3 = 0.5, 0.3, 0.2
-    return (w1 * distance_score) + (w2 * specialty_score) + (w3 * availability_score)
+    return {
+        'distance': w1 * distance_score,
+        'specialty': w2 * specialty_score,
+        'availability': w3 * availability_score,
+    }
+
+
+def calculate_score(distance, max_p, current_p, is_specialty):
+    return sum(score_components(distance, max_p, current_p, is_specialty).values())
+
+
+def recommendation_reason(distance, max_p, current_p, is_specialty):
+    """추천 점수에 가장 크게 기여한 요소를 한 줄 이유 문구로 돌려준다."""
+    components = score_components(distance, max_p, current_p, is_specialty)
+    top_factor = max(components, key=components.get)
+    if components[top_factor] <= 0:
+        return "회원님께 추천하는 농장이에요"
+    if top_factor == 'distance':
+        return f"내 위치에서 약 {distance:.1f}km로 가까워요"
+    if top_factor == 'specialty':
+        return "이 지역 대표 특산물이에요"
+    return f"신청 여유가 넉넉해요 ({current_p}/{max_p}명)"
 
 
 # --- 2. DB 모델(테이블) 정의 (farmer 기준으로 통합) ---
@@ -467,6 +496,8 @@ def index():
 
                     exp.recommendation_score = recommendation_score
                     exp.distance = distance
+                    exp.recommendation_reason = recommendation_reason(
+                        distance, exp.max_participants, exp.current_participants, is_specialty)
                     ranked_experiences.append(exp)
 
                 sorted_items = sorted(ranked_experiences, key=lambda x: x.recommendation_score, reverse=True)
@@ -507,9 +538,15 @@ def index():
                         item.is_specialty = True
                         break
 
+        # "이번 주 제철 체험" 레일용: 위치 정보 없이도 항상 채워지는 마감 임박 추천 목록
+        featured = Experience.query.filter(
+            Experience.status == 'recruiting', Experience.end_date >= today
+        ).order_by(Experience.end_date.asc()).limit(8).all()
+
         return render_template('index.html',
                                items=items_on_page,
                                pagination=pagination,
+                               featured=featured,
                                sort_by=sort_by)
 
 @app.route('/toggle_view_mode')
@@ -613,7 +650,9 @@ def farmer_easy_mode():
     if 'user_id' not in session or session.get('role') != 'farmer':
         return redirect(url_for('login_page'))
     session['view_mode'] = 'easy'
-    return render_template('farmer_easy_mode.html')
+    user = User.query.get_or_404(session['user_id'])
+    listings = Experience.query.filter_by(farmer_id=user.id).order_by(Experience.end_date.desc()).all()
+    return render_template('farmer_easy_mode.html', user=user, listings=listings)
 
 @app.route('/my_farm/expired')
 def expired_experiences():
@@ -1189,6 +1228,16 @@ def my_info():
 
     applications = Application.query.filter_by(user_id=user.id).order_by(Application.apply_date.desc()).all()
     return render_template('my_info.html', user=user, applications=applications)
+
+
+@app.route('/mypage')
+def mypage():
+    if 'user_id' not in session:
+        flash("로그인이 필요합니다.", "warning")
+        return redirect(url_for('login_page'))
+    user = User.query.get_or_404(session['user_id'])
+    applications = Application.query.filter_by(user_id=user.id).order_by(Application.apply_date.desc()).all()
+    return render_template('mypage.html', user=user, applications=applications)
 
 @app.route('/application/delete/<int:app_id>', methods=['POST'])
 def delete_application(app_id):

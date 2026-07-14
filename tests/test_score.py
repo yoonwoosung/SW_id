@@ -9,7 +9,7 @@ PR5 이후: max_p<=0 이면 availability_score 0, address_detail/crop None 이�
 방어하므로, 예전에 '터지던' 경계도 이제 안전값을 반환한다.
 """
 import pytest
-from app import calculate_score, matches_specialty
+from app import calculate_score, matches_specialty, score_components, recommendation_reason
 
 # 가중치: distance 0.5 / specialty 0.3 / availability 0.2
 # 각 성분을 분리하려고 나머지 성분을 0으로 만드는 입력을 고른다.
@@ -91,3 +91,45 @@ def test_specialty_substring_match_is_current_behavior():
     # '철원' 특산물에 '토마토'가 있고, 'sc in crop' 부분매칭이라 '방울토마토'도 매칭된다.
     # 의도된 동작인지와 무관하게 '현재 동작'을 확정해 둔다.
     assert matches_specialty("철원군", "방울토마토") is True
+
+
+# --- score_components: 합이 calculate_score와 일치해야 한다(리팩터 회귀 방지) ---
+def test_components_sum_equals_calculate_score():
+    args = (10, 20, 5, True)
+    assert sum(score_components(*args).values()) == pytest.approx(calculate_score(*args))
+
+
+def test_components_keys_and_weights():
+    c = score_components(0, 20, 0, True)  # 세 성분 모두 최대
+    assert set(c) == {'distance', 'specialty', 'availability'}
+    assert c['distance'] == pytest.approx(0.5)
+    assert c['specialty'] == pytest.approx(0.3)
+    assert c['availability'] == pytest.approx(0.2)
+
+
+# --- recommendation_reason: 최대 기여 요소를 문구로 매핑 ---
+def test_reason_distance_dominant():
+    # 0km → distance 성분(0.5)이 최대 → 거리 문구 + km 표기
+    r = recommendation_reason(0, 20, 20, False)
+    assert "가까워요" in r and "0.0km" in r
+
+
+def test_reason_specialty_dominant():
+    # distance 50(→0), 만석(avail 0), 특산물 → specialty(0.3)만 양수
+    assert recommendation_reason(50, 20, 20, True) == "이 지역 대표 특산물이에요"
+
+
+def test_reason_availability_dominant():
+    # distance 50(→0), 특산물 아님, 빈자리 → availability(0.2)만 양수
+    r = recommendation_reason(50, 20, 0, False)
+    assert "넉넉해요" in r and "0/20" in r
+
+
+def test_reason_priority_on_tie_prefers_distance():
+    # 세 성분 모두 양수여도 가중치 최대인 distance가 우선
+    assert "가까워요" in recommendation_reason(0, 20, 0, True)
+
+
+def test_reason_all_zero_returns_generic():
+    # distance>50(클램프 0), 만석(0), 특산물 아님 → 모든 성분 0 → 일반 문구
+    assert recommendation_reason(60, 20, 20, False) == "회원님께 추천하는 농장이에요"

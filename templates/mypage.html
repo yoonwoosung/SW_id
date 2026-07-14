@@ -1,0 +1,169 @@
+{% extends "layout.html" %}
+{% block page_class %}page-mypage{% endblock %}
+
+{# AI 코스 플레이스홀더 (content·scripts 공용) #}
+{% set ai_course = [
+    {"time":"09:00","title":"딸기 수확 체험","desc":"천안 행복 딸기 농장","lat":36.815,"lng":127.114},
+    {"time":"12:30","title":"천안 향토 음식","desc":"병천 순대국 & 로컬 맛집","lat":36.788,"lng":127.153},
+    {"time":"15:00","title":"독립기념관 관람","desc":"역사와 자연을 함께","lat":36.784,"lng":127.211},
+    {"time":"17:00","title":"로컬 카페 휴식","desc":"아늑한 시골 카페에서 힐링","lat":36.807,"lng":127.148}
+] %}
+{% set upcoming = applications | selectattr('status', 'equalto', '예정') | list %}
+{% set next_trip = upcoming[0] if upcoming else (applications[0] if applications else none) %}
+
+{% block content %}
+<div class="fl-container fl-scope" style="margin-top:var(--fl-s5);">
+    <div class="fl-layout">
+
+        {# ===== 사이드바 ===== #}
+        <aside class="fl-sidebar">
+            <div class="fl-card"><div class="fl-card-body fl-side-profile">
+                <img class="fl-avatar" src="{{ url_for('static', filename='uploads/' + user.profile_image) }}" alt="{{ user.nickname }}">
+                <strong>{{ user.nickname }}</strong>
+                <div><span class="fl-badge fl-badge--success">일반 회원</span></div>
+            </div></div>
+            <div class="fl-card"><div class="fl-card-body fl-side-menu">
+                <a href="#" class="is-active"><i class="fa-regular fa-calendar-check"></i> 예약 내역</a>
+                <a href="#ai-course"><i class="fa-solid fa-robot"></i> AI 여행 코스</a>
+                <a href="#archive"><i class="fa-regular fa-images"></i> 추억 아카이브</a>
+                <a href="#revisit"><i class="fa-solid fa-arrows-rotate"></i> 재방문 추천</a>
+                <a href="{{ url_for('my_info') }}"><i class="fa-solid fa-user-pen"></i> 내 정보 수정</a>
+            </div></div>
+            <div class="fl-card"><div class="fl-card-body">
+                <strong>내 정보</strong>
+                <div class="fl-info-row"><span class="lbl">이름</span><span class="val">{{ user.name }}</span></div>
+                <div class="fl-info-row"><span class="lbl">이메일</span><span class="val" style="font-size:.85rem;">{{ user.email }}</span></div>
+                <div class="fl-info-row"><span class="lbl">가입일</span><span class="val fl-muted">미기록</span></div>
+                <div class="fl-info-row"><span class="lbl">포인트</span><span class="val fl-muted">준비 중</span></div>
+                <a href="{{ url_for('logout') }}" class="fl-btn fl-btn-outline fl-btn-block" style="margin-top:var(--fl-s3);">로그아웃</a>
+            </div></div>
+        </aside>
+
+        {# ===== 메인 ===== #}
+        <main style="display:flex;flex-direction:column;gap:var(--fl-s5);">
+
+            <div class="fl-section-head">
+                <div>
+                    <h2>🌱 안녕하세요, {{ user.nickname }}님</h2>
+                    <p class="fl-muted" style="margin:4px 0 0;">이번 주 예약된 체험이 <strong style="color:var(--fl-orange);">{{ upcoming|length }}개</strong> 있어요.</p>
+                </div>
+            </div>
+
+            {# 나의 다음 여행 #}
+            <section class="fl-card"><div class="fl-card-body">
+                <div class="fl-section-head"><h2>나의 다음 여행</h2></div>
+                {% if next_trip %}
+                <div style="display:flex;gap:var(--fl-s4);flex-wrap:wrap;align-items:center;">
+                    {% if next_trip.experience.images %}
+                    <img src="{{ url_for('static', filename='uploads/' + next_trip.experience.images.split(',')[0]) }}" alt="{{ next_trip.experience.crop }}" style="width:180px;height:120px;object-fit:cover;border-radius:var(--fl-radius);">
+                    {% else %}
+                    <div style="width:180px;height:120px;border-radius:var(--fl-radius);background:var(--fl-green-100);display:flex;align-items:center;justify-content:center;font-size:2rem;">🍓</div>
+                    {% endif %}
+                    <div style="flex:1;min-width:220px;">
+                        <span class="fl-badge fl-badge--success">{{ next_trip.status }}</span>
+                        <h3 style="font-weight:800;margin:8px 0;">{{ next_trip.experience.crop }} 체험</h3>
+                        <div class="fl-exp-meta"><i class="fa-regular fa-calendar"></i> {{ next_trip.apply_date }} {{ next_trip.apply_time }}</div>
+                        <div class="fl-exp-meta"><i class="fa-solid fa-user-group"></i> 총 {{ next_trip.participants_count }}명</div>
+                        <div class="fl-exp-meta"><i class="fa-solid fa-location-dot"></i> {{ next_trip.experience.address_detail or next_trip.experience.location }}</div>
+                        <div class="fl-muted" style="font-size:.85rem;margin-top:6px;">예약번호 FLT-{{ '%06d' | format(next_trip.id) }}</div>
+                    </div>
+                    <div style="display:flex;flex-direction:column;gap:8px;">
+                        <a href="{{ url_for('experience_detail', item_id=next_trip.experience.id) }}" class="fl-btn fl-btn-primary fl-btn-sm">예약 상세</a>
+                        <a href="#ai-course" class="fl-btn fl-btn-outline fl-btn-sm">AI 여행 코스 보기</a>
+                    </div>
+                </div>
+                {% else %}
+                <p class="fl-muted">예약된 체험이 아직 없어요. <a href="{{ url_for('index') }}" style="color:var(--fl-green-700);font-weight:700;">체험 찾아보기 ›</a></p>
+                {% endif %}
+            </div></section>
+
+            {# AI 추천 여행 코스 #}
+            <section class="fl-section" id="ai-course" style="margin:0;">
+                <div class="fl-section-head"><h2>🤖 AI 추천 여행 코스</h2></div>
+                <div class="fl-grid--2">
+                    <div class="fl-card"><div class="fl-card-body">
+                        <div class="fl-timeline">
+                            {% for c in ai_course %}
+                            <div class="fl-tl-item">
+                                <span class="fl-tl-time">{{ c.time }}</span>
+                                <span><strong>{{ c.title }}</strong><br><small class="fl-muted">{{ c.desc }}</small></span>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div></div>
+                    <div class="fl-card"><div id="ai-course-map" class="fl-map"></div></div>
+                </div>
+            </section>
+
+            {# 추억 아카이브 + 재방문 추천 #}
+            <div class="fl-grid--2">
+                <section class="fl-card" id="archive"><div class="fl-card-body">
+                    <div class="fl-section-head">
+                        <h2>추억 아카이브</h2>
+                        <span class="fl-badge fl-badge--muted">준비 중</span>
+                    </div>
+                    {% set photos = applications | map(attribute='experience') | selectattr('images') | list %}
+                    {% if photos %}
+                    <div class="fl-rail">
+                        {% for exp in photos %}
+                        <img src="{{ url_for('static', filename='uploads/' + exp.images.split(',')[0]) }}" alt="{{ exp.crop }}" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:var(--fl-radius);">
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p class="fl-muted">체험을 다녀오면 사진이 이곳에 모여요.</p>
+                    {% endif %}
+                    <div class="fl-chips" style="margin-top:var(--fl-s3);">
+                        <span class="fl-chip">사진 업로드</span><span class="fl-chip">앨범 만들기</span><span class="fl-chip">SNS 공유</span>
+                    </div>
+                </div></section>
+
+                <section class="fl-card" id="revisit"><div class="fl-card-body">
+                    <div class="fl-section-head"><h2>재방문 추천</h2></div>
+                    {% set visited = applications | map(attribute='experience') | unique(attribute='id') | list %}
+                    {% if visited %}
+                    {% for exp in visited[:3] %}
+                    <div class="fl-info-row">
+                        <span class="lbl" style="min-width:auto;"><i class="fa-solid fa-seedling"></i> {{ exp.crop }}</span>
+                        <a href="{{ url_for('experience_detail', item_id=exp.id) }}" class="fl-btn fl-btn-outline fl-btn-sm">다시 보기</a>
+                    </div>
+                    {% endfor %}
+                    {% else %}
+                    <p class="fl-muted">다시 찾고 싶은 농장이 여기에 표시돼요.</p>
+                    {% endif %}
+                </div></section>
+            </div>
+
+            {# 통계 바 #}
+            <div class="fl-stats">
+                <div class="fl-card fl-stat"><div><div class="num">준비 중</div><div class="lbl">포인트</div></div><i class="fa-solid fa-coins ico"></i></div>
+                <div class="fl-card fl-stat"><div><div class="num">준비 중</div><div class="lbl">찜한 체험</div></div><i class="fa-regular fa-heart ico"></i></div>
+                <div class="fl-card fl-stat"><div><div class="num">{{ applications|length }}</div><div class="lbl">신청 내역</div></div><i class="fa-regular fa-comment-dots ico"></i></div>
+                <div class="fl-card fl-stat"><div><div class="num">준비 중</div><div class="lbl">알림</div></div><i class="fa-regular fa-bell ico"></i></div>
+            </div>
+
+        </main>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<div id="ai-course-data" style="display:none;">{{ ai_course|tojson|safe }}</div>
+<script type="text/javascript" src="https://dapi.kakao.com/v2/maps/sdk.js?appkey={{ KAKAO_API_KEY }}&libraries=services"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    var el = document.getElementById('ai-course-map');
+    var dataEl = document.getElementById('ai-course-data');
+    if (!el || !dataEl || !window.kakao || !kakao.maps) { return; }
+    var course = JSON.parse(dataEl.textContent);
+    if (!course.length) { return; }
+    var map = new kakao.maps.Map(el, { center: new kakao.maps.LatLng(course[0].lat, course[0].lng), level: 7 });
+    var path = [];
+    course.forEach(function (c, i) {
+        var pos = new kakao.maps.LatLng(c.lat, c.lng);
+        path.push(pos);
+        new kakao.maps.Marker({ map: map, position: pos, title: (i + 1) + '. ' + c.title });
+    });
+    new kakao.maps.Polyline({ map: map, path: path, strokeWeight: 3, strokeColor: '#1d6340', strokeOpacity: 0.8, strokeStyle: 'shortdash' }).setMap(map);
+});
+</script>
+{% endblock %}

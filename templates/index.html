@@ -17,6 +17,7 @@
     <div class="list-title-header">
         <h2>현재 진행 중 체험</h2>
         <div class="sort-links">
+            <a href="#" onclick="getGpsAndSort(event)" class="sort-link {% if sort_by == 'recommended' %}active{% endif %}">내 주변</a>
             <a href="{{ url_for('index', sort='deadline', region=request.args.get('region'), crop_query=request.args.get('crop_query')) }}" class="sort-link {% if sort_by == 'deadline' or not sort_by %}active{% endif %}">모집 임박순</a>
             <a href="{{ url_for('index', sort='reviews', region=request.args.get('region'), crop_query=request.args.get('crop_query')) }}" class="sort-link {% if sort_by == 'reviews' %}active{% endif %}">리뷰 많은순</a>
         </div>
@@ -63,23 +64,63 @@
             {% if items %}
                 {% for item in items %}
                 <a href="{{ url_for('experience_detail', item_id=item.id) }}" class="list-item-row {% if item.current_participants >= item.max_participants %}closed{% endif %}">
+                    
                     <span class="col-crop">
                         <strong>{{ item.crop }}</strong>
-                        <span class="review-count ml-2 text-muted">후기({{ item.reviews|length }})</span>
-                        <div class="tag">#{{ "친환경" if item.pesticide_free else "일반" }}</div>
+                        
+                        {% if sort_by == 'reviews' %}
+                            <span class="text-warning font-weight-bold ml-1" style="font-size: 0.85rem;">⭐ 후기 {{ item.reviews|length }}개</span>
+                        {% else %}
+                            <span class="text-muted ml-1" style="font-size: 0.8rem;">후기({{ item.reviews|length }})</span>
+                        {% endif %}
+
+                        <div class="tag mt-1" style="font-size: 0.85rem;">
+                            {% if item.pesticide_free %}
+                                <span class="text-success font-weight-bold">#친환경</span> 
+                            {% endif %}
+                            
+                            {% if item.is_specialty %}
+                                <span class="text-success font-weight-bold">#지역특산물</span> 
+                            {% endif %}
+                            
+                            {% if not item.pesticide_free and not item.is_specialty %}
+                                <span class="text-muted">#일반체험</span>
+                            {% endif %}
+                        </div>
                     </span>
-                    <span class="col-location">{{ item.address_detail }}</span>
+                    
+                    <span class="col-location">
+                        {{ item.address_detail }}
+                        {% if sort_by == 'recommended' and item.distance is defined %}
+                            <br><span class="text-primary font-weight-bold" style="font-size: 0.85rem;">📍 내 위치에서 {{ "%.1f"|format(item.distance) }}km</span>
+                        {% endif %}
+                    </span>
+                    
                     <span class="col-d-day">
                         {% if item.d_day >= 0 and item.d_day < 999 %}
-                            <span class="{{ 'text-danger font-weight-bold' if item.d_day <= 3 else '' }}">
-                                D-{{ item.d_day }}
-                            </span>
+                            {% if item.d_day <= 3 %}
+                                <span class="text-danger font-weight-bold">🔥 D-{{ item.d_day }}</span>
+                            {% else %}
+                                <span class="text-muted">D-{{ item.d_day }}</span>
+                            {% endif %}
                         {% else %}
                             -
                         {% endif %}
                     </span>
+                    
                     <span class="col-cost">{{ "{:,}".format(item.cost) }}원</span>
-                    <span class="col-status">{{ item.current_participants }} / {{ item.max_participants }}명</span>
+                    
+                    <span class="col-status">
+                        {% set remaining_spots = item.max_participants - item.current_participants %}
+                        {% if remaining_spots == 0 %}
+                            <span class="text-secondary font-weight-bold">🔒 마감</span>
+                        {% elif remaining_spots <= 3 %}
+                            <span class="text-danger font-weight-bold" style="font-size: 0.95rem;">🚨 {{ remaining_spots }}자리 남음!</span>
+                        {% else %}
+                            <span class="text-muted">{{ item.current_participants }} / {{ item.max_participants }}명</span>
+                        {% endif %}
+                    </span>
+                    
                     <span class="col-action">
                         {% if item.current_participants >= item.max_participants %}
                             <button class="btn btn-sm btn-secondary" disabled>마감</button>
@@ -126,4 +167,38 @@
         {% endif %}
     </div>
 </div>
+
+<script>
+function getGpsAndSort(event) {
+    event.preventDefault(); 
+    
+    const urlParams = new URLSearchParams(window.location.search);
+    urlParams.set('sort', 'recommended'); 
+
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+            function(position) { 
+                // 1. 성공 시
+                urlParams.set('lat', position.coords.latitude);
+                urlParams.set('lon', position.coords.longitude);
+                window.location.href = window.location.pathname + '?' + urlParams.toString();
+            },
+            function(error) { 
+                // 2. 실패 시 (원인별 세분화)
+                let errorMsg = "위치 정보를 가져올 수 없습니다.";
+                if (error.code === 1) errorMsg = "위치 정보 제공을 거부하셨습니다.";
+                if (error.code === 2) errorMsg = "PC/네트워크 문제로 위치를 파악할 수 없습니다.";
+                if (error.code === 3) errorMsg = "위치를 찾는 데 시간이 너무 오래 걸렸습니다(시간 초과).";
+                
+                alert(errorMsg + " 기본 위치 기준으로 검색합니다.");
+                window.location.href = window.location.pathname + '?' + urlParams.toString();
+            },
+            // PC 환경에 맞게 고정밀도 끄기(속도 향상), 제한시간 15초로 넉넉하게 연장
+            { enableHighAccuracy: false, timeout: 15000, maximumAge: 0 } 
+        );
+    } else {
+        alert("사용 중인 브라우저가 위치 정보를 지원하지 않습니다.");
+    }
+}
+</script>
 {% endblock %}

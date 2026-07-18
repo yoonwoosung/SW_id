@@ -1,5 +1,6 @@
 import os
 from flask import Flask, render_template, request, redirect, url_for, flash, session, abort, jsonify
+from dotenv import load_dotenv
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
@@ -17,15 +18,19 @@ from types import SimpleNamespace
 import platform
 from PIL import Image
 
+
+project_folder = os.path.dirname(os.path.abspath(__file__))
+load_dotenv(os.path.join(project_folder, '.env'))
+
 # --- 1. 앱 및 DB 설정 ---
 app = Flask(__name__)
-app.secret_key = os.environ.get('SECRET_KEY', 'mysql-secret-key-for-production')
+app.secret_key = os.environ.get('SECRET_KEY')
 
 # DB 접속 정보: farmer 기준 로컬 DB 사용.
-db_username = 'kevin4201'
-db_password = 'ict_farmLink'
-db_hostname = 'kevin4201.mysql.pythonanywhere-services.com'
-db_name     = 'kevin4201$default'
+db_username = os.environ.get('DB_USERNAME')
+db_password = os.environ.get('DB_PASSWORD')
+db_hostname = os.environ.get('DB_HOST')
+db_name     = os.environ.get('DB_NAME')
 DATABASE_URI = f"mysql+mysqlconnector://{db_username}:{db_password}@{db_hostname}/{db_name}"
 
 
@@ -37,7 +42,7 @@ app.config['SQLALCHEMY_POOL_TIMEOUT'] = 30
 # --- 파일 업로드 설정 ---
 app.config['UPLOAD_FOLDER'] = os.path.join(app.static_folder, 'uploads')
 app.config['ALLOWED_EXTENSIONS'] = {'png', 'jpg', 'jpeg', 'gif', 'pdf'} # farmer 기준
-app.config['KAKAO_API_KEY'] = os.environ.get('KAKAO_API_KEY', '65cb5346683883dc8374f0f1a9aeccf0') # farmer 기준
+app.config['KAKAO_API_KEY'] = os.environ.get('KAKAO_API_KEY') # farmer 기준
 
 db = SQLAlchemy(app, engine_options={"pool_pre_ping": True})
 
@@ -355,9 +360,9 @@ class Notification(db.Model):
 # app.py의 analyze_review_with_clova 함수
 
 def analyze_review_with_clova(text):
-    api_key = "nv-630074f1c8094226829c835d4a17284c09S4"
-    host = "https://clovastudio.stream.ntruss.com"
-    endpoint = "/v3/chat-completions/HCX-DASH-002"
+    api_key = os.environ.get('CLOVA_API_KEY')
+    host = os.environ.get('CLOVA_HOST')
+    endpoint = os.environ.get('CLOVA_ENDPOINT')
     url = host + endpoint
     headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
 
@@ -445,7 +450,7 @@ def index():
 
     if is_farmer:
         session['view_mode'] = 'easy' 
-        return redirect(url_for('farmer_easy_mode'))
+        return redirect(url_for('detailed_farmer_dashboard')) #farmer_easy_mode에서 detailed_farmer_dashboard로 수정
     else: 
         page = request.args.get('page', 1, type=int)
         sort_by = request.args.get('sort', 'recommended', type=str)

@@ -9,7 +9,9 @@ PR5 이후: max_p<=0 이면 availability_score 0, address_detail/crop None 이�
 방어하므로, 예전에 '터지던' 경계도 이제 안전값을 반환한다.
 """
 import pytest
-from app import calculate_score, matches_specialty, score_components, recommendation_reason
+# 추천 점수 함수는 app.py에서 services/ 패키지로 분리됨(리팩터링). import 경로만 갱신, 로직 동일.
+from services.recommend_service import calculate_score, matches_specialty, score_components
+from services.recommend_reason import recommendation_reason
 
 # 가중치: distance 0.5 / specialty 0.3 / availability 0.2
 # 각 성분을 분리하려고 나머지 성분을 0으로 만드는 입력을 고른다.

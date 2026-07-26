@@ -1,10 +1,50 @@
 {% extends "layout.html" %}
 {% block content %}
-<div class="container text-center" style="padding: 4rem 0;">
-    <h2 style="font-size: 2rem; color: #4CAF50;">✅<br>{{ item.crop }} 체험 신청이 완료되었습니다.</h2>
-    <p style="font-size: 1.2rem;"><strong>{{ name }}</strong> 님, 감사합니다!</p>
-    <p>예약 확인 및 안내 문자가 곧 발송될 예정입니다.</p>
-    <br>
-    <a href="{{ url_for('index') }}" class="btn-submit">메인으로 돌아가기</a>
+<div class="complete-page-bg">
+    <div class="complete-card">
+        <div class="complete-icon-wrap">
+            <div class="complete-icon">✓</div>
+        </div>
+        <h2 class="complete-title">예약이 완료되었습니다!</h2>
+        <p class="complete-subtitle"><strong>{{ name }}</strong>님, 농촌 체험을 신청해 주셔서 감사합니다.</p>
+
+        <div class="complete-booking-box">
+            <div class="complete-booking-header">
+                <i class="fa-solid fa-receipt"></i> 예약 확인증
+            </div>
+            <div class="complete-booking-body">
+                <div class="complete-booking-row">
+                    <span class="complete-booking-label"><i class="fa-solid fa-seedling"></i> 체험</span>
+                    <span class="complete-booking-val">{{ item.crop }} 수확 체험</span>
+                </div>
+                <div class="complete-booking-row">
+                    <span class="complete-booking-label"><i class="fa-solid fa-location-dot"></i> 장소</span>
+                    <span class="complete-booking-val">{{ item.address_detail }}</span>
+                </div>
+                <div class="complete-booking-row">
+                    <span class="complete-booking-label"><i class="fa-solid fa-won-sign"></i> 가격</span>
+                    <span class="complete-booking-val">{{ "{:,}".format(item.cost) }}원 / 1인</span>
+                </div>
+                <div class="complete-booking-row">
+                    <span class="complete-booking-label"><i class="fa-solid fa-user"></i> 신청자</span>
+                    <span class="complete-booking-val">{{ name }}</span>
+                </div>
+            </div>
+        </div>
+
+        <p class="complete-notice">
+            <i class="fa-solid fa-circle-info"></i>
+            예약 확인 및 안내 문자가 곧 발송될 예정입니다.
+        </p>
+
+        <div class="complete-actions">
+            <a href="{{ url_for('index') }}" class="complete-btn-primary">
+                <i class="fa-solid fa-house"></i> 메인으로 돌아가기
+            </a>
+            <a href="{{ url_for('my_info') }}" class="complete-btn-secondary">
+                <i class="fa-solid fa-list-check"></i> 예약 내역 보기
+            </a>
+        </div>
+    </div>
 </div>
 {% endblock %}

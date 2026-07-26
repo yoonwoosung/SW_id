@@ -1,320 +1,294 @@
 {% extends "layout.html" %}
-{% from 'shared/macros.html' import guide_popup_modal, how_to_use_carousel_modal %}
-
 {% block content %}
+<div class="detail-page-bg">
+<div class="detail-page-wrapper">
 
-<div class="container detail-container mt-4">
+    <!-- 왼쪽: 메인 콘텐츠 -->
+    <div class="detail-main-col">
 
-    <div class="row mb-5">
-        <div class="col-lg-7">
+        <!-- 이미지 갤러리 -->
+        <div class="detail-gallery-card">
+            {% if item.images %}
             <div id="experience-carousel" class="carousel slide" data-ride="carousel">
                 <div class="carousel-inner">
-                    {% if item.images %}
-                        {% for image in item.images.split(',') %}
-                        <div class="carousel-item {% if loop.first %}active{% endif %}">
-                            <img src="{{ url_for('static', filename='uploads/' + image) }}" class="d-block w-100 detail-image" alt="체험 사진">
-                        </div>
-                        {% endfor %}
-                    {% else %}
-                        <div class="carousel-item active">
-                            <div class="image-placeholder">
-                                <i class="fa-solid fa-camera"></i>
-                                <span>농장주가 아직 이미지를 등록하지 않았습니다.</span>
-                            </div>
-                        </div>
-                    {% endif %}
+                    {% for image in item.images.split(',') %}
+                    <div class="carousel-item {% if loop.first %}active{% endif %}">
+                        <img src="{{ url_for('static', filename='uploads/' + image) }}"
+                             class="detail-carousel-img" alt="{{ item.crop }} 체험 사진">
+                    </div>
+                    {% endfor %}
                 </div>
-                {% if item.images and item.images.split(',')|length > 1 %}
-                <a class="carousel-control-prev" href="#experience-carousel" role="button" data-slide="prev">
-                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                {% if item.images.split(',')|length > 1 %}
+                <a class="carousel-control-prev detail-carousel-ctrl" href="#experience-carousel" role="button" data-slide="prev">
+                    <span class="carousel-control-prev-icon"></span>
                 </a>
-                <a class="carousel-control-next" href="#experience-carousel" role="button" data-slide="next">
-                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                <a class="carousel-control-next detail-carousel-ctrl" href="#experience-carousel" role="button" data-slide="next">
+                    <span class="carousel-control-next-icon"></span>
                 </a>
                 {% endif %}
             </div>
-        </div>
-
-        <div class="col-lg-5">
-            <div class="buy-box-card">
-                <h1 class="buy-box-title">{{ item.crop }} 체험</h1>
-                <div class="buy-box-info">
-                    <p><strong>📍 위치:</strong> {{ item.address_detail }}</p>
-                    <p><strong>🌿 친환경:</strong> {{ "예" if item.pesticide_free else "아니오" }}</p>
-                    <p><strong>👥 모집 인원:</strong> {{ item.current_participants }} / {{ item.max_participants }}명</p>
-                    <p><strong>⏳ 모집 마감:</strong> D-{{ item.d_day }} {% if item.end_date %}({{ item.end_date.strftime('%Y-%m-%d') }}){% endif %}</p>
-                </div>
-                <div class="buy-box-price">
-                    <h2 class="font-weight-bold">{{ "{:,}".format(item.cost) }}원 <small class="text-muted">/ 1인</small></h2>
-                </div>
-                <a href="{{ url_for('experience_apply', item_id=item.id) }}" class="btn btn-success btn-lg btn-block mt-3">체험 예약하기</a>
-            </div>
-        </div>
-    </div>
-
-    <div class="row">
-        <div class="col-lg-12">
-            <div class="card detail-section-card mb-4">
-                <div class="card-body">
-                    <h3 class="card-title">상세 정보</h3>
-                    {% if item.notes %}
-                    <p><strong>챙겨오세요! (준비물)</strong><br>{{ item.notes }}</p>
-                    {% endif %}
-                    {% if item.includes %}
-                    <p><strong>이런 것을 제공해요 (포함 내역)</strong><br>{{ item.includes }}</p>
-                    {% endif %}
-                    {% if item.excludes %}
-                    <p><strong>이것은 포함되지 않아요 (불포함 내역)</strong><br>{{ item.excludes }}</p>
-                    {% endif %}
-                </div>
-            </div>
-
-            <div class="card detail-section-card mb-4">
-                <div class="card-body">
-                    <h3 class="card-title">농장 위치 및 주변 시설 🗺️</h3>
-                    <div id="map" style="width:100%;height:300px;"></div>
-                    <div id="nearby-distances" class="mt-3">
-                        <h6 class="mb-2">주요 시설까지의 직선거리</h6>
-                        <div id="distance-list">
-                            <small class="text-muted">가장 가까운 시설을 검색 중입니다...</small>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            {% if item.timetable_data %}
-            <div class="card detail-section-card mb-4">
-                <div class="card-body">
-                    <h3 class="card-title">운영 시간표 🗓️</h3>
-                    <p class="text-muted small mb-2">녹색 칸이 신청 가능한 시간입니다</p>
-                    <table class="timetable-display">
-                        <thead>
-                            <tr><th>시간</th><th>월</th><th>화</th><th>수</th><th>목</th><th>금</th><th>토</th><th>일</th></tr>
-                        </thead>
-                        <tbody>
-                            <tr><td>09:00 - 10:00</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-                            <tr><td>10:00 - 11:00</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-                            <tr><td>11:00 - 12:00</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-                            <tr><td>12:00 - 13:00</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-                            <tr><td>13:00 - 14:00</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-                            <tr><td>14:00 - 15:00</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-                            <tr><td>15:00 - 16:00</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-                            <tr><td>16:00 - 17:00</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-                        </tbody>
-                    </table>
-                </div>
+            {% else %}
+            <div class="detail-img-placeholder">
+                <i class="fa-solid fa-camera"></i>
+                <span>아직 등록된 사진이 없습니다.</span>
             </div>
             {% endif %}
+        </div>
 
-            <div class="card detail-section-card mb-4">
-                <div class="card-body">
-                    <h3 class="card-title">농장주 프로필 🧑‍🌾</h3>
-                     <div class="d-flex align-items-start">
-                        {% if item.farmer %}
-                        <div class="text-center mr-4" style="width: 90px;">
-                            <img src="{{ url_for('static', filename='uploads/' + item.farmer.profile_image) }}" alt="{{ item.farmer.nickname }}" class="img-fluid rounded-circle mb-2" style="width: 80px; height: 80px; object-fit: cover;">
-                            <h6 class="mb-0" style="font-weight: bold;">{{ item.farmer.nickname }}</h6>
-                        </div>
-                        <div class="flex-grow-1" style="padding-top: 10px;">
-                            <p class="text-muted" style="font-size: 0.9rem; margin-bottom: 5px;">"{{ item.farmer.profile_bio | default('한 줄 소개가 없습니다.', true) }}"</p>
-                        </div>
-                        {% else %}
-                        <div class="text-center mr-4" style="width: 90px;">
-                            <img src="{{ url_for('static', filename='uploads/shd.png') }}" alt="탈퇴한 사용자" class="img-fluid rounded-circle mb-2" style="width: 80px; height: 80px; object-fit: cover;">
-                            <h6 class="mb-0" style="font-weight: bold;">탈퇴한 사용자</h6>
-                        </div>
-                        <div class="flex-grow-1" style="padding-top: 10px;">
-                            <p class="text-muted" style="font-size: 0.9rem; margin-bottom: 5px;">"사용자 정보를 찾을 수 없습니다."</p>
-                        </div>
-                        {% endif %}
-                    </div>
+        <!-- 체험 정보 -->
+        <div class="detail-info-card">
+            <div class="detail-info-badges">
+                {% if item.pesticide_free %}<span class="detail-badge badge-eco"><i class="fa-solid fa-leaf"></i> 친환경</span>{% endif %}
+                {% if item.has_parking %}<span class="detail-badge badge-parking"><i class="fa-solid fa-square-parking"></i> 주차 가능</span>{% endif %}
+                {% if item.is_specialty %}<span class="detail-badge badge-family"><i class="fa-solid fa-star"></i> 추천</span>{% endif %}
+            </div>
+            <h1 class="detail-crop-title">{{ item.crop }} 수확 체험</h1>
+            <div class="detail-info-meta">
+                <span><i class="fa-solid fa-location-dot"></i> {{ item.address_detail }}</span>
+                <span><i class="fa-solid fa-user-group"></i> {{ item.current_participants }} / {{ item.max_participants }}명 모집</span>
+                <span><i class="fa-regular fa-calendar"></i> 마감 D-{{ item.d_day }}</span>
+            </div>
+
+            {% if item.notes or item.includes or item.excludes %}
+            <div class="detail-info-sections">
+                {% if item.notes %}
+                <div class="detail-info-section">
+                    <h4><i class="fa-solid fa-bag-shopping"></i> 챙겨오세요 (준비물)</h4>
+                    <p>{{ item.notes }}</p>
+                </div>
+                {% endif %}
+                {% if item.includes %}
+                <div class="detail-info-section">
+                    <h4><i class="fa-solid fa-circle-check"></i> 포함 내역</h4>
+                    <p>{{ item.includes }}</p>
+                </div>
+                {% endif %}
+                {% if item.excludes %}
+                <div class="detail-info-section">
+                    <h4><i class="fa-solid fa-circle-xmark"></i> 불포함 내역</h4>
+                    <p>{{ item.excludes }}</p>
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- 운영 시간표 -->
+        {% if item.timetable_data %}
+        <div class="detail-section-card">
+            <h3 class="detail-section-title"><i class="fa-regular fa-calendar-check"></i> 운영 시간표</h3>
+            <div class="detail-timetable-wrap">
+                <table class="timetable-display">
+                    <thead>
+                        <tr><th>시간</th><th>월</th><th>화</th><th>수</th><th>목</th><th>금</th><th>토</th><th>일</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>09:00</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                        <tr><td>10:00</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                        <tr><td>11:00</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                        <tr><td>12:00</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                        <tr><td>13:00</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                        <tr><td>14:00</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                        <tr><td>15:00</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                        <tr><td>16:00</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- 농장 위치 -->
+        <div class="detail-section-card">
+            <div class="detail-section-header">
+                <h3 class="detail-section-title"><i class="fa-solid fa-map-location-dot"></i> 농장 위치</h3>
+                <a href="https://map.kakao.com/?q={{ item.address_detail }}" target="_blank" class="detail-map-link">
+                    카카오맵에서 보기 <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                </a>
+            </div>
+            <div id="map" class="detail-map"></div>
+            <div id="nearby-distances" class="detail-nearby">
+                <h5 class="detail-nearby-title">주요 시설까지 거리</h5>
+                <div id="distance-list">
+                    <small class="text-muted">검색 중...</small>
                 </div>
             </div>
-            
-            <div class="card detail-section-card">
-                <div class="card-body">
-                    <ul class="nav nav-tabs" id="reviewInquiryTab" role="tablist">
-                        <li class="nav-item" role="presentation">
-                            <a class="nav-link active" id="reviews-tab" data-toggle="tab" href="#reviews" role="tab" aria-controls="reviews" aria-selected="true">
-                                방문자 후기 ({{ reviews|length }})
-                            </a>
-                        </li>
-                        <li class="nav-item" role="presentation">
-                            <a class="nav-link" id="inquiries-tab" data-toggle="tab" href="#inquiries" role="tab" aria-controls="inquiries" aria-selected="false">
-                                문의사항 ({{ inquiries|length }})
-                            </a>
-                        </li>
-                    </ul>
+        </div>
 
-                    <div class="tab-content" id="reviewInquiryTabContent">
-                        <div class="tab-pane fade show active" id="reviews" role="tabpanel" aria-labelledby="reviews-tab">
-                            {% if review_status == 'allowed' %}
-                            <form action="{{ url_for('add_review', item_id=item.id) }}" method="POST" class="my-4">
-                                <div class="form-group">
-                                    <label for="rating">별점</label>
-                                    <select class="form-control" id="rating" name="rating">
-                                        <option>5</option><option>4</option><option>3</option><option>2</option><option>1</option>
-                                    </select>
-                                </div>
-                                <div class="form-group">
-                                    <textarea name="content" class="form-control" rows="3" placeholder="후기를 남겨주세요." required></textarea>
-                                </div>
-                                <button type="submit" class="btn btn-primary mt-2">후기 등록</button>
-                            </form>
-                            {% elif review_status == 'already_reviewed' %}
-                            <p class="text-muted small my-4">이미 이 체험에 대한 후기를 작성하셨습니다.</p>
-                            {% elif review_status == 'pending_confirmation' %}
-                            <p class="text-muted small my-4">예약이 확정된 후에 후기를 작성할 수 있습니다.</p>
-                            {% elif review_status == 'not_logged_in' %}
-                            <p class="text-muted small my-4">후기를 남기시려면 <a href="{{ url_for('login_page') }}">로그인</a>이 필요합니다.</p>
-                            {% else %}
-                            <p class="text-muted small my-4">체험을 완료한 사용자만 후기를 작성할 수 있습니다.</p>
-                            {% endif %}
-                            
-                            <div class="review-list">
-                                {% for review in reviews %}
-                                <div class="review-item">
-                                    <strong>{{ review.user.nickname if review.user else '알 수 없는 사용자' }}</strong> <span class="text-muted">| {{ review.rating }}점</span>
-                                    <p>{{ review.content }}</p>
-                                    <small class="text-muted">{{ review.timestamp.strftime('%Y-%m-%d') }}</small>
-                                </div>
-                                {% else %}
-                                <p class="pt-3">아직 작성된 후기가 없습니다.</p>
-                                {% endfor %}
-                            </div>
-                        </div>
-
-                        <div class="tab-pane fade" id="inquiries" role="tabpanel" aria-labelledby="inquiries-tab">
-                            {% if session.get('user_id') %}
-                            <form action="{{ url_for('add_inquiry', item_id=item.id) }}" method="POST" class="my-4">
-                                <div class="form-group">
-                                    <textarea name="content" class="form-control" rows="3" placeholder="농장주에게 궁금한 점을 질문해보세요." required></textarea>
-                                </div>
-                                <button type="submit" class="btn btn-primary mt-2">문의 등록</button>
-                            </form>
-                            {% else %}
-                            <p class="text-muted small my-4">문의를 남기시려면 <a href="{{ url_for('login_page') }}">로그인</a>이 필요합니다.</p>
-                            {% endif %}
-                            
-                            <div class="review-list">
-                                {% for inquiry in inquiries %}
-                                <div class="review-item">
-                                    <strong>{{ inquiry.user.nickname if inquiry.user else '알 수 없는 사용자' }}</strong>
-                                    <p>{{ inquiry.content }}</p>
-                                    <small class="text-muted">{{ inquiry.timestamp.strftime('%Y-%m-%d') }}</small>
-                                </div>
-                                {% else %}
-                                <p class="pt-3">아직 작성된 문의가 없습니다.</p>
-                                {% endfor %}
-                            </div>
-                        </div>
-                    </div>
+        <!-- 방문자 후기 -->
+        <div class="detail-section-card">
+            <h3 class="detail-section-title"><i class="fa-solid fa-star"></i> 방문자 후기</h3>
+            {% if session.get('user_id') %}
+            <form action="{{ url_for('add_review', item_id=item.id) }}" method="POST" class="detail-review-form">
+                <div class="detail-review-rating">
+                    <label>별점</label>
+                    <select name="rating" class="apply-input" style="max-width:120px;">
+                        <option>5</option><option>4</option><option>3</option><option>2</option><option>1</option>
+                    </select>
                 </div>
+                <textarea name="content" class="detail-review-textarea" rows="3"
+                          placeholder="체험 후기를 남겨주세요." required></textarea>
+                <button type="submit" class="detail-review-submit">후기 등록</button>
+            </form>
+            {% else %}
+            <p class="detail-login-notice">
+                후기를 남기시려면 <a href="{{ url_for('login_page') }}">로그인</a>이 필요합니다.
+            </p>
+            {% endif %}
+            <div class="review-list">
+                {% for review in reviews %}
+                <div class="review-item">
+                    <div class="review-item-header">
+                        <strong>{{ review.user.nickname }}</strong>
+                        <span class="review-rating">
+                            {% for i in range(review.rating) %}⭐{% endfor %}
+                        </span>
+                        <small class="text-muted">{{ review.timestamp.strftime('%Y.%m.%d') }}</small>
+                    </div>
+                    <p class="review-item-content">{{ review.content }}</p>
+                </div>
+                {% else %}
+                <p class="detail-empty">아직 작성된 후기가 없어요. 첫 후기를 남겨보세요!</p>
+                {% endfor %}
             </div>
-             </div>
+        </div>
+
+        <!-- 문의하기 -->
+        <div class="detail-section-card">
+            <h3 class="detail-section-title"><i class="fa-solid fa-message"></i> 농장주에게 문의하기</h3>
+            {% if session.get('user_id') %}
+            <form action="{{ url_for('add_inquiry', item_id=item.id) }}" method="POST" class="detail-review-form">
+                <textarea name="content" class="detail-review-textarea" rows="3"
+                          placeholder="농장주에게 궁금한 점을 질문해보세요." required></textarea>
+                <button type="submit" class="detail-review-submit">문의 등록</button>
+            </form>
+            {% else %}
+            <p class="detail-login-notice">
+                문의하시려면 <a href="{{ url_for('login_page') }}">로그인</a>이 필요합니다.
+            </p>
+            {% endif %}
+            <div class="review-list">
+                {% for inquiry in inquiries %}
+                <div class="review-item">
+                    <div class="review-item-header">
+                        <strong>{{ inquiry.user.nickname }}</strong>
+                        <small class="text-muted">{{ inquiry.timestamp.strftime('%Y.%m.%d') }}</small>
+                    </div>
+                    <p class="review-item-content">{{ inquiry.content }}</p>
+                </div>
+                {% else %}
+                <p class="detail-empty">아직 문의가 없습니다.</p>
+                {% endfor %}
+            </div>
+        </div>
     </div>
+
+    <!-- 오른쪽: 예약 패널 (sticky) -->
+    <div class="detail-booking-col">
+        <div class="detail-booking-panel">
+            <div class="detail-booking-price">
+                <span class="detail-booking-price-num">{{ "{:,}".format(item.cost) }}원</span>
+                <span class="detail-booking-price-per">/ 1인</span>
+            </div>
+            <div class="detail-booking-stats">
+                <div class="detail-booking-stat">
+                    <i class="fa-solid fa-user-group"></i>
+                    <span>{{ item.current_participants }}/{{ item.max_participants }}명</span>
+                </div>
+                <div class="detail-booking-stat">
+                    <i class="fa-regular fa-calendar-xmark"></i>
+                    <span>D-{{ item.d_day }}</span>
+                </div>
+            </div>
+            {% set remaining = item.max_participants - item.current_participants %}
+            {% if remaining > 0 %}
+            <a href="{{ url_for('experience_apply', item_id=item.id) }}" class="detail-booking-btn">
+                <i class="fa-solid fa-calendar-check"></i> 체험 예약하기
+            </a>
+            <p class="detail-booking-remaining">잔여 <strong>{{ remaining }}</strong>석 남았습니다.</p>
+            {% else %}
+            <button class="detail-booking-btn disabled" disabled>마감되었습니다</button>
+            {% endif %}
+            <div class="detail-booking-info">
+                <div class="detail-booking-info-row">
+                    <i class="fa-solid fa-location-dot"></i>
+                    <span>{{ item.address_detail }}</span>
+                </div>
+                <div class="detail-booking-info-row">
+                    <i class="fa-solid fa-leaf"></i>
+                    <span>친환경: {{ "예" if item.pesticide_free else "아니오" }}</span>
+                </div>
+                <div class="detail-booking-info-row">
+                    <i class="fa-solid fa-square-parking"></i>
+                    <span>주차: {{ "가능" if item.has_parking else "불가" }}</span>
+                </div>
+                <div class="detail-booking-info-row">
+                    <i class="fa-regular fa-calendar"></i>
+                    <span>마감: {{ item.end_date.strftime('%Y.%m.%d') }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
 </div>
 
-<div id="item-data-json" style="display: none;">{{ item_data_for_js|tojson|safe }}</div>
-<script type="text/javascript" src="https://dapi.kakao.com/v2/maps/sdk.js?appkey={{ KAKAO_API_KEY }}&libraries=services"></script>
+<div id="item-data-json" style="display:none;">{{ item_data_for_js|tojson|safe }}</div>
+
+<script type="text/javascript" src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=7dd9cd8d1e3754dcf8532c81dea3e95f&libraries=services"></script>
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const itemDataElement = document.getElementById('item-data-json');
-        const itemData = JSON.parse(itemDataElement.textContent);
+document.addEventListener('DOMContentLoaded', function() {
+    const itemData = JSON.parse(document.getElementById('item-data-json').textContent);
 
-        const mapContainer = document.getElementById('map');
-        const mapOption = {
-            center: new kakao.maps.LatLng(itemData.lat, itemData.lng),
-            level: 3
-        };
-        const map = new kakao.maps.Map(mapContainer, mapOption);
-        const marker = new kakao.maps.Marker({
-            position: new kakao.maps.LatLng(itemData.lat, itemData.lng)
-        });
-        marker.setMap(map);
-
-        const categoriesToSearch = [
-            { code: 'CS2', name: '편의점', emoji: '🏪' },
-            { code: 'PM9', name: '약국', emoji: '💊' },
-            { code: 'HP8', name: '병원', emoji: '🏥' },
-            { code: 'PK6', name: '공용주차장', emoji: '🅿️' }
-        ];
-
-        const ps = new kakao.maps.services.Places();
-        const listContainer = document.getElementById('distance-list');
-        const farmLatLng = new kakao.maps.LatLng(itemData.lat, itemData.lng);
-        listContainer.innerHTML = '';
-
-        categoriesToSearch.forEach(category => {
-            const searchOptions = {
-                location: farmLatLng,
-                radius: 20000,
-                size: 1,
-                sort: kakao.maps.services.SortBy.DISTANCE
-            };
-
-            const callback = function(result, status) {
-                const p = document.createElement('p');
-                p.className = 'mb-1';
-
-                if (status === kakao.maps.services.Status.OK) {
-                    if (result.length > 0) {
-                        const place = result[0];
-                        const placeLatLng = new kakao.maps.LatLng(place.y, place.x);
-                        const polyline = new kakao.maps.Polyline({ path: [farmLatLng, placeLatLng] });
-                        const distance = Math.round(polyline.getLength());
-                        let distanceText = (distance > 1000) ? `약 ${(distance / 1000).toFixed(1)} km` : `약 ${distance} m`;
-                        p.innerHTML = `${category.emoji} ${category.name}: <strong>${distanceText}</strong> <small class="text-muted">(${place.place_name})</small>`;
-                    } else {
-                        p.innerHTML = `${category.emoji} ${category.name}: <span class="text-muted">주변에 없음</span>`;
-                    }
-                } else {
-                    p.innerHTML = `${category.emoji} ${category.name}: <span class="text-danger">검색 실패</span>`;
-                }
-                listContainer.appendChild(p);
-            };
-
-            ps.categorySearch(category.code, callback, searchOptions);
-        });
-
-        const timetableData = "{{ item.timetable_data or '' }}";
-        if (timetableData) {
-            const selectedSlots = timetableData.split(',');
-            const dayMap = { '월': 1, '화': 2, '수': 3, '목': 4, '금': 5, '토': 6, '일': 7 };
-            const timeMap = {
-                '09:00': 1, '10:00': 2, '11:00': 3, '12:00': 4,
-                '13:00': 5, '14:00': 6, '15:00': 7, '16:00': 8
-            };
-            selectedSlots.forEach(slot => {
-                const [day, time] = slot.split('-');
-                if (day && time && dayMap[day] && timeMap[time]) {
-                    const colIndex = dayMap[day];
-                    const rowIndex = timeMap[time];
-                    const table = document.querySelector('.timetable-display');
-                    if (table.rows[rowIndex] && table.rows[rowIndex].cells[colIndex]) {
-                        const cell = table.rows[rowIndex].cells[colIndex];
-                        cell.classList.add('selected');
-                    }
-                }
-            });
-        }
+    // 카카오맵
+    const map = new kakao.maps.Map(document.getElementById('map'), {
+        center: new kakao.maps.LatLng(itemData.lat, itemData.lng),
+        level: 3
     });
+    new kakao.maps.Marker({ position: new kakao.maps.LatLng(itemData.lat, itemData.lng) }).setMap(map);
+
+    // 주변 시설 검색
+    const cats = [
+        { code: 'CS2', name: '편의점', emoji: '🏪' },
+        { code: 'PM9', name: '약국',   emoji: '💊' },
+        { code: 'HP8', name: '병원',   emoji: '🏥' },
+        { code: 'PK6', name: '주차장', emoji: '🅿️' }
+    ];
+    const ps = new kakao.maps.services.Places();
+    const listEl = document.getElementById('distance-list');
+    const farmLatLng = new kakao.maps.LatLng(itemData.lat, itemData.lng);
+    listEl.innerHTML = '';
+
+    cats.forEach(cat => {
+        ps.categorySearch(cat.code, function(result, status) {
+            const p = document.createElement('p');
+            p.className = 'detail-nearby-row';
+            if (status === kakao.maps.services.Status.OK && result.length > 0) {
+                const pl = result[0];
+                const line = new kakao.maps.Polyline({ path: [farmLatLng, new kakao.maps.LatLng(pl.y, pl.x)] });
+                const dist = Math.round(line.getLength());
+                const distStr = dist > 1000 ? `약 ${(dist/1000).toFixed(1)}km` : `약 ${dist}m`;
+                p.innerHTML = `${cat.emoji} <span class="nearby-name">${cat.name}</span> <strong>${distStr}</strong> <small>(${pl.place_name})</small>`;
+            } else {
+                p.innerHTML = `${cat.emoji} <span class="nearby-name">${cat.name}</span> <span class="text-muted">주변에 없음</span>`;
+            }
+            listEl.appendChild(p);
+        }, { location: farmLatLng, radius: 20000, size: 1, sort: kakao.maps.services.SortBy.DISTANCE });
+    });
+
+    // 시간표 셀 채우기
+    const ttData = "{{ item.timetable_data or '' }}";
+    if (ttData) {
+        const dayMap = { '월':1,'화':2,'수':3,'목':4,'금':5,'토':6,'일':7 };
+        const timeMap = { '09:00':1,'10:00':2,'11:00':3,'12:00':4,'13:00':5,'14:00':6,'15:00':7,'16:00':8 };
+        ttData.split(',').forEach(s => {
+            const [day, time] = s.split('-');
+            if (day && time && dayMap[day] && timeMap[time]) {
+                const table = document.querySelector('.timetable-display');
+                const cell = table.rows[timeMap[time]].cells[dayMap[day]];
+                if (cell) { cell.classList.add('selected'); cell.textContent = '✓'; }
+            }
+        });
+    }
+});
 </script>
-{% set carousel_images = [
-    {'src': 'guide_images/1.png', 'title': '확대보기에서 이용방법'},
-    {'src': 'guide_images/2.png'},
-    {'src': 'guide_images/3.png'},
-    {'src': 'guide_images/4.png'},
-    {'src': 'guide_images/5.png'},
-    {'src': 'guide_images/6.png'},
-    {'src': 'guide_images/7.png'},
-    {'src': 'guide_images/8.jpg'},
-    {'src': 'guide_images/9.png'},
-    {'src': 'guide_images/10.png'},
-    {'src': 'guide_images/11.png'}
-] %}
-{{ how_to_use_carousel_modal(modal_id='guide-modal', close_btn_id='guide-modal-close', carousel_id='guide-carousel-modal', images=carousel_images) }}
-
-{{ guide_popup_modal(modal_id='guide-popup-modal', close_btn_id='guide-popup-modal-close', image_filename='이용가이드 이미지.png') }}
-
 {% endblock %}

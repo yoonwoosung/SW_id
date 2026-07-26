@@ -1,160 +1,143 @@
 {% extends "layout.html" %}
 {% block page_class %}page-experiences{% endblock %}
 {% block content %}
-<div class="container page-container">
-    
-    <div class="content-tabs">
-        <a href="{{ url_for('index') }}" class="tab-item active">
-            <i class="fa-solid fa-leaf"></i> 체험하기
-        </a>
-        <a href="{{ url_for('volunteer_apply') }}" class="tab-item">
-            <i class="fa-solid fa-handshake-angle"></i> 봉사활동
-        </a>
-    </div>
 
-
-<div class="tab-content-wrapper">
-    <div class="list-title-header">
-        <h2>현재 진행 중 체험</h2>
-        <div class="sort-links">
-            <a href="#" onclick="getGpsAndSort(event)" class="sort-link {% if sort_by == 'recommended' %}active{% endif %}">내 주변</a>
-            <a href="{{ url_for('index', sort='deadline', region=request.args.get('region'), crop_query=request.args.get('crop_query')) }}" class="sort-link {% if sort_by == 'deadline' or not sort_by %}active{% endif %}">모집 임박순</a>
-            <a href="{{ url_for('index', sort='reviews', region=request.args.get('region'), crop_query=request.args.get('crop_query')) }}" class="sort-link {% if sort_by == 'reviews' %}active{% endif %}">리뷰 많은순</a>
-        </div>
-    </div>
-
-    <div class="search-filter-box card mb-3">
-        <div class="card-body">
-        <form method="GET" action="{{ url_for('index') }}" class="row align-items-end">
-            <div class="col-md-4">
-                <label for="region-select">지역 선택</label>
-                <select id="region-select" name="region" class="form-control">
-                    <option value="">전체</option>
+<!-- HERO -->
+<section class="hero-section" style="background-image: url('{{ url_for('static', filename='가족배경.png') }}');">
+    <div class="hero-overlay"></div>
+    <div class="hero-content">
+        <h1 class="hero-title">제철 농촌 체험으로<br>떠나는 하루 여행</h1>
+        <p class="hero-subtitle">수확 체험부터 주변 관광지까지 한 번에 추천</p>
+        <div class="hero-search-box">
+            <form method="GET" action="{{ url_for('index') }}" class="hero-unified-form">
+                <input type="text" name="crop_query" class="hero-unified-text"
+                       placeholder="지역, 종류, 점포명 등"
+                       value="{{ request.args.get('crop_query', '') }}">
+                <div class="hero-unified-divider"></div>
+                <select name="region" class="hero-unified-select">
+                    <option value="">지역</option>
                     {% set regions = ["서울", "경기", "인천", "강원", "대전", "세종", "충북", "충남", "부산", "대구", "울산", "경북", "경남", "광주", "전북", "전남", "제주"] %}
                     {% for r in regions %}
                         <option value="{{ r }}" {% if request.args.get('region') == r %}selected{% endif %}>{{ r }}</option>
                     {% endfor %}
                 </select>
-            </div>
-            <div class="col-md-6">
-                <label for="crop-search">작물 키워드</label>
-                <input type="text" id="crop-search" name="crop_query" class="form-control" placeholder="예: 딸기, 상추" value="{{ request.args.get('crop_query', '') }}">
-            </div>
-            <div class="col-md-2">
-                <button type="submit" class="btn btn-success btn-block"><i class="fa-solid fa-magnifying-glass"></i> 검색</button>
-            </div>
-        </form>
+                <div class="hero-unified-divider"></div>
+                <input type="date" name="date_filter" class="hero-unified-select"
+                       value="{{ request.args.get('date_filter', '') }}">
+                <div class="hero-unified-divider"></div>
+                <select name="people_count" class="hero-unified-select">
+                    <option value="">인원</option>
+                    <option value="1">1명</option>
+                    <option value="2">2명</option>
+                    <option value="3">3명</option>
+                    <option value="4">4명</option>
+                    <option value="5+">5명+</option>
+                </select>
+                <button type="submit" class="hero-unified-btn">
+                    <i class="fa-solid fa-magnifying-glass"></i> 검색
+                </button>
+            </form>
+        </div>
+        <div class="hero-tags">
+            <a href="{{ url_for('index') }}" class="hero-tag">#아이와함께</a>
+            <a href="{{ url_for('index') }}" class="hero-tag">#반려견가능</a>
+            <a href="{{ url_for('index') }}" class="hero-tag">#당일치기</a>
+            <a href="{{ url_for('index') }}" class="hero-tag">#주차가능</a>
+            <a href="{{ url_for('index') }}" class="hero-tag">#유아차 가능</a>
+            <a href="{{ url_for('index') }}" class="hero-tag">#숙박 가능</a>
         </div>
     </div>
+</section>
 
-    <div class="experience-list-container">
-        <div class="list-header-row">
-            <span class="col-crop">작물명</span>
-            <span class="col-location">위치</span>
-            <span class="col-d-day">마감까지</span>
-            <span class="col-cost">비용</span>
-            <span class="col-status">모집현황</span>
-            <span class="col-action">신청</span>
+<div class="main-content-wrapper">
+
+    <!-- 이번 주 제철 체험 -->
+    <section class="section-block">
+        <div class="section-header">
+            <h2 class="section-title"><i class="fa-solid fa-seedling text-success"></i> 이번 주 제철 체험</h2>
+            <div class="d-flex align-items-center gap-12">
+                <div class="sort-pills">
+                    <a href="#" onclick="getGpsAndSort(event)" class="sort-pill {% if sort_by == 'recommended' %}active{% endif %}">내 주변</a>
+                    <a href="{{ url_for('index', sort='deadline', region=request.args.get('region'), crop_query=request.args.get('crop_query')) }}" class="sort-pill {% if sort_by == 'deadline' or not sort_by %}active{% endif %}">모집 임박순</a>
+                    <a href="{{ url_for('index', sort='reviews', region=request.args.get('region'), crop_query=request.args.get('crop_query')) }}" class="sort-pill {% if sort_by == 'reviews' %}active{% endif %}">리뷰 많은순</a>
+                </div>
+                <a href="{{ url_for('index') }}" class="more-link ml-3">더보기 <i class="fa-solid fa-chevron-right"></i></a>
+            </div>
         </div>
 
-
-
-
-
+        <div class="experience-card-grid">
             {% if items %}
                 {% for item in items %}
-                <a href="{{ url_for('experience_detail', item_id=item.id) }}" class="list-item-row {% if item.current_participants >= item.max_participants %}closed{% endif %}">
-                    
-                    <span class="col-crop">
-                        <strong>{{ item.crop }}</strong>
-                        
-                        {% if sort_by == 'reviews' %}
-                            <span class="text-warning font-weight-bold ml-1" style="font-size: 0.85rem;">⭐ 후기 {{ item.reviews|length }}개</span>
+                {% set first_image = item.images.split(',')[0] if item.images else None %}
+                {% set remaining_spots = item.max_participants - item.current_participants %}
+                <a href="{{ url_for('experience_detail', item_id=item.id) }}" class="exp-card {% if remaining_spots == 0 %}closed{% endif %}">
+                    <div class="exp-card-img-wrap">
+                        {% if first_image %}
+                            <img src="{{ url_for('static', filename='uploads/' + first_image) }}" alt="{{ item.crop }}" class="exp-card-img">
                         {% else %}
-                            <span class="text-muted ml-1" style="font-size: 0.8rem;">후기({{ item.reviews|length }})</span>
+                            <div class="exp-card-img-placeholder">
+                                <i class="fa-solid fa-seedling"></i>
+                            </div>
                         {% endif %}
-
-                        <div class="tag mt-1" style="font-size: 0.85rem;">
-                            {% if item.pesticide_free %}
-                                <span class="text-success font-weight-bold">#친환경</span> 
-                            {% endif %}
-                            
-                            {% if item.is_specialty %}
-                                <span class="text-success font-weight-bold">#지역특산물</span> 
-                            {% endif %}
-                            
-                            {% if not item.pesticide_free and not item.is_specialty %}
-                                <span class="text-muted">#일반체험</span>
+                        <div class="exp-card-badge-wrap">
+                            {% if remaining_spots == 0 %}
+                                <span class="exp-badge badge-closed">마감임박</span>
+                            {% elif item.is_specialty %}
+                                <span class="exp-badge badge-family">가족추천</span>
+                            {% elif item.pesticide_free %}
+                                <span class="exp-badge badge-eco">친환경</span>
+                            {% else %}
+                                <span class="exp-badge badge-open">예약가능</span>
                             {% endif %}
                         </div>
-                    </span>
-                    
-                    <span class="col-location">
-                        {{ item.address_detail }}
                         {% if sort_by == 'recommended' and item.distance is defined %}
-                            <br><span class="text-primary font-weight-bold" style="font-size: 0.85rem;">📍 내 위치에서 {{ "%.1f"|format(item.distance) }}km</span>
+                        <div class="exp-card-dist-badge">
+                            <i class="fa-solid fa-location-dot"></i> {{ "%.1f"|format(item.distance) }}km
+                        </div>
                         {% endif %}
-                    </span>
-                    
-                    <span class="col-d-day">
-                        {% if item.d_day >= 0 and item.d_day < 999 %}
-                            {% if item.d_day <= 3 %}
-                                <span class="text-danger font-weight-bold">🔥 D-{{ item.d_day }}</span>
-                            {% else %}
-                                <span class="text-muted">D-{{ item.d_day }}</span>
-                            {% endif %}
-                        {% else %}
-                            -
-                        {% endif %}
-                    </span>
-                    
-                    <span class="col-cost">{{ "{:,}".format(item.cost) }}원</span>
-                    
-                    <span class="col-status">
-                        {% set remaining_spots = item.max_participants - item.current_participants %}
-                        {% if remaining_spots == 0 %}
-                            <span class="text-secondary font-weight-bold">🔒 마감</span>
-                        {% elif remaining_spots <= 3 %}
-                            <span class="text-danger font-weight-bold" style="font-size: 0.95rem;">🚨 {{ remaining_spots }}자리 남음!</span>
-                        {% else %}
-                            <span class="text-muted">{{ item.current_participants }} / {{ item.max_participants }}명</span>
-                        {% endif %}
-                    </span>
-                    
-                    <span class="col-action">
-                        {% if item.current_participants >= item.max_participants %}
-                            <button class="btn btn-sm btn-secondary" disabled>마감</button>
-                        {% else %}
-                            <button class="btn btn-sm btn-success">신청하기</button>
-                        {% endif %}
-                    </span>
+                    </div>
+                    <div class="exp-card-body">
+                        <div class="exp-card-title">{{ item.crop }} 체험</div>
+                        <div class="exp-card-location"><i class="fa-solid fa-location-dot"></i> {{ item.address_detail }}</div>
+                        <div class="exp-card-meta">
+                            <span><i class="fa-solid fa-user-group"></i> 2-4인 추천</span>
+                            <span><i class="fa-regular fa-clock"></i>
+                                {% if item.d_day >= 0 and item.d_day < 999 %}
+                                    {% if item.d_day <= 3 %}
+                                        <span class="text-danger font-weight-bold">D-{{ item.d_day }}</span>
+                                    {% else %}
+                                        D-{{ item.d_day }}
+                                    {% endif %}
+                                {% else %}
+                                    당일 체험
+                                {% endif %}
+                            </span>
+                        </div>
+                        <div class="exp-card-price">{{ "{:,}".format(item.cost) }}원~</div>
+                    </div>
                 </a>
                 {% endfor %}
             {% else %}
-                <div class="no-items-message">
+                <div class="no-items-message" style="grid-column: 1 / -1;">
                     <div class="empty-icon">🌱</div>
                     <p>아직 등록된 체험이 없어요.</p>
                     {% if session.get('role') == 'farmer' %}
                         <small>새로운 농장 체험을 등록하고 첫 손님을 맞이해보세요!</small>
-                        <a href="{{ url_for('farmer_register') }}" class="btn btn-success mt-3">
-                            내 농장 체험 등록하기
-                        </a>
+                        <a href="{{ url_for('farmer_register') }}" class="btn btn-success mt-3">내 농장 체험 등록하기</a>
                     {% endif %}
                 </div>
             {% endif %}
         </div>
-    
+
         {% if pagination and pagination.pages > 1 %}
-        <nav class="pagination-container">
-            <ul class="pagination">
+        <nav class="pagination-container mt-4">
+            <ul class="pagination justify-content-center">
                 <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
                     <a class="page-link" href="{{ url_for('index', page=pagination.prev_num, sort=sort_by, region=request.args.get('region'), crop_query=request.args.get('crop_query')) }}">&laquo;</a>
                 </li>
                 {% for page_num in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
                     {% if page_num %}
-                        <li class="page-item ...">
-                            <a class="page-link" href="{{ url_for('index', page=page_num, sort=sort_by, region=request.args.get('region'), crop_query=request.args.get('crop_query')) }}">{{ page_num }}</a>
-                        </li>
+                        <li class="page-item"><a class="page-link" href="{{ url_for('index', page=page_num, sort=sort_by, region=request.args.get('region'), crop_query=request.args.get('crop_query')) }}">{{ page_num }}</a></li>
                     {% else %}
                         <li class="page-item disabled"><span class="page-link">...</span></li>
                     {% endif %}
@@ -165,36 +148,142 @@
             </ul>
         </nav>
         {% endif %}
+    </section>
+
+    <!-- 하단 두 섹션 -->
+    <div class="bottom-grid">
+
+        <!-- 내 상황에 맞는 체험 찾기 -->
+        <section class="section-block mb-0 section-card">
+            <h2 class="section-title mb-3"><i class="fa-solid fa-seedling text-success"></i> 내 상황에 맞는 체험 찾기</h2>
+            <div class="situation-grid">
+                <a href="{{ url_for('index') }}" class="situation-card">
+                    <div class="situation-icon">👨‍👩‍👧</div>
+                    <div class="situation-label">아이와 함께</div>
+                    <div class="situation-sub">가족 맞춤 체험</div>
+                </a>
+                <a href="{{ url_for('index') }}" class="situation-card">
+                    <div class="situation-icon">🐕</div>
+                    <div class="situation-label">반려견과 함께</div>
+                    <div class="situation-sub">펫 프렌들리</div>
+                </a>
+                <a href="{{ url_for('index') }}" class="situation-card">
+                    <div class="situation-icon">🚗</div>
+                    <div class="situation-label">당일치기 여행</div>
+                    <div class="situation-sub">가볍게 떠나요</div>
+                </a>
+                <a href="{{ url_for('index') }}" class="situation-card">
+                    <div class="situation-icon">🛒</div>
+                    <div class="situation-label">유아차 가능</div>
+                    <div class="situation-sub">편하게 다녀요</div>
+                </a>
+                <a href="{{ url_for('index') }}" class="situation-card">
+                    <div class="situation-icon">🏠</div>
+                    <div class="situation-label">숙박 가능한</div>
+                    <div class="situation-sub">1박 2일 힐링</div>
+                </a>
+                <a href="{{ url_for('index') }}" class="situation-card">
+                    <div class="situation-icon situation-parking">P</div>
+                    <div class="situation-label">주차 가능한</div>
+                    <div class="situation-sub">편리한 주차</div>
+                </a>
+            </div>
+        </section>
+
+        <!-- AI 추천 여행 코스 -->
+        <section class="section-block mb-0 section-card">
+            <div class="section-header">
+                <h2 class="section-title">
+                    <span class="ai-badge-label">AI</span> AI가 추천하는 농촌 여행 코스
+                </h2>
+                <a href="#" class="more-link">코스 더보기 <i class="fa-solid fa-chevron-right"></i></a>
+            </div>
+            <div class="ai-course-inner">
+                <div class="ai-timeline">
+                    <div class="ai-timeline-item">
+                        <div class="ai-time">09:00</div>
+                        <div class="ai-dot"></div>
+                        <div class="ai-timeline-body">
+                            <div class="ai-act-name">딸기 수확 체험</div>
+                            <div class="ai-act-sub">싱싱한 딸기 직접 수확</div>
+                        </div>
+                        <div class="ai-thumb">🍓</div>
+                    </div>
+                    <div class="ai-timeline-item">
+                        <div class="ai-time">12:30</div>
+                        <div class="ai-dot"></div>
+                        <div class="ai-timeline-body">
+                            <div class="ai-act-name">천안 향토 음식</div>
+                            <div class="ai-act-sub">병천 순대국 &amp; 로컬 맛집</div>
+                        </div>
+                        <div class="ai-thumb">🍲</div>
+                    </div>
+                    <div class="ai-timeline-item">
+                        <div class="ai-time">15:00</div>
+                        <div class="ai-dot"></div>
+                        <div class="ai-timeline-body">
+                            <div class="ai-act-name">독립기념관 관람</div>
+                            <div class="ai-act-sub">역사와 자연을 함께</div>
+                        </div>
+                        <div class="ai-thumb">🏛️</div>
+                    </div>
+                    <div class="ai-timeline-item">
+                        <div class="ai-time">17:00</div>
+                        <div class="ai-dot"></div>
+                        <div class="ai-timeline-body">
+                            <div class="ai-act-name">로컬 카페 휴식</div>
+                            <div class="ai-act-sub">아늑한 시골 카페에서 힐링</div>
+                        </div>
+                        <div class="ai-thumb">☕</div>
+                    </div>
+                </div>
+                <div class="ai-map-placeholder">
+                    <div class="ai-map-inner">
+                        <i class="fa-solid fa-map-location-dot"></i>
+                        <span>지도 영역</span>
+                    </div>
+                </div>
+            </div>
+        </section>
     </div>
+
+    <!-- 지역별 추천 -->
+    <section class="section-block">
+        <div class="section-header">
+            <h2 class="section-title"><i class="fa-solid fa-location-dot text-success"></i> 지역별 추천</h2>
+            <a href="{{ url_for('index') }}" class="more-link">지역 전체보기 <i class="fa-solid fa-chevron-right"></i></a>
+        </div>
+        <div class="region-tabs">
+            {% for r in ["천안", "공주", "부여", "논산", "아산"] %}
+            <a href="{{ url_for('index', region=r) }}" class="region-tab {% if request.args.get('region') == r %}active{% endif %}">{{ r }}</a>
+            {% endfor %}
+            <a href="{{ url_for('index') }}" class="region-tab-more"><i class="fa-solid fa-chevron-right"></i></a>
+        </div>
+    </section>
+
 </div>
 
 <script>
 function getGpsAndSort(event) {
-    event.preventDefault(); 
-    
+    event.preventDefault();
     const urlParams = new URLSearchParams(window.location.search);
-    urlParams.set('sort', 'recommended'); 
-
+    urlParams.set('sort', 'recommended');
     if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
-            function(position) { 
-                // 1. 성공 시
+            function(position) {
                 urlParams.set('lat', position.coords.latitude);
                 urlParams.set('lon', position.coords.longitude);
                 window.location.href = window.location.pathname + '?' + urlParams.toString();
             },
-            function(error) { 
-                // 2. 실패 시 (원인별 세분화)
+            function(error) {
                 let errorMsg = "위치 정보를 가져올 수 없습니다.";
                 if (error.code === 1) errorMsg = "위치 정보 제공을 거부하셨습니다.";
                 if (error.code === 2) errorMsg = "PC/네트워크 문제로 위치를 파악할 수 없습니다.";
-                if (error.code === 3) errorMsg = "위치를 찾는 데 시간이 너무 오래 걸렸습니다(시간 초과).";
-                
+                if (error.code === 3) errorMsg = "위치를 찾는 데 시간이 너무 오래 걸렸습니다.";
                 alert(errorMsg + " 기본 위치 기준으로 검색합니다.");
                 window.location.href = window.location.pathname + '?' + urlParams.toString();
             },
-            // PC 환경에 맞게 고정밀도 끄기(속도 향상), 제한시간 15초로 넉넉하게 연장
-            { enableHighAccuracy: false, timeout: 15000, maximumAge: 0 } 
+            { enableHighAccuracy: false, timeout: 15000, maximumAge: 0 }
         );
     } else {
         alert("사용 중인 브라우저가 위치 정보를 지원하지 않습니다.");

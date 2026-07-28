@@ -125,3 +125,15 @@
 
 링크
 kevin4201.pythonanywhere.com/
+
+## 7. 개발 문서 (Development Docs)
+
+팀 개발 기록·협업 규칙은 아래 문서를 참고하세요. (기여 진입점: [CONTRIBUTING.md](CONTRIBUTING.md))
+
+- [팀 개발 워크플로](docs/development/team-workflow.md)
+- [커밋 메시지 규칙](docs/development/commit-convention.md)
+- [GitHub 라벨 기준](docs/development/github-labels.md)
+- [ADR (아키텍처 결정 기록)](docs/adr/README.md)
+- [주간 개발 기록](docs/worklog/README.md)
+- [포트폴리오 정리 가이드](docs/portfolio/README.md)
+- [릴리스 노트](docs/releases/README.md)

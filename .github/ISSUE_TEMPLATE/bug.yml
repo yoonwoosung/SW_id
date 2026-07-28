@@ -1,0 +1,59 @@
+name: 버그
+description: 버그를 신고합니다.
+title: "[Bug] "
+labels: ["bug"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: 발생한 문제
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: 재현 방법
+      value: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: 기대 결과
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: 실제 결과
+    validations:
+      required: true
+  - type: input
+    id: env
+    attributes:
+      label: 발생 환경
+      description: OS, 브라우저, 로컬/배포, 브랜치 등
+  - type: textarea
+    id: logs
+    attributes:
+      label: 로그 또는 오류 메시지
+      render: shell
+  - type: textarea
+    id: cause
+    attributes:
+      label: 예상 원인
+  - type: input
+    id: impact
+    attributes:
+      label: 영향 범위
+  - type: textarea
+    id: done
+    attributes:
+      label: 완료 조건
+      value: |
+        - [ ] 원인이 확인되었다.
+        - [ ] 재현이 해결되었다.
+        - [ ] 재발 방지 코드/테스트가 추가되었다.

@@ -1,0 +1,39 @@
+# 포트폴리오 재료 다이제스트 (선택 자동화)
+#
+# 안전 설계:
+# - 수동 실행(workflow_dispatch)만. 자동으로 커밋/푸시하지 않는다.
+# - 읽기 전용 권한. 결과는 Actions 실행 요약(Job Summary)에만 출력한다.
+# - 기본 GITHUB_TOKEN만 사용. 별도 Secret이 필요 없다.
+#
+# 이 파일은 브랜치에 있어도 default 브랜치에 병합되기 전에는 실행되지 않는다.
+name: 포트폴리오 PR 다이제스트
+
+on:
+  workflow_dispatch:
+    inputs:
+      label:
+        description: "조회할 라벨"
+        required: false
+        default: "portfolio"
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  digest:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 라벨별 병합 PR 요약
+        env:
+          GH_TOKEN: ${{ github.token }}
+          LABEL: ${{ github.event.inputs.label }}
+        run: |
+          {
+            echo "## '${LABEL}' 라벨 병합 PR"
+            echo ""
+            gh pr list --repo "$GITHUB_REPOSITORY" --state merged --label "$LABEL" --limit 100 \
+              --json number,title,author,mergedAt \
+              --jq '.[] | "- #\(.number) \(.title) (@\(.author.login), \(.mergedAt[0:10]))"' \
+              || echo "조회 결과가 없거나 라벨이 아직 없습니다."
+          } >> "$GITHUB_STEP_SUMMARY"

@@ -1,0 +1,47 @@
+name: 리팩터링
+description: 동작 변화 없는 코드 구조 개선 작업을 등록합니다.
+title: "[Refactor] "
+labels: ["refactor"]
+body:
+  - type: textarea
+    id: current
+    attributes:
+      label: 현재 구조의 문제
+    validations:
+      required: true
+  - type: textarea
+    id: purpose
+    attributes:
+      label: 리팩터링 목적
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: 변경 범위
+  - type: dropdown
+    id: behavior
+    attributes:
+      label: 동작 변경 여부
+      options:
+        - 동작 변경 없음 (구조만 개선)
+        - 동작 변경 있음
+    validations:
+      required: true
+  - type: input
+    id: modules
+    attributes:
+      label: 영향받는 모듈
+      description: 예 models/, routes/, services/, external/, common/
+  - type: textarea
+    id: test
+    attributes:
+      label: 테스트 방법
+  - type: textarea
+    id: done
+    attributes:
+      label: 완료 조건
+      value: |
+        - [ ] 기존 동작이 그대로 유지된다.
+        - [ ] 기존 테스트가 통과한다.
+        - [ ] 관련 문서가 갱신된다.

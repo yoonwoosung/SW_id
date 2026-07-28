@@ -1,0 +1,29 @@
+name: 문서화
+description: 문서 추가 또는 수정 작업을 등록합니다.
+title: "[Docs] "
+labels: ["documentation"]
+body:
+  - type: input
+    id: target
+    attributes:
+      label: 문서화 대상
+    validations:
+      required: true
+  - type: textarea
+    id: reason
+    attributes:
+      label: 문서화가 필요한 이유
+    validations:
+      required: true
+  - type: textarea
+    id: files
+    attributes:
+      label: 수정 또는 추가할 문서
+      description: 예 docs/adr/, docs/development/, README.md
+  - type: textarea
+    id: done
+    attributes:
+      label: 완료 조건
+      value: |
+        - [ ] 필요한 문서가 작성/수정되었다.
+        - [ ] 내부 링크가 올바르다.

@@ -1,0 +1,60 @@
+name: 기능 개발
+description: 새로운 기능 개발 작업을 등록합니다.
+title: "[Feature] "
+labels: ["feature"]
+body:
+  - type: textarea
+    id: background
+    attributes:
+      label: 작업 배경
+      description: 현재 어떤 문제나 상황이 있는지 작성합니다.
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: 해결하려는 문제
+      description: 사용자 또는 시스템이 겪는 문제를 작성합니다.
+    validations:
+      required: true
+  - type: textarea
+    id: goal
+    attributes:
+      label: 작업 목표
+      description: 이번 작업으로 달성할 목표를 작성합니다.
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: 작업 범위
+      value: |
+        - [ ] 작업 항목 1
+        - [ ] 작업 항목 2
+  - type: textarea
+    id: done
+    attributes:
+      label: 완료 조건
+      value: |
+        - [ ] 핵심 기능이 정상 동작한다.
+        - [ ] 예외 상황이 처리된다.
+        - [ ] 필요한 테스트가 작성된다.
+        - [ ] 관련 문서가 갱신된다.
+  - type: textarea
+    id: tech
+    attributes:
+      label: 기술적 고려 사항
+      description: 검토해야 하는 구조, 성능, 보안, 데이터 정합성 문제를 작성합니다.
+  - type: input
+    id: refs
+    attributes:
+      label: 관련 API 또는 화면
+  - type: input
+    id: assignee
+    attributes:
+      label: 담당자
+  - type: textarea
+    id: links
+    attributes:
+      label: 참고 자료
+      description: 관련 문서, 화면, API, Issue 링크를 작성합니다.

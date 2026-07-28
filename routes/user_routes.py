@@ -116,8 +116,13 @@ def my_info():
     user = User.query.get_or_404(session['user_id'])
 
     if request.method == 'POST':
-        user.nickname = request.form.get('nickname')
-        user.name = request.form.get('name')
+        # nickname·name은 NOT NULL이므로 폼에 값이 있을 때만 갱신(없으면 기존값 유지).
+        nickname = request.form.get('nickname')
+        if nickname:
+            user.nickname = nickname
+        name = request.form.get('name')
+        if name:
+            user.name = name
         user.phone = request.form.get('phone')
         if user.role == 'farmer':
             user.farm_address = request.form.get('farm_address')

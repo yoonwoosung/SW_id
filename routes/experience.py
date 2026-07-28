@@ -108,8 +108,10 @@ def index():
                 )
                 # --- ▲ 여기까지가 추천순 정렬 로직입니다. ▲ ---
             else:
-                items_on_page = []
-                pagination = None
+                # 위치 정보가 없으면(첫 방문·위치 거부) 빈 화면 대신 마감임박순으로 폴백한다.
+                query = base_query.order_by(is_closed.asc(), Experience.end_date.asc())
+                pagination = query.paginate(page=page, per_page=15, error_out=False)
+                items_on_page = pagination.items
 
         elif sort_by == 'reviews':
             review_count = func.count(Review.id).label('review_count')

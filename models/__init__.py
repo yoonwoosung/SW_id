@@ -8,7 +8,10 @@ from models.review import Review
 from models.inquiry import Inquiry
 from models.reservation import Application
 from models.notification import Notification
+from models.user_request import UserRequest
+from models.proposal import Proposal
 
 __all__ = [
     'db', 'User', 'Experience', 'Review', 'Inquiry', 'Application', 'Notification',
+    'UserRequest', 'Proposal',
 ]

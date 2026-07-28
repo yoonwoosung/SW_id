@@ -1,5 +1,5 @@
 # routes/ — 도메인별 라우트 모듈. register_routes(app)로 모든 라우트를 앱에 등록한다.
-from routes import (experience, farm, farmer, auth, user_routes, reservation, review, volunteer, admin, recommend, nearby, course, esg, product)
+from routes import (experience, farm, farmer, auth, user_routes, reservation, review, volunteer, admin, recommend, nearby, course, esg, product, request_routes)
 
 
 def register_routes(app):
@@ -17,3 +17,4 @@ def register_routes(app):
     course.register(app)
     esg.register(app)
     product.register(app)
+    request_routes.register(app)

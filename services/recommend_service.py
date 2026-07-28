@@ -1,5 +1,7 @@
-# services/recommend_service.py — 추천 점수 계산(특산물 매칭·점수 요소·합산).
+# services/recommend_service.py — 추천 점수 계산(특산물 매칭·점수 요소·합산·조건 가점).
+from common.constants import CATEGORY_MATCH_SCORE
 from services.recommend_data import REGIONAL_SPECIALTIES
+from services.category_match import compute_category_match
 
 
 def matches_specialty(address_detail, crop):
@@ -30,3 +32,8 @@ def score_components(distance, max_p, current_p, is_specialty):
 
 def calculate_score(distance, max_p, current_p, is_specialty):
     return sum(score_components(distance, max_p, current_p, is_specialty).values())
+
+
+def category_bonus(conditions, experience):
+    """사용자가 고른 조건과 일치하는 항목 수 × CATEGORY_MATCH_SCORE 가점."""
+    return CATEGORY_MATCH_SCORE * compute_category_match(conditions, experience)

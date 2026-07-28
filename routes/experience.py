@@ -20,9 +20,11 @@ from PIL import Image
 from models import db, User, Experience, Review, Inquiry, Application, Notification
 from services.distance import haversine
 from services.recommend_data import REGIONAL_SPECIALTIES
-from services.recommend_service import matches_specialty, score_components, calculate_score
+from services.recommend_service import matches_specialty, score_components, calculate_score, category_bonus
 from services.recommend_reason import recommendation_reason
 from services.review_service import analyze_review_with_clova
+from common.search_categories import SEARCH_CATEGORIES, CATEGORY_CODES
+from common.response import success_response
 from external.kakao_map import get_coords_from_address
 from common.validators import allowed_file
 
@@ -38,6 +40,8 @@ def index():
         sort_by = request.args.get('sort', 'recommended', type=str)
         region = request.args.get('region', type=str)
         crop_query = request.args.get('crop_query', type=str)
+        # 카테고리 조건은 cond_<카테고리> 파라미터로 받는다(기존 region 필터와 충돌 방지). 없으면 가점 0.
+        selected_conditions = {code: request.args.getlist('cond_' + code) for code in CATEGORY_CODES}
 
         today = date.today()
         base_query = Experience.query.filter(Experience.status == 'recruiting', Experience.end_date >= today)
@@ -80,6 +84,7 @@ def index():
 
                     is_specialty = matches_specialty(exp.address_detail, exp.crop)
                     recommendation_score = calculate_score(distance, exp.max_participants, exp.current_participants, is_specialty)
+                    recommendation_score += category_bonus(selected_conditions, exp)
 
                     exp.recommendation_score = recommendation_score
                     exp.distance = distance
@@ -319,8 +324,14 @@ def get_experiences_json():
     return jsonify(experience_list)
 
 
+def search_categories():
+    # 프론트 드롭박스용 조건 카테고리 트리(필터·역제안 요청글 공용).
+    return success_response({"categories": SEARCH_CATEGORIES})
+
+
 def register(app):
     app.add_url_rule('/', 'index', index)
+    app.add_url_rule('/api/search-categories', 'search_categories', search_categories)
     app.add_url_rule('/experience/<int:item_id>', 'experience_detail', experience_detail)
     app.add_url_rule('/farmer/register', 'farmer_register', farmer_register, methods=['GET', 'POST'])
     app.add_url_rule('/farmer/modify/<int:item_id>', 'farmer_register', farmer_register, methods=['GET', 'POST'])

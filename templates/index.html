@@ -289,5 +289,26 @@ function getGpsAndSort(event) {
         alert("사용 중인 브라우저가 위치 정보를 지원하지 않습니다.");
     }
 }
+
+// 상단 'AI 여행 추천'으로 진입(locate=1)하면 위치를 자동 요청한다.
+// 성공 시 좌표로 재조회, 거부/실패 시 마감임박순 폴백 목록이 그대로 유지된다.
+document.addEventListener('DOMContentLoaded', function() {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('locate') === '1' && !params.get('lat') && navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+            function(position) {
+                params.set('lat', position.coords.latitude);
+                params.set('lon', position.coords.longitude);
+                params.delete('locate');
+                window.location.href = window.location.pathname + '?' + params.toString();
+            },
+            function() {
+                params.delete('locate');
+                history.replaceState(null, '', window.location.pathname + '?' + params.toString());
+            },
+            { enableHighAccuracy: false, timeout: 15000, maximumAge: 0 }
+        );
+    }
+});
 </script>
 {% endblock %}

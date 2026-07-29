@@ -232,6 +232,57 @@
 </div>
 </div>
 
+<!-- AI 추천 코스 (이 체험 주변 장소 기반) -->
+<div class="main-content-wrapper">
+    <section class="section-block section-card mb-0">
+        <div class="section-header">
+            <h2 class="section-title"><span class="ai-badge-label">AI</span> 이 체험과 함께 즐기는 추천 코스</h2>
+        </div>
+        <p id="ai-course-reason" style="margin:0 0 14px;color:#666;"></p>
+        <div class="ai-course-inner">
+            <div class="ai-timeline" id="ai-course-timeline">
+                <div style="padding:20px;color:#888;">주변 장소로 코스를 짜는 중…</div>
+            </div>
+        </div>
+    </section>
+</div>
+
+<script>
+(function () {
+    var TYPE_META = {
+        experience: '🌱', restaurant: '🍽️', attraction: '🏛️', cafe: '☕'
+    };
+    var timeline = document.getElementById('ai-course-timeline');
+    var reasonEl = document.getElementById('ai-course-reason');
+    function esc(s) { var d = document.createElement('div'); d.textContent = (s == null ? '' : String(s)); return d.innerHTML; }
+    function showEmpty(msg) { reasonEl.textContent = ''; timeline.innerHTML = '<div style="padding:20px;color:#888;">' + esc(msg) + '</div>'; }
+
+    fetch('/api/experiences/{{ item.id }}/course')
+        .then(function (r) { return r.json(); })
+        .then(function (res) {
+            if (!res.success || !res.data) { showEmpty('코스를 불러올 수 없습니다.'); return; }
+            var data = res.data;
+            var placeCount = (data.items || []).filter(function (it) { return it.type !== 'experience'; }).length;
+            if (placeCount === 0) { showEmpty(data.message || '주변 장소 정보를 불러오지 못했어요.'); return; }
+            reasonEl.textContent = data.reason || '';
+            timeline.innerHTML = data.items.map(function (it) {
+                var sub = it.type === 'experience' ? '이 체험'
+                    : (esc(it.address || '') + (it.distance_km != null ? ' · ' + it.distance_km + 'km' : ''));
+                return '<div class="ai-timeline-item">'
+                    + '<div class="ai-time">' + esc(it.time) + '</div>'
+                    + '<div class="ai-dot"></div>'
+                    + '<div class="ai-timeline-body">'
+                    + '<div class="ai-act-name">' + esc(it.name || '') + '</div>'
+                    + '<div class="ai-act-sub">' + sub + '</div>'
+                    + '</div>'
+                    + '<div class="ai-thumb">' + (TYPE_META[it.type] || '📍') + '</div>'
+                    + '</div>';
+            }).join('');
+        })
+        .catch(function () { showEmpty('코스를 불러오는 중 오류가 발생했어요.'); });
+})();
+</script>
+
 <div id="item-data-json" style="display:none;">{{ item_data_for_js|tojson|safe }}</div>
 
 <script type="text/javascript" src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=7dd9cd8d1e3754dcf8532c81dea3e95f&libraries=services"></script>

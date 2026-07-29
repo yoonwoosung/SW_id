@@ -153,3 +153,48 @@
 ### 에러 코드
 `LOGIN_REQUIRED`(403) · `FARMER_ONLY`(403) · `REQUEST_NOT_FOUND`(404) ·
 `TITLE_REQUIRED`/`MESSAGE_REQUIRED`/`INVALID_CONDITIONS`(400)
+
+---
+
+## AI 추천 코스
+
+체험(농장) 위치를 기준으로 주변 장소를 **시간순 코스**(오전 체험 → 점심 맛집 → 오후 관광 → 카페)로 구성한다.
+장소 선정·순서는 규칙 기반(거리순·중복 제거)이며, `reason`은 추천 이유 한 줄이다.
+
+### 코스 조회
+`GET /api/experiences/<id>/course`
+
+```jsonc
+// 200 (정상)
+{ "success": true,
+  "data": {
+    "experience_id": 1,
+    "reason": "'딸기 체험'과 가까운 인기 장소 3곳으로 구성한 코스입니다.",
+    "items": [
+      {"time":"09:00","type":"experience","name":"딸기 체험","distance_km":0.0},
+      {"time":"12:30","type":"restaurant","name":"○○식당","address":"...","distance_km":2.1},
+      {"time":"15:00","type":"attraction","name":"○○관광지","address":"...","distance_km":5.0},
+      {"time":"17:00","type":"cafe","name":"○○카페","address":"...","distance_km":3.2}
+    ]
+  },
+  "error": null }
+
+// 200 (주변 장소를 못 가져온 경우 — 화면이 죽지 않도록 체험 항목 + 안내 메시지)
+{ "success": true,
+  "data": {
+    "experience_id": 1, "reason": null,
+    "items": [ {"time":"09:00","type":"experience","name":"딸기 체험","distance_km":0.0} ],
+    "message": "코스를 생성할 수 없습니다. 주변 장소 정보를 불러오지 못했습니다."
+  },
+  "error": null }
+
+// 404 (없는 체험)
+{ "success": false, "data": null,
+  "error": { "code": "EXPERIENCE_NOT_FOUND", "message": "체험을 찾을 수 없습니다." } }
+```
+
+### 참고
+- 장소 데이터: 한국관광공사 일반 관광정보 API(`external/tour_api.py`). `.env`에 `TOUR_API_KEY`를 넣으면 실제 장소가 채워지고, 없으면 `items`는 체험 항목만 나온다(오류 아님).
+- `reason`은 현재 규칙 기반 문장이며, 추후 LLM(`services/course_reason.py`)으로 교체 가능하다. LLM은 코스에 담긴 장소만 근거로 설명하게 하여 장소를 새로 지어내지 않는다.
+- KTO에 별도 '카페' 종류가 없어 카페 슬롯도 음식점(contentType 39)에서 (식당과 중복되지 않게) 선정한다. — 개선 여지(TODO).
+

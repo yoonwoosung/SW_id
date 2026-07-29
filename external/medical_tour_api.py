@@ -5,7 +5,9 @@ import requests
 
 from common.constants import HTTP_TIMEOUT_SEC, NEARBY_RESULT_LIMIT
 
-# TODO: 실제 키 발급 시 KTO 의료관광 서비스의 정확한 위치기반 목록 URL로 확정.
+# ⚠️ 확인 필요(미검증): 이 URL은 임시 placeholder다. KTO에 'MedicalTourService'가 실재하는지 불확실.
+#   MEDICAL_API_KEY가 어떤 data.go.kr 서비스(의료관광/응급의료/병원정보 등)용인지 확인 후,
+#   해당 서비스의 샘플 요청 URL·파라미터·응답 필드로 맞춰야 한다. (다른 제공기관일 수 있음)
 MEDICAL_TOUR_URL = "https://apis.data.go.kr/B551011/MedicalTourService/locationBasedList"
 
 

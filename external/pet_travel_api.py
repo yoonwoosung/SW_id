@@ -5,8 +5,9 @@ import requests
 
 from common.constants import HTTP_TIMEOUT_SEC, NEARBY_RESULT_LIMIT
 
-# TODO: 실제 키 발급 시 KTO 반려동물 동반여행 서비스의 정확한 위치기반 목록 URL로 확정.
-PET_TRAVEL_URL = "https://apis.data.go.kr/B551011/KorPetTourService/locationBasedList"
+# ⚠️ 확인 필요(미검증): 국문관광정보가 KorService2로 이관된 것에 맞춰 v2 형태로 추정 변경.
+#   KorPetTourService의 실제 v2 서비스명/오퍼레이션은 data.go.kr 샘플 URL로 확인해 확정할 것.
+PET_TRAVEL_URL = "https://apis.data.go.kr/B551011/KorPetTourService2/locationBasedList2"
 
 
 def find_pet_facilities(lat, lng, radius_m):

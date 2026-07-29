@@ -1,0 +1,120 @@
+{% extends "layout.html" %}
+{% block page_class %}page-ai-recommend{% endblock %}
+{% block content %}
+<div class="main-content-wrapper" style="padding-top:24px;">
+
+    <section class="section-block section-card mb-0" style="margin-bottom:16px;">
+        <h1 class="section-title" style="font-size:1.5rem;"><span class="ai-badge-label">AI</span> AI 맞춤 여행 추천</h1>
+        <p style="color:#888;margin:8px 0 0;">
+            {% if session.get('user_id') %}회원님의 지난 신청 이력과 위치·조건을 반영해 추천합니다.{% else %}로그인하면 회원님 이력까지 반영해 더 정확히 추천합니다.{% endif %}
+        </p>
+    </section>
+
+    <!-- 상세 조건 -->
+    <section class="section-block section-card mb-0" style="margin-bottom:16px;">
+        <button type="button" id="cat-toggle" style="display:flex;align-items:center;gap:8px;background:none;border:none;cursor:pointer;font-size:1.05rem;font-weight:700;padding:4px 0;">
+            🎛 상세 조건 <i class="fa-solid fa-chevron-down" style="font-size:0.8rem;"></i>
+        </button>
+        <div id="cat-panel" style="display:none;margin-top:12px;">
+            <div id="cat-groups" style="color:#888;">불러오는 중…</div>
+        </div>
+        <button type="button" id="rec-apply" style="margin-top:14px;background:#2e7d32;color:#fff;border:none;border-radius:8px;padding:11px 20px;cursor:pointer;font-weight:600;font-size:1rem;">
+            📍 내 위치로 맞춤 추천받기
+        </button>
+    </section>
+
+    <!-- 추천 결과 -->
+    <section class="section-block section-card mb-0" style="margin-bottom:16px;">
+        <div class="section-header"><h2 class="section-title">맞춤 추천 체험</h2></div>
+        <div id="rec-results" style="color:#888;padding:8px 4px;">‘내 위치로 맞춤 추천받기’를 눌러주세요.</div>
+    </section>
+
+    <!-- AI 코스 -->
+    <section class="section-block section-card mb-0">
+        <div class="section-header"><h2 class="section-title"><span class="ai-badge-label">AI</span> 추천 코스</h2></div>
+        <p id="course-info" style="color:#888;margin:0 0 12px;"></p>
+        <div class="ai-course-inner">
+            <div class="ai-timeline" id="course-timeline"><div style="padding:16px;color:#999;">추천을 받으면 1위 체험 기준 코스가 표시됩니다.</div></div>
+        </div>
+    </section>
+
+</div>
+
+<script>
+(function () {
+    function esc(s) { var d = document.createElement('div'); d.textContent = (s == null ? '' : String(s)); return d.innerHTML; }
+    var TYPE_EMOJI = { experience: '🌱', restaurant: '🍽️', attraction: '🏛️', cafe: '☕' };
+    var toggle = document.getElementById('cat-toggle'),
+        panel = document.getElementById('cat-panel'),
+        groupsEl = document.getElementById('cat-groups'),
+        applyBtn = document.getElementById('rec-apply'),
+        resEl = document.getElementById('rec-results'),
+        courseTl = document.getElementById('course-timeline'),
+        courseInfo = document.getElementById('course-info');
+
+    toggle.addEventListener('click', function () { panel.style.display = (panel.style.display === 'none') ? 'block' : 'none'; });
+
+    fetch('/api/search-categories').then(function (r) { return r.json(); }).then(function (res) {
+        var cats = (res.data && res.data.categories) || [];
+        groupsEl.innerHTML = cats.map(function (c) {
+            var chips = c.items.map(function (it) {
+                return '<label style="display:inline-flex;align-items:center;gap:4px;margin:4px 8px 4px 0;font-size:0.9rem;cursor:pointer;">'
+                    + '<input type="checkbox" data-cat="' + c.code + '" value="' + it.code + '"> ' + it.label + '</label>';
+            }).join('');
+            return '<div style="margin-bottom:10px;"><div style="font-weight:700;margin-bottom:4px;">' + c.label + '</div>' + chips + '</div>';
+        }).join('');
+    }).catch(function () { groupsEl.textContent = '조건을 불러오는 중 오류.'; });
+
+    function renderCourse(expId) {
+        fetch('/api/experiences/' + expId + '/course').then(function (r) { return r.json(); }).then(function (cRes) {
+            var d = cRes.data || {};
+            var placeCount = (d.items || []).filter(function (it) { return it.type !== 'experience'; }).length;
+            courseInfo.textContent = placeCount ? (d.reason || '') : '1위 체험 주변 장소가 부족해 코스를 만들지 못했어요.';
+            if (!placeCount) { courseTl.innerHTML = ''; return; }
+            courseTl.innerHTML = d.items.map(function (it) {
+                var sub = it.type === 'experience' ? '이 체험' : (esc(it.address || '') + (it.distance_km != null ? ' · ' + it.distance_km + 'km' : ''));
+                return '<div class="ai-timeline-item"><div class="ai-time">' + esc(it.time) + '</div><div class="ai-dot"></div>'
+                    + '<div class="ai-timeline-body"><div class="ai-act-name">' + esc(it.name || '') + '</div><div class="ai-act-sub">' + sub + '</div></div>'
+                    + '<div class="ai-thumb">' + (TYPE_EMOJI[it.type] || '📍') + '</div></div>';
+            }).join('');
+        });
+    }
+
+    function loadRecommendations(lat, lon) {
+        var qs = new URLSearchParams();
+        if (lat != null) { qs.set('lat', lat); qs.set('lon', lon); }
+        groupsEl.querySelectorAll('input[type=checkbox]:checked').forEach(function (cb) {
+            qs.append('cond_' + cb.getAttribute('data-cat'), cb.value);
+        });
+        resEl.innerHTML = '<div style="color:#888;">추천을 불러오는 중…</div>';
+        fetch('/api/recommendations/personalized?' + qs.toString()).then(function (r) { return r.json(); }).then(function (res) {
+            if (!res.success) { resEl.textContent = (res.error && res.error.message) || '추천을 불러올 수 없습니다.'; return; }
+            var list = res.data.results || [];
+            if (!list.length) { resEl.textContent = '조건에 맞는 주변 체험을 찾지 못했어요.'; return; }
+            if (!res.data.personalized) { courseInfo.textContent = ''; }
+            resEl.innerHTML = list.map(function (x) {
+                var reasons = (x.reasons || []).map(function (r) {
+                    return '<span style="display:inline-block;background:#eef7ee;color:#2e7d32;border-radius:10px;padding:2px 8px;font-size:0.78rem;margin:2px 4px 0 0;">' + esc(r) + '</span>';
+                }).join('');
+                return '<a href="/experience/' + x.id + '" style="display:block;text-decoration:none;color:inherit;padding:12px 4px;border-bottom:1px solid #f0f0f0;">'
+                    + '<div style="font-weight:700;">' + esc(x.crop) + ' 체험 <span style="color:#999;font-weight:400;font-size:0.85rem;">' + (x.distance_km != null ? x.distance_km + 'km' : '') + '</span></div>'
+                    + '<div style="color:#888;font-size:0.85rem;">' + esc(x.address || '') + '</div>'
+                    + '<div style="margin-top:4px;">' + reasons + '</div></a>';
+            }).join('');
+            renderCourse(list[0].id);
+        }).catch(function () { resEl.textContent = '추천을 불러오는 중 오류가 발생했어요.'; });
+    }
+
+    applyBtn.addEventListener('click', function () {
+        if (navigator.geolocation) {
+            applyBtn.textContent = '📍 내 위치 확인 중…';
+            navigator.geolocation.getCurrentPosition(
+                function (pos) { applyBtn.textContent = '📍 내 위치로 맞춤 추천받기'; loadRecommendations(pos.coords.latitude, pos.coords.longitude); },
+                function () { applyBtn.textContent = '📍 내 위치로 맞춤 추천받기'; resEl.textContent = '위치 정보를 가져오지 못했어요. 위치 권한을 허용해주세요.'; },
+                { enableHighAccuracy: false, timeout: 15000, maximumAge: 0 }
+            );
+        } else { resEl.textContent = '이 브라우저는 위치 정보를 지원하지 않아요.'; }
+    });
+})();
+</script>
+{% endblock %}

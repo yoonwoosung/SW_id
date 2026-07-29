@@ -35,3 +35,6 @@ ESG_SCORE_PARKING = 10         # 주차 접근성 (사회)
 ESG_GRADE_A = 80
 ESG_GRADE_B = 60
 ESG_GRADE_C = 40
+
+# --- 회원 기반 개인화 추천 (기본 추천점수 0~1 스케일에 더함) ---
+PERSONALIZE_CROP_BOOST = 0.4  # 과거 신청한 작물과 같은 작물이면 가점

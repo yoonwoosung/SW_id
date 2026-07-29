@@ -1,11 +1,25 @@
-# routes/recommend.py — 추천 도메인 라우트(맞춤 체험 추천 JSON API). 얇게 유지, 로직은 services 호출.
+# routes/recommend.py — 추천 도메인 라우트(AI 맞춤 추천 페이지 + JSON API). 얇게 유지, 로직은 services 호출.
 from datetime import date
 
-from flask import request
+from flask import request, session, render_template
 
-from models import Experience
+from models import Experience, User
 from common.response import success_response, error_response
+from common.search_categories import CATEGORY_CODES
 from services.recommend_service import rank_recommendations
+from services.personalize_service import rank_personalized
+
+
+def _recruiting_experiences():
+    today = date.today()
+    return Experience.query.filter(
+        Experience.status == 'recruiting', Experience.end_date >= today
+    ).all()
+
+
+def ai_recommend_page():
+    # AI 맞춤 추천 전용 페이지(상세조건 + 개인화 추천 + 코스). 데이터는 JS가 API로 불러온다.
+    return render_template('ai_recommend.html')
 
 
 def recommend_experiences():
@@ -13,12 +27,7 @@ def recommend_experiences():
     lon = request.args.get('lon', type=float)
     if lat is None or lon is None:
         return error_response("COORDS_REQUIRED", "위치(lat, lon)가 필요합니다.", 400)
-
-    today = date.today()
-    experiences = Experience.query.filter(
-        Experience.status == 'recruiting', Experience.end_date >= today
-    ).all()
-    ranked = rank_recommendations(experiences, lat, lon)
+    ranked = rank_recommendations(_recruiting_experiences(), lat, lon)
     results = [{
         "id": exp.id, "crop": exp.crop, "address": exp.address_detail,
         "distance_km": distance, "score": round(score, 3),
@@ -26,5 +35,24 @@ def recommend_experiences():
     return success_response({"count": len(results), "results": results})
 
 
+def personalized_recommendations():
+    lat = request.args.get('lat', type=float)
+    lon = request.args.get('lon', type=float)
+    if lat is None or lon is None:
+        return error_response("COORDS_REQUIRED", "위치(lat, lon)가 필요합니다.", 400)
+
+    conditions = {code: request.args.getlist('cond_' + code) for code in CATEGORY_CODES}
+    user = User.query.get(session['user_id']) if 'user_id' in session else None
+
+    ranked = rank_personalized(_recruiting_experiences(), user, lat, lon, conditions)
+    results = [{
+        "id": exp.id, "crop": exp.crop, "address": exp.address_detail,
+        "distance_km": distance, "score": round(score, 3), "reasons": reasons,
+    } for exp, distance, score, reasons in ranked]
+    return success_response({"personalized": user is not None, "count": len(results), "results": results})
+
+
 def register(app):
+    app.add_url_rule('/ai-recommend', 'ai_recommend_page', ai_recommend_page)
     app.add_url_rule('/api/experiences/recommendations', 'recommend_experiences', recommend_experiences)
+    app.add_url_rule('/api/recommendations/personalized', 'personalized_recommendations', personalized_recommendations)

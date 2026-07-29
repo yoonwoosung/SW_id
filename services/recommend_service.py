@@ -2,6 +2,7 @@
 from common.constants import CATEGORY_MATCH_SCORE
 from services.recommend_data import REGIONAL_SPECIALTIES
 from services.category_match import compute_category_match
+from services.distance import haversine
 
 
 def matches_specialty(address_detail, crop):
@@ -37,3 +38,18 @@ def calculate_score(distance, max_p, current_p, is_specialty):
 def category_bonus(conditions, experience):
     """사용자가 고른 조건과 일치하는 항목 수 × CATEGORY_MATCH_SCORE 가점."""
     return CATEGORY_MATCH_SCORE * compute_category_match(conditions, experience)
+
+
+def rank_recommendations(experiences, user_lat, user_lon, max_distance_km=150, limit=15):
+    """좌표 기준으로 체험들을 추천 점수순 정렬해 (experience, distance_km, score) 목록을 반환한다.
+    150km 초과는 제외. 목록/화면 라우트에서 재사용 가능한 순수 로직."""
+    ranked = []
+    for exp in experiences:
+        distance = haversine(user_lat, user_lon, exp.lat, exp.lng)
+        if distance > max_distance_km:
+            continue
+        is_specialty = matches_specialty(exp.address_detail, exp.crop)
+        score = calculate_score(distance, exp.max_participants, exp.current_participants, is_specialty)
+        ranked.append((exp, round(distance, 1), score))
+    ranked.sort(key=lambda x: x[2], reverse=True)
+    return ranked[:limit]

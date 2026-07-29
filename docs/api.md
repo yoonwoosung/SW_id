@@ -198,3 +198,45 @@
 - `reason`은 현재 규칙 기반 문장이며, 추후 LLM(`services/course_reason.py`)으로 교체 가능하다. LLM은 코스에 담긴 장소만 근거로 설명하게 하여 장소를 새로 지어내지 않는다.
 - KTO에 별도 '카페' 종류가 없어 카페 슬롯도 음식점(contentType 39)에서 (식당과 중복되지 않게) 선정한다. — 개선 여지(TODO).
 
+---
+
+## ESG 점수
+
+`GET /api/experiences/<id>/esg` — 체험(농장)의 지속가능성 점수. Experience 속성(무농약·유기농·봉사·주차)으로 산출.
+
+```jsonc
+{ "success": true, "data": {
+    "experience_id": 1, "score": 45, "grade": "C",
+    "breakdown": [
+      {"key":"pesticide_free","label":"무농약 재배","earned":35,"max":35},
+      {"key":"organic","label":"유기농 인증","earned":0,"max":30},
+      {"key":"volunteer","label":"봉사 프로그램 운영","earned":0,"max":25},
+      {"key":"parking","label":"주차 접근성","earned":10,"max":10}
+    ] }, "error": null }
+```
+- 등급: A≥80 / B≥60 / C≥40 / D<40. 배점은 `common/constants.py`(ESG_SCORE_*).
+
+## 맞춤 체험 추천
+
+`GET /api/experiences/recommendations?lat=<위도>&lon=<경도>` — 좌표 기준 추천 점수순 체험 목록.
+좌표 없으면 400(`COORDS_REQUIRED`).
+
+```jsonc
+{ "success": true, "data": {
+    "count": 3,
+    "results": [ {"id":1,"crop":"쌀","address":"경기도 이천시 ...","distance_km":4.9,"score":0.83}, ... ]
+  }, "error": null }
+```
+
+## 농산물(특산물) 정보
+
+`GET /api/products` — 지역별 특산물 전체. `?region=<지역명>`으로 부분일치 필터.
+
+```jsonc
+// GET /api/products?region=이천
+{ "success": true, "data": {
+    "region": "이천",
+    "results": [ {"region":"이천","specialties":["쌀","복숭아"]} ]
+  }, "error": null }
+```
+

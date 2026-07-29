@@ -25,6 +25,8 @@ from services.recommend_reason import recommendation_reason
 from services.review_service import analyze_review_with_clova
 from external.kakao_map import get_coords_from_address
 from common.validators import allowed_file
+from services.profile_service import clean_profile
+from common.profile_options import AGE_GROUPS, GENDERS, FAMILY_TYPES, ACTIVITY_LABELS, TRANSPORT_LABELS
 
 
 def register_page():
@@ -52,13 +54,15 @@ def register_page():
 
         hashed_password = generate_password_hash(password, method='pbkdf2:sha256')
 
+        profile = clean_profile(request.form.get, request.form.getlist)  # 선택 입력, 검증된 값만
         new_user = User(
             email=email, nickname=nickname, password=hashed_password,
             role=role, name=name, phone=phone,
             farm_address=request.form.get('farm_address'),
             farm_size=request.form.get('farm_size'),
             profile_bio=request.form.get('profile_bio'),
-            farmer_certificate_pdf=cert_pdf_filename
+            farmer_certificate_pdf=cert_pdf_filename,
+            **profile
         )
         
         if role == 'farmer':
@@ -144,6 +148,14 @@ def logout():
 
 
 def register(app):
+    @app.context_processor
+    def _inject_register_options():
+        # 가입폼 프로필 드롭박스용 선택지(고정값). 모든 render에 자동 주입.
+        return {"reg_options": {
+            "age_groups": AGE_GROUPS, "genders": GENDERS, "family_types": FAMILY_TYPES,
+            "activities": ACTIVITY_LABELS, "transports": TRANSPORT_LABELS,
+        }}
+
     app.add_url_rule('/register', 'register_page', register_page, methods=['GET', 'POST'])
     app.add_url_rule('/check_email', 'check_email', check_email, methods=['POST'])
     app.add_url_rule('/login', 'login_page', login_page, methods=['GET', 'POST'])

@@ -54,14 +54,22 @@
 
     toggle.addEventListener('click', function () { panel.style.display = (panel.style.display === 'none') ? 'block' : 'none'; });
 
+    function renderNodes(nodes, topCode) {
+        return nodes.map(function (n) {
+            if (n.children && n.children.length) {
+                return '<details style="margin:2px 0 2px 6px;"><summary style="cursor:pointer;font-weight:600;font-size:0.9rem;">' + esc(n.label) + '</summary>'
+                    + '<div style="padding-left:10px;">' + renderNodes(n.children, topCode) + '</div></details>';
+            }
+            return '<label style="display:inline-flex;align-items:center;gap:4px;margin:3px 8px 3px 0;font-size:0.9rem;cursor:pointer;">'
+                + '<input type="checkbox" data-cat="' + topCode + '" value="' + esc(n.code) + '"> ' + esc(n.label) + '</label>';
+        }).join('');
+    }
     fetch('/api/search-categories').then(function (r) { return r.json(); }).then(function (res) {
         var cats = (res.data && res.data.categories) || [];
         groupsEl.innerHTML = cats.map(function (c) {
-            var chips = c.items.map(function (it) {
-                return '<label style="display:inline-flex;align-items:center;gap:4px;margin:4px 8px 4px 0;font-size:0.9rem;cursor:pointer;">'
-                    + '<input type="checkbox" data-cat="' + c.code + '" value="' + it.code + '"> ' + it.label + '</label>';
-            }).join('');
-            return '<div style="margin-bottom:10px;"><div style="font-weight:700;margin-bottom:4px;">' + c.label + '</div>' + chips + '</div>';
+            return '<details style="margin-bottom:8px;border-bottom:1px solid #f0f0f0;padding-bottom:6px;">'
+                + '<summary style="cursor:pointer;font-weight:700;font-size:0.98rem;">' + esc(c.label) + '</summary>'
+                + '<div style="padding:6px 0 0 6px;">' + renderNodes(c.children || [], c.code) + '</div></details>';
         }).join('');
     }).catch(function () { groupsEl.textContent = '조건을 불러오는 중 오류.'; });
 

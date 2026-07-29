@@ -88,36 +88,53 @@
 
 프론트가 드롭박스(아코디언)를 그리는 기준. 필터 검색과 역제안 요청글이 **동일한 트리**를 쓴다.
 
+**★중첩 구조★**: 각 노드는 `{code, label, children?}`. `children`이 있으면 펼침 그룹, 없으면 잎(선택 가능).
+`children`은 여러 단계로 중첩된다(예: 지역 → 시/도 → 시/군 → 구, 반려견 → 동반가능 → 몸무게 → 목줄/케이지).
+
 ```jsonc
 // 200
 { "success": true,
   "data": { "categories": [
-    { "code": "region", "label": "지역",
-      "items": [ {"code":"seoul","label":"서울"}, {"code":"chungnam","label":"충남"}, ... ] },
-    { "code": "experience_type", "label": "체험종류",
-      "items": [ {"code":"harvest","label":"수확"}, ... ] },
-    { "code": "companion_type", "label": "동반유형", "items": [ ... ] },
-    { "code": "budget_range", "label": "예산대",
-      "items": [ {"code":"range_20k","label":"2만원대"}, ... ] },
-    { "code": "facility", "label": "편의시설",
-      "items": [ {"code":"parking","label":"주차"}, ... ] }
+    { "code": "region", "label": "지역", "children": [
+      { "code": "chungnam", "label": "충남", "children": [
+        { "code": "cheonan", "label": "천안", "children": [
+          { "code": "cheonan_dongnam", "label": "동남구" },
+          { "code": "cheonan_seobuk", "label": "서북구" } ] },
+        { "code": "gongju", "label": "공주" } ] } ] },
+    { "code": "pet_dog", "label": "반려견", "children": [
+      { "code": "pet_allowed", "label": "동반가능", "children": [
+        { "code": "dog_small", "label": "소형(5kg 미만)", "children": [
+          { "code": "leash_required", "label": "목줄필수" }, ... ] },
+        { "code": "dog_medium", "label": "중형(5~15kg)", "children": [ ... ] } ] },
+      { "code": "pet_not_allowed", "label": "동반불가" } ] },
+    { "code": "companion_type", "label": "동반유형", "children": [ {"code":"child","label":"아이"}, ... ] },
+    { "code": "activity", "label": "액티비티", "children": [ {"code":"harvest","label":"수확체험"}, {"code":"kayak","label":"카약"}, ... ] },
+    { "code": "budget_range", "label": "예산대", "children": [ {"code":"range_20k","label":"2만원대"}, ... ] },
+    { "code": "transport", "label": "교통수단", "children": [ {"code":"car","label":"자가용"}, ... ] },
+    { "code": "facility", "label": "편의시설", "children": [ {"code":"parking","label":"주차"}, {"code":"wifi","label":"와이파이"}, ... ] }
   ] },
   "error": null }
 ```
 
+**드롭박스 렌더 규칙(준형용)**: 최상위 7개(region/pet_dog/companion_type/activity/budget_range/transport/facility)를
+아코디언 헤더로 두고, `children`을 재귀로 펼친다. `children`이 없는 노드에만 체크박스를 단다.
+선택 시 값은 **잎의 `code`**, 키는 **최상위 카테고리 `code`**로 묶어 보낸다.
+
 ### 선택 조건 형식
 ```jsonc
-{ "region": ["chungnam"], "experience_type": ["harvest"],
-  "companion_type": ["child"], "budget_range": ["range_20k"],
-  "facility": ["parking","pesticide_free"] }
+{ "region": ["cheonan_dongnam"], "activity": ["harvest"],
+  "pet_dog": ["dog_medium"], "budget_range": ["range_20k"],
+  "transport": ["car"], "facility": ["parking","wifi"] }
 ```
 
 ### 추천 목록에 조건 가점 적용
-목록 조회(`GET /`, 추천 정렬) 시 조건을 `cond_<카테고리>` 파라미터로 넘기면, 조건과 일치하는
-체험이 상위로 온다. 예: `GET /?sort=recommended&lat=..&lon=..&cond_region=chungnam&cond_facility=parking`
+조건을 `cond_<최상위카테고리>=<잎코드>` 파라미터로 넘기면 일치 체험이 상위로 온다.
+예: `GET /api/recommendations/personalized?lat=..&lon=..&cond_region=chungnam&cond_activity=harvest&cond_facility=wifi`
 - 일치 1건당 `CATEGORY_MATCH_SCORE`(현재 0.3) 가산.
-- 점수 반영은 Experience에 데이터가 있는 항목만: **region, budget_range, facility(주차·무농약·유기농인증)**.
-  experience_type·companion_type·무장애·화장실은 드롭박스(필터 UI)용이며 점수 미반영(대응 컬럼 없음).
+- **점수 반영(Experience 데이터 있는 항목)**: region(시/도·시군·구 키워드), budget_range, activity(`activity_type`),
+  pet_dog(몸무게 티어 ↔ `pet_allowed`·`pet_max_weight_kg`), transport(자가용 ↔ `has_parking`),
+  facility(주차·와이파이·무농약·유기농).
+- **점수 미반영(UI·역제안 저장용)**: companion_type, 반려견 목줄/케이지 세부, 대중교통/도보/자전거, 화장실·무장애.
 
 ---
 

@@ -35,6 +35,11 @@ class Experience(db.Model):
     has_parking = db.Column(db.Boolean, default=False, nullable=False)
     organic_certification_image = db.Column(db.String(255), nullable=True)
     organic_certification_type = db.Column(db.String(100), nullable=True)
+    # 세분화 카테고리 채점용(파트1). 값 없으면 해당 조건은 미충족으로 처리.
+    activity_type = db.Column(db.String(50), nullable=True)          # activity 코드(harvest, kayak, ...)
+    pet_allowed = db.Column(db.Boolean, default=False, nullable=False)  # 반려견 동반 가능 여부
+    pet_max_weight_kg = db.Column(db.Integer, nullable=True)         # 허용하는 반려견 최대 몸무게(kg)
+    has_wifi = db.Column(db.Boolean, default=False, nullable=False)  # 와이파이 제공 여부
     farmer = db.relationship('User', back_populates='experiences')
 
     def to_dict(self):

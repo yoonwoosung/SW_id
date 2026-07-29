@@ -1,10 +1,18 @@
 # routes/course.py — AI 추천 코스 라우트(체험 주변 장소를 시간순 코스로 구성). 얇게 유지, 로직은 services 호출.
 from models import Experience
 from common.response import success_response, error_response
-from common.constants import COURSE_SEARCH_RADIUS_M, COURSE_SLOTS
+from common.constants import COURSE_SEARCH_RADIUS_M, MAX_SEARCH_RADIUS_M, COURSE_SLOTS
 from external import tour_api
 from services import course_builder
 from services.course_reason import build_course_reason
+
+
+def _fetch_places(experience, content_type):
+    # 기본 반경으로 조회하고, 비면 최대 반경으로 한 번 더 시도(시골 농장 대응).
+    places = tour_api.find_nearby_places(experience.lat, experience.lng, COURSE_SEARCH_RADIUS_M, content_type)
+    if not places:
+        places = tour_api.find_nearby_places(experience.lat, experience.lng, MAX_SEARCH_RADIUS_M, content_type)
+    return places
 
 
 def _collect_places(experience):
@@ -16,8 +24,7 @@ def _collect_places(experience):
         if content_type is None:
             continue
         if content_type not in places_by_content:
-            places_by_content[content_type] = tour_api.find_nearby_places(
-                experience.lat, experience.lng, COURSE_SEARCH_RADIUS_M, content_type)
+            places_by_content[content_type] = _fetch_places(experience, content_type)
         places_by_type[slot["type"]] = places_by_content[content_type]
     return places_by_type
 

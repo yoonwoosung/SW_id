@@ -46,9 +46,11 @@ with flask_app.app_context():
         today = date.today()
         seeds = [
             dict(crop='쌀', location='경기도 이천', address_detail='경기도 이천시 부발읍',
-                 lat=37.27, lng=127.44, cost=30000, max_participants=20, current_participants=5),
+                 lat=37.27, lng=127.44, cost=30000, max_participants=20, current_participants=5,
+                 has_parking=True),
             dict(crop='포도', location='경기도 안성', address_detail='경기도 안성시 서운면',
-                 lat=37.01, lng=127.27, cost=25000, max_participants=20, current_participants=15),
+                 lat=37.01, lng=127.27, cost=25000, max_participants=20, current_participants=15,
+                 has_parking=True, barrier_free=True),
             dict(crop='잣', location='경기도 가평', address_detail='경기도 가평군 상면',
                  lat=37.83, lng=127.51, cost=40000, max_participants=20, current_participants=0),
         ]

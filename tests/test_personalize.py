@@ -50,3 +50,13 @@ def test_ranking_prefers_history_crop():
     ranked = rank_personalized([grape, strawberry], user, 36.8, 127.3)
     assert ranked[0][0].id == 1  # 딸기가 1위
     assert "이전에 신청한 작물이에요" in ranked[0][3]
+
+
+def test_segment_trending_boosts_experience():
+    # 세그먼트 인기 체험(id=2)이 trending_ids에 있으면 위로 오고 이유가 붙는다.
+    a = FakeExp(1, 36.8, 127.3, "포도")
+    b = FakeExp(2, 36.8, 127.3, "포도")
+    user = FakeUser([])
+    ranked = rank_personalized([a, b], user, 36.8, 127.3, trending_ids={2})
+    assert ranked[0][0].id == 2
+    assert "나와 비슷한 분들이 많이 봤어요" in ranked[0][3]

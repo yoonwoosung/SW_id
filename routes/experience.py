@@ -23,6 +23,7 @@ from services.recommend_data import REGIONAL_SPECIALTIES
 from services.recommend_service import matches_specialty, score_components, calculate_score, category_bonus
 from services.recommend_reason import recommendation_reason
 from services.review_service import analyze_review_with_clova
+from services.trend_service import record_click
 from common.search_categories import SEARCH_CATEGORIES, CATEGORY_CODES
 from common.response import success_response
 from external.kakao_map import get_coords_from_address
@@ -149,6 +150,12 @@ def experience_detail(item_id):
     if item.status != 'recruiting' and session.get('user_id') != item.farmer_id:
         flash("현재 모집 중인 체험이 아닙니다.", "warning")
         return redirect(url_for('index'))
+
+    # 클릭 로그 적재(개인화 추천 신호). 실패해도 상세 페이지는 정상 표시.
+    try:
+        record_click(session.get('user_id'), 'experience', item_id)
+    except Exception:
+        db.session.rollback()
 
     review_status = 'not_logged_in'
     if 'user_id' in session:

@@ -245,6 +245,51 @@
   }, "error": null }
 ```
 
+## 맞춤 추천(회원 이력·세그먼트 반영)
+
+`GET /api/recommendations/personalized?lat=<위도>&lon=<경도>` — 위치 + (로그인 시)회원 이력 + 세그먼트 인기를 합산한 추천.
+조건은 `cond_<카테고리>=<잎코드>`로 함께 넘길 수 있다. 좌표 없으면 400(`COORDS_REQUIRED`).
+
+```jsonc
+{ "success": true, "data": {
+    "personalized": true,        // 로그인 사용자 여부
+    "segment_applied": true,     // 같은 성별·나이대 인기 신호가 반영됐는지
+    "count": 3,
+    "results": [
+      {"id":2,"crop":"포도","address":"경기도 안성시 ...","distance_km":6.3,"score":1.13,
+       "reasons":["나와 비슷한 분들이 많이 봤어요","이 지역 대표 특산물이에요","가까워요(약 6.3km)"]}
+    ]
+  }, "error": null }
+```
+- 가점: 과거 신청 작물(`PERSONALIZE_CROP_BOOST`) + 세그먼트 인기(`SEGMENT_TREND_BOOST`) + 조건 일치(`CATEGORY_MATCH_SCORE`).
+- **폴백**: 프로필(성별·나이대 등)이 없으면 세그먼트 미적용(`segment_applied:false`) → 규칙 기반(거리·특산물)으로만 추천.
+
+## 클릭 로그 · 트렌드 (파트3)
+
+개인화의 원천. 체험 상세 조회 시 서버가 자동으로 클릭을 적재하며, 프론트가 카테고리/체험 클릭을 직접 보낼 수도 있다.
+
+### 클릭 적재
+`POST /api/click-logs`  (성공 201)
+```jsonc
+// body(JSON 또는 form)
+{ "target_type": "category", "target_id": "harvest" }   // target_type: "experience" | "category"
+// 200/201
+{ "success": true, "data": { "recorded": true }, "error": null }
+// 400
+{ "success": false, "data": null, "error": { "code": "INVALID_CLICK", "message": "target_type·target_id가 올바르지 않습니다." } }
+```
+- 로그인 여부와 무관하게 적재(비로그인은 `user_id=null`). **비로그인 클릭은 세그먼트 집계에서 제외**된다.
+- 개인정보 최소화: 성별·나이대는 로그에 저장하지 않고, 집계 시 `user_id`로 회원과 join해서만 사용한다.
+
+### 트렌드 키워드
+`GET /api/trend-keywords` — 최근 많이 눌린 카테고리 상위(검색창 하단 노출용).
+```jsonc
+{ "success": true, "data": { "keywords": [
+    { "code": "harvest", "label": "수확체험", "count": 42 },
+    { "code": "kayak", "label": "카약", "count": 17 } ] }, "error": null }
+```
+- 세그먼트("가족과 함께 / 20대" 등)는 수동 정의하지 않고, `성별×나이대×대상` 집계에서 **자동 도출**한다.
+
 ## 농산물(특산물) 정보
 
 `GET /api/products` — 지역별 특산물 전체. `?region=<지역명>`으로 부분일치 필터.

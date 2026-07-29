@@ -91,6 +91,17 @@ def _iter_leaf_codes(nodes):
 LEAF_CODES = set(_iter_leaf_codes(SEARCH_CATEGORIES))
 
 
+def _iter_all_nodes(nodes):
+    for node in nodes:
+        yield node
+        if node.get("children"):
+            yield from _iter_all_nodes(node["children"])
+
+
+# 코드 → 한글 라벨(트렌드 키워드 표시 등에 사용).
+LABEL_BY_CODE = {node["code"]: node["label"] for node in _iter_all_nodes(SEARCH_CATEGORIES)}
+
+
 # ============================================================
 # 채점용 내부 매핑 (Experience에 실제 데이터가 있는 항목만)
 # ============================================================

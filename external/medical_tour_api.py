@@ -5,9 +5,9 @@ import requests
 
 from common.constants import HTTP_TIMEOUT_SEC, NEARBY_RESULT_LIMIT
 
-# ⚠️ 확인 필요(미검증): 이 URL은 임시 placeholder다. KTO에 'MedicalTourService'가 실재하는지 불확실.
-#   MEDICAL_API_KEY가 어떤 data.go.kr 서비스(의료관광/응급의료/병원정보 등)용인지 확인 후,
-#   해당 서비스의 샘플 요청 URL·파라미터·응답 필드로 맞춰야 한다. (다른 제공기관일 수 있음)
+# ⚠️ 현재 이 URL은 500(Unexpected errors) = 'MedicalTourService'는 실재하지 않는 placeholder다.
+#   의료관광 서비스에 활용신청돼 있으므로, data.go.kr 그 서비스 상세페이지의 샘플 요청 URL을
+#   받아 엔드포인트·파라미터·응답 필드로 확정해야 한다. (그전까지 실패 시 빈 리스트)
 MEDICAL_TOUR_URL = "https://apis.data.go.kr/B551011/MedicalTourService/locationBasedList"
 
 

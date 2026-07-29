@@ -5,8 +5,8 @@ import requests
 
 from common.constants import HTTP_TIMEOUT_SEC, NEARBY_RESULT_LIMIT
 
-# ⚠️ 확인 필요(미검증): 국문관광정보가 KorService2로 이관된 것에 맞춰 v2 형태로 추정 변경.
-#   KorPetTourService의 실제 v2 서비스명/오퍼레이션은 data.go.kr 샘플 URL로 확인해 확정할 것.
+# ⚠️ 현재 활성 키로는 403 Forbidden = 이 계정이 '반려동물 동반여행' 서비스에 활용신청 안 됨.
+#   → data.go.kr에서 해당 서비스 활용신청 후, 샘플 URL로 엔드포인트 확정 필요. (그전까지 실패 시 빈 리스트)
 PET_TRAVEL_URL = "https://apis.data.go.kr/B551011/KorPetTourService2/locationBasedList2"
 
 

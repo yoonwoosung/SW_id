@@ -293,13 +293,13 @@
     </section>
 </div>
 
-<!-- 주변 무장애 여행지 -->
+<!-- 주변 편의시설 (무장애/반려동물/의료) -->
 <div class="main-content-wrapper">
     <section class="section-block section-card mb-0">
         <div class="section-header">
-            <h2 class="section-title">♿ 주변 무장애 여행지</h2>
+            <h2 class="section-title">🧭 주변 편의시설</h2>
         </div>
-        <div id="barrier-content" style="padding:8px 4px;color:#888;">불러오는 중…</div>
+        <div id="facilities-content" style="padding:8px 4px;color:#888;">불러오는 중…</div>
     </section>
 </div>
 
@@ -326,16 +326,31 @@
             + '<div style="font-size:0.85rem;color:#888;">무농약·유기농·봉사·접근성 기준</div></div></div>' + bars;
     }).catch(function () { esgEl.textContent = 'ESG 점수를 불러오는 중 오류.'; });
 
-    var bEl = document.getElementById('barrier-content');
-    fetch('/api/experiences/{{ item.id }}/barrier-free').then(function (r) { return r.json(); }).then(function (res) {
-        var list = res.data || [];
-        if (!res.success || !list.length) { bEl.textContent = '주변 무장애 여행지 정보가 없습니다.'; return; }
-        bEl.innerHTML = list.slice(0, 6).map(function (p) {
-            return '<div style="padding:8px 0;border-bottom:1px solid #f0f0f0;">'
-                + '<div style="font-weight:600;">' + esc(p.name) + (p.distance_km != null ? ' <span style="color:#999;font-weight:400;font-size:0.85rem;">' + p.distance_km + 'km</span>' : '') + '</div>'
-                + '<div style="font-size:0.85rem;color:#888;">' + esc(p.address || '') + '</div></div>';
+    // 주변 편의시설: 무장애/반려동물/의료를 함께 조회해 데이터 있는 것만 노출.
+    // (무장애=KorWithService2 검증됨 / 반려동물=미구독 403 / 의료=URL 확정 필요 → 없으면 자동 숨김)
+    var facEl = document.getElementById('facilities-content');
+    var FACILITIES = [
+        { ep: 'barrier-free', label: '♿ 무장애 여행지' },
+        { ep: 'pet-facilities', label: '🐾 반려동물 동반 시설' },
+        { ep: 'medical', label: '🏥 주변 의료 시설' }
+    ];
+    Promise.all(FACILITIES.map(function (f) {
+        return fetch('/api/experiences/{{ item.id }}/' + f.ep)
+            .then(function (r) { return r.json(); })
+            .then(function (res) { return { label: f.label, list: (res.success && res.data) || [] }; })
+            .catch(function () { return { label: f.label, list: [] }; });
+    })).then(function (groups) {
+        var html = groups.filter(function (g) { return g.list.length; }).map(function (g) {
+            var items = g.list.slice(0, 5).map(function (p) {
+                return '<div style="padding:6px 0;border-bottom:1px solid #f4f4f4;font-size:0.9rem;">'
+                    + '<span style="font-weight:600;">' + esc(p.name) + '</span>'
+                    + (p.distance_km != null ? ' <span style="color:#999;font-size:0.8rem;">' + p.distance_km + 'km</span>' : '')
+                    + '<div style="color:#999;font-size:0.8rem;">' + esc(p.address || '') + '</div></div>';
+            }).join('');
+            return '<div style="margin-bottom:16px;"><div style="font-weight:700;margin-bottom:4px;">' + g.label + '</div>' + items + '</div>';
         }).join('');
-    }).catch(function () { bEl.textContent = '무장애 여행지 정보를 불러오는 중 오류.'; });
+        facEl.innerHTML = html || '주변 편의시설 정보가 없습니다.';
+    });
 })();
 </script>
 

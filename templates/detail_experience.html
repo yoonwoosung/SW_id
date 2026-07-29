@@ -283,6 +283,62 @@
 })();
 </script>
 
+<!-- ESG 점수 -->
+<div class="main-content-wrapper">
+    <section class="section-block section-card mb-0">
+        <div class="section-header">
+            <h2 class="section-title"><span class="ai-badge-label">ESG</span> 이 농장의 지속가능성 점수</h2>
+        </div>
+        <div id="esg-content" style="padding:8px 4px;color:#888;">불러오는 중…</div>
+    </section>
+</div>
+
+<!-- 주변 무장애 여행지 -->
+<div class="main-content-wrapper">
+    <section class="section-block section-card mb-0">
+        <div class="section-header">
+            <h2 class="section-title">♿ 주변 무장애 여행지</h2>
+        </div>
+        <div id="barrier-content" style="padding:8px 4px;color:#888;">불러오는 중…</div>
+    </section>
+</div>
+
+<script>
+(function () {
+    function esc(s) { var d = document.createElement('div'); d.textContent = (s == null ? '' : String(s)); return d.innerHTML; }
+    var GRADE_COLOR = { A: '#2e7d32', B: '#66bb6a', C: '#fbc02d', D: '#bbb' };
+
+    var esgEl = document.getElementById('esg-content');
+    fetch('/api/experiences/{{ item.id }}/esg').then(function (r) { return r.json(); }).then(function (res) {
+        if (!res.success || !res.data) { esgEl.textContent = 'ESG 점수를 불러올 수 없습니다.'; return; }
+        var d = res.data, c = GRADE_COLOR[d.grade] || '#999';
+        var bars = d.breakdown.map(function (b) {
+            var pct = b.max ? Math.round(b.earned / b.max * 100) : 0;
+            return '<div style="margin:6px 0;">'
+                + '<div style="display:flex;justify-content:space-between;font-size:0.9rem;color:#555;">'
+                + '<span>' + esc(b.label) + '</span><span>' + b.earned + '/' + b.max + '</span></div>'
+                + '<div style="height:8px;background:#eee;border-radius:4px;overflow:hidden;">'
+                + '<div style="height:100%;width:' + pct + '%;background:' + (b.earned ? c : '#eee') + ';"></div></div></div>';
+        }).join('');
+        esgEl.innerHTML = '<div style="display:flex;align-items:center;gap:16px;margin-bottom:10px;">'
+            + '<div style="font-size:2.4rem;font-weight:800;color:' + c + ';">' + esc(d.grade) + '</div>'
+            + '<div><div style="font-size:1.4rem;font-weight:700;">' + d.score + '<span style="font-size:0.9rem;color:#999;">/100</span></div>'
+            + '<div style="font-size:0.85rem;color:#888;">무농약·유기농·봉사·접근성 기준</div></div></div>' + bars;
+    }).catch(function () { esgEl.textContent = 'ESG 점수를 불러오는 중 오류.'; });
+
+    var bEl = document.getElementById('barrier-content');
+    fetch('/api/experiences/{{ item.id }}/barrier-free').then(function (r) { return r.json(); }).then(function (res) {
+        var list = res.data || [];
+        if (!res.success || !list.length) { bEl.textContent = '주변 무장애 여행지 정보가 없습니다.'; return; }
+        bEl.innerHTML = list.slice(0, 6).map(function (p) {
+            return '<div style="padding:8px 0;border-bottom:1px solid #f0f0f0;">'
+                + '<div style="font-weight:600;">' + esc(p.name) + (p.distance_km != null ? ' <span style="color:#999;font-weight:400;font-size:0.85rem;">' + p.distance_km + 'km</span>' : '') + '</div>'
+                + '<div style="font-size:0.85rem;color:#888;">' + esc(p.address || '') + '</div></div>';
+        }).join('');
+    }).catch(function () { bEl.textContent = '무장애 여행지 정보를 불러오는 중 오류.'; });
+})();
+</script>
+
 <div id="item-data-json" style="display:none;">{{ item_data_for_js|tojson|safe }}</div>
 
 <script type="text/javascript" src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=7dd9cd8d1e3754dcf8532c81dea3e95f&libraries=services"></script>

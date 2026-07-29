@@ -25,3 +25,13 @@ COURSE_SLOTS = [
 ]
 # 외부 장소를 하나도 못 가져왔을 때 이유 문장(코스 생성 실패와 별개로 기본 문구)
 COURSE_REASON_FALLBACK = "체험과 가까운 인기 장소로 구성한 코스입니다."
+
+# --- ESG 점수 (체험의 기존 속성 기반, 항목 합계 100) ---
+ESG_SCORE_PESTICIDE_FREE = 35  # 무농약 재배 (환경)
+ESG_SCORE_ORGANIC = 30         # 유기농 인증 (환경)
+ESG_SCORE_VOLUNTEER = 25       # 봉사 프로그램 운영 (사회)
+ESG_SCORE_PARKING = 10         # 주차 접근성 (사회)
+# 등급 경계
+ESG_GRADE_A = 80
+ESG_GRADE_B = 60
+ESG_GRADE_C = 40

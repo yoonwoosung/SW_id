@@ -212,8 +212,9 @@
                 </h2>
                 <a href="#" class="more-link">코스 더보기 <i class="fa-solid fa-chevron-right"></i></a>
             </div>
+            <p id="home-course-info" style="margin:0 0 12px;color:#888;font-size:0.9rem;"></p>
             <div class="ai-course-inner">
-                <div class="ai-timeline">
+                <div class="ai-timeline" id="home-course-timeline">
                     <div class="ai-timeline-item">
                         <div class="ai-time">09:00</div>
                         <div class="ai-dot"></div>
@@ -368,6 +369,44 @@ document.addEventListener('DOMContentLoaded', function() {
             );
         } else { go(null, null); }
     });
+})();
+
+// 홈 'AI가 추천하는 농촌 여행 코스': 위치(lat/lon)가 있으면 가장 가까운 추천 체험의 실제 코스를 렌더.
+// 위치가 없으면 정적 예시를 그대로 두고 안내만 표시.
+(function () {
+    var tl = document.getElementById('home-course-timeline');
+    var info = document.getElementById('home-course-info');
+    if (!tl) return;
+    function esc(s) { var d = document.createElement('div'); d.textContent = (s == null ? '' : String(s)); return d.innerHTML; }
+    var TYPE_EMOJI = { experience: '🌱', restaurant: '🍽️', attraction: '🏛️', cafe: '☕' };
+    var params = new URLSearchParams(window.location.search);
+    var lat = params.get('lat'), lon = params.get('lon');
+    if (!lat || !lon) {
+        if (info) info.textContent = "‘내 주변’을 눌러 위치를 허용하면, 가장 가까운 체험 기준 실제 코스를 보여드려요. (아래는 예시)";
+        return;
+    }
+    if (info) info.textContent = '내 주변 추천 체험으로 코스를 짜는 중…';
+    fetch('/api/experiences/recommendations?lat=' + lat + '&lon=' + lon)
+        .then(function (r) { return r.json(); })
+        .then(function (res) {
+            var top = res.data && res.data.results && res.data.results[0];
+            if (!top) { if (info) info.textContent = '주변 추천 체험을 찾지 못했어요.'; return; }
+            return fetch('/api/experiences/' + top.id + '/course')
+                .then(function (r) { return r.json(); })
+                .then(function (cRes) {
+                    var d = cRes.data || {};
+                    var placeCount = (d.items || []).filter(function (it) { return it.type !== 'experience'; }).length;
+                    if (info) info.textContent = placeCount ? ('가까운 «' + esc(top.crop) + ' 체험» 기준 — ' + esc(d.reason || '')) : '가까운 체험은 찾았지만 주변 장소가 부족해 코스를 못 만들었어요.';
+                    if (!placeCount) return;
+                    tl.innerHTML = d.items.map(function (it) {
+                        var sub = it.type === 'experience' ? '이 체험' : (esc(it.address || '') + (it.distance_km != null ? ' · ' + it.distance_km + 'km' : ''));
+                        return '<div class="ai-timeline-item"><div class="ai-time">' + esc(it.time) + '</div><div class="ai-dot"></div>'
+                            + '<div class="ai-timeline-body"><div class="ai-act-name">' + esc(it.name || '') + '</div><div class="ai-act-sub">' + sub + '</div></div>'
+                            + '<div class="ai-thumb">' + (TYPE_EMOJI[it.type] || '📍') + '</div></div>';
+                    }).join('');
+                });
+        })
+        .catch(function () { if (info) info.textContent = '코스를 불러오는 중 오류가 발생했어요.'; });
 })();
 </script>
 {% endblock %}

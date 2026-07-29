@@ -1,0 +1,12 @@
+# 환경변수(비밀키·API키) — 절대 커밋 금지. .env.example만 커밋한다.
+.env
+.env.local
+.env.*.local
+
+# 로컬 데모 DB
+local_db.sqlite
+
+# 파이썬
+__pycache__/
+*.pyc
+.pytest_cache/

@@ -36,6 +36,7 @@ def experience_course(item_id):
 
     places_by_type = _collect_places(item)
     items = course_builder.build_course(item, places_by_type)
+    summary = course_builder.build_course_summary(item)
 
     has_places = any(it.get("type") != "experience" for it in items)
     if not has_places:
@@ -44,6 +45,7 @@ def experience_course(item_id):
             "experience_id": item.id,
             "reason": None,
             "items": items,
+            "summary": summary,
             "message": "코스를 생성할 수 없습니다. 주변 장소 정보를 불러오지 못했습니다.",
         })
 
@@ -51,6 +53,7 @@ def experience_course(item_id):
         "experience_id": item.id,
         "reason": build_course_reason(item, items),
         "items": items,
+        "summary": summary,
     })
 
 

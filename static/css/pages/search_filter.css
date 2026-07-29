@@ -1,0 +1,114 @@
+/* static/css/pages/search_filter.css
+   상세조건 아코디언 드롭박스 + 맞춤 코스 카드. FarmLink 기존 토큰(:root의 --green-*, --orange) 재사용.
+   모바일 1순위(PWA). 데스크톱은 미디어쿼리로 확장. */
+
+.ai-rec-wrap { max-width: 760px; margin: 0 auto; padding: 16px 14px 40px; }
+
+.ai-rec-head h1 { font-size: 1.35rem; font-weight: 800; color: var(--green-dark); margin: 0 0 4px; }
+.ai-rec-head p { color: #77807a; font-size: 0.9rem; margin: 0; }
+
+/* ---- 공통 패널(카드) ---- */
+.fl-panel {
+    background: #fff;
+    border-radius: var(--radius-card, 14px);
+    box-shadow: var(--shadow-card, 0 2px 12px rgba(0,0,0,0.08));
+    padding: 16px;
+    margin-top: 16px;
+}
+.fl-panel__title { font-size: 1.02rem; font-weight: 700; color: #253027; margin: 0 0 10px; display: flex; align-items: center; gap: 6px; }
+
+/* ---- 선택 조건 칩 ---- */
+.fl-chips { display: flex; flex-wrap: wrap; gap: 8px; min-height: 4px; }
+.fl-chips:empty { display: none; }
+.fl-chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: var(--green-light, #E8F5E9); color: var(--green-dark, #2D5A1B);
+    border-radius: 999px; padding: 5px 10px; font-size: 0.82rem; font-weight: 600;
+}
+.fl-chip__x { cursor: pointer; border: none; background: none; color: var(--green-dark); font-size: 1rem; line-height: 1; padding: 0; }
+.fl-chip__x:hover { color: #b33; }
+
+/* ---- 아코디언 ---- */
+.fl-acc__item { border-bottom: 1px solid #eef1ee; }
+.fl-acc__item:last-child { border-bottom: none; }
+.fl-acc__head {
+    width: 100%; display: flex; align-items: center; justify-content: space-between;
+    background: none; border: none; cursor: pointer;
+    padding: 14px 2px; font-size: 0.98rem; font-weight: 700; color: #2c352e; text-align: left;
+}
+.fl-acc__count { font-size: 0.72rem; font-weight: 700; color: #fff; background: var(--green-mid, #4CAF50); border-radius: 999px; padding: 1px 7px; margin-left: 6px; }
+.fl-acc__toggle { transition: transform 0.18s ease; color: #9aa39c; flex-shrink: 0; }
+.fl-acc__head[aria-expanded="true"] .fl-acc__toggle { transform: rotate(180deg); color: var(--green-dark); }
+.fl-acc__body { padding: 0 2px 14px; }
+.fl-acc__body[hidden] { display: none; }
+
+/* 중첩 그룹(지역>시도, 반려견>몸무게 등) */
+.fl-group { margin: 4px 0 4px 4px; border-left: 2px solid #eef1ee; padding-left: 10px; }
+.fl-group__head {
+    width: 100%; display: flex; align-items: center; justify-content: space-between;
+    background: none; border: none; cursor: pointer;
+    padding: 8px 2px; font-size: 0.9rem; font-weight: 600; color: #45514a; text-align: left;
+}
+.fl-group__head[aria-expanded="true"] .fl-acc__toggle { transform: rotate(180deg); }
+.fl-group__body[hidden] { display: none; }
+
+/* 체크박스(복수 선택) */
+.fl-checks { display: flex; flex-wrap: wrap; gap: 6px 4px; padding: 4px 0; }
+.fl-check {
+    display: inline-flex; align-items: center; gap: 6px; cursor: pointer;
+    font-size: 0.88rem; color: #37413a; font-weight: 500;
+    border: 1px solid #e2e7e2; border-radius: 10px; padding: 6px 10px;
+    transition: background 0.15s, border-color 0.15s;
+}
+.fl-check input { accent-color: var(--green-mid, #4CAF50); width: 15px; height: 15px; }
+.fl-check:has(input:checked) { background: var(--green-light, #E8F5E9); border-color: var(--green-mid, #4CAF50); color: var(--green-dark, #2D5A1B); }
+
+/* ---- 액션 버튼 ---- */
+.fl-actions { display: flex; gap: 10px; margin-top: 14px; }
+.fl-btn { flex: 1; border: none; border-radius: 12px; padding: 13px 12px; font-size: 0.98rem; font-weight: 700; cursor: pointer; }
+.fl-btn--primary { background: var(--green-dark, #2D5A1B); color: #fff; flex: 2; }
+.fl-btn--primary:hover { background: #1e3e12; }
+.fl-btn--primary:disabled { opacity: 0.6; cursor: default; }
+.fl-btn--ghost { background: #f2f4f1; color: #55605a; }
+.fl-btn--ghost:hover { background: #e7ebe6; }
+
+/* ---- 트렌드 키워드 ---- */
+.fl-trend { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.fl-trend__tag { font-size: 0.82rem; color: #55605a; background: #f4f6f2; border-radius: 999px; padding: 5px 11px; }
+.fl-trend__tag b { color: var(--orange, #E8960C); }
+
+/* ---- 코스 카드 ---- */
+.fl-course-list { display: grid; grid-template-columns: 1fr; gap: 14px; }
+.fl-course-card {
+    background: #fff; border: 1px solid #eef1ee; border-radius: var(--radius-card, 14px);
+    box-shadow: var(--shadow-card, 0 2px 12px rgba(0,0,0,0.06)); overflow: hidden;
+}
+.fl-course-card__head { padding: 14px 16px; }
+.fl-course-card__title { font-size: 1.02rem; font-weight: 800; color: #253027; margin: 0 0 8px; }
+.fl-course-badge {
+    display: inline-block; font-size: 0.72rem; font-weight: 700; color: var(--green-dark, #2D5A1B);
+    background: var(--green-light, #E8F5E9); border-radius: 6px; padding: 2px 7px; margin-left: 6px; vertical-align: middle;
+}
+.fl-reasons { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 4px; }
+.fl-reason { font-size: 0.76rem; color: var(--green-dark, #2D5A1B); background: #eef7ee; border-radius: 8px; padding: 2px 8px; }
+.fl-course-meta { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 10px; font-size: 0.85rem; color: #55605a; }
+.fl-course-meta .fl-cost { color: var(--orange, #E8960C); font-weight: 800; }
+.fl-barrier { display: inline-flex; align-items: center; gap: 4px; color: #1565c0; font-weight: 700; }
+
+.fl-course-card__toggle {
+    width: 100%; display: flex; align-items: center; justify-content: center; gap: 6px;
+    background: #f7f9f6; border: none; border-top: 1px solid #eef1ee; cursor: pointer;
+    padding: 11px; font-size: 0.9rem; font-weight: 700; color: var(--green-dark, #2D5A1B);
+}
+.fl-course-card__toggle .fl-acc__toggle { color: inherit; }
+.fl-course-card__toggle[aria-expanded="true"] .fl-acc__toggle { transform: rotate(180deg); }
+.fl-course-card__body { padding: 6px 16px 16px; }
+.fl-course-card__body[hidden] { display: none; }
+
+/* 상태 문구 */
+.fl-empty { color: #8a938c; font-size: 0.9rem; padding: 10px 2px; }
+
+/* ---- 데스크톱 확장 ---- */
+@media (min-width: 720px) {
+    .fl-course-list { grid-template-columns: repeat(2, 1fr); }
+}

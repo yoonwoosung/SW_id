@@ -40,6 +40,7 @@ class Experience(db.Model):
     pet_allowed = db.Column(db.Boolean, default=False, nullable=False)  # 반려견 동반 가능 여부
     pet_max_weight_kg = db.Column(db.Integer, nullable=True)         # 허용하는 반려견 최대 몸무게(kg)
     has_wifi = db.Column(db.Boolean, default=False, nullable=False)  # 와이파이 제공 여부
+    barrier_free = db.Column(db.Boolean, default=False, nullable=False)  # 무장애(휠체어 등) 확인 여부 — 코스 무장애 로고용
     farmer = db.relationship('User', back_populates='experiences')
 
     def to_dict(self):

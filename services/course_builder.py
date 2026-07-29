@@ -1,7 +1,17 @@
 # services/course_builder.py — 주변 장소를 시간순 코스로 조립하는 규칙 기반 로직(순수 함수, 테스트 가능).
 # 장소 선정·순서는 여기서 규칙으로 정한다(LLM이 장소를 지어내지 않게 함).
-from common.constants import COURSE_SLOTS
+from common.constants import COURSE_SLOTS, COURSE_EXTRA_COST_ESTIMATE
 from services.distance import haversine  # 거리 계산은 기존 함수 재사용
+
+
+def build_course_summary(experience):
+    """코스 카드용 요약: 예상 비용·이동수단·무장애 여부. Experience 속성만 사용(외부 호출 없음)."""
+    cost = experience.cost or 0
+    return {
+        "estimated_cost": cost + COURSE_EXTRA_COST_ESTIMATE,
+        "transport": "자가용" if getattr(experience, "has_parking", False) else "대중교통",
+        "barrier_free": bool(getattr(experience, "barrier_free", False)),
+    }
 
 
 def build_course(experience, places_by_type):

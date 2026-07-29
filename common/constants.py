@@ -25,6 +25,8 @@ COURSE_SLOTS = [
 ]
 # 외부 장소를 하나도 못 가져왔을 때 이유 문장(코스 생성 실패와 별개로 기본 문구)
 COURSE_REASON_FALLBACK = "체험과 가까운 인기 장소로 구성한 코스입니다."
+# 코스 예상 비용 = 체험 비용 + 점심·카페 예상치(1인 기준, 원). 실제 값은 튜닝 대상.
+COURSE_EXTRA_COST_ESTIMATE = 20000
 
 # --- ESG 점수 (체험의 기존 속성 기반, 항목 합계 100) ---
 ESG_SCORE_PESTICIDE_FREE = 35  # 무농약 재배 (환경)

@@ -51,7 +51,8 @@ def personalized_recommendations():
 
     ranked = rank_personalized(_recruiting_experiences(), user, lat, lon, conditions, trending_ids=trending)
     results = [{
-        "id": exp.id, "crop": exp.crop, "address": exp.address_detail,
+        "id": exp.id, "crop": exp.crop, "address": exp.address_detail, "cost": exp.cost,
+        "barrier_free": bool(exp.barrier_free),
         "distance_km": distance, "score": round(score, 3), "reasons": reasons,
     } for exp, distance, score, reasons in ranked]
     return success_response({

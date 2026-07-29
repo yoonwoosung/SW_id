@@ -4,14 +4,34 @@
 """
 import pytest
 
-from services.course_builder import build_course
+from services.course_builder import build_course, build_course_summary
+from common.constants import COURSE_EXTRA_COST_ESTIMATE
 
 
 class FakeExperience:
-    def __init__(self, lat, lng, crop):
+    def __init__(self, lat, lng, crop, cost=25000, has_parking=False, barrier_free=False):
         self.lat = lat
         self.lng = lng
         self.crop = crop
+        self.cost = cost
+        self.has_parking = has_parking
+        self.barrier_free = barrier_free
+
+
+def test_summary_cost_transport_barrier():
+    # 주차 있음 → 자가용, 무장애 True, 예상비용 = 체험비 + 점심·카페 추정치
+    exp = FakeExperience(36.8, 127.3, "딸기", cost=25000, has_parking=True, barrier_free=True)
+    s = build_course_summary(exp)
+    assert s["estimated_cost"] == 25000 + COURSE_EXTRA_COST_ESTIMATE
+    assert s["transport"] == "자가용"
+    assert s["barrier_free"] is True
+
+
+def test_summary_defaults_public_transit():
+    exp = FakeExperience(36.8, 127.3, "딸기", cost=10000, has_parking=False, barrier_free=False)
+    s = build_course_summary(exp)
+    assert s["transport"] == "대중교통"
+    assert s["barrier_free"] is False
 
 
 def test_first_item_is_experience():

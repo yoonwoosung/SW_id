@@ -192,7 +192,8 @@
       {"time":"12:30","type":"restaurant","name":"○○식당","address":"...","distance_km":2.1},
       {"time":"15:00","type":"attraction","name":"○○관광지","address":"...","distance_km":5.0},
       {"time":"17:00","type":"cafe","name":"○○카페","address":"...","distance_km":3.2}
-    ]
+    ],
+    "summary": { "estimated_cost": 45000, "transport": "자가용", "barrier_free": true }
   },
   "error": null }
 
@@ -209,6 +210,13 @@
 { "success": false, "data": null,
   "error": { "code": "EXPERIENCE_NOT_FOUND", "message": "체험을 찾을 수 없습니다." } }
 ```
+
+### summary(코스 카드용, 파트 보강)
+| 필드 | 설명 |
+|---|---|
+| estimated_cost | 예상 1인 비용 = 체험 비용 + 점심·카페 추정치(`COURSE_EXTRA_COST_ESTIMATE`) |
+| transport | 이동수단: `has_parking` 이면 "자가용", 아니면 "대중교통" |
+| barrier_free | 무장애 확인 여부(`Experience.barrier_free`). true인 코스만 무장애 로고 표시 |
 
 ### 참고
 - 장소 데이터: 한국관광공사 일반 관광정보 API(`external/tour_api.py`). `.env`에 `TOUR_API_KEY`를 넣으면 실제 장소가 채워지고, 없으면 `items`는 체험 항목만 나온다(오류 아님).
@@ -256,7 +264,8 @@
     "segment_applied": true,     // 같은 성별·나이대 인기 신호가 반영됐는지
     "count": 3,
     "results": [
-      {"id":2,"crop":"포도","address":"경기도 안성시 ...","distance_km":6.3,"score":1.13,
+      {"id":2,"crop":"포도","address":"경기도 안성시 ...","cost":25000,"barrier_free":false,
+       "distance_km":6.3,"score":1.13,
        "reasons":["나와 비슷한 분들이 많이 봤어요","이 지역 대표 특산물이에요","가까워요(약 6.3km)"]}
     ]
   }, "error": null }

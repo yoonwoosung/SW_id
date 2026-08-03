@@ -1,0 +1,111 @@
+/* static/css/pages/experience_detail.css
+   체험 상세 페이지 리디자인. AI 추천 화면과 동일한 팜링크 토큰(--green-*, --orange) 사용.
+   기존 detail-* 레이아웃 클래스는 그대로 재사용하고, 여기서는 신규 요소(ed-*)만 정의한다.
+   데스크톱 기준(모바일 보류). */
+
+/* ---- 갤러리(대표 + 썸네일 + 라이트박스) ---- */
+.ed-gallery { display: flex; flex-direction: column; gap: 10px; }
+.ed-gallery__main {
+    width: 100%; aspect-ratio: 16 / 10; object-fit: cover; cursor: zoom-in;
+    border-radius: var(--radius-card, 14px); background: #eef1ee; display: block;
+}
+.ed-gallery__thumbs { display: flex; gap: 8px; flex-wrap: wrap; }
+.ed-gallery__thumb {
+    width: 72px; height: 56px; object-fit: cover; border-radius: 8px; cursor: pointer;
+    border: 2px solid transparent; opacity: 0.7; transition: opacity 0.15s, border-color 0.15s;
+}
+.ed-gallery__thumb:hover { opacity: 1; }
+.ed-gallery__thumb.is-active { opacity: 1; border-color: var(--green-dark, #2D5A1B); }
+
+.ed-lightbox {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 2000;
+    display: none; align-items: center; justify-content: center;
+}
+.ed-lightbox.is-open { display: flex; }
+.ed-lightbox img { max-width: 90vw; max-height: 88vh; border-radius: 8px; }
+.ed-lightbox__close {
+    position: absolute; top: 22px; right: 28px; background: none; border: none;
+    color: #fff; font-size: 2rem; cursor: pointer; line-height: 1;
+}
+
+/* ---- 헤더: 평점 · 긴박감 ---- */
+.ed-rating { display: inline-flex; align-items: center; gap: 6px; font-size: 0.95rem; color: #333; }
+.ed-rating__star { color: var(--orange, #E8960C); }
+.ed-rating__count { color: #8a938c; }
+.ed-rating--empty { color: #9aa39c; font-size: 0.9rem; }
+
+.ed-urgency { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0 0; }
+.ed-urgency__item {
+    display: inline-flex; align-items: center; gap: 5px; font-size: 0.82rem; font-weight: 700;
+    border-radius: 8px; padding: 4px 10px;
+}
+.ed-urgency__deadline { background: #fdecea; color: #d3462f; }
+.ed-urgency__viewers { background: var(--green-light, #E8F5E9); color: var(--green-dark, #2D5A1B); }
+
+/* ---- 찜 / 공유 ---- */
+.ed-actions { display: flex; gap: 8px; margin-top: 12px; }
+.ed-icon-btn {
+    display: inline-flex; align-items: center; gap: 6px; cursor: pointer;
+    background: #fff; border: 1px solid #e2e7e2; border-radius: 10px; padding: 9px 14px;
+    font-size: 0.9rem; font-weight: 600; color: #45514a; transition: border-color 0.15s, color 0.15s;
+}
+.ed-icon-btn:hover { border-color: var(--green-mid, #4CAF50); }
+.ed-icon-btn.is-wished { color: #e0245e; border-color: #f3c6d3; }
+.ed-icon-btn.is-wished .fa-heart { font-weight: 900; }
+
+.ed-toast {
+    position: fixed; bottom: 32px; left: 50%; transform: translateX(-50%);
+    background: #253027; color: #fff; padding: 10px 18px; border-radius: 999px;
+    font-size: 0.88rem; z-index: 2100; opacity: 0; transition: opacity 0.2s; pointer-events: none;
+}
+.ed-toast.is-show { opacity: 1; }
+
+/* ---- 리뷰: 별점 분포 · AI 요약 · 더보기 ---- */
+.ed-review-summary { display: flex; gap: 24px; align-items: center; flex-wrap: wrap; margin-bottom: 14px; }
+.ed-review-avg { text-align: center; }
+.ed-review-avg__num { font-size: 2.4rem; font-weight: 800; color: var(--green-dark, #2D5A1B); line-height: 1; }
+.ed-review-avg__stars { color: var(--orange, #E8960C); font-size: 0.9rem; }
+.ed-review-avg__count { font-size: 0.82rem; color: #8a938c; }
+.ed-review-dist { flex: 1; min-width: 220px; }
+.ed-review-dist__row { display: flex; align-items: center; gap: 8px; font-size: 0.8rem; color: #666; margin: 3px 0; }
+.ed-review-dist__bar { flex: 1; height: 7px; background: #eee; border-radius: 4px; overflow: hidden; }
+.ed-review-dist__fill { height: 100%; background: var(--green-mid, #4CAF50); }
+
+.ed-ai-summary {
+    background: var(--green-light, #E8F5E9); border-radius: 10px; padding: 12px 14px; margin-bottom: 14px;
+    font-size: 0.9rem; color: #2c4030;
+}
+.ed-ai-summary .ai-badge-label { background: var(--green-dark, #2D5A1B); }
+
+.ed-review-more {
+    display: block; width: 100%; margin-top: 10px; background: #f2f4f1; border: none;
+    border-radius: 10px; padding: 10px; font-size: 0.9rem; font-weight: 700; color: #45514a; cursor: pointer;
+}
+.ed-review-more:hover { background: #e7ebe6; }
+.review-item.is-hidden { display: none; }
+
+/* ---- 하단: 비슷한 체험 · 코스 CTA ---- */
+.ed-similar-scroll { display: flex; gap: 14px; overflow-x: auto; padding: 4px 2px 12px; }
+.ed-similar-card {
+    flex: 0 0 200px; text-decoration: none; color: inherit;
+    border: 1px solid #eef1ee; border-radius: 12px; overflow: hidden; background: #fff;
+    box-shadow: var(--shadow-card, 0 2px 12px rgba(0,0,0,0.06)); transition: transform 0.15s;
+}
+.ed-similar-card:hover { transform: translateY(-3px); }
+.ed-similar-card__thumb {
+    height: 96px; background: var(--green-light, #E8F5E9); display: flex;
+    align-items: center; justify-content: center; font-size: 2rem;
+}
+.ed-similar-card__body { padding: 10px 12px; }
+.ed-similar-card__title { font-weight: 700; font-size: 0.95rem; color: #253027; }
+.ed-similar-card__loc { font-size: 0.8rem; color: #8a938c; margin: 2px 0 6px; }
+.ed-similar-card__price { font-weight: 800; color: var(--orange, #E8960C); font-size: 0.95rem; }
+
+.ed-course-cta {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    background: var(--green-dark, #2D5A1B); color: #fff; border-radius: 14px; padding: 18px 22px;
+    cursor: pointer; text-decoration: none;
+}
+.ed-course-cta:hover { background: #1e3e12; color: #fff; text-decoration: none; }
+.ed-course-cta__title { font-weight: 800; font-size: 1.05rem; }
+.ed-course-cta__sub { font-size: 0.85rem; opacity: 0.85; }

@@ -25,6 +25,22 @@ from services.recommend_reason import recommendation_reason
 from services.review_service import analyze_review_with_clova
 from external.kakao_map import get_coords_from_address
 from common.validators import allowed_file
+from common.response import success_response
+from common.auth import api_login_required
+from services.trend_service import recent_viewed_experiences
+from services.point_service import get_point_summary
+
+
+def recent_views():
+    # 로그인 사용자의 '최근 본 체험'(click_log 기반). 비로그인은 빈 배열.
+    views = recent_viewed_experiences(session.get('user_id'))
+    return success_response({"recent_views": views})
+
+
+@api_login_required
+def my_points():
+    # 내 포인트 잔액 + 적립·사용 내역. 로그인 필수(비로그인 403).
+    return success_response(get_point_summary(session['user_id']))
 
 
 def update_bio():
@@ -161,5 +177,7 @@ def register(app):
     app.add_url_rule('/upload_farm_photo', 'upload_farm_photo', upload_farm_photo, methods=['POST'])
     app.add_url_rule('/my_info', 'my_info', my_info, methods=['GET', 'POST'])
     app.add_url_rule('/mypage', 'mypage', mypage)
+    app.add_url_rule('/api/users/me/recent-views', 'recent_views', recent_views)
+    app.add_url_rule('/api/users/me/points', 'my_points', my_points)
     app.add_url_rule('/guide', 'guide_page', guide_page)
     app.add_url_rule('/farmer_guide', 'farmer_guide', farmer_guide)

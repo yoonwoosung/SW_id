@@ -11,8 +11,10 @@ from models.notification import Notification
 from models.user_request import UserRequest
 from models.proposal import Proposal
 from models.click_log import ClickLog
+from models.wishlist import Wishlist
+from models.point_log import PointLog
 
 __all__ = [
     'db', 'User', 'Experience', 'Review', 'Inquiry', 'Application', 'Notification',
-    'UserRequest', 'Proposal', 'ClickLog',
+    'UserRequest', 'Proposal', 'ClickLog', 'Wishlist', 'PointLog',
 ]

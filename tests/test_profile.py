@@ -9,14 +9,14 @@ def _getters(single, multi):
 def test_valid_profile_is_kept():
     single, multi = _getters(
         {"age_group": "20s", "gender": "female", "family_type": "couple", "preferred_transport": "car"},
-        {"interest_activities": ["harvest", "kayak"]},
+        {"interest_activities": ["kayak", "hiking"]},
     )
     out = clean_profile(single, multi)
     assert out["age_group"] == "20s"
     assert out["gender"] == "female"
     assert out["family_type"] == "couple"
     assert out["preferred_transport"] == "car"
-    assert out["interest_activities"] == "harvest,kayak"
+    assert out["interest_activities"] == "kayak,hiking"
 
 
 def test_invalid_or_empty_values_become_none():

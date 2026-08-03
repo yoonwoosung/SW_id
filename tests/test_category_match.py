@@ -36,8 +36,8 @@ def test_region_and_budget_and_facility_match():
     exp = FakeExperience(address_detail="충남 논산시 연무읍", cost=25000,
                          has_parking=True, pesticide_free=True)
     conditions = {
-        "region": ["chungnam"],        # 주소에 '충남' 포함 → +1
-        "budget_range": ["range_20k"], # 25000원 → 2만원대 → +1
+        "region": ["chungnam"],              # 주소에 '충남' 포함 → +1
+        "budget_range": ["course_30_50k"],   # 코스총비용 25000+8000+12000=45000 → 3~5만 → +1
         "facility": ["parking", "pesticide_free"],  # 둘 다 → +2
     }
     assert compute_category_match(conditions, exp) == 4

@@ -24,7 +24,7 @@ from services.recommend_service import matches_specialty, score_components, calc
 from services.recommend_reason import recommendation_reason
 from services.review_service import analyze_review_with_clova
 from services.trend_service import record_click
-from common.search_categories import SEARCH_CATEGORIES, CATEGORY_CODES
+from common.search_categories import SEARCH_CATEGORIES, CATEGORY_CODES, CATEGORY_GROUPS
 from common.response import success_response
 from external.kakao_map import get_coords_from_address
 from common.validators import allowed_file
@@ -334,8 +334,8 @@ def get_experiences_json():
 
 
 def search_categories():
-    # 프론트 드롭박스용 조건 카테고리 트리(필터·역제안 요청글 공용).
-    return success_response({"categories": SEARCH_CATEGORIES})
+    # 프론트 드롭박스용 조건 카테고리 트리(필터·역제안 요청글 공용). groups로 섹션 구분.
+    return success_response({"categories": SEARCH_CATEGORIES, "groups": CATEGORY_GROUPS})
 
 
 def register(app):

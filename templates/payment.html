@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>간편결제</title>
+    <style>
+        :root { --green:#2D5A1B; --orange:#E8960C; }
+        * { box-sizing: border-box; }
+        body { margin:0; font-family:'Noto Sans KR',sans-serif; background:#faf8f3;
+               display:flex; align-items:center; justify-content:center; min-height:100vh; padding:20px; }
+        .pay-card { background:#fff; border-radius:16px; box-shadow:0 4px 24px rgba(0,0,0,0.1);
+                    width:100%; max-width:360px; padding:28px 24px; text-align:center; }
+        .pay-brand { font-size:1.1rem; font-weight:800; color:var(--green); margin-bottom:4px; }
+        .pay-sub { font-size:0.82rem; color:#8a938c; margin-bottom:20px; }
+        .pay-item { font-size:0.9rem; color:#555; margin-bottom:6px; }
+        .pay-amount { font-size:2rem; font-weight:800; color:var(--orange); margin:4px 0 22px; }
+        .pay-btn { width:100%; border:none; border-radius:12px; padding:14px; font-size:1.05rem;
+                   font-weight:700; color:#fff; background:var(--green); cursor:pointer; }
+        .pay-btn:disabled { opacity:0.6; cursor:default; }
+        .pay-done { color:var(--green); font-weight:700; font-size:1.1rem; margin-top:10px; display:none; }
+    </style>
+</head>
+<body>
+    <div class="pay-card">
+        <div class="pay-brand">🌿 FarmLink 간편결제</div>
+        <div class="pay-sub">체험 예약 결제</div>
+        <div class="pay-item">{{ experience.crop }} 수확 체험 · {{ application.participants_count }}명</div>
+        <div class="pay-amount">{{ "{:,}".format(amount) }}원</div>
+        <button type="button" id="pay-btn" class="pay-btn">결제하기</button>
+        <div id="pay-done" class="pay-done">✓ 결제가 완료되었습니다</div>
+    </div>
+
+    <script id="pay-data" type="application/json">{{ {'application_id': application.id}|tojson|safe }}</script>
+    <script>
+    (function () {
+        var DATA = JSON.parse(document.getElementById('pay-data').textContent);
+        var btn = document.getElementById('pay-btn');
+        btn.addEventListener('click', function () {
+            btn.disabled = true;
+            btn.textContent = '결제 중…';
+            fetch('/api/payments', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ application_id: DATA.application_id })
+            }).then(function (r) { return r.json(); }).then(function (res) {
+                if (res.success) {
+                    btn.style.display = 'none';
+                    document.getElementById('pay-done').style.display = 'block';
+                    // 부모 창(신청완료 화면) 새로고침 후 창 닫기
+                    if (window.opener && !window.opener.closed) { try { window.opener.location.reload(); } catch (e) {} }
+                    setTimeout(function () { window.close(); }, 1200);
+                } else {
+                    btn.disabled = false;
+                    btn.textContent = '결제하기';
+                    alert((res.error && res.error.message) || '결제에 실패했습니다.');
+                }
+            }).catch(function () {
+                btn.disabled = false;
+                btn.textContent = '결제하기';
+                alert('결제 중 오류가 발생했습니다.');
+            });
+        });
+    })();
+    </script>
+</body>
+</html>

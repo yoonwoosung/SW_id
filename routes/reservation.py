@@ -25,6 +25,8 @@ from services.recommend_reason import recommendation_reason
 from services.review_service import analyze_review_with_clova
 from external.kakao_map import get_coords_from_address
 from common.validators import allowed_file
+from common.constants import (APPLICATION_STATUS_PENDING, APPLICATION_STATUS_PAID,
+                              APPLICATION_STATUS_CONFIRMED)
 
 
 def experience_apply(item_id):
@@ -80,7 +82,7 @@ def experience_apply(item_id):
 
         db.session.commit()
 
-        return render_template('apply_complete.html', item=item, name=new_application.applicant_name)
+        return render_template('apply_complete.html', item=item, name=new_application.applicant_name, application=new_application)
 
     return render_template('experience_apply.html', item=item)
 
@@ -97,8 +99,8 @@ def confirm_application(app_id):
         flash("자신의 체험에 대한 예약만 확정할 수 있습니다.", "danger")
         return redirect(url_for('index'))
 
-    if application.status == '예정':
-        application.status = '확정'
+    if application.status in (APPLICATION_STATUS_PENDING, APPLICATION_STATUS_PAID):
+        application.status = APPLICATION_STATUS_CONFIRMED
         db.session.commit()
         flash(f"{application.applicant_name}님의 예약을 확정했습니다.", "success")
     else:

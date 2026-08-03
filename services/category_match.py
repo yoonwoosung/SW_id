@@ -2,6 +2,7 @@
 # 추천 가점(recommend_service)과 역제안 매칭(match_service)이 함께 재사용한다.
 # 중첩 트리에서 프론트가 보낸 잎 코드({카테고리코드: [선택코드,...]})를 Experience 속성과 대조한다.
 from common.search_categories import REGION_ADDRESS_KEYWORDS, BUDGET_RANGES, PET_WEIGHT_MIN_KG
+from services.course_builder import estimate_course_cost_per_person
 
 
 def compute_category_match(conditions, experience):
@@ -29,15 +30,17 @@ def _match_region(selected, experience):
 
 
 def _match_budget(selected, experience):
-    if not selected or experience.cost is None:
+    # 예산대는 코스 총비용(1인당) 기준으로 채점한다.
+    if not selected:
         return 0
+    course_cost = estimate_course_cost_per_person(experience)
     matched = 0
     for code in selected:
         rng = BUDGET_RANGES.get(code)
         if not rng:
             continue
         low, high = rng
-        if experience.cost >= low and (high is None or experience.cost <= high):
+        if course_cost >= low and (high is None or course_cost <= high):
             matched += 1
     return matched
 

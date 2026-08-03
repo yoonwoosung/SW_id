@@ -5,7 +5,7 @@
 import pytest
 
 from services.course_builder import build_course, build_course_summary
-from common.constants import COURSE_EXTRA_COST_ESTIMATE
+from common.constants import COURSE_TRANSPORT_ESTIMATE, COURSE_MEAL_ESTIMATE
 
 
 class FakeExperience:
@@ -22,7 +22,7 @@ def test_summary_cost_transport_barrier():
     # 주차 있음 → 자가용, 무장애 True, 예상비용 = 체험비 + 점심·카페 추정치
     exp = FakeExperience(36.8, 127.3, "딸기", cost=25000, has_parking=True, barrier_free=True)
     s = build_course_summary(exp)
-    assert s["estimated_cost"] == 25000 + COURSE_EXTRA_COST_ESTIMATE
+    assert s["estimated_cost"] == 25000 + COURSE_TRANSPORT_ESTIMATE + COURSE_MEAL_ESTIMATE
     assert s["transport"] == "자가용"
     assert s["barrier_free"] is True
 

@@ -13,8 +13,15 @@ def _pet_conditions():
     ]
 
 
+# 최상위 카테고리 묶음(프론트 드롭박스 섹션 구분용).
+CATEGORY_GROUPS = [
+    {"code": "travel", "label": "여행 조건"},
+    {"code": "taste", "label": "취향·활동"},
+    {"code": "practical", "label": "실용 조건"},
+]
+
 SEARCH_CATEGORIES = [
-    {"code": "region", "label": "지역", "children": [
+    {"code": "region", "label": "지역", "group": "travel", "children": [
         {"code": "gyeonggi", "label": "경기", "children": [
             {"code": "icheon", "label": "이천"}, {"code": "anseong", "label": "안성"},
             {"code": "gapyeong", "label": "가평"}, {"code": "yongin", "label": "용인"},
@@ -46,7 +53,11 @@ SEARCH_CATEGORIES = [
         {"code": "jeju", "label": "제주", "children": [
             {"code": "jeju_si", "label": "제주시"}, {"code": "seogwipo", "label": "서귀포"}]},
     ]},
-    {"code": "pet_dog", "label": "반려견", "children": [
+    {"code": "companion_type", "label": "동반유형", "group": "travel", "children": [
+        {"code": "solo", "label": "혼자"}, {"code": "couple", "label": "커플"},
+        {"code": "family_child", "label": "가족(아이)"}, {"code": "friends", "label": "친구"},
+        {"code": "parents", "label": "부모님"}, {"code": "with_pet", "label": "반려견"}]},
+    {"code": "pet_dog", "label": "반려견", "group": "travel", "children": [
         {"code": "pet_allowed", "label": "동반가능", "children": [
             {"code": "dog_small", "label": "소형(5kg 미만)", "children": _pet_conditions()},
             {"code": "dog_medium", "label": "중형(5~15kg)", "children": _pet_conditions()},
@@ -54,24 +65,45 @@ SEARCH_CATEGORIES = [
         ]},
         {"code": "pet_not_allowed", "label": "동반불가"},
     ]},
-    {"code": "companion_type", "label": "동반유형", "children": [
-        {"code": "child", "label": "아이"}, {"code": "infant_stroller", "label": "유아·유아차"},
-        {"code": "elderly", "label": "노약자"}, {"code": "wheelchair", "label": "휠체어"}]},
-    {"code": "activity", "label": "액티비티", "children": [
-        {"code": "harvest", "label": "수확체험"}, {"code": "horse_riding", "label": "승마"},
-        {"code": "kayak", "label": "카약"}, {"code": "hiking", "label": "등산"},
-        {"code": "fishing", "label": "낚시"}, {"code": "craft", "label": "공예"},
-        {"code": "farm_work", "label": "농사체험"}, {"code": "cooking", "label": "요리·먹거리"},
-        {"code": "animal", "label": "동물교감"}, {"code": "camping", "label": "캠핑"}]},
-    {"code": "budget_range", "label": "예산대", "children": [
-        {"code": "under_10k", "label": "1만원 이하"}, {"code": "range_10k", "label": "1만원대"},
-        {"code": "range_20k", "label": "2만원대"}, {"code": "over_30k", "label": "3만원 이상"}]},
-    {"code": "transport", "label": "교통수단", "children": [
+    {"code": "party", "label": "인원", "group": "travel", "children": [
+        {"code": "headcount", "label": "인원수", "children": [
+            {"code": "party_1", "label": "1명"}, {"code": "party_2", "label": "2명"},
+            {"code": "party_3_4", "label": "3~4명"}, {"code": "party_5plus", "label": "5명 이상"}]},
+        {"code": "age_composition", "label": "연령대 구성", "children": [
+            {"code": "adults_only", "label": "성인만"}, {"code": "with_child", "label": "아이 동반"},
+            {"code": "with_parents", "label": "부모님 동반"}]},
+    ]},
+    {"code": "schedule", "label": "일정", "group": "travel", "children": [
+        {"code": "day_trip", "label": "당일"}, {"code": "one_night", "label": "1박 2일"}]},
+    {"code": "experience_type", "label": "체험종류", "group": "taste", "children": [
+        {"code": "harvest", "label": "수확"}, {"code": "food", "label": "먹거리"},
+        {"code": "craft", "label": "공예"}, {"code": "animal", "label": "동물교감"},
+        {"code": "nature", "label": "자연생태"}]},
+    {"code": "activity", "label": "액티비티", "group": "taste", "children": [
+        {"code": "horse_riding", "label": "승마"}, {"code": "kayak", "label": "카약"},
+        {"code": "fishing", "label": "낚시"}, {"code": "hiking", "label": "등산"},
+        {"code": "cycling", "label": "자전거"}]},
+    {"code": "mood", "label": "분위기", "group": "taste", "children": [
+        {"code": "healing", "label": "힐링"}, {"code": "active", "label": "액티브"},
+        {"code": "photo", "label": "인생샷"}, {"code": "educational", "label": "교육적"},
+        {"code": "tradition", "label": "전통"}]},
+    {"code": "season", "label": "계절·제철", "group": "taste", "children": [
+        {"code": "spring_strawberry", "label": "봄 딸기"}, {"code": "summer_blueberry", "label": "여름 블루베리"},
+        {"code": "autumn_harvest", "label": "가을 수확"}, {"code": "winter_experience", "label": "겨울 체험"}]},
+    {"code": "budget_range", "label": "예산대", "group": "practical",
+     "note": "*1인당 코스 총비용(교통·식사 포함) 기준입니다", "children": [
+        {"code": "course_under_30k", "label": "3만원 이하"}, {"code": "course_30_50k", "label": "3~5만원"},
+        {"code": "course_50_100k", "label": "5~10만원"}, {"code": "course_over_100k", "label": "10만원 이상"}]},
+    {"code": "transport", "label": "교통수단", "group": "practical", "children": [
         {"code": "car", "label": "자가용"}, {"code": "public_transit", "label": "대중교통"},
         {"code": "walk", "label": "도보"}, {"code": "bike", "label": "자전거"}]},
-    {"code": "facility", "label": "편의시설", "children": [
+    {"code": "duration_hours", "label": "소요시간", "group": "practical", "children": [
+        {"code": "hours_2", "label": "2시간"}, {"code": "half_day", "label": "반나절"},
+        {"code": "full_day", "label": "종일"}]},
+    {"code": "facility", "label": "편의시설", "group": "practical", "children": [
         {"code": "parking", "label": "주차"}, {"code": "restroom", "label": "화장실"},
         {"code": "barrier_free", "label": "무장애"}, {"code": "wifi", "label": "와이파이"},
+        {"code": "nursing_room", "label": "수유실"},
         {"code": "pesticide_free", "label": "무농약"}, {"code": "organic", "label": "유기농인증"}]},
 ]
 
@@ -125,12 +157,12 @@ REGION_ADDRESS_KEYWORDS = {
     "cheonan_dongnam": ["동남구"], "cheonan_seobuk": ["서북구"],
 }
 
-# 예산대 코드 → (최소원, 최대원). 최대 None = 상한 없음.
+# 예산대 코드 → (최소원, 최대원). ★코스 총비용(1인당) 기준★. 최대 None = 상한 없음.
 BUDGET_RANGES = {
-    "under_10k": (0, 9999),
-    "range_10k": (10000, 19999),
-    "range_20k": (20000, 29999),
-    "over_30k": (30000, None),
+    "course_under_30k": (0, 29999),
+    "course_30_50k": (30000, 49999),
+    "course_50_100k": (50000, 99999),
+    "course_over_100k": (100000, None),
 }
 
 # 반려견 몸무게 티어 코드 → 체험이 최소 이 kg 이상 허용해야 매칭(Experience.pet_max_weight_kg 기준).

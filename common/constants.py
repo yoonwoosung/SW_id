@@ -25,8 +25,9 @@ COURSE_SLOTS = [
 ]
 # 외부 장소를 하나도 못 가져왔을 때 이유 문장(코스 생성 실패와 별개로 기본 문구)
 COURSE_REASON_FALLBACK = "체험과 가까운 인기 장소로 구성한 코스입니다."
-# 코스 예상 비용 = 체험 비용 + 점심·카페 예상치(1인 기준, 원). 실제 값은 튜닝 대상.
-COURSE_EXTRA_COST_ESTIMATE = 20000
+# 코스 총비용(1인당) 추정 = 체험비(입장) + 교통 + 식사. 예산대 채점·코스 카드가 공유. 튜닝 대상.
+COURSE_TRANSPORT_ESTIMATE = 8000   # 교통비 추정(1인)
+COURSE_MEAL_ESTIMATE = 12000       # 식사·카페 추정(1인)
 
 # --- ESG 점수 (체험의 기존 속성 기반, 항목 합계 100) ---
 ESG_SCORE_PESTICIDE_FREE = 35  # 무농약 재배 (환경)
@@ -45,3 +46,13 @@ PERSONALIZE_CROP_BOOST = 0.4  # 과거 신청한 작물과 같은 작물이면 �
 SEGMENT_TREND_BOOST = 0.5   # 같은 성별·나이대가 많이 누른 체험이면 가점(취향 신호 강함)
 TREND_TOP_LIMIT = 20        # 세그먼트에서 뽑을 인기 대상(체험) 최대 수
 TREND_KEYWORD_LIMIT = 8     # 검색창 하단 트렌드 키워드 최대 노출 수
+RECENT_VIEWS_LIMIT = 10     # '내 활동 - 최근 본 체험' 최대 노출 수
+
+# --- 예약(Application) 상태값 ---
+APPLICATION_STATUS_PENDING = '예정'      # 신청됨(결제 전)
+APPLICATION_STATUS_PAID = '결제완료'     # 더미 결제 성공
+APPLICATION_STATUS_CONFIRMED = '확정'    # 농장주 확정
+
+# --- 포인트 ---
+POINT_EARN_RATE = 0.05           # 결제금액 대비 적립률(5%). 적립액은 정수 내림.
+POINT_REASON_PAYMENT = 'payment'  # 결제 적립 사유 코드

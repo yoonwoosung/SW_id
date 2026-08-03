@@ -3,7 +3,7 @@
 # 파트3: 같은 성별·나이대가 많이 누른 체험(trending_ids)에도 가점한다.
 from common.constants import PERSONALIZE_CROP_BOOST, SEGMENT_TREND_BOOST
 from services.distance import haversine
-from services.recommend_service import matches_specialty, calculate_score, category_bonus
+from services.recommend_service import matches_specialty, calculate_score, category_bonus, score_components
 
 
 def user_preferences(user):
@@ -32,13 +32,22 @@ def rank_personalized(experiences, user, user_lat, user_lon, conditions=None,
     prefs = user_preferences(user)
     conditions = conditions or {}
     trending_ids = trending_ids or set()
+    has_location = user_lat is not None and user_lon is not None
     ranked = []
     for exp in experiences:
-        distance = haversine(user_lat, user_lon, exp.lat, exp.lng)
-        if distance > max_distance_km:
-            continue
+        if has_location:
+            distance = haversine(user_lat, user_lon, exp.lat, exp.lng)
+            if distance > max_distance_km:
+                continue
+        else:
+            distance = None
         is_specialty = matches_specialty(exp.address_detail, exp.crop)
-        score = calculate_score(distance, exp.max_participants, exp.current_participants, is_specialty)
+        if has_location:
+            score = calculate_score(distance, exp.max_participants, exp.current_participants, is_specialty)
+        else:
+            # 위치가 없으면 거리 요소를 빼고 특산물·잔여석만으로 기본 점수를 낸다.
+            components = score_components(0, exp.max_participants, exp.current_participants, is_specialty)
+            score = components["specialty"] + components["availability"]
         score += personalize_boost(exp, prefs)
         score += category_bonus(conditions, exp)
         if exp.id in trending_ids:
@@ -51,9 +60,9 @@ def rank_personalized(experiences, user, user_lat, user_lon, conditions=None,
             reasons.append("이전에 신청한 작물이에요")
         if is_specialty:
             reasons.append("이 지역 대표 특산물이에요")
-        if distance <= 20:
+        if has_location and distance <= 20:
             reasons.append(f"가까워요(약 {round(distance, 1)}km)")
-        ranked.append((exp, round(distance, 1), score, reasons))
+        ranked.append((exp, round(distance, 1) if has_location else None, score, reasons))
 
     ranked.sort(key=lambda x: x[2], reverse=True)
     return ranked[:limit]

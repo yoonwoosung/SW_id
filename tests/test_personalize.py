@@ -52,6 +52,17 @@ def test_ranking_prefers_history_crop():
     assert "이전에 신청한 작물이에요" in ranked[0][3]
 
 
+def test_ranks_without_location():
+    # 좌표가 없으면 거리 필터 없이 특산물·잔여석 기반으로 순위를 낸다(기본 추천).
+    near = FakeExp(1, 0, 0, "포도")          # 좌표 무의미
+    far = FakeExp(2, 99, 99, "포도")
+    user = FakeUser([])
+    ranked = rank_personalized([near, far], user, None, None)
+    assert len(ranked) == 2                  # 150km 컷오프 없음(둘 다 포함)
+    assert all(item[1] is None for item in ranked)  # distance_km None
+    assert all("가까워요" not in " ".join(item[3]) for item in ranked)  # 거리 이유 없음
+
+
 def test_segment_trending_boosts_experience():
     # 세그먼트 인기 체험(id=2)이 trending_ids에 있으면 위로 오고 이유가 붙는다.
     a = FakeExp(1, 36.8, 127.3, "포도")

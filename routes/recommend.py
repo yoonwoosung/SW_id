@@ -38,10 +38,9 @@ def recommend_experiences():
 
 
 def personalized_recommendations():
+    # 좌표는 선택. 없으면 거리 요소를 빼고 회원정보(이력·특산물·조건) 기반 '기본 추천'을 준다.
     lat = request.args.get('lat', type=float)
     lon = request.args.get('lon', type=float)
-    if lat is None or lon is None:
-        return error_response("COORDS_REQUIRED", "위치(lat, lon)가 필요합니다.", 400)
 
     conditions = {code: request.args.getlist('cond_' + code) for code in CATEGORY_CODES}
     user = User.query.get(session['user_id']) if 'user_id' in session else None

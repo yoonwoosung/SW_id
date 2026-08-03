@@ -19,6 +19,9 @@
 
     FarmFilter.mount(filterEl, { endpoint: filterEl.dataset.endpoint, onApply: run });
 
+    // 진입 즉시: 좌표 없이 회원정보 기반 '기본 추천 코스'를 보여준다(위치·조건은 이후 정교화).
+    loadCourses(null, null, {}, true);
+
     // 트렌드 키워드(검색창 하단)
     fetch('/api/trend-keywords').then(function (r) { return r.json(); }).then(function (res) {
         var kws = (res.data && res.data.keywords) || [];
@@ -40,21 +43,25 @@
 
     function buildQuery(lat, lon, selected) {
         var qs = new URLSearchParams();
-        qs.set('lat', lat); qs.set('lon', lon);
+        if (lat != null && lon != null) { qs.set('lat', lat); qs.set('lon', lon); }
         Object.keys(selected || {}).forEach(function (cat) {
             (selected[cat] || []).forEach(function (v) { qs.append('cond_' + cat, v); });
         });
         return qs.toString();
     }
 
-    function loadCourses(lat, lon, selected) {
+    function loadCourses(lat, lon, selected, isDefault) {
+        resultsEl.innerHTML = '<p class="fl-empty">' + (isDefault ? '기본 추천 코스를 준비하는 중…' : '내 위치로 맞춤 코스를 찾는 중…') + '</p>';
         fetch('/api/recommendations/personalized?' + buildQuery(lat, lon, selected))
             .then(function (r) { return r.json(); })
             .then(function (res) {
                 if (!res.success) { resultsEl.innerHTML = '<p class="fl-empty">' + esc((res.error && res.error.message) || '추천을 불러올 수 없어요.') + '</p>'; return; }
                 var list = (res.data.results || []).slice(0, 3);
-                if (!list.length) { resultsEl.innerHTML = '<p class="fl-empty">조건에 맞는 주변 체험을 못 찾았어요. 조건을 줄여보세요.</p>'; return; }
-                if (noteEl && res.data.segment_applied) noteEl.textContent = '회원님과 비슷한 분들이 좋아한 코스를 반영했어요.';
+                if (!list.length) { resultsEl.innerHTML = '<p class="fl-empty">추천할 체험을 찾지 못했어요.</p>'; return; }
+                if (noteEl) {
+                    if (res.data.segment_applied) { noteEl.textContent = '회원님과 비슷한 분들이 좋아한 코스를 반영했어요.'; }
+                    else if (isDefault) { noteEl.textContent = '기본 추천이에요. ‘내 위치로 맞춤 추천받기’를 누르거나 조건을 고르면 더 정확해져요.'; }
+                }
                 Promise.all(list.map(function (x) {
                     return fetch('/api/experiences/' + x.id + '/course')
                         .then(function (r) { return r.json(); })

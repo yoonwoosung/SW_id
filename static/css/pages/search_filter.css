@@ -28,40 +28,46 @@
 .fl-chip__x { cursor: pointer; border: none; background: none; color: var(--green-dark); font-size: 1rem; line-height: 1; padding: 0; }
 .fl-chip__x:hover { color: #b33; }
 
-/* ---- 아코디언 ---- */
-.fl-acc__item { border-bottom: 1px solid #eef1ee; }
-.fl-acc__item:last-child { border-bottom: none; }
-.fl-acc__head {
-    width: 100%; display: flex; align-items: center; justify-content: space-between;
-    background: none; border: none; cursor: pointer;
-    padding: 14px 2px; font-size: 0.98rem; font-weight: 700; color: #2c352e; text-align: left;
+/* ---- 대분류 가로 탭 ---- */
+.fl-tabbar {
+    display: flex; gap: 8px; overflow-x: auto; padding: 10px 0 12px;
+    border-bottom: 1px solid #eef1ee; margin-bottom: 12px; scrollbar-width: thin;
 }
-.fl-acc__count { font-size: 0.72rem; font-weight: 700; color: #fff; background: var(--green-mid, #4CAF50); border-radius: 999px; padding: 1px 7px; margin-left: 6px; }
-.fl-acc__toggle { transition: transform 0.18s ease; color: #9aa39c; flex-shrink: 0; }
-.fl-acc__head[aria-expanded="true"] .fl-acc__toggle { transform: rotate(180deg); color: var(--green-dark); }
-.fl-acc__body { padding: 0 2px 14px; }
-.fl-acc__body[hidden] { display: none; }
-
-/* 중첩 그룹(지역>시도, 반려견>몸무게 등) */
-.fl-group { margin: 4px 0 4px 4px; border-left: 2px solid #eef1ee; padding-left: 10px; }
-.fl-group__head {
-    width: 100%; display: flex; align-items: center; justify-content: space-between;
-    background: none; border: none; cursor: pointer;
-    padding: 8px 2px; font-size: 0.9rem; font-weight: 600; color: #45514a; text-align: left;
+.fl-tab {
+    flex: 0 0 auto; display: inline-flex; align-items: center; gap: 5px;
+    border: 1px solid #dbe5dd; background: #fff; color: #45514a;
+    border-radius: 999px; padding: 8px 14px; font-size: 0.88rem; font-weight: 700; cursor: pointer;
+    white-space: nowrap; transition: background 0.15s, color 0.15s, border-color 0.15s;
 }
-.fl-group__head[aria-expanded="true"] .fl-acc__toggle { transform: rotate(180deg); }
-.fl-group__body[hidden] { display: none; }
+.fl-tab:hover { border-color: var(--green-mid, #4CAF50); }
+.fl-tab.is-active { background: var(--green-dark, #2D5A1B); color: #fff; border-color: var(--green-dark, #2D5A1B); }
+.fl-tab__count {
+    font-size: 0.68rem; font-weight: 800; color: var(--green-dark, #2D5A1B);
+    background: #fff; border-radius: 999px; padding: 0 6px; min-width: 16px; text-align: center;
+}
+.fl-tab.is-active .fl-tab__count { color: var(--green-dark, #2D5A1B); background: #fff; }
 
-/* 체크박스(복수 선택) */
-.fl-checks { display: flex; flex-wrap: wrap; gap: 6px 4px; padding: 4px 0; }
-.fl-check {
-    display: inline-flex; align-items: center; gap: 6px; cursor: pointer;
+/* ---- 세부항목: 같은 크기 체크박스 그리드 ---- */
+.fl-catpanel[hidden] { display: none; }
+.fl-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 8px; margin: 4px 0;
+}
+.fl-cell {
+    display: flex; align-items: center; gap: 7px; cursor: pointer;
+    border: 1px solid #e2e7e2; border-radius: 10px; padding: 10px 12px;
     font-size: 0.88rem; color: #37413a; font-weight: 500;
-    border: 1px solid #e2e7e2; border-radius: 10px; padding: 6px 10px;
     transition: background 0.15s, border-color 0.15s;
 }
-.fl-check input { accent-color: var(--green-mid, #4CAF50); width: 15px; height: 15px; }
-.fl-check:has(input:checked) { background: var(--green-light, #E8F5E9); border-color: var(--green-mid, #4CAF50); color: var(--green-dark, #2D5A1B); }
+.fl-cell input { accent-color: var(--green-mid, #4CAF50); width: 16px; height: 16px; flex-shrink: 0; }
+.fl-cell:has(input:checked) { background: var(--green-light, #E8F5E9); border-color: var(--green-mid, #4CAF50); color: var(--green-dark, #2D5A1B); font-weight: 700; }
+
+/* 탭 안의 중첩 소제목(지역>시도, 반려견>몸무게, 인원>인원수 등) */
+.fl-subgroup { margin: 10px 0 4px; }
+.fl-subgroup__title { font-size: 0.82rem; font-weight: 700; color: #6a746d; margin: 0 0 6px; }
+
+/* 예산대 등 카테고리 주석 */
+.fl-note { font-size: 0.78rem; color: #9aa39c; margin-top: 10px; }
 
 /* ---- 액션 버튼 ---- */
 .fl-actions { display: flex; gap: 10px; margin-top: 14px; }

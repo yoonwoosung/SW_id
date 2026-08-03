@@ -16,8 +16,8 @@
         <a href="/" class="site-logo">FarmLink</a>
         <nav class="site-nav">
             <a href="{{ url_for('index') }}" {% if request.endpoint == 'index' %}class="active"{% endif %}>체험 찾기</a>
-            <a href="{{ url_for('ai_recommend_page') }}">AI 여행 추천</a>
-            <a href="{{ url_for('my_info') }}" {% if request.endpoint == 'my_info' %}class="active"{% endif %}>예약 내역</a>
+            <a href="{{ url_for('ai_recommend_page') }}">오늘의 추천 코스</a>
+            <a href="{{ url_for('mypage') }}" {% if request.endpoint == 'mypage' %}class="active"{% endif %}>내 활동</a>
         </nav>
         <div class="site-user-area">
             {% if session.get('user_id') %}

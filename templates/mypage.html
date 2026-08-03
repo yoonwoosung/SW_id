@@ -1,6 +1,22 @@
 {% extends "layout.html" %}
 {% block page_class %}page-mypage{% endblock %}
 
+{% block head %}
+<style>
+    .mp-tabs { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:var(--fl-s4,16px); }
+    .mp-tab { border:1px solid #cfe3d6; background:#fff; color:#3a4a40; border-radius:999px;
+              padding:9px 18px; font-weight:700; font-size:.92rem; cursor:pointer; }
+    .mp-tab.is-active { background:var(--fl-green-700,#1d6340); color:#fff; border-color:var(--fl-green-700,#1d6340); }
+    .mp-panel[hidden] { display:none; }
+    .mp-list-item { display:flex; align-items:center; gap:12px; padding:12px 4px;
+                    border-bottom:1px solid #eef1ee; text-decoration:none; color:inherit; }
+    .mp-thumb { width:56px; height:56px; border-radius:10px; object-fit:cover; background:var(--fl-green-100,#e8f5e9);
+                display:flex; align-items:center; justify-content:center; font-size:1.4rem; flex-shrink:0; }
+    .mp-empty { color:#8a938c; padding:16px 4px; }
+    .mp-point-balance { font-size:2.2rem; font-weight:800; color:var(--fl-orange,#E8960C); }
+</style>
+{% endblock %}
+
 {# AI 코스 플레이스홀더 (content·scripts 공용) #}
 {% set ai_course = [
     {"time":"09:00","title":"딸기 수확 체험","desc":"천안 행복 딸기 농장","lat":36.815,"lng":127.114},
@@ -34,7 +50,7 @@
                 <div class="fl-info-row"><span class="lbl">이름</span><span class="val">{{ user.name }}</span></div>
                 <div class="fl-info-row"><span class="lbl">이메일</span><span class="val" style="font-size:.85rem;">{{ user.email }}</span></div>
                 <div class="fl-info-row"><span class="lbl">가입일</span><span class="val fl-muted">미기록</span></div>
-                <div class="fl-info-row"><span class="lbl">포인트</span><span class="val fl-muted">준비 중</span></div>
+                <div class="fl-info-row"><span class="lbl">포인트</span><span class="val" id="mp-side-points">–</span></div>
                 <a href="{{ url_for('logout') }}" class="fl-btn fl-btn-outline fl-btn-block" style="margin-top:var(--fl-s3);">로그아웃</a>
             </div></div>
         </aside>
@@ -48,6 +64,16 @@
                     <p class="fl-muted" style="margin:4px 0 0;">이번 주 예약된 체험이 <strong style="color:var(--fl-orange);">{{ upcoming|length }}개</strong> 있어요.</p>
                 </div>
             </div>
+
+            {# ===== 내 활동 탭 ===== #}
+            <div class="mp-tabs" role="tablist">
+                <button type="button" class="mp-tab is-active" data-tab="reservations">예약 내역</button>
+                <button type="button" class="mp-tab" data-tab="wishlist">찜</button>
+                <button type="button" class="mp-tab" data-tab="recent">최근 본 것</button>
+                <button type="button" class="mp-tab" data-tab="points">포인트</button>
+            </div>
+
+            <div class="mp-panel" data-panel="reservations">
 
             {# 나의 다음 여행 #}
             <section class="fl-card"><div class="fl-card-body">
@@ -137,10 +163,37 @@
 
             {# 통계 바 #}
             <div class="fl-stats">
-                <div class="fl-card fl-stat"><div><div class="num">준비 중</div><div class="lbl">포인트</div></div><i class="fa-solid fa-coins ico"></i></div>
-                <div class="fl-card fl-stat"><div><div class="num">준비 중</div><div class="lbl">찜한 체험</div></div><i class="fa-regular fa-heart ico"></i></div>
+                <div class="fl-card fl-stat"><div><div class="num" id="mp-stat-points">–</div><div class="lbl">포인트</div></div><i class="fa-solid fa-coins ico"></i></div>
+                <div class="fl-card fl-stat"><div><div class="num" id="mp-stat-wish">–</div><div class="lbl">찜한 체험</div></div><i class="fa-regular fa-heart ico"></i></div>
                 <div class="fl-card fl-stat"><div><div class="num">{{ applications|length }}</div><div class="lbl">신청 내역</div></div><i class="fa-regular fa-comment-dots ico"></i></div>
                 <div class="fl-card fl-stat"><div><div class="num">준비 중</div><div class="lbl">알림</div></div><i class="fa-regular fa-bell ico"></i></div>
+            </div>
+
+            </div>{# /reservations 패널 #}
+
+            {# 찜 #}
+            <div class="mp-panel" data-panel="wishlist" hidden>
+                <section class="fl-card"><div class="fl-card-body">
+                    <div class="fl-section-head"><h2>❤️ 찜한 체험</h2></div>
+                    <div id="mp-wishlist"><p class="mp-empty">불러오는 중…</p></div>
+                </div></section>
+            </div>
+
+            {# 최근 본 것 #}
+            <div class="mp-panel" data-panel="recent" hidden>
+                <section class="fl-card"><div class="fl-card-body">
+                    <div class="fl-section-head"><h2>🕘 최근 본 체험</h2></div>
+                    <div id="mp-recent"><p class="mp-empty">불러오는 중…</p></div>
+                </div></section>
+            </div>
+
+            {# 포인트 #}
+            <div class="mp-panel" data-panel="points" hidden>
+                <section class="fl-card"><div class="fl-card-body">
+                    <div class="fl-section-head"><h2>🪙 포인트</h2></div>
+                    <div class="mp-point-balance" id="mp-point-balance">–</div>
+                    <div id="mp-point-logs" style="margin-top:12px;"><p class="mp-empty">불러오는 중…</p></div>
+                </div></section>
             </div>
 
         </main>
@@ -167,5 +220,69 @@ document.addEventListener('DOMContentLoaded', function () {
     });
     new kakao.maps.Polyline({ map: map, path: path, strokeWeight: 3, strokeColor: '#1d6340', strokeOpacity: 0.8, strokeStyle: 'shortdash' }).setMap(map);
 });
+</script>
+
+{# 내 활동 탭: 찜·최근본것·포인트를 실제 API로 채운다 #}
+<script>
+(function () {
+    function esc(s) { var d = document.createElement('div'); d.textContent = (s == null ? '' : String(s)); return d.innerHTML; }
+    function setText(id, v) { var e = document.getElementById(id); if (e) e.textContent = v; }
+    function won(n) { return Number(n || 0).toLocaleString() + '원'; }
+
+    var tabs = document.querySelectorAll('.mp-tab');
+    var panels = document.querySelectorAll('.mp-panel');
+    var loaded = {};
+    function show(name) {
+        tabs.forEach(function (t) { t.classList.toggle('is-active', t.dataset.tab === name); });
+        panels.forEach(function (p) { p.hidden = p.dataset.panel !== name; });
+        if (!loaded[name]) { loaded[name] = true; load(name); }
+    }
+    tabs.forEach(function (t) { t.addEventListener('click', function () { show(t.dataset.tab); }); });
+
+    function expCard(expId, name, image, cost) {
+        var thumb = image ? '<img class="mp-thumb" src="/static/uploads/' + esc(image) + '" alt="">' : '<div class="mp-thumb">🌱</div>';
+        return '<a class="mp-list-item" href="/experience/' + expId + '">' + thumb
+            + '<div style="flex:1;"><div style="font-weight:700;">' + esc(name) + '</div>'
+            + '<div style="color:var(--fl-orange,#E8960C);font-weight:800;">' + won(cost) + '</div></div></a>';
+    }
+    function fetchList(url, key, elId, empty, render) {
+        fetch(url).then(function (r) { return r.json(); }).then(function (res) {
+            var el = document.getElementById(elId);
+            if (!res.success) { el.innerHTML = '<p class="mp-empty">로그인이 필요해요.</p>'; return; }
+            var list = res.data[key] || [];
+            el.innerHTML = list.length ? list.map(render).join('') : '<p class="mp-empty">' + empty + '</p>';
+        }).catch(function () { var el = document.getElementById(elId); if (el) el.innerHTML = '<p class="mp-empty">불러오지 못했어요.</p>'; });
+    }
+    function load(name) {
+        if (name === 'wishlist') {
+            fetchList('/api/wishlists', 'wishlists', 'mp-wishlist', '아직 찜한 체험이 없어요.',
+                function (x) { return expCard(x.experience_id, x.name, x.image, x.cost); });
+        } else if (name === 'recent') {
+            fetchList('/api/users/me/recent-views', 'recent_views', 'mp-recent', '최근 본 체험이 없어요.',
+                function (x) { return expCard(x.id, x.name, x.image, x.cost); });
+        } else if (name === 'points') {
+            fetch('/api/users/me/points').then(function (r) { return r.json(); }).then(function (res) {
+                if (!res.success) { setText('mp-point-balance', '로그인 필요'); return; }
+                setText('mp-point-balance', Number(res.data.balance || 0).toLocaleString() + 'P');
+                var logs = res.data.logs || [];
+                document.getElementById('mp-point-logs').innerHTML = logs.length ? logs.map(function (l) {
+                    var pos = l.amount >= 0;
+                    return '<div class="mp-list-item"><div style="flex:1;">' + esc(l.reason)
+                        + ' <small style="color:#999;">' + esc((l.created_at || '').slice(0, 10)) + '</small></div>'
+                        + '<div style="font-weight:800;color:' + (pos ? '#2e7d32' : '#c00') + ';">'
+                        + (pos ? '+' : '') + Number(l.amount).toLocaleString() + 'P</div></div>';
+                }).join('') : '<p class="mp-empty">적립 내역이 없어요.</p>';
+            }).catch(function () {});
+        }
+    }
+
+    // 사이드바·통계 숫자(포인트·찜)를 진입 시 채움
+    fetch('/api/users/me/points').then(function (r) { return r.json(); }).then(function (res) {
+        if (res.success) { var b = Number(res.data.balance || 0).toLocaleString() + 'P'; setText('mp-stat-points', b); setText('mp-side-points', b); }
+    }).catch(function () {});
+    fetch('/api/wishlists').then(function (r) { return r.json(); }).then(function (res) {
+        if (res.success) { setText('mp-stat-wish', (res.data.wishlists || []).length); }
+    }).catch(function () {});
+})();
 </script>
 {% endblock %}

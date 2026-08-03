@@ -1,68 +1,50 @@
 /* static/js/pages/farm_filter.js
-   재사용 상세조건 아코디언 드롭박스 컴포넌트(바닐라 JS, 의존성 0).
+   재사용 상세조건 필터 컴포넌트(바닐라 JS, 의존성 0).
+   ★UI: 대분류 = 가로 탭 / 세부 = 같은 크기 체크박스 그리드(한 번에 하나의 대분류만) / 선택 = 상단 칩★
    상세검색 + 역제안 요청글 양쪽에서 FarmFilter.mount(el, opts)로 사용.
 
    사용:
      var f = FarmFilter.mount(document.getElementById('cond-filter'), {
-       endpoint: '/api/search-categories',   // 카테고리 트리(중첩) 소스. 실패 시 목업으로 폴백.
-       onApply: function (selected) { ... }   // {카테고리코드: [잎코드,...]} (빈 카테고리는 제외)
+       endpoint: '/api/search-categories',
+       onApply: function (selected) { ... }   // {카테고리코드: [잎코드,...]} (빈 카테고리 제외)
      });
      f.getSelected(); f.reset();
 */
 window.FarmFilter = (function () {
     'use strict';
 
-    // API 실패 시 폴백용 최소 목업(실제 연동으로 쉽게 교체되도록 분리).
+    // API 실패 시 폴백 목업(실제 연동으로 쉽게 교체되도록 분리).
     var MOCK_TREE = [
         { code: 'region', label: '지역', children: [
             { code: 'gyeonggi', label: '경기', children: [
-                { code: 'icheon', label: '이천' }, { code: 'anseong', label: '안성' }] }] },
+                { code: 'gapyeong', label: '가평' }, { code: 'yongin', label: '용인' }] }] },
         { code: 'activity', label: '액티비티', children: [
-            { code: 'harvest', label: '수확체험' }, { code: 'fishing', label: '낚시' }] }
+            { code: 'kayak', label: '카약' }, { code: 'hiking', label: '등산' }] }
     ];
 
     function esc(s) { var d = document.createElement('div'); d.textContent = (s == null ? '' : String(s)); return d.innerHTML; }
 
-    function renderNodes(nodes, topCode) {
+    // 한 대분류 패널: 잎은 그리드 체크박스, 하위 그룹은 소제목 + 재귀 그리드.
+    function renderPanelNodes(nodes, topCode) {
         var leaves = nodes.filter(function (n) { return !(n.children && n.children.length); });
         var groups = nodes.filter(function (n) { return n.children && n.children.length; });
         var html = '';
         if (leaves.length) {
-            html += '<div class="fl-checks">' + leaves.map(function (n) {
-                return '<label class="fl-check"><input type="checkbox" data-cat="' + esc(topCode) + '" value="' + esc(n.code) + '">'
+            html += '<div class="fl-grid">' + leaves.map(function (n) {
+                return '<label class="fl-cell"><input type="checkbox" data-cat="' + esc(topCode) + '" value="' + esc(n.code) + '">'
                     + '<span>' + esc(n.label) + '</span></label>';
             }).join('') + '</div>';
         }
         groups.forEach(function (g) {
-            html += '<div class="fl-group">'
-                + '<button type="button" class="fl-group__head" aria-expanded="false"><span>' + esc(g.label) + '</span>'
-                + '<i class="fa-solid fa-chevron-down fl-acc__toggle" aria-hidden="true"></i></button>'
-                + '<div class="fl-group__body" hidden>' + renderNodes(g.children, topCode) + '</div></div>';
+            html += '<div class="fl-subgroup"><div class="fl-subgroup__title">' + esc(g.label) + '</div>'
+                + renderPanelNodes(g.children, topCode) + '</div>';
         });
         return html;
     }
 
-    function renderTree(root, tree) {
-        var acc = tree.map(function (cat) {
-            return '<div class="fl-acc__item">'
-                + '<button type="button" class="fl-acc__head" data-cat="' + esc(cat.code) + '" aria-expanded="false">'
-                + '<span>' + esc(cat.label) + '<span class="fl-acc__count" hidden>0</span></span>'
-                + '<i class="fa-solid fa-chevron-down fl-acc__toggle" aria-hidden="true"></i></button>'
-                + '<div class="fl-acc__body" hidden>' + renderNodes(cat.children || [], cat.code) + '</div></div>';
-        }).join('');
-
-        root.innerHTML =
-            '<div class="fl-chips" data-role="chips" aria-live="polite"></div>'
-            + '<div class="fl-acc" data-role="acc">' + acc + '</div>'
-            + '<div class="fl-actions">'
-            + '<button type="button" class="fl-btn fl-btn--ghost" data-role="reset">초기화</button>'
-            + '<button type="button" class="fl-btn fl-btn--primary" data-role="apply">이 조건으로 추천받기</button>'
-            + '</div>';
-    }
-
     function mount(root, opts) {
         opts = opts || {};
-        var chipsEl, applyBtn;
+        var chipsEl;
 
         function refresh() {
             var checked = Array.prototype.slice.call(root.querySelectorAll('input[type=checkbox]:checked'));
@@ -71,11 +53,10 @@ window.FarmFilter = (function () {
                 return '<span class="fl-chip" data-cat="' + esc(cb.dataset.cat) + '" data-value="' + esc(cb.value) + '">'
                     + esc(label) + '<button type="button" class="fl-chip__x" aria-label="' + esc(label) + ' 제거">&times;</button></span>';
             }).join('');
-            root.querySelectorAll('.fl-acc__head').forEach(function (head) {
-                var n = root.querySelectorAll('input[data-cat="' + head.dataset.cat + '"]:checked').length;
-                var badge = head.querySelector('.fl-acc__count');
-                badge.textContent = n;
-                badge.hidden = n === 0;
+            root.querySelectorAll('.fl-tab').forEach(function (tab) {
+                var n = root.querySelectorAll('input[data-cat="' + tab.dataset.cat + '"]:checked').length;
+                var badge = tab.querySelector('.fl-tab__count');
+                if (badge) { badge.textContent = n; badge.hidden = n === 0; }
             });
         }
 
@@ -92,18 +73,36 @@ window.FarmFilter = (function () {
             refresh();
         }
 
-        function bind() {
-            chipsEl = root.querySelector('[data-role=chips]');
-            applyBtn = root.querySelector('[data-role=apply]');
+        function showTab(code) {
+            root.querySelectorAll('.fl-tab').forEach(function (t) { t.classList.toggle('is-active', t.dataset.cat === code); });
+            root.querySelectorAll('.fl-catpanel').forEach(function (p) { p.hidden = p.dataset.catpanel !== code; });
+        }
 
+        function renderTree(tree) {
+            root.innerHTML =
+                '<div class="fl-chips" data-role="chips" aria-live="polite"></div>'
+                + '<div class="fl-tabbar" role="tablist">' + tree.map(function (c, i) {
+                    return '<button type="button" class="fl-tab' + (i === 0 ? ' is-active' : '') + '" data-cat="' + esc(c.code) + '">'
+                        + esc(c.label) + '<span class="fl-tab__count" hidden>0</span></button>';
+                }).join('') + '</div>'
+                + '<div class="fl-panel-body">' + tree.map(function (c, i) {
+                    return '<div class="fl-catpanel" data-catpanel="' + esc(c.code) + '"' + (i === 0 ? '' : ' hidden') + '>'
+                        + renderPanelNodes(c.children || [], c.code)
+                        + (c.note ? '<div class="fl-note">' + esc(c.note) + '</div>' : '')
+                        + '</div>';
+                }).join('') + '</div>'
+                + '<div class="fl-actions">'
+                + '<button type="button" class="fl-btn fl-btn--ghost" data-role="reset">초기화</button>'
+                + '<button type="button" class="fl-btn fl-btn--primary" data-role="apply">이 조건으로 추천받기</button>'
+                + '</div>';
+            chipsEl = root.querySelector('[data-role=chips]');
+            bind();
+        }
+
+        function bind() {
             root.addEventListener('click', function (e) {
-                var head = e.target.closest('.fl-acc__head, .fl-group__head');
-                if (head && root.contains(head)) {
-                    var expanded = head.getAttribute('aria-expanded') === 'true';
-                    head.setAttribute('aria-expanded', String(!expanded));
-                    head.nextElementSibling.hidden = expanded;
-                    return;
-                }
+                var tab = e.target.closest('.fl-tab');
+                if (tab && root.contains(tab)) { showTab(tab.dataset.cat); return; }
                 var x = e.target.closest('.fl-chip__x');
                 if (x) {
                     var chip = x.closest('.fl-chip');
@@ -114,7 +113,6 @@ window.FarmFilter = (function () {
                 if (e.target.closest('[data-role=reset]')) { reset(); return; }
                 if (e.target.closest('[data-role=apply]') && opts.onApply) { opts.onApply(getSelected()); }
             });
-
             root.addEventListener('change', function (e) {
                 if (e.target.matches('input[type=checkbox]')) { refresh(); }
             });
@@ -122,11 +120,10 @@ window.FarmFilter = (function () {
 
         function load() {
             var url = opts.endpoint || root.dataset.endpoint;
-            var done = function (tree) { renderTree(root, tree); bind(); };
+            var done = function (tree) { renderTree(tree && tree.length ? tree : MOCK_TREE); };
             if (!url) { done(MOCK_TREE); return; }
             fetch(url).then(function (r) { return r.json(); }).then(function (res) {
-                var tree = (res && res.data && res.data.categories) || [];
-                done(tree.length ? tree : MOCK_TREE);
+                done((res && res.data && res.data.categories) || []);
             }).catch(function () { done(MOCK_TREE); });
         }
 

@@ -1,7 +1,7 @@
 # services/recommend_service.py — 추천 점수 계산(특산물 매칭·점수 요소·합산·조건 가점).
-from common.constants import CATEGORY_MATCH_SCORE
+from common.constants import CATEGORY_MATCH_SCORE, CATEGORY_WEIGHTS
 from services.recommend_data import REGIONAL_SPECIALTIES
-from services.category_match import compute_category_match
+from services.category_match import compute_category_match, matched_categories
 from services.distance import haversine
 
 
@@ -36,8 +36,12 @@ def calculate_score(distance, max_p, current_p, is_specialty):
 
 
 def category_bonus(conditions, experience):
-    """사용자가 고른 조건과 일치하는 항목 수 × CATEGORY_MATCH_SCORE 가점."""
-    return CATEGORY_MATCH_SCORE * compute_category_match(conditions, experience)
+    """충족한 대분류마다 가점을 더한다(대분류당 OR·1회). 대분류별 가중치는 CATEGORY_WEIGHTS,
+    없으면 CATEGORY_MATCH_SCORE 기본값."""
+    return sum(
+        CATEGORY_WEIGHTS.get(category, CATEGORY_MATCH_SCORE)
+        for category in matched_categories(conditions, experience)
+    )
 
 
 def rank_recommendations(experiences, user_lat, user_lon, max_distance_km=150, limit=15):

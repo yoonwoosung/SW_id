@@ -36,11 +36,11 @@ def test_region_and_budget_and_facility_match():
     exp = FakeExperience(address_detail="충남 논산시 연무읍", cost=25000,
                          has_parking=True, pesticide_free=True)
     conditions = {
-        "region": ["chungnam"],              # 주소에 '충남' 포함 → +1
-        "budget_range": ["course_30_50k"],   # 코스총비용 25000+8000+12000=45000 → 3~5만 → +1
-        "facility": ["parking", "pesticide_free"],  # 둘 다 → +2
+        "region": ["chungnam"],              # 대분류 충족 → +1
+        "budget_range": ["course_30_50k"],   # 코스총비용 45000 → 3~5만 → +1
+        "facility": ["parking", "pesticide_free"],  # ★OR: 둘 다 맞아도 대분류 1회 → +1★
     }
-    assert compute_category_match(conditions, exp) == 4
+    assert compute_category_match(conditions, exp) == 3  # 충족 대분류 3개(region·budget·facility)
 
 
 def test_unscored_categories_are_ignored():
@@ -65,10 +65,10 @@ def test_activity_match():
 
 
 def test_pet_weight_tier_match():
-    # 최대 15kg까지 허용하는 체험: 소형·중형은 매칭, 대형(25kg 필요)은 불매칭.
+    # 최대 15kg까지 허용하는 체험: 소형·중형 둘 다 골라도 OR로 대분류 1회.
     exp = FakeExperience(pet_allowed=True, pet_max_weight_kg=15)
-    assert compute_category_match({"pet_dog": ["dog_small", "dog_medium"]}, exp) == 2
-    assert compute_category_match({"pet_dog": ["dog_large"]}, exp) == 0
+    assert compute_category_match({"pet_dog": ["dog_small", "dog_medium"]}, exp) == 1
+    assert compute_category_match({"pet_dog": ["dog_large"]}, exp) == 0  # 25kg 필요 → 불충족
     # 동반 불가 체험은 어떤 티어도 매칭 안 됨.
     assert compute_category_match({"pet_dog": ["dog_small"]}, FakeExperience(pet_allowed=False)) == 0
 
@@ -88,6 +88,21 @@ def test_wifi_facility_match():
 def test_region_no_match():
     exp = FakeExperience(address_detail="경기도 이천시", cost=25000)
     assert compute_category_match({"region": ["chungnam"]}, exp) == 0
+
+
+def test_region_or_is_equal_for_each_match():
+    # 지역 [가평, 춘천]을 함께 골라도, 가평 체험·춘천 체험 각각 지역 대분류 1회로 동등.
+    gapyeong = FakeExperience(address_detail="경기도 가평군 상면", cost=25000)
+    chuncheon = FakeExperience(address_detail="강원도 춘천시 신북읍", cost=25000)
+    cond = {"region": ["gapyeong", "chuncheon"]}
+    assert compute_category_match(cond, gapyeong) == 1
+    assert compute_category_match(cond, chuncheon) == 1
+
+
+def test_different_categories_stack():
+    exp = FakeExperience(address_detail="경기도 가평군", cost=25000, has_parking=True, activity_type="kayak")
+    cond = {"region": ["gapyeong"], "transport": ["car"], "activity": ["kayak", "hiking"]}
+    assert compute_category_match(cond, exp) == 3  # region·transport·activity 각 1회
 
 
 def test_category_bonus_scales_by_constant():

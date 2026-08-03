@@ -43,8 +43,8 @@ def test_best_match_picks_highest_experience():
     req = FakeRequest({"region": ["chungnam"], "facility": ["parking", "pesticide_free"]})
     weak = FakeExperience(address_detail="경기도 이천시")               # 0
     strong = FakeExperience(address_detail="충남 논산시",
-                            has_parking=True, pesticide_free=True)      # 3
-    assert best_match_for_experiences(req, [weak, strong]) == 3
+                            has_parking=True, pesticide_free=True)      # region+facility(OR) = 2
+    assert best_match_for_experiences(req, [weak, strong]) == 2
 
 
 def test_best_match_no_experiences_returns_zero():

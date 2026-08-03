@@ -7,9 +7,11 @@ MAX_SEARCH_RADIUS_M = 20000     # 한국관광공사 위치기반 API 허용 최
 NEARBY_RESULT_LIMIT = 30        # 외부 API에서 가져올 최대 항목 수
 
 # --- 추천 점수 ---
-# 추천 기본 점수(calculate_score)는 0~1 스케일. 카테고리 조건 1건 일치당 이 값을 가산한다.
-# (3~4건 일치 시 거리·특산물 점수를 앞서도록 설계. 실제 값은 튜닝 대상)
+# 추천 기본 점수(calculate_score)는 0~1 스케일. 충족한 '대분류'당 이 값을 가산한다(대분류당 OR·1회).
+# (3~4개 대분류 충족 시 거리·특산물 점수를 앞서도록 설계. 실제 값은 튜닝 대상)
 CATEGORY_MATCH_SCORE = 0.3
+# 대분류별 가중치 override(비우면 전부 CATEGORY_MATCH_SCORE 동일). 예: {"region": 0.4}
+CATEGORY_WEIGHTS = {}
 
 # --- AI 추천 코스 ---
 COURSE_SEARCH_RADIUS_M = 10000        # 코스용 주변 장소 검색 반경(미터)

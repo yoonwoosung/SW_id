@@ -83,8 +83,35 @@
 .fl-trend__tag { font-size: 0.82rem; color: #55605a; background: #f4f6f2; border-radius: 999px; padding: 5px 11px; }
 .fl-trend__tag b { color: var(--orange, #E8960C); }
 
+/* ---- 회원정보 기반 자동 추천 세그먼트 ---- */
+.ai-seg-panel { background: #eef5f0; border: 1px solid #cfe3d6; }
+.ai-seg-head { font-size: 0.9rem; font-weight: 700; color: var(--green-dark, #1d6340); margin-bottom: 10px; }
+.ai-seg-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.ai-seg-card {
+    background: #fff; border: 1px solid #dbe8df; border-radius: 10px; padding: 12px 8px;
+    text-align: center; cursor: pointer; transition: border-color 0.15s, box-shadow 0.15s;
+}
+.ai-seg-card:hover { border-color: var(--green-mid, #4CAF50); }
+.ai-seg-card.is-active { border-color: var(--green-dark, #1d6340); box-shadow: 0 0 0 1px var(--green-dark, #1d6340) inset; }
+.ai-seg-emoji { font-size: 1.4rem; margin-bottom: 3px; }
+.ai-seg-title { font-size: 0.82rem; font-weight: 700; color: #1d3d2c; line-height: 1.25; }
+.ai-seg-sub { font-size: 0.72rem; color: #8a9890; margin-top: 2px; }
+
 /* ---- 코스 카드 ---- */
 .fl-course-list { display: grid; grid-template-columns: 1fr; gap: 14px; }
+/* 카드 상단 컬러 밴드 + 뱃지 */
+.fl-course-card__band {
+    height: 92px; background: linear-gradient(135deg, #c0dd97, #9fe1cb);
+    position: relative; display: flex; align-items: flex-start; gap: 6px; padding: 10px; flex-wrap: wrap;
+}
+.fl-badge { font-size: 0.7rem; font-weight: 700; border-radius: 6px; padding: 3px 8px; }
+.fl-badge--urgent { background: #e24b4a; color: #fff; }
+.fl-badge--eco { background: rgba(255,255,255,0.92); color: #04342c; }
+.fl-badge--day { background: rgba(255,255,255,0.85); color: #173404; }
+.fl-course-viewers { margin: 0 0 8px; font-size: 0.8rem; color: #8a5a1a; }
+.fl-course-price { margin-top: 12px; padding-top: 10px; border-top: 1px solid #f0f0f0; }
+.fl-course-price .fl-cost { font-size: 1.15rem; font-weight: 800; color: #d85a30; }
+.fl-course-price .fl-per { font-size: 0.72rem; color: #a0a89e; margin-left: 6px; }
 .fl-course-card {
     background: #fff; border: 1px solid #eef1ee; border-radius: var(--radius-card, 14px);
     box-shadow: var(--shadow-card, 0 2px 12px rgba(0,0,0,0.06)); overflow: hidden;

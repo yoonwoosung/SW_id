@@ -9,15 +9,19 @@
 <div class="ai-rec-wrap">
 
     <div class="ai-rec-head">
-        <h1><span class="ai-badge-label">AI</span> AI 맞춤 여행 추천</h1>
-        <p id="rec-note">
-            {% if session.get('user_id') %}회원님의 위치·이력·취향을 반영해 코스를 추천합니다.{% else %}로그인하면 취향까지 반영해 더 정확히 추천합니다.{% endif %}
-        </p>
+        <h1>나에게 딱 맞는 하루 여행 찾기</h1>
+        <p id="rec-note">AI가 회원정보를 바탕으로 먼저 추천해요.</p>
     </div>
 
-    <!-- 화면 1: 상세 조건(재사용 아코디언 드롭박스) -->
+    <!-- 회원정보 기반 AI 자동 추천 세그먼트 -->
+    <section class="fl-panel ai-seg-panel" id="ai-seg-panel" hidden>
+        <div class="ai-seg-head">✨ 회원님께 어울리는 추천</div>
+        <div class="ai-seg-grid" id="ai-segments"></div>
+    </section>
+
+    <!-- 또는 직접 조건 고르기 -->
     <section class="fl-panel">
-        <h2 class="fl-panel__title">🎛 상세 조건</h2>
+        <h2 class="fl-panel__title">🎛 또는 직접 조건 고르기</h2>
         <div id="cond-filter" data-endpoint="{{ url_for('search_categories') }}"></div>
         <div class="fl-trend" id="trend"></div>
     </section>

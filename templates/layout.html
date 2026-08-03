@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FarmLink Travel</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"/>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="{% block page_class %}{% endblock %}">
+
+<header class="site-header">
+    <div class="site-header-inner">
+        <a href="/" class="site-logo">FarmLink</a>
+        <nav class="site-nav">
+            <a href="{{ url_for('index') }}" {% if request.endpoint == 'index' %}class="active"{% endif %}>체험 찾기</a>
+            <a href="#">AI 여행 추천</a>
+            <a href="{{ url_for('my_info') }}" {% if request.endpoint == 'my_info' %}class="active"{% endif %}>예약 내역</a>
+        </nav>
+        <div class="site-user-area">
+            {% if session.get('user_id') %}
+            {% if session.get('role') == 'farmer' %}
+            <a href="{{ url_for('toggle_view_mode') }}" class="btn-view-mode-toggle">
+                <i class="fa-solid fa-arrows-rotate mr-1"></i>
+                {% if session.get('view_mode') == 'easy' %}상세모드 변환{% else %}이지모드 변환{% endif %}
+            </a>
+            {% endif %}
+            <div class="user-chip">
+                <i class="fa-solid fa-circle-user user-chip-icon"></i>
+                <span>{{ session.get('nickname') }}님</span>
+                <i class="fa-solid fa-chevron-down" style="font-size:0.7rem;"></i>
+                <div class="user-chip-dropdown">
+                    {% if session.get('role') == 'farmer' %}
+                    <a href="{{ url_for('detailed_farmer_dashboard') }}"><i class="fa-solid fa-gauge-high mr-1"></i> 농장주 대시보드</a>
+                    {% else %}
+                    <a href="{{ url_for('my_info') }}"><i class="fa-solid fa-user mr-1"></i> 내 정보</a>
+                    {% endif %}
+                    <a href="{{ url_for('logout') }}"><i class="fa-solid fa-right-from-bracket mr-1"></i> 로그아웃</a>
+                </div>
+            </div>
+            {% else %}
+            <a href="{{ url_for('login_page') }}" class="btn-header-login">
+                <i class="fa-solid fa-circle-user"></i> 로그인 <i class="fa-solid fa-chevron-down ml-1" style="font-size:0.7rem;"></i>
+            </a>
+            {% endif %}
+        </div>
+    </div>
+</header>
+
+<main>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="container mt-3">
+                {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+    {% block content %}{% endblock %}
+</main>
+
+<footer class="site-footer-bar">
+    <p>&copy; 2025 FarmLink Travel. Farm to Link.</p>
+</footer>
+
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+<script>
+(function() {
+    const chip = document.querySelector('.user-chip');
+    if (!chip) return;
+    const dropdown = chip.querySelector('.user-chip-dropdown');
+    chip.addEventListener('click', function(e) {
+        e.stopPropagation();
+        dropdown.classList.toggle('open');
+    });
+    document.addEventListener('click', function() {
+        dropdown.classList.remove('open');
+    });
+})();
+</script>
+{# 리팩터 백엔드의 일부 페이지(mypage, easy_create_experience 등)가 scripts 블록을 사용하므로 하위호환용으로 유지 #}
+{% block scripts %}{% endblock %}
+</body>
+</html>

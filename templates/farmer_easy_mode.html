@@ -1,0 +1,119 @@
+{% extends "layout.html" %}
+{% block page_class %}page-farmer-center{% endblock %}
+
+{% block content %}
+<div class="fl-container fl-scope" style="margin-top:var(--fl-s5);">
+    <div class="fl-layout">
+
+        {# ===== 사이드바 ===== #}
+        <aside class="fl-sidebar">
+            <div class="fl-card"><div class="fl-card-body fl-side-profile">
+                {% if user.farm_image %}
+                <img class="fl-avatar" src="{{ url_for('static', filename='uploads/' + user.farm_image) }}" alt="{{ user.nickname }}">
+                {% else %}
+                <img class="fl-avatar" src="{{ url_for('static', filename='uploads/' + user.profile_image) }}" alt="{{ user.nickname }}">
+                {% endif %}
+                <strong>{{ user.nickname }}</strong>
+                <div class="fl-muted" style="font-size:.85rem;">{{ (user.farm_address or '지역 미등록').split(' ')[:2] | join(' ') }}</div>
+            </div></div>
+            <div class="fl-card"><div class="fl-card-body fl-side-menu">
+                <a href="#" class="is-active"><i class="fa-solid fa-user"></i> 농장 프로필</a>
+                <a href="{{ url_for('easy_reservations') }}"><i class="fa-solid fa-gear"></i> 운영 설정</a>
+                <a href="#certifications"><i class="fa-solid fa-shield-halved"></i> 인증 관리</a>
+                <a href="{{ url_for('farmer_guide') }}"><i class="fa-regular fa-circle-question"></i> 도움말</a>
+            </div></div>
+        </aside>
+
+        {# ===== 메인 ===== #}
+        <main style="display:flex;flex-direction:column;gap:var(--fl-s5);">
+
+            {# 농장 프로필 #}
+            <section class="fl-card"><div class="fl-card-body">
+                <div class="fl-section-head"><h2>농장 프로필</h2></div>
+                <div style="display:flex;gap:var(--fl-s4);flex-wrap:wrap;align-items:center;">
+                    {% if user.farm_image %}
+                    <img src="{{ url_for('static', filename='uploads/' + user.farm_image) }}" alt="농장 사진" style="width:180px;height:120px;object-fit:cover;border-radius:var(--fl-radius);">
+                    {% else %}
+                    <div style="width:180px;height:120px;border-radius:var(--fl-radius);background:var(--fl-green-100);display:flex;align-items:center;justify-content:center;font-size:2rem;">🌾</div>
+                    {% endif %}
+                    <div style="flex:1;min-width:200px;">
+                        <h3 style="font-weight:800;margin:0 0 6px;">{{ user.nickname }}</h3>
+                        <div class="fl-muted" style="margin-bottom:10px;"><i class="fa-solid fa-location-dot"></i> {{ user.farm_address or '주소 미등록' }}</div>
+                        {% if user.verification_status == 'verified' %}
+                        <span class="fl-badge fl-badge--success"><i class="fa-solid fa-shield-halved"></i> 인증 완료</span>
+                        {% else %}
+                        <span class="fl-badge fl-badge--muted"><i class="fa-solid fa-hourglass-half"></i> 인증 {{ user.verification_status }}</span>
+                        {% endif %}
+                        <span class="fl-badge fl-badge--solid"><i class="fa-solid fa-circle" style="font-size:.5rem;"></i> {{ '운영 중' if listings else '준비 중' }}</span>
+                    </div>
+                    <div style="display:flex;flex-direction:column;gap:8px;">
+                        <a href="{{ url_for('my_info') }}" class="fl-btn fl-btn-primary fl-btn-sm"><i class="fa-solid fa-pen"></i> 프로필 수정</a>
+                        <a href="{{ url_for('my_info') }}" class="fl-btn fl-btn-outline fl-btn-sm"><i class="fa-solid fa-camera"></i> 사진 변경</a>
+                    </div>
+                </div>
+            </div></section>
+
+            {# 기본 정보 + 운영 설정 #}
+            {% set organic_type = (listings | selectattr('organic_certification_type') | map(attribute='organic_certification_type') | first) %}
+            <div class="fl-grid--2">
+                <section class="fl-card"><div class="fl-card-body">
+                    <div class="fl-section-head"><h2>기본 정보</h2></div>
+                    <div class="fl-info-row"><span class="lbl"><i class="fa-solid fa-seedling"></i> 대표 작물</span><span class="val">{{ (listings | map(attribute='crop') | unique | join(', ')) or '등록된 작물 없음' }}</span></div>
+                    <div class="fl-info-row"><span class="lbl"><i class="fa-solid fa-phone"></i> 연락처</span><span class="val">{{ user.phone or '미등록' }}</span></div>
+                    <div class="fl-info-row"><span class="lbl"><i class="fa-solid fa-car"></i> 주차 가능 여부</span><span class="val">{{ '주차 가능' if (listings | selectattr('has_parking') | list) else '정보 없음' }}</span></div>
+                    <div class="fl-info-row"><span class="lbl"><i class="fa-solid fa-paw"></i> 반려동물 동반</span><span class="val fl-muted">미설정</span></div>
+                </div></section>
+
+                <section class="fl-card"><div class="fl-card-body">
+                    <div class="fl-section-head"><h2>운영 설정</h2></div>
+                    <div class="fl-info-row"><span class="lbl"><i class="fa-regular fa-calendar"></i> 운영 요일</span><span class="val fl-muted">미설정</span></div>
+                    <div class="fl-info-row"><span class="lbl"><i class="fa-regular fa-clock"></i> 운영 시간</span><span class="val fl-muted">미설정</span></div>
+                    <div class="fl-info-row"><span class="lbl"><i class="fa-solid fa-user-group"></i> 회차당 최대 인원</span><span class="val">{{ (listings[0].max_participants ~ '명') if listings else '미설정' }}</span></div>
+                    <a href="{{ url_for('easy_reservations') }}" class="fl-btn fl-btn-outline fl-btn-block" style="margin-top:var(--fl-s3);"><i class="fa-regular fa-calendar-plus"></i> 예약 가능 시간 설정</a>
+                </div></section>
+            </div>
+
+            {# 인증 관리 + 도움말 #}
+            <div class="fl-grid--2" id="certifications">
+                <section class="fl-card"><div class="fl-card-body">
+                    <div class="fl-section-head"><h2>인증 관리</h2></div>
+                    <div class="fl-info-row">
+                        <span class="lbl">농업인 확인서</span>
+                        <span class="val">
+                            {% if user.farmer_certificate_pdf %}<span class="fl-badge fl-badge--success">제출 완료</span>
+                            {% else %}<span class="fl-badge fl-badge--muted">미제출</span>{% endif %}
+                        </span>
+                    </div>
+                    <div class="fl-info-row">
+                        <span class="lbl">친환경 인증</span>
+                        <span class="val">
+                            {% if organic_type %}<span class="fl-badge fl-badge--success">{{ organic_type }}</span>
+                            {% else %}<span class="fl-badge fl-badge--muted">미등록</span>{% endif %}
+                        </span>
+                    </div>
+                    <a href="{{ url_for('my_info') }}" class="fl-btn fl-btn-outline fl-btn-block" style="margin-top:var(--fl-s3);"><i class="fa-regular fa-file-lines"></i> 인증 정보 확인</a>
+                </div></section>
+
+                <section class="fl-card"><div class="fl-card-body">
+                    <div class="fl-section-head"><h2>도움말 및 문의</h2></div>
+                    <p class="fl-muted">사용 방법이 궁금하시거나 도움이 필요하시면 언제든지 문의해주세요.</p>
+                    <a href="{{ url_for('farmer_guide') }}" class="fl-btn fl-btn-primary fl-btn-block"><i class="fa-solid fa-headset"></i> 문의하기</a>
+                </div></section>
+            </div>
+
+            {# 빠른 작업 (기존 easy 기능 보존) #}
+            <section class="fl-card"><div class="fl-card-body">
+                <div class="fl-section-head"><h2>빠른 작업</h2></div>
+                <div class="fl-grid">
+                    <a href="{{ url_for('easy_create_experience') }}" class="fl-btn fl-btn-outline">➕ 체험 만들기</a>
+                    <a href="{{ url_for('easy_modify_experience_list') }}" class="fl-btn fl-btn-outline">✏️ 체험 수정</a>
+                    <a href="{{ url_for('easy_reservations') }}" class="fl-btn fl-btn-outline">🗓️ 예약 살펴보기</a>
+                    <a href="{{ url_for('easy_communication') }}" class="fl-btn fl-btn-outline">💬 소통 창구</a>
+                    <a href="{{ url_for('easy_edit_bio') }}" class="fl-btn fl-btn-outline">✍️ 소개 글 수정</a>
+                </div>
+            </div></section>
+
+        </main>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,66 @@
+{% extends "layout.html" %}
+{% block page_class %}easy-mode-page{% endblock %}
+{% block content %}
+<div class="container easy-mode-container">
+    <div class="easy-header">
+        <h1>💬 소통 창구</h1>
+        <p>손님들이 남긴 문의와 후기를 확인해 보세요.</p>
+    </div>
+
+    <!-- 1. 문의사항 -->
+    <div class="easy-communication-section">
+        <h2 class="easy-section-title">새로운 문의사항</h2>
+        {% for inquiry in inquiries %}
+            <div class="easy-inquiry-card">
+                <p><strong>{{ inquiry.user.nickname }}</strong>님이 '<strong>{{ inquiry.experience.crop }}</strong>' 체험에 대해 질문했어요.</p>
+                <div class="easy-inquiry-content">
+                    "{{ inquiry.content }}"
+                </div>
+                <small>{{ inquiry.timestamp.strftime('%Y년 %m월 %d일') }}</small>
+            </div>
+        {% else %}
+            <div class="easy-no-item-small">
+                <p>아직 새로운 문의가 없습니다.</p>
+            </div>
+        {% endfor %}
+    </div>
+
+    <!-- 2. AI 후기 요약 -->
+    <div class="easy-communication-section">
+        <h2 class="easy-section-title">AI가 요약한 후기</h2>
+        {% for exp_id, feedback in feedback_report.items() %}
+            <div class="easy-feedback-card">
+                <h3>'{{ feedback.name }}' 체험 후기 요약</h3>
+                <div class="row mt-4">
+                    <div class="col-md-6">
+                        <h4>👍 칭찬 받은 점</h4>
+                        <ul class="easy-feedback-list">
+                            {% for keyword, count in feedback.strengths %}
+                                <li>{{ keyword }} ({{ count }}번)</li>
+                            {% else %}
+                                <li>아직 데이터가 부족해요.</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h4>🤔 개선하면 좋을 점</h4>
+                        <ul class="easy-feedback-list">
+                             {% for keyword, count in feedback.improvements %}
+                                <li>{{ keyword }} ({{ count }}번)</li>
+                            {% else %}
+                                <li>아직 데이터가 부족해요.</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        {% else %}
+             <div class="easy-no-item-small">
+                <p>분석할 후기가 아직 없습니다.</p>
+            </div>
+        {% endfor %}
+    </div>
+
+    <a href="{{ url_for('farmer_easy_mode') }}" class="easy-back-button mt-4">처음으로 돌아가기</a>
+</div>
+{% endblock %}

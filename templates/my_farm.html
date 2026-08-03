@@ -1,0 +1,279 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="container dashboard-container mt-3">
+    <div class="dashboard-grid">
+        <aside class="dashboard-sidebar">
+            <div class="dashboard-card profile-card">
+                <form id="profile-pic-form" method="POST" action="{{ url_for('upload_profile') }}" enctype="multipart/form-data">
+                    <label for="profile-pic-input">
+                        <img id="profile-pic-preview" src="{{ url_for('static', filename='uploads/' + user.profile_image) }}" alt="Profile Picture" class="profile-pic-img">
+                        <div class="profile-pic-overlay">사진 변경</div>
+                    </label>
+                    <input type="file" id="profile-pic-input" name="profile_pic" accept="image/*" class="d-none">
+                </form>
+                <h4 class="mt-3">환영합니다,</h4>
+                <h3>{{ user.nickname }}님!</h3>
+            </div>
+            <div class="dashboard-card">
+                <h5>내 농장 통계</h5>
+                <div class="stats-grid">
+                    <span>총 등록 체험</span><span>{{ stats.total_experiences }}</span>
+                    <span>평균 별점</span><span>{{ stats.average_rating }} / 5.0</span>
+                    <span>총 방문자 수</span><span>{{ stats.total_visitors }}</span>
+                </div>
+            </div>
+            <div class="dashboard-card mt-3">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="mb-0">내 정보</h5>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" id="farmer-edit-btn">수정</button>
+                </div>
+                <form id="farmer-info-form" method="POST" action="{{ url_for('my_info') }}">
+                    <fieldset id="farmer-info-fieldset" disabled>
+                        <div class="form-group mb-2">
+                            <label class="small font-weight-bold text-muted mb-1">닉네임</label>
+                            <input type="text" name="nickname" class="form-control form-control-sm" value="{{ user.nickname }}" required>
+                        </div>
+                        <div class="form-group mb-2">
+                            <label class="small font-weight-bold text-muted mb-1">이름</label>
+                            <input type="text" name="name" class="form-control form-control-sm" value="{{ user.name }}" required>
+                        </div>
+                        <div class="form-group mb-2">
+                            <label class="small font-weight-bold text-muted mb-1">생년월일</label>
+                            <input type="text" class="form-control form-control-sm bg-light" value="{{ user.birthdate or '미등록' }}" readonly tabindex="-1">
+                        </div>
+                        <div class="form-group mb-2">
+                            <label class="small font-weight-bold text-muted mb-1">성별</label>
+                            <input type="text" class="form-control form-control-sm bg-light" value="{% if user.gender == 'male' %}남자{% elif user.gender == 'female' %}여자{% else %}미선택{% endif %}" readonly tabindex="-1">
+                        </div>
+                        <div class="form-group mb-2">
+                            <label class="small font-weight-bold text-muted mb-1">이메일</label>
+                            <input type="text" class="form-control form-control-sm" value="{{ user.email }}" disabled>
+                        </div>
+                        <div class="form-group mb-2">
+                            <label class="small font-weight-bold text-muted mb-1">전화번호</label>
+                            <input type="text" name="phone" class="form-control form-control-sm" value="{{ user.phone or '' }}" required>
+                        </div>
+                        <div class="form-group mb-2">
+                            <label class="small font-weight-bold text-muted mb-1">농장 주소</label>
+                            <input type="text" name="farm_address" class="form-control form-control-sm" value="{{ user.farm_address or '' }}">
+                        </div>
+                        <div class="form-group mb-2">
+                            <label class="small font-weight-bold text-muted mb-1">농장 규모 (평)</label>
+                            <input type="text" name="farm_size" class="form-control form-control-sm" value="{{ user.farm_size or '' }}">
+                        </div>
+                        <div class="form-group mb-2">
+                            <label class="small font-weight-bold text-muted mb-1">한 줄 소개</label>
+                            <input type="text" name="profile_bio" class="form-control form-control-sm" value="{{ user.profile_bio or '' }}">
+                        </div>
+                        <div id="farmer-form-buttons" style="display: none;" class="mt-3">
+                            <button type="button" id="farmer-cancel-btn" class="btn btn-sm btn-secondary btn-block">취소</button>
+                            <button type="submit" class="btn btn-sm btn-success btn-block mt-1">저장하기</button>
+                        </div>
+                    </fieldset>
+                </form>
+            </div>
+        </aside>
+
+        <main class="dashboard-main">
+            <div class="dashboard-card">
+                <h5>내 농장</h5>
+                <form id="farm-photo-form" method="POST" action="{{ url_for('upload_farm_photo') }}" enctype="multipart/form-data">
+                    <label for="farm-photo-input" class="farm-photo-label">
+                        {% if user.farm_image %}
+                            <img src="{{ url_for('static', filename='uploads/' + user.farm_image) }}" alt="Farm Photo" class="farm-photo-img">
+                            <div class="farm-photo-overlay">
+                                <i class="fa-solid fa-camera"></i> 사진 바꾸기
+                            </div>
+                        {% else %}
+                            <div class="farm-photo-placeholder">
+                                <i class="fa-solid fa-camera"></i>
+                                <span>사진 업로드</span>
+                            </div>
+                        {% endif %}
+                    </label>
+                    <input type="file" id="farm-photo-input" name="farm_photo" accept="image/*" class="d-none">
+                </form>
+            </div>
+            <div class="dashboard-card">
+                <h5>최근 활동 (내 체험 목록)</h5>
+                <ul class="activity-list">
+                    {% for item in experiences %}
+                    <li class="d-flex justify-content-between align-items-center">
+                        <a href="{{ url_for('experience_detail', item_id=item.id) }}">{{ item.crop }}</a>
+                        <div>
+                            <a href="{{ url_for('farmer_register', item_id=item.id) }}" class="btn btn-sm btn-outline-primary mr-2">수정</a>
+                            <form action="{{ url_for('delete_experience', item_id=item.id) }}" method="POST" class="d-inline" onsubmit="return confirmDelete()">
+                                <button type="submit" class="btn btn-sm btn-outline-danger">삭제</button>
+                            </form>
+                        </div>
+                    </li>
+                    {% else %}
+                    <li>등록된 체험이 없습니다.</li>
+                    {% endfor %}
+                </ul>
+                <a href="{{ url_for('farmer_register') }}" class="btn btn-success btn-block mt-3">
+                    <i class="fa-solid fa-plus"></i> 새로운 체험 추가하기
+                </a>
+            </div>
+        </main>
+
+        <div class="dashboard-right">
+            <div class="dashboard-card">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="mb-0">예약 일정</h5>
+                    <a href="{{ url_for('farmer_calendar') }}" class="btn btn-sm btn-outline-secondary font-weight-bold" style="font-size: 1.1rem; line-height: 1; padding: 2px 8px;" title="달력 크게보기">+</a>
+                </div>
+
+                <!-- 날짜 이동 조작 바 -->
+                <div class="d-flex justify-content-center align-items-center py-2 mb-3 bg-light rounded border">
+                    <button type="button" class="btn btn-sm btn-link text-secondary p-0 px-2" id="prev-day-btn">
+                        <i class="fa-solid fa-chevron-left"></i>
+                    </button>
+                    <span id="current-date-display" class="font-weight-bold h6 mb-0 mx-3 text-dark"></span>
+                    <button type="button" class="btn btn-sm btn-link text-secondary p-0 px-2" id="next-day-btn">
+                        <i class="fa-solid fa-chevron-right"></i>
+                    </button>
+                </div>
+                <div id="daily-schedule-list" style="min-height: 160px; max-height: 280px; overflow-y: auto;"></div>
+            </div>
+            <div class="dashboard-card mt-3">
+                <h5>최신 문의</h5>
+                <ul class="inquiry-list">
+                    {% for inquiry in inquiries %}
+                    <li>
+                        <div>
+                            <a href="{{ url_for('experience_detail', item_id=inquiry.experience_id) }}">{{ inquiry.experience.crop }}</a> 체험에 대한 문의
+                            <p style="margin: 4px 0 0; font-size: 0.9rem; color: #555;">{{ inquiry.content }}</p>
+                        </div>
+                        <small class="text-muted">{{ inquiry.timestamp.strftime('%m-%d') }}</small>
+                    </li>
+                    {% else %}
+                    <li>최신 문의가 없습니다.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="reservation-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-content" style="max-width: 500px;">
+        <h4 id="modal-title"></h4>
+        <div id="modal-body" class="mt-3">
+            </div>
+        <div class="modal-buttons">
+            <button id="modal-close-btn" class="btn btn-success">확인</button>
+        </div>
+    </div>
+</div>
+<div id="reservations-data" style="display:none;">{{ reservations_data | tojson | safe }}</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const reservationsData = JSON.parse(document.getElementById('reservations-data').textContent || '{}');
+    let currentDate = new Date();
+    const dayOfWeekNames = ['일', '월', '화', '수', '목', '금', '토'];
+
+    const farmerEditBtn = document.getElementById('farmer-edit-btn');
+    const farmerCancelBtn = document.getElementById('farmer-cancel-btn');
+    const farmerFieldset = document.getElementById('farmer-info-fieldset');
+    const farmerFormButtons = document.getElementById('farmer-form-buttons');
+
+
+    function formatDateToKey(d) {
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
+
+    // 화면용 YYYY.MM.DD(요일) 포맷 변환
+    function formatDateToDisplay(d) {
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        const dayName = dayOfWeekNames[d.getDay()];
+        return `${year}.${month}.${day}(${dayName})`;
+    }
+
+    // 선택된 날짜의 일정 렌더링 함수
+    function renderDailySchedule() {
+        const dateKey = formatDateToKey(currentDate);
+        const displayStr = formatDateToDisplay(currentDate);
+        
+        document.getElementById('current-date-display').textContent = displayStr;
+
+        const listContainer = document.getElementById('daily-schedule-list');
+        listContainer.innerHTML = '';
+
+        const todaysReservations = reservationsData[dateKey] || [];
+
+        if (todaysReservations.length === 0) {
+            listContainer.innerHTML = `
+                <div class="text-center text-muted py-4">
+                    <i class="fa-regular fa-calendar-xmark fa-2x mb-2 d-block text-secondary"></i>
+                    <small>예약된 일정이 없습니다.</small>
+                </div>
+            `;
+            return;
+        }
+
+        // 시간순 정렬
+        todaysReservations.sort((a, b) => (a.time > b.time ? 1 : -1));
+
+        todaysReservations.forEach(res => {
+            const totalPeople = (res.adult || 0) + (res.teen || 0) + (res.child || 0);
+            const itemDiv = document.createElement('div');
+            itemDiv.className = 'p-2 mb-2 rounded border-left border-success bg-light';
+            itemDiv.style.borderLeftWidth = '4px !important';
+            itemDiv.innerHTML = `
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <span class="font-weight-bold text-dark" style="font-size:0.92rem;">
+                        <i class="fa-regular fa-clock mr-1 text-success"></i>${res.time || '시간미지정'}
+                    </span>
+                    <span class="badge badge-success">${res.crop || '체험'}</span>
+                </div>
+                <div class="small text-dark">
+                    <strong>${res.name}</strong> (${res.phone})
+                </div>
+                <div class="small text-muted">
+                    인원: 총 ${totalPeople}명 (성인 ${res.adult || 0}, 청소년 ${res.teen || 0}, 아동 ${res.child || 0})
+                </div>
+            `;
+            listContainer.appendChild(itemDiv);
+        });
+    }
+
+    // 날짜 이동 버튼 이벤트 연결
+    document.getElementById('prev-day-btn').addEventListener('click', function() {
+        currentDate.setDate(currentDate.getDate() - 1);
+        renderDailySchedule();
+    });
+
+    document.getElementById('next-day-btn').addEventListener('click', function() {
+        currentDate.setDate(currentDate.getDate() + 1);
+        renderDailySchedule();
+    });
+
+    // 최초 렌더링
+    renderDailySchedule();
+
+    if (farmerEditBtn) {
+        farmerEditBtn.addEventListener('click', function() {
+            farmerFieldset.disabled = false;           // 입력창 활성화
+            farmerFormButtons.style.display = 'block'; // [취소/저장하기] 버튼 표시
+            farmerEditBtn.style.display = 'none';      // 상단 [수정] 버튼 숨김
+        });
+    }
+
+    if (farmerCancelBtn) {
+        farmerCancelBtn.addEventListener('click', function() {
+            farmerFieldset.disabled = true;            // 입력창 다시 비활성화
+            farmerFormButtons.style.display = 'none';  // [취소/저장하기] 버튼 숨김
+            farmerEditBtn.style.display = 'block';     // 상단 [수정] 버튼 다시 표시
+            location.reload();                         // 입력 데이터 원래대로 복구
+        });
+    }
+});
+</script>
+{% endblock %}

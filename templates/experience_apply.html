@@ -1,0 +1,275 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="apply-page-bg">
+<div class="apply-page-wrapper">
+    <!-- 왼쪽: 신청 폼 -->
+    <div class="apply-form-col">
+        <!-- 체험 요약 헤더 -->
+        <div class="apply-exp-header">
+            <div class="apply-exp-header-info">
+                <span class="apply-exp-badge">{{ item.crop }} 체험</span>
+                <h2 class="apply-exp-title">{{ item.crop }} 수확 체험 신청</h2>
+                <div class="apply-exp-meta">
+                    <span><i class="fa-solid fa-location-dot"></i> {{ item.address_detail }}</span>
+                    {% if item.has_parking %}
+                    <span><i class="fa-solid fa-square-parking"></i> 주차 가능</span>
+                    {% endif %}
+                    {% if item.pesticide_free %}
+                    <span><i class="fa-solid fa-leaf"></i> 친환경 농장</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <form method="POST" id="apply-form" action="{{ url_for('experience_apply', item_id=item.id) }}">
+
+            <!-- Step 1: 신청자 정보 -->
+            <div class="apply-form-card">
+                <h3 class="apply-step-title"><span class="apply-step-num">1</span> 신청자 정보</h3>
+                <div class="apply-field-grid">
+                    <div class="apply-field">
+                        <label class="apply-label">이름 <span class="required">*</span></label>
+                        <input type="text" id="applicant_name" name="applicant_name"
+                               class="apply-input" placeholder="홍길동" required>
+                    </div>
+                    <div class="apply-field">
+                        <label class="apply-label">연락처 <span class="required">*</span></label>
+                        <input type="tel" id="phone_number" name="phone_number"
+                               class="apply-input" placeholder="010-1111-1111" required>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 2: 참가자 구성 -->
+            <div class="apply-form-card">
+                <h3 class="apply-step-title"><span class="apply-step-num">2</span> 참가자 구성</h3>
+                <div class="participant-counter-grid">
+                    <div class="participant-counter-item">
+                        <div class="participant-counter-label">
+                            <span class="participant-type">성인</span>
+                            <span class="participant-desc">만 13세 이상</span>
+                        </div>
+                        <div class="participant-counter-ctrl">
+                            <button type="button" class="counter-btn" onclick="changeCount('count_adult', -1)">−</button>
+                            <input type="number" id="count_adult" name="count_adult"
+                                   class="counter-input" value="1" min="0" readonly>
+                            <button type="button" class="counter-btn" onclick="changeCount('count_adult', 1)">+</button>
+                        </div>
+                    </div>
+                    <div class="participant-counter-item">
+                        <div class="participant-counter-label">
+                            <span class="participant-type">청소년</span>
+                            <span class="participant-desc">만 7~12세</span>
+                        </div>
+                        <div class="participant-counter-ctrl">
+                            <button type="button" class="counter-btn" onclick="changeCount('count_teen', -1)">−</button>
+                            <input type="number" id="count_teen" name="count_teen"
+                                   class="counter-input" value="0" min="0" readonly>
+                            <button type="button" class="counter-btn" onclick="changeCount('count_teen', 1)">+</button>
+                        </div>
+                    </div>
+                    <div class="participant-counter-item">
+                        <div class="participant-counter-label">
+                            <span class="participant-type">아동</span>
+                            <span class="participant-desc">만 6세 이하</span>
+                        </div>
+                        <div class="participant-counter-ctrl">
+                            <button type="button" class="counter-btn" onclick="changeCount('count_child', -1)">−</button>
+                            <input type="number" id="count_child" name="count_child"
+                                   class="counter-input" value="0" min="0" readonly>
+                            <button type="button" class="counter-btn" onclick="changeCount('count_child', 1)">+</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 3: 날짜 선택 -->
+            <div class="apply-form-card">
+                <h3 class="apply-step-title"><span class="apply-step-num">3</span> 체험 날짜 선택</h3>
+                <p class="apply-date-range">
+                    <i class="fa-regular fa-calendar"></i>
+                    체험 가능 기간: {{ item.duration_start.strftime('%Y.%m.%d') }} ~ {{ item.end_date.strftime('%Y.%m.%d') }}
+                </p>
+                <input type="date" id="apply_date" name="apply_date" class="apply-date-input"
+                       min="{{ item.duration_start.strftime('%Y-%m-%d') }}"
+                       max="{{ item.end_date.strftime('%Y-%m-%d') }}" required>
+            </div>
+
+            <!-- Step 4: 시간 선택 -->
+            <div class="apply-form-card">
+                <h3 class="apply-step-title"><span class="apply-step-num">4</span> 체험 시간 선택</h3>
+                <p class="apply-time-guide" id="time-select-guide">
+                    <i class="fa-regular fa-clock"></i> 날짜를 먼저 선택해주세요.
+                </p>
+                <div class="time-btn-grid" id="time-btn-grid" style="display:none;"></div>
+                <input type="hidden" id="selected-time" name="apply_time" required>
+            </div>
+
+            <input type="hidden" id="participants_count" name="participants_count" value="1">
+
+        </form>
+    </div>
+
+    <!-- 오른쪽: 예약 요약 -->
+    <div class="apply-summary-col">
+        <div class="apply-summary-card">
+            <div class="apply-summary-exp">
+                <div class="apply-summary-crop-icon">🌱</div>
+                <div>
+                    <div class="apply-summary-crop-name">{{ item.crop }} 체험</div>
+                    <div class="apply-summary-location">{{ item.location }}</div>
+                </div>
+            </div>
+            <hr class="apply-summary-divider">
+            <div class="apply-price-row">
+                <span>1인 요금</span>
+                <span class="apply-price-val">{{ "{:,}".format(item.cost) }}원</span>
+            </div>
+            <div class="apply-price-row" id="summary-participants">
+                <span>총 인원</span>
+                <span class="apply-price-val" id="summary-count">1명</span>
+            </div>
+            <hr class="apply-summary-divider">
+            <div class="apply-price-row apply-total-row">
+                <span>합계</span>
+                <span class="apply-total-val" id="summary-total">{{ "{:,}".format(item.cost) }}원</span>
+            </div>
+            <div class="apply-summary-date-time" id="summary-date-time" style="display:none;">
+                <div class="apply-summary-dt-row" id="summary-date-display"></div>
+                <div class="apply-summary-dt-row" id="summary-time-display"></div>
+            </div>
+            <div class="apply-summary-spots">
+                <i class="fa-solid fa-user-group"></i>
+                잔여 {{ item.max_participants - item.current_participants }}석
+                ({{ item.current_participants }}/{{ item.max_participants }}명)
+            </div>
+            <button type="submit" form="apply-form" class="apply-submit-btn">
+                <i class="fa-solid fa-check-circle"></i> 예약 신청하기
+            </button>
+            <p class="apply-notice">
+                <i class="fa-solid fa-circle-info"></i>
+                날짜·시간 선택 후 신청이 완료됩니다.
+            </p>
+        </div>
+    </div>
+</div>
+</div>
+
+<script>
+const COST_PER_PERSON = {{ item.cost }};
+const TIMETABLE_DATA = "{{ item.timetable_data or '' }}";
+
+// 요일별 운영 시간 파싱
+const slotsByDay = {};
+TIMETABLE_DATA.split(',').forEach(s => {
+    const [day, time] = s.split('-');
+    if (day && time) {
+        if (!slotsByDay[day]) slotsByDay[day] = [];
+        slotsByDay[day].push(time);
+    }
+});
+
+// 시간 버튼 목록
+const ALL_TIMES = ['09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00'];
+let selectedTime = '';
+
+// 인원 카운터
+function changeCount(id, delta) {
+    const el = document.getElementById(id);
+    const newVal = Math.max(0, parseInt(el.value) + delta);
+    // 성인은 최소 1명
+    if (id === 'count_adult' && newVal < 1) return;
+    el.value = newVal;
+    updateSummary();
+}
+
+function getTotalCount() {
+    return parseInt(document.getElementById('count_adult').value || 0)
+         + parseInt(document.getElementById('count_teen').value || 0)
+         + parseInt(document.getElementById('count_child').value || 0);
+}
+
+function updateSummary() {
+    const total = getTotalCount();
+    document.getElementById('summary-count').textContent = total + '명';
+    document.getElementById('summary-total').textContent = (COST_PER_PERSON * total).toLocaleString() + '원';
+    document.getElementById('participants_count').value = total;
+}
+
+// 날짜 선택 시 시간 버튼 렌더링
+document.getElementById('apply_date').addEventListener('change', function() {
+    const val = this.value;
+    if (!val) {
+        document.getElementById('time-btn-grid').style.display = 'none';
+        document.getElementById('time-select-guide').innerHTML = '<i class="fa-regular fa-clock"></i> 날짜를 먼저 선택해주세요.';
+        document.getElementById('selected-time').value = '';
+        selectedTime = '';
+        updateDateTimeDisplay();
+        return;
+    }
+
+    const d = new Date(val);
+    const days = ['일','월','화','수','목','금','토'];
+    const dayName = days[d.getDay()];
+    const availTimes = new Set(slotsByDay[dayName] || []);
+
+    document.getElementById('time-select-guide').innerHTML =
+        `<i class="fa-regular fa-calendar-check"></i> <strong>${dayName}요일</strong> 가능한 시간을 선택하세요.`;
+
+    const grid = document.getElementById('time-btn-grid');
+    grid.innerHTML = '';
+    grid.style.display = 'grid';
+
+    ALL_TIMES.forEach(t => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.textContent = t;
+        if (availTimes.has(t)) {
+            btn.className = 'time-btn available';
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.time-btn.selected').forEach(b => b.classList.remove('selected'));
+                btn.classList.add('selected');
+                selectedTime = t;
+                document.getElementById('selected-time').value = t;
+                updateDateTimeDisplay();
+            });
+        } else {
+            btn.className = 'time-btn unavailable';
+            btn.disabled = true;
+        }
+        grid.appendChild(btn);
+    });
+
+    // 이전 선택 초기화
+    selectedTime = '';
+    document.getElementById('selected-time').value = '';
+    updateDateTimeDisplay();
+});
+
+function updateDateTimeDisplay() {
+    const dateVal = document.getElementById('apply_date').value;
+    const dtDiv = document.getElementById('summary-date-time');
+    if (dateVal) {
+        dtDiv.style.display = 'block';
+        document.getElementById('summary-date-display').innerHTML =
+            '<i class="fa-regular fa-calendar"></i> ' + dateVal;
+        document.getElementById('summary-time-display').innerHTML =
+            selectedTime
+            ? '<i class="fa-regular fa-clock"></i> ' + selectedTime
+            : '<i class="fa-regular fa-clock"></i> 시간 미선택';
+    } else {
+        dtDiv.style.display = 'none';
+    }
+}
+
+// 폼 제출 유효성 검사
+document.getElementById('apply-form').addEventListener('submit', function(e) {
+    if (!document.getElementById('apply_date').value || !document.getElementById('selected-time').value) {
+        alert('날짜와 시간을 모두 선택해주세요.');
+        e.preventDefault();
+    }
+});
+
+updateSummary();
+</script>
+{% endblock %}

@@ -20,39 +20,72 @@ CATEGORY_GROUPS = [
     {"code": "practical", "label": "실용 조건"},
 ]
 
+# 지역: 8도(+제주) → 시/군. 구 단위는 나누지 않는다. (code, 라벨, 도 별칭, [(시/군코드, 라벨)])
+_REGIONS = [
+    ("gyeonggi", "경기", ["경기"], [
+        ("suwon", "수원"), ("seongnam", "성남"), ("yongin", "용인"), ("bucheon", "부천"),
+        ("ansan", "안산"), ("anyang", "안양"), ("namyangju", "남양주"), ("hwaseong", "화성"),
+        ("pyeongtaek", "평택"), ("uijeongbu", "의정부"), ("siheung", "시흥"), ("paju", "파주"),
+        ("gimpo", "김포"), ("gwangmyeong", "광명"), ("gwangju_gg", "광주(경기)"), ("gunpo", "군포"),
+        ("osan", "오산"), ("icheon", "이천"), ("yangju", "양주"), ("anseong", "안성"),
+        ("guri", "구리"), ("pocheon", "포천"), ("uiwang", "의왕"), ("hanam", "하남"),
+        ("yeoju", "여주"), ("dongducheon", "동두천"), ("gwacheon", "과천"),
+        ("gapyeong", "가평"), ("yangpyeong", "양평"), ("yeoncheon", "연천")]),
+    ("gangwon", "강원", ["강원"], [
+        ("chuncheon", "춘천"), ("wonju", "원주"), ("gangneung", "강릉"), ("donghae", "동해"),
+        ("taebaek", "태백"), ("sokcho", "속초"), ("samcheok", "삼척"), ("hongcheon", "홍천"),
+        ("hoengseong", "횡성"), ("yeongwol", "영월"), ("pyeongchang", "평창"), ("jeongseon", "정선"),
+        ("cheorwon", "철원"), ("hwacheon", "화천"), ("yanggu", "양구"), ("inje", "인제"),
+        ("goseong_gw", "고성(강원)"), ("yangyang", "양양")]),
+    ("chungbuk", "충북", ["충북", "충청북도"], [
+        ("cheongju", "청주"), ("chungju", "충주"), ("jecheon", "제천"), ("boeun", "보은"),
+        ("okcheon", "옥천"), ("yeongdong", "영동"), ("jeungpyeong", "증평"), ("jincheon", "진천"),
+        ("goesan", "괴산"), ("eumseong", "음성"), ("danyang", "단양")]),
+    ("chungnam", "충남", ["충남", "충청남도"], [
+        ("cheonan", "천안"), ("gongju", "공주"), ("boryeong", "보령"), ("asan", "아산"),
+        ("seosan", "서산"), ("nonsan", "논산"), ("gyeryong", "계룡"), ("dangjin", "당진"),
+        ("geumsan", "금산"), ("buyeo", "부여"), ("seocheon", "서천"), ("cheongyang", "청양"),
+        ("hongseong", "홍성"), ("yesan", "예산"), ("taean", "태안")]),
+    ("jeonbuk", "전북", ["전북", "전라북도"], [
+        ("jeonju", "전주"), ("gunsan", "군산"), ("iksan", "익산"), ("jeongeup", "정읍"),
+        ("namwon", "남원"), ("gimje", "김제"), ("wanju", "완주"), ("jinan", "진안"),
+        ("muju", "무주"), ("jangsu", "장수"), ("imsil", "임실"), ("sunchang", "순창"),
+        ("gochang", "고창"), ("buan", "부안")]),
+    ("jeonnam", "전남", ["전남", "전라남도"], [
+        ("mokpo", "목포"), ("yeosu", "여수"), ("suncheon", "순천"), ("naju", "나주"),
+        ("gwangyang", "광양"), ("damyang", "담양"), ("gokseong", "곡성"), ("gurye", "구례"),
+        ("goheung", "고흥"), ("boseong", "보성"), ("hwasun", "화순"), ("jangheung", "장흥"),
+        ("gangjin", "강진"), ("haenam", "해남"), ("yeongam", "영암"), ("muan", "무안"),
+        ("hampyeong", "함평"), ("yeonggwang", "영광"), ("jangseong", "장성"), ("wando", "완도"),
+        ("jindo", "진도"), ("sinan", "신안")]),
+    ("gyeongbuk", "경북", ["경북", "경상북도"], [
+        ("pohang", "포항"), ("gyeongju", "경주"), ("gimcheon", "김천"), ("andong", "안동"),
+        ("gumi", "구미"), ("yeongju", "영주"), ("yeongcheon", "영천"), ("sangju", "상주"),
+        ("mungyeong", "문경"), ("gyeongsan", "경산"), ("uiseong", "의성"), ("cheongsong", "청송"),
+        ("yeongyang", "영양"), ("yeongdeok", "영덕"), ("cheongdo", "청도"), ("goryeong", "고령"),
+        ("seongju", "성주"), ("chilgok", "칠곡"), ("yecheon", "예천"), ("bonghwa", "봉화"),
+        ("uljin", "울진"), ("ulleung", "울릉")]),
+    ("gyeongnam", "경남", ["경남", "경상남도"], [
+        ("changwon", "창원"), ("jinju", "진주"), ("tongyeong", "통영"), ("sacheon", "사천"),
+        ("gimhae", "김해"), ("miryang", "밀양"), ("geoje", "거제"), ("yangsan", "양산"),
+        ("uiryeong", "의령"), ("haman", "함안"), ("changnyeong", "창녕"), ("goseong_gn", "고성(경남)"),
+        ("namhae", "남해"), ("hadong", "하동"), ("sancheong", "산청"), ("hamyang", "함양"),
+        ("geochang", "거창"), ("hapcheon", "합천")]),
+    ("jeju", "제주", ["제주"], [
+        ("jeju_si", "제주시"), ("seogwipo", "서귀포")]),
+]
+
+
+def _region_node():
+    return {"code": "region", "label": "지역", "group": "travel", "children": [
+        {"code": prov_code, "label": prov_label,
+         "children": [{"code": c, "label": cl} for c, cl in cities]}
+        for prov_code, prov_label, _aliases, cities in _REGIONS
+    ]}
+
+
 SEARCH_CATEGORIES = [
-    {"code": "region", "label": "지역", "group": "travel", "children": [
-        {"code": "gyeonggi", "label": "경기", "children": [
-            {"code": "icheon", "label": "이천"}, {"code": "anseong", "label": "안성"},
-            {"code": "gapyeong", "label": "가평"}, {"code": "yongin", "label": "용인"},
-            {"code": "yeoju", "label": "여주"}, {"code": "paju", "label": "파주"}]},
-        {"code": "chungnam", "label": "충남", "children": [
-            {"code": "cheonan", "label": "천안", "children": [
-                {"code": "cheonan_dongnam", "label": "동남구"},
-                {"code": "cheonan_seobuk", "label": "서북구"}]},
-            {"code": "gongju", "label": "공주"}, {"code": "nonsan", "label": "논산"},
-            {"code": "asan", "label": "아산"}]},
-        {"code": "chungbuk", "label": "충북", "children": [
-            {"code": "cheongju", "label": "청주"}, {"code": "chungju", "label": "충주"},
-            {"code": "jecheon", "label": "제천"}]},
-        {"code": "gangwon", "label": "강원", "children": [
-            {"code": "chuncheon", "label": "춘천"}, {"code": "wonju", "label": "원주"},
-            {"code": "gangneung", "label": "강릉"}, {"code": "pyeongchang", "label": "평창"}]},
-        {"code": "jeonbuk", "label": "전북", "children": [
-            {"code": "jeonju", "label": "전주"}, {"code": "namwon", "label": "남원"},
-            {"code": "gochang", "label": "고창"}]},
-        {"code": "jeonnam", "label": "전남", "children": [
-            {"code": "suncheon", "label": "순천"}, {"code": "damyang", "label": "담양"},
-            {"code": "boseong", "label": "보성"}]},
-        {"code": "gyeongbuk", "label": "경북", "children": [
-            {"code": "gyeongju", "label": "경주"}, {"code": "andong", "label": "안동"},
-            {"code": "yeongju", "label": "영주"}]},
-        {"code": "gyeongnam", "label": "경남", "children": [
-            {"code": "jinju", "label": "진주"}, {"code": "hadong", "label": "하동"},
-            {"code": "sancheong", "label": "산청"}]},
-        {"code": "jeju", "label": "제주", "children": [
-            {"code": "jeju_si", "label": "제주시"}, {"code": "seogwipo", "label": "서귀포"}]},
-    ]},
+    _region_node(),
     {"code": "companion_type", "label": "동반유형", "group": "travel", "children": [
         {"code": "solo", "label": "혼자"}, {"code": "couple", "label": "커플"},
         {"code": "family_child", "label": "가족(아이)"}, {"code": "friends", "label": "친구"},
@@ -138,24 +171,18 @@ LABEL_BY_CODE = {node["code"]: node["label"] for node in _iter_all_nodes(SEARCH_
 # 채점용 내부 매핑 (Experience에 실제 데이터가 있는 항목만)
 # ============================================================
 
-# 지역 코드(시/도·시군구·구) → 주소(address_detail)에서 찾을 키워드.
-REGION_ADDRESS_KEYWORDS = {
-    # 시/도
-    "gyeonggi": ["경기"], "chungnam": ["충남", "충청남도"], "chungbuk": ["충북", "충청북도"],
-    "gangwon": ["강원"], "jeonbuk": ["전북", "전라북도"], "jeonnam": ["전남", "전라남도"],
-    "gyeongbuk": ["경북", "경상북도"], "gyeongnam": ["경남", "경상남도"], "jeju": ["제주"],
-    # 시/군
-    "icheon": ["이천"], "anseong": ["안성"], "gapyeong": ["가평"], "yongin": ["용인"],
-    "yeoju": ["여주"], "paju": ["파주"], "cheonan": ["천안"], "gongju": ["공주"],
-    "nonsan": ["논산"], "asan": ["아산"], "cheongju": ["청주"], "chungju": ["충주"],
-    "jecheon": ["제천"], "chuncheon": ["춘천"], "wonju": ["원주"], "gangneung": ["강릉"],
-    "pyeongchang": ["평창"], "jeonju": ["전주"], "namwon": ["남원"], "gochang": ["고창"],
-    "suncheon": ["순천"], "damyang": ["담양"], "boseong": ["보성"], "gyeongju": ["경주"],
-    "andong": ["안동"], "yeongju": ["영주"], "jinju": ["진주"], "hadong": ["하동"],
-    "sancheong": ["산청"], "jeju_si": ["제주시"], "seogwipo": ["서귀포"],
-    # 구(천안)
-    "cheonan_dongnam": ["동남구"], "cheonan_seobuk": ["서북구"],
-}
+# 지역 코드(도·시/군) → 주소(address_detail)에서 찾을 키워드. _REGIONS에서 자동 생성한다.
+# 도: 별칭 포함 / 시·군: 라벨(괄호 주석 제거)로 매칭. 예: '안성' 키워드가 '경기도 안성시'를 매칭.
+def _build_region_keywords():
+    keywords = {}
+    for prov_code, prov_label, aliases, cities in _REGIONS:
+        keywords[prov_code] = list(aliases)
+        for city_code, city_label in cities:
+            keywords[city_code] = [city_label.split("(")[0]]  # '광주(경기)' → '광주'
+    return keywords
+
+
+REGION_ADDRESS_KEYWORDS = _build_region_keywords()
 
 # 예산대 코드 → (최소원, 최대원). ★코스 총비용(1인당) 기준★. 최대 None = 상한 없음.
 BUDGET_RANGES = {

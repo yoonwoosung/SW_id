@@ -30,8 +30,8 @@
 
 /* ---- 대분류 가로 탭 ---- */
 .fl-tabbar {
-    display: flex; gap: 8px; overflow-x: auto; padding: 10px 0 12px;
-    border-bottom: 1px solid #eef1ee; margin-bottom: 12px; scrollbar-width: thin;
+    display: flex; flex-wrap: wrap; gap: 6px; padding: 8px 0 10px;
+    border-bottom: 1px solid #eef1ee; margin-bottom: 10px;
 }
 .fl-tab {
     flex: 0 0 auto; display: inline-flex; align-items: center; gap: 5px;
@@ -48,23 +48,30 @@
 .fl-tab.is-active .fl-tab__count { color: var(--green-dark, #2D5A1B); background: #fff; }
 
 /* ---- 세부항목: 같은 크기 체크박스 그리드 ---- */
+/* 세부 영역은 높이를 제한해 내부에서만 스크롤(페이지가 길어지지 않게) */
+.fl-panel-body { max-height: 240px; overflow-y: auto; padding-right: 4px; }
 .fl-catpanel[hidden] { display: none; }
 .fl-grid {
-    display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-    gap: 8px; margin: 4px 0;
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr));
+    gap: 6px; margin: 4px 0;
 }
 .fl-cell {
-    display: flex; align-items: center; gap: 7px; cursor: pointer;
-    border: 1px solid #e2e7e2; border-radius: 10px; padding: 10px 12px;
-    font-size: 0.88rem; color: #37413a; font-weight: 500;
+    display: flex; align-items: center; gap: 5px; cursor: pointer;
+    border: 1px solid #e2e7e2; border-radius: 8px; padding: 5px 8px;
+    font-size: 0.8rem; color: #37413a; font-weight: 500; line-height: 1.2;
     transition: background 0.15s, border-color 0.15s;
 }
-.fl-cell input { accent-color: var(--green-mid, #4CAF50); width: 16px; height: 16px; flex-shrink: 0; }
+.fl-cell input { accent-color: var(--green-mid, #4CAF50); width: 14px; height: 14px; flex-shrink: 0; }
 .fl-cell:has(input:checked) { background: var(--green-light, #E8F5E9); border-color: var(--green-mid, #4CAF50); color: var(--green-dark, #2D5A1B); font-weight: 700; }
 
-/* 탭 안의 중첩 소제목(지역>시도, 반려견>몸무게, 인원>인원수 등) */
-.fl-subgroup { margin: 10px 0 4px; }
+/* 탭 안의 중첩 묶음(지역>도, 반려견>몸무게, 인원>인원수 등) */
+.fl-subgroup { margin: 8px 0 4px; }
 .fl-subgroup__title { font-size: 0.82rem; font-weight: 700; color: #6a746d; margin: 0 0 6px; }
+/* 중분류 '전체' 부모 체크박스 — 한 줄 전체 폭, 굵게 */
+.fl-cell--parent {
+    width: 100%; margin: 0 0 6px; font-weight: 700; color: var(--green-dark, #2D5A1B);
+    background: #f3f8f4; border-color: #d3e3d7;
+}
 
 /* 예산대 등 카테고리 주석 */
 .fl-note { font-size: 0.78rem; color: #9aa39c; margin-top: 10px; }

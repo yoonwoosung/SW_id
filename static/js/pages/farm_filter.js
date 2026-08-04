@@ -1,30 +1,20 @@
 /* static/js/pages/farm_filter.js
-   재사용 상세조건 필터 컴포넌트(바닐라 JS, 의존성 0).
-   ★UI: 대분류 = 가로 탭 / 세부 = 같은 크기 체크박스 그리드(한 번에 하나의 대분류만) / 선택 = 상단 칩★
-   상세검색 + 역제안 요청글 양쪽에서 FarmFilter.mount(el, opts)로 사용.
-
-   사용:
-     var f = FarmFilter.mount(document.getElementById('cond-filter'), {
-       endpoint: '/api/search-categories',
-       onApply: function (selected) { ... }   // {카테고리코드: [잎코드,...]} (빈 카테고리 제외)
-     });
-     f.getSelected(); f.reset();
+   재사용 상세조건 필터(바닐라 JS, 의존성 0).
+   ★UI: 대분류 = 탭 / 세부 = 그리드 체크박스 / 중분류(도·묶음)도 체크 가능(체크 시 하위 전체 선택) / 선택 = 칩★
+   상세검색 + 역제안 요청글에서 FarmFilter.mount(el, opts)로 사용.
 */
 window.FarmFilter = (function () {
     'use strict';
 
-    // API 실패 시 폴백 목업(실제 연동으로 쉽게 교체되도록 분리).
     var MOCK_TREE = [
         { code: 'region', label: '지역', children: [
             { code: 'gyeonggi', label: '경기', children: [
-                { code: 'gapyeong', label: '가평' }, { code: 'yongin', label: '용인' }] }] },
-        { code: 'activity', label: '액티비티', children: [
-            { code: 'kayak', label: '카약' }, { code: 'hiking', label: '등산' }] }
+                { code: 'gapyeong', label: '가평' }, { code: 'yongin', label: '용인' }] }] }
     ];
 
     function esc(s) { var d = document.createElement('div'); d.textContent = (s == null ? '' : String(s)); return d.innerHTML; }
 
-    // 한 대분류 패널: 잎은 그리드 체크박스, 하위 그룹은 소제목 + 재귀 그리드.
+    // 잎은 그리드 체크박스, 중분류(children 있음)는 '전체' 부모 체크박스 + 재귀 하위.
     function renderPanelNodes(nodes, topCode) {
         var leaves = nodes.filter(function (n) { return !(n.children && n.children.length); });
         var groups = nodes.filter(function (n) { return n.children && n.children.length; });
@@ -36,7 +26,9 @@ window.FarmFilter = (function () {
             }).join('') + '</div>';
         }
         groups.forEach(function (g) {
-            html += '<div class="fl-subgroup"><div class="fl-subgroup__title">' + esc(g.label) + '</div>'
+            html += '<div class="fl-subgroup">'
+                + '<label class="fl-cell fl-cell--parent"><input type="checkbox" class="fl-parent" data-cat="' + esc(topCode) + '" value="' + esc(g.code) + '">'
+                + '<span>' + esc(g.label) + ' 전체</span></label>'
                 + renderPanelNodes(g.children, topCode) + '</div>';
         });
         return html;
@@ -46,15 +38,43 @@ window.FarmFilter = (function () {
         opts = opts || {};
         var chipsEl;
 
+        // 상위 '전체'가 이미 체크된 항목은 대표(상위)만 유효 선택으로 본다(칩·조건 중복 방지).
+        function hasCheckedAncestor(input) {
+            var group = input.closest('.fl-subgroup');
+            while (group) {
+                var parent = group.querySelector(':scope > .fl-cell--parent > .fl-parent');
+                if (parent && parent !== input && parent.checked) return true;
+                var up = group.parentElement;
+                group = up ? up.closest('.fl-subgroup') : null;
+            }
+            return false;
+        }
+        function effectiveChecked() {
+            return Array.prototype.slice.call(root.querySelectorAll('input[type=checkbox]:checked'))
+                .filter(function (cb) { return !hasCheckedAncestor(cb); });
+        }
+
+        // 부모 체크 상태를 하위 잎 기준으로 동기화(전체 체크→체크, 일부→중간표시).
+        function syncParents() {
+            root.querySelectorAll('.fl-parent').forEach(function (p) {
+                var group = p.closest('.fl-subgroup');
+                var leaves = Array.prototype.slice.call(group.querySelectorAll('input[type=checkbox]:not(.fl-parent)'));
+                if (!leaves.length) return;
+                var checked = leaves.filter(function (c) { return c.checked; }).length;
+                p.checked = checked === leaves.length;
+                p.indeterminate = checked > 0 && checked < leaves.length;
+            });
+        }
+
         function refresh() {
-            var checked = Array.prototype.slice.call(root.querySelectorAll('input[type=checkbox]:checked'));
+            var checked = effectiveChecked();
             chipsEl.innerHTML = checked.map(function (cb) {
                 var label = cb.parentNode.querySelector('span').textContent;
                 return '<span class="fl-chip" data-cat="' + esc(cb.dataset.cat) + '" data-value="' + esc(cb.value) + '">'
                     + esc(label) + '<button type="button" class="fl-chip__x" aria-label="' + esc(label) + ' 제거">&times;</button></span>';
             }).join('');
             root.querySelectorAll('.fl-tab').forEach(function (tab) {
-                var n = root.querySelectorAll('input[data-cat="' + tab.dataset.cat + '"]:checked').length;
+                var n = checked.filter(function (cb) { return cb.dataset.cat === tab.dataset.cat; }).length;
                 var badge = tab.querySelector('.fl-tab__count');
                 if (badge) { badge.textContent = n; badge.hidden = n === 0; }
             });
@@ -62,14 +82,14 @@ window.FarmFilter = (function () {
 
         function getSelected() {
             var out = {};
-            root.querySelectorAll('input[type=checkbox]:checked').forEach(function (cb) {
+            effectiveChecked().forEach(function (cb) {
                 (out[cb.dataset.cat] = out[cb.dataset.cat] || []).push(cb.value);
             });
             return out;
         }
 
         function reset() {
-            root.querySelectorAll('input[type=checkbox]:checked').forEach(function (cb) { cb.checked = false; });
+            root.querySelectorAll('input[type=checkbox]').forEach(function (cb) { cb.checked = false; cb.indeterminate = false; });
             refresh();
         }
 
@@ -107,14 +127,27 @@ window.FarmFilter = (function () {
                 if (x) {
                     var chip = x.closest('.fl-chip');
                     var cb = root.querySelector('input[data-cat="' + chip.dataset.cat + '"][value="' + chip.dataset.value + '"]');
-                    if (cb) { cb.checked = false; refresh(); }
+                    if (cb) {
+                        cb.checked = false;
+                        if (cb.classList.contains('fl-parent')) {
+                            cb.closest('.fl-subgroup').querySelectorAll('input[type=checkbox]').forEach(function (d) { d.checked = false; d.indeterminate = false; });
+                        }
+                        syncParents(); refresh();
+                    }
                     return;
                 }
                 if (e.target.closest('[data-role=reset]')) { reset(); return; }
                 if (e.target.closest('[data-role=apply]') && opts.onApply) { opts.onApply(getSelected()); }
             });
             root.addEventListener('change', function (e) {
-                if (e.target.matches('input[type=checkbox]')) { refresh(); }
+                if (!e.target.matches('input[type=checkbox]')) return;
+                if (e.target.classList.contains('fl-parent')) {   // 중분류 체크 → 하위 전체 선택/해제
+                    e.target.closest('.fl-subgroup').querySelectorAll('input[type=checkbox]').forEach(function (cb) {
+                        cb.checked = e.target.checked; cb.indeterminate = false;
+                    });
+                }
+                syncParents();
+                refresh();
             });
         }
 

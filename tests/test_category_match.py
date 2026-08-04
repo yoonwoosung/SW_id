@@ -50,12 +50,12 @@ def test_unscored_categories_are_ignored():
     assert compute_category_match(conditions, exp) == 0
 
 
-def test_sub_region_district_match():
-    # 시/군·구 단위 코드도 주소 키워드로 채점된다.
-    exp = FakeExperience(address_detail="충청남도 천안시 동남구 목천읍", cost=15000)
-    assert compute_category_match({"region": ["cheonan"]}, exp) == 1
-    assert compute_category_match({"region": ["cheonan_dongnam"]}, exp) == 1
-    assert compute_category_match({"region": ["cheonan_seobuk"]}, exp) == 0
+def test_region_province_and_city_match():
+    # 도(별칭)·시 단위 코드 모두 주소 키워드로 채점된다(구 단위는 없음).
+    exp = FakeExperience(address_detail="충청남도 천안시 서북구", cost=15000)
+    assert compute_category_match({"region": ["cheonan"]}, exp) == 1     # 시
+    assert compute_category_match({"region": ["chungnam"]}, exp) == 1    # 도(충청남도)
+    assert compute_category_match({"region": ["gongju"]}, exp) == 0      # 다른 시
 
 
 def test_activity_match():

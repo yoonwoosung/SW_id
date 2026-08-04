@@ -22,6 +22,10 @@
         <div class="site-user-area">
             {% if session.get('user_id') %}
             {% if session.get('role') == 'farmer' %}
+            <a href="{{ url_for('toggle_view_mode') }}" class="btn-view-mode-toggle">
+                <i class="fa-solid fa-arrows-rotate mr-1"></i>
+                {% if session.get('view_mode') == 'easy' %}상세모드 변환{% else %}이지모드 변환{% endif %}
+            </a>
             <a href="{{ url_for('detailed_farmer_dashboard') }}" class="btn-view-mode-toggle">
                 <i class="fa-solid fa-chart-line"></i> 농장 대시보드
             </a>
@@ -31,7 +35,11 @@
                 <span>{{ session.get('nickname') }}님</span>
                 <i class="fa-solid fa-chevron-down" style="font-size:0.7rem;"></i>
                 <div class="user-chip-dropdown">
+                    {% if session.get('role') == 'farmer' %}
+                    <a href="{{ url_for('detailed_farmer_dashboard') }}"><i class="fa-solid fa-gauge-high mr-1"></i> 농장주 대시보드</a>
+                    {% else %}
                     <a href="{{ url_for('my_info') }}"><i class="fa-solid fa-user mr-1"></i> 내 정보</a>
+                    {% endif %}
                     <a href="{{ url_for('logout') }}"><i class="fa-solid fa-right-from-bracket mr-1"></i> 로그아웃</a>
                 </div>
             </div>

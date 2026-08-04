@@ -2732,3 +2732,419 @@ body {
         flex: 0 0 100%; /* 모바일 환경에서는 1개씩 표시 */
     }
 }
+
+/* --- 추억 아카이브 앨범 에디터 전용 스타일 --- */
+.wizard-steps-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    max-width: 800px;
+    margin: 0 auto;
+}
+.step-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    color: #aaa;
+}
+.step-box.active { color: #2D5A1B; font-weight: 700; }
+.step-num {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: #e0e0e0;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+    margin-bottom: 4px;
+}
+.step-box.active .step-num { background: #4CAF50; }
+.step-line {
+    flex: 1;
+    height: 2px;
+    background: #e0e0e0;
+    margin: 0 12px;
+    margin-bottom: 20px;
+}
+
+/* 프레임 옵션 카드 */
+.frame-card {
+    border: 2px solid #eee;
+    border-radius: 10px;
+    padding: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: #fff;
+}
+.frame-card:hover, .frame-card.active {
+    border-color: #4CAF50;
+    box-shadow: 0 4px 12px rgba(76, 175, 80, 0.2);
+}
+.frame-preview {
+    height: 70px;
+    background: #333;
+    border-radius: 6px;
+    margin-bottom: 8px;
+    display: grid;
+    gap: 3px;
+    padding: 4px;
+}
+.frame-preview span { background: #bbb; border-radius: 2px; }
+.cut-4 { grid-template-rows: repeat(4, 1fr); }
+.cut-6 { grid-template-columns: 1fr 1fr; grid-template-rows: repeat(3, 1fr); }
+.cut-9 { grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr); }
+
+.upload-thumb-img {
+    width: 70px;
+    height: 70px;
+    object-fit: cover;
+    border-radius: 6px;
+    border: 1px solid #ddd;
+}
+
+/* 앨범 지면 (PDF 대상) */
+.album-paper-container {
+    display: flex;
+    justify-content: center;
+    background: #e9ecef;
+    padding: 20px;
+    border-radius: 12px;
+}
+.album-paper {
+    width: 360px;
+    min-height: 520px;
+    background-color: #1f1f1f;
+    color: #fff;
+    padding: 24px 20px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+.album-paper-title { font-size: 1.15rem; font-weight: 800; text-align: center; margin-bottom: 4px; }
+.album-paper-meta { font-size: 0.72rem; text-align: center; opacity: 0.75; margin-bottom: 16px; }
+
+/* Grid slots */
+.paper-grid { display: grid; gap: 8px; flex: 1; }
+.grid-4cut { grid-template-rows: repeat(4, 1fr); }
+.grid-6cut { grid-template-columns: 1fr 1fr; grid-template-rows: repeat(3, 1fr); }
+.grid-9grid { grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr); }
+
+.grid-slot {
+    background: #333;
+    overflow: hidden;
+    border-radius: 4px;
+    cursor: grab;
+}
+.grid-slot img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.album-footer-area { text-align: center; font-size: 0.65rem; opacity: 0.5; margin-top: 14px; letter-spacing: 1px; }
+
+.btn-color-dot {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+}
+
+/* ============================================================
+   단일 통합 마스터 대시보드 카드 CSS (Master Card Dashboard)
+   ============================================================ */
+
+/* 전체를 감싸는 유일한 거대 카드 */
+.dashboard-master-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+    display: grid;
+    grid-template-columns: 250px 1fr 300px;
+    overflow: hidden;
+    min-height: 580px;
+}
+
+/* 1. 좌측 칼럼 (사이드바) */
+.dash-col-left {
+    background: #f8fafc;
+    padding: 24px 18px;
+    border-right: 1px solid #e2e8f0;
+    display: flex;
+    flex-direction: column;
+}
+
+.sidebar-mini-profile {
+    display: flex;
+    align-items: center;
+}
+
+.dashboard-nav-tabs {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+/* 깔끔한 탭 버튼 디자인 */
+.dash-tab-btn {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 14px;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: #64748b;
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.2s ease;
+}
+
+.dash-tab-btn:hover {
+    background: #e2e8f0;
+    color: #1e293b;
+}
+
+.dash-tab-btn.active {
+    background: #4CAF50;
+    color: #ffffff;
+    box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
+}
+
+.dash-tab-btn i {
+    font-size: 1.1rem;
+}
+
+/* 2. 중앙 칼럼 (메인 컨텐츠) */
+.dash-col-main {
+    background: #ffffff;
+    padding: 28px 24px;
+    border-right: 1px solid #e2e8f0;
+    min-width: 0;
+}
+
+.dash-tab-content {
+    display: none; /* active가 없는 탭은 화면에서 숨김 */
+}
+
+.dash-tab-content.active {
+    display: block; /* active 클래스가 있는 탭만 화면에 표시 */
+}
+
+/* 3. 우측 칼럼 (달력) */
+.dash-col-right {
+    background: #ffffff;
+    padding: 24px 20px;
+}
+
+/* 스크롤 가능한 목록 박스 */
+.scrollable-list-box {
+    max-height: 200px;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+
+.scrollable-list-box::-webkit-scrollbar {
+    width: 4px;
+}
+.scrollable-list-box::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 4px;
+}
+
+/* 통계 오버뷰 그리드 */
+.stats-overview-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+}
+
+.stat-box {
+    background: #f8fafc;
+    padding: 16px;
+    border-radius: 8px;
+    text-align: center;
+    border: 1px solid #f1f5f9;
+}
+
+.stat-box .label {
+    display: block;
+    font-size: 0.78rem;
+    color: #64748b;
+    margin-bottom: 4px;
+}
+
+.stat-box .value {
+    font-size: 1.15rem;
+    color: #2D5A1B;
+}
+
+/* 스마트 알림 배너 스타일 */
+.notice-banner-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.notice-slides-container {
+    flex: 1;
+}
+
+.notice-slide-card {
+    border-radius: 12px;
+    padding: 18px 20px;
+}
+
+.notice-slide-card.alert-orange {
+    background-color: #fff9e6;
+    border: 1px solid #ffe8a1;
+}
+
+.notice-slide-card.alert-green {
+    background-color: #eafaf1;
+    border: 1px solid #b7f0d0;
+}
+
+.notice-card-body {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.notice-icon-box {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    background: #ffffff;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+    flex-shrink: 0;
+}
+
+.alert-orange .notice-icon-box { color: #d97706; }
+.alert-green .notice-icon-box { color: #059669; }
+
+.notice-tag {
+    display: inline-block;
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 4px;
+    margin-bottom: 2px;
+}
+
+.alert-orange .notice-tag { background: #fef3c7; color: #b45309; }
+.alert-green .notice-tag { background: #d1fae5; color: #047857; }
+
+.notice-title {
+    font-size: 0.98rem;
+    font-weight: 700;
+    color: #1f2937;
+    margin-bottom: 2px;
+}
+
+.notice-sub {
+    font-size: 0.82rem;
+    color: #4b5563;
+    margin: 0;
+}
+
+.notice-arrow-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 1px solid #e2e8f0;
+    background: #ffffff;
+    color: #475569;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    transition: all 0.2s;
+    flex-shrink: 0;
+}
+
+.notice-arrow-btn:hover {
+    background: #4CAF50;
+    color: #ffffff;
+    border-color: #4CAF50;
+}
+
+/* 내 정보 폼 그리드 */
+.profile-top-banner {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 14px 18px;
+}
+
+.profile-avatar-wrapper {
+    position: relative;
+}
+
+.profile-img {
+    width: 60px;
+    height: 60px;
+    object-fit: cover;
+    border: 2px solid #ffffff;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+}
+
+.profile-img-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(0,0,0,0.6);
+    color: #fff;
+    font-size: 0.6rem;
+    padding: 1px 0;
+    text-align: center;
+    border-bottom-left-radius: 50%;
+    border-bottom-right-radius: 50%;
+}
+
+.settings-form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+}
+
+.settings-form-grid .span-full {
+    grid-column: 1 / -1;
+}
+
+.form-label-custom {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: #475569;
+    margin-bottom: 4px;
+    display: block;
+}
+
+/* 반응형 모바일 대응 */
+@media (max-width: 1024px) {
+    .dashboard-master-card {
+        grid-template-columns: 210px 1fr 260px;
+    }
+}
+
+@media (max-width: 860px) {
+    .dashboard-master-card {
+        grid-template-columns: 1fr;
+    }
+    .dash-col-left, .dash-col-main {
+        border-right: none;
+        border-bottom: 1px solid #e2e8f0;
+    }
+    .settings-form-grid {
+        grid-template-columns: 1fr;
+    }
+}

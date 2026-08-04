@@ -10,20 +10,20 @@
         <p class="hero-subtitle">수확 체험부터 주변 관광지까지 한 번에 추천</p>
         <div class="hero-search-box">
             <form method="GET" action="{{ url_for('index') }}" class="hero-unified-form">
-                <input type="text" name="crop_query" class="hero-unified-text"
-                       placeholder="지역, 종류, 점포명 등"
-                       value="{{ request.args.get('crop_query', '') }}">
+                <input type="text" name="crop_query" class="hero-unified-text" placeholder="지역, 종류, 점포명 등"
+                    value="{{ request.args.get('crop_query', '') }}">
                 <div class="hero-unified-divider"></div>
                 <select name="region" class="hero-unified-select">
                     <option value="">지역</option>
-                    {% set regions = ["서울", "경기", "인천", "강원", "대전", "세종", "충북", "충남", "부산", "대구", "울산", "경북", "경남", "광주", "전북", "전남", "제주"] %}
+                    {% set regions = ["서울", "경기", "인천", "강원", "대전", "세종", "충북", "충남", "부산", "대구", "울산", "경북", "경남",
+                    "광주", "전북", "전남", "제주"] %}
                     {% for r in regions %}
-                        <option value="{{ r }}" {% if request.args.get('region') == r %}selected{% endif %}>{{ r }}</option>
+                    <option value="{{ r }}" {% if request.args.get('region')==r %}selected{% endif %}>{{ r }}</option>
                     {% endfor %}
                 </select>
                 <div class="hero-unified-divider"></div>
                 <input type="date" name="date_filter" class="hero-unified-select"
-                       value="{{ request.args.get('date_filter', '') }}">
+                    value="{{ request.args.get('date_filter', '') }}">
                 <div class="hero-unified-divider"></div>
                 <select name="people_count" class="hero-unified-select">
                     <option value="">인원</option>
@@ -57,75 +57,81 @@
             <h2 class="section-title"><i class="fa-solid fa-seedling text-success"></i> 이번 주 제철 체험</h2>
             <div class="d-flex align-items-center gap-12">
                 <div class="sort-pills">
-                    <a href="#" onclick="getGpsAndSort(event)" class="sort-pill {% if sort_by == 'recommended' %}active{% endif %}">내 주변</a>
-                    <a href="{{ url_for('index', sort='deadline', region=request.args.get('region'), crop_query=request.args.get('crop_query')) }}" class="sort-pill {% if sort_by == 'deadline' or not sort_by %}active{% endif %}">모집 임박순</a>
-                    <a href="{{ url_for('index', sort='reviews', region=request.args.get('region'), crop_query=request.args.get('crop_query')) }}" class="sort-pill {% if sort_by == 'reviews' %}active{% endif %}">리뷰 많은순</a>
+                    <a href="#" onclick="getGpsAndSort(event)"
+                        class="sort-pill {% if sort_by == 'recommended' %}active{% endif %}">내 주변</a>
+                    <a href="{{ url_for('index', sort='deadline', region=request.args.get('region'), crop_query=request.args.get('crop_query')) }}"
+                        class="sort-pill {% if sort_by == 'deadline' or not sort_by %}active{% endif %}">모집 임박순</a>
+                    <a href="{{ url_for('index', sort='reviews', region=request.args.get('region'), crop_query=request.args.get('crop_query')) }}"
+                        class="sort-pill {% if sort_by == 'reviews' %}active{% endif %}">리뷰 많은순</a>
                 </div>
-                <a href="{{ url_for('index') }}" class="more-link ml-3">더보기 <i class="fa-solid fa-chevron-right"></i></a>
+                <a href="{{ url_for('index') }}" class="more-link ml-3">더보기 <i
+                        class="fa-solid fa-chevron-right"></i></a>
             </div>
         </div>
 
         <div class="experience-card-grid">
             {% if items %}
-                {% for item in items %}
-                {% set first_image = item.images.split(',')[0] if item.images else None %}
-                {% set remaining_spots = item.max_participants - item.current_participants %}
-                <a href="{{ url_for('experience_detail', item_id=item.id) }}" class="exp-card {% if remaining_spots == 0 %}closed{% endif %}">
-                    <div class="exp-card-img-wrap">
-                        {% if first_image %}
-                            <img src="{{ url_for('static', filename='uploads/' + first_image) }}" alt="{{ item.crop }}" class="exp-card-img">
+            {% for item in items %}
+            {% set first_image = item.images.split(',')[0] if item.images else None %}
+            {% set remaining_spots = item.max_participants - item.current_participants %}
+            <a href="{{ url_for('experience_detail', item_id=item.id) }}"
+                class="exp-card {% if remaining_spots == 0 %}closed{% endif %}">
+                <div class="exp-card-img-wrap">
+                    {% if first_image %}
+                    <img src="{{ url_for('static', filename='uploads/' + first_image) }}" alt="{{ item.crop }}"
+                        class="exp-card-img">
+                    {% else %}
+                    <div class="exp-card-img-placeholder">
+                        <i class="fa-solid fa-seedling"></i>
+                    </div>
+                    {% endif %}
+                    <div class="exp-card-badge-wrap">
+                        {% if remaining_spots == 0 %}
+                        <span class="exp-badge badge-closed">마감임박</span>
+                        {% elif item.is_specialty %}
+                        <span class="exp-badge badge-family">가족추천</span>
+                        {% elif item.pesticide_free %}
+                        <span class="exp-badge badge-eco">친환경</span>
                         {% else %}
-                            <div class="exp-card-img-placeholder">
-                                <i class="fa-solid fa-seedling"></i>
-                            </div>
-                        {% endif %}
-                        <div class="exp-card-badge-wrap">
-                            {% if remaining_spots == 0 %}
-                                <span class="exp-badge badge-closed">마감임박</span>
-                            {% elif item.is_specialty %}
-                                <span class="exp-badge badge-family">가족추천</span>
-                            {% elif item.pesticide_free %}
-                                <span class="exp-badge badge-eco">친환경</span>
-                            {% else %}
-                                <span class="exp-badge badge-open">예약가능</span>
-                            {% endif %}
-                        </div>
-                        {% if sort_by == 'recommended' and item.distance is defined %}
-                        <div class="exp-card-dist-badge">
-                            <i class="fa-solid fa-location-dot"></i> {{ "%.1f"|format(item.distance) }}km
-                        </div>
+                        <span class="exp-badge badge-open">예약가능</span>
                         {% endif %}
                     </div>
-                    <div class="exp-card-body">
-                        <div class="exp-card-title">{{ item.crop }} 체험</div>
-                        <div class="exp-card-location"><i class="fa-solid fa-location-dot"></i> {{ item.address_detail }}</div>
-                        <div class="exp-card-meta">
-                            <span><i class="fa-solid fa-user-group"></i> 2-4인 추천</span>
-                            <span><i class="fa-regular fa-clock"></i>
-                                {% if item.d_day >= 0 and item.d_day < 999 %}
-                                    {% if item.d_day <= 3 %}
-                                        <span class="text-danger font-weight-bold">D-{{ item.d_day }}</span>
-                                    {% else %}
-                                        D-{{ item.d_day }}
-                                    {% endif %}
-                                {% else %}
-                                    당일 체험
-                                {% endif %}
-                            </span>
-                        </div>
-                        <div class="exp-card-price">{{ "{:,}".format(item.cost) }}원~</div>
+                    {% if sort_by == 'recommended' and item.distance is defined %}
+                    <div class="exp-card-dist-badge">
+                        <i class="fa-solid fa-location-dot"></i> {{ "%.1f"|format(item.distance) }}km
                     </div>
-                </a>
-                {% endfor %}
-            {% else %}
-                <div class="no-items-message" style="grid-column: 1 / -1;">
-                    <div class="empty-icon">🌱</div>
-                    <p>아직 등록된 체험이 없어요.</p>
-                    {% if session.get('role') == 'farmer' %}
-                        <small>새로운 농장 체험을 등록하고 첫 손님을 맞이해보세요!</small>
-                        <a href="{{ url_for('farmer_register') }}" class="btn btn-success mt-3">내 농장 체험 등록하기</a>
                     {% endif %}
                 </div>
+                <div class="exp-card-body">
+                    <div class="exp-card-title">{{ item.crop }} 체험</div>
+                    <div class="exp-card-location"><i class="fa-solid fa-location-dot"></i> {{ item.address_detail }}
+                    </div>
+                    <div class="exp-card-meta">
+                        <span><i class="fa-solid fa-user-group"></i> 2-4인 추천</span>
+                        <span><i class="fa-regular fa-clock"></i>
+                            {% if item.d_day >= 0 and item.d_day < 999 %} {% if item.d_day <=3 %} <span
+                                class="text-danger font-weight-bold">D-{{ item.d_day }}</span>
+                        {% else %}
+                        D-{{ item.d_day }}
+                        {% endif %}
+                        {% else %}
+                        당일 체험
+                        {% endif %}
+                        </span>
+                    </div>
+                    <div class="exp-card-price">{{ "{:,}".format(item.cost) }}원~</div>
+                </div>
+            </a>
+            {% endfor %}
+            {% else %}
+            <div class="no-items-message" style="grid-column: 1 / -1;">
+                <div class="empty-icon">🌱</div>
+                <p>아직 등록된 체험이 없어요.</p>
+                {% if session.get('role') == 'farmer' %}
+                <small>새로운 농장 체험을 등록하고 첫 손님을 맞이해보세요!</small>
+                <a href="{{ url_for('farmer_register') }}" class="btn btn-success mt-3">내 농장 체험 등록하기</a>
+                {% endif %}
+            </div>
             {% endif %}
         </div>
 
@@ -133,17 +139,21 @@
         <nav class="pagination-container mt-4">
             <ul class="pagination justify-content-center">
                 <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
-                    <a class="page-link" href="{{ url_for('index', page=pagination.prev_num, sort=sort_by, region=request.args.get('region'), crop_query=request.args.get('crop_query')) }}">&laquo;</a>
+                    <a class="page-link"
+                        href="{{ url_for('index', page=pagination.prev_num, sort=sort_by, region=request.args.get('region'), crop_query=request.args.get('crop_query')) }}">&laquo;</a>
                 </li>
                 {% for page_num in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
-                    {% if page_num %}
-                        <li class="page-item"><a class="page-link" href="{{ url_for('index', page=page_num, sort=sort_by, region=request.args.get('region'), crop_query=request.args.get('crop_query')) }}">{{ page_num }}</a></li>
-                    {% else %}
-                        <li class="page-item disabled"><span class="page-link">...</span></li>
-                    {% endif %}
+                {% if page_num %}
+                <li class="page-item"><a class="page-link"
+                        href="{{ url_for('index', page=page_num, sort=sort_by, region=request.args.get('region'), crop_query=request.args.get('crop_query')) }}">{{
+                        page_num }}</a></li>
+                {% else %}
+                <li class="page-item disabled"><span class="page-link">...</span></li>
+                {% endif %}
                 {% endfor %}
                 <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
-                    <a class="page-link" href="{{ url_for('index', page=pagination.next_num, sort=sort_by, region=request.args.get('region'), crop_query=request.args.get('crop_query')) }}">&raquo;</a>
+                    <a class="page-link"
+                        href="{{ url_for('index', page=pagination.next_num, sort=sort_by, region=request.args.get('region'), crop_query=request.args.get('crop_query')) }}">&raquo;</a>
                 </li>
             </ul>
         </nav>
@@ -155,10 +165,10 @@
         <button type="button" class="card-slider-btn prev" id="card-prev-btn" aria-label="이전">
             <i class="fa-solid fa-chevron-left"></i>
         </button>
-        
+
         <div class="card-slider-viewport">
             <div class="card-slider-track" id="card-slider-track">
-                
+
                 <!-- 카드 1: 내 상황에 맞는 체험 찾기 -->
                 <section class="section-block mb-0 section-card slider-card">
                     <h2 class="section-title mb-3"><i class="fa-solid fa-seedling text-success"></i> 내 상황에 맞는 체험 찾기</h2>
@@ -257,33 +267,47 @@
                     <div class="section-header">
                         <h2 class="section-title"><i class="fa-regular fa-images text-success"></i> 추억일지</h2>
                         <div class="archive-btns">
-                            <button type="button" class="btn btn-sm btn-outline-secondary">사진 업로드</button>
-                            <button type="button" class="btn btn-sm btn-outline-secondary">앨범 만들기</button>
+                            <!-- 앨범 만들기 (새 페이지 연결 예정) -->
+                            <a href="{{ url_for('album_create') }}" class="btn btn-sm btn-success">
+                                <i class="fa-solid fa-plus"></i> 앨범 만들기
+                            </a>
                             <button type="button" class="btn btn-sm btn-outline-secondary">SNS 공유</button>
                         </div>
                     </div>
                     <p class="text-muted mb-2" style="font-size:0.82rem;">여행의 추억을 사진으로 간직해보세요.</p>
+
                     <div class="archive-grid">
                         {% set has_archive = namespace(found=false) %}
                         {% if applications is defined and applications %}
-                            {% for app in applications %}
-                                {% if app.experience and app.experience.images %}
-                                    {% set has_archive.found = true %}
-                                    <div class="archive-item">
-                                        <img src="{{ url_for('static', filename='uploads/' + app.experience.images.split(',')[0]) }}"
-                                             alt="{{ app.experience.crop }}">
-                                        <div class="archive-label">{{ app.experience.crop }} 체험</div>
-                                        <div class="archive-date">{{ app.apply_date.strftime('%Y.%m.%d') }}</div>
-                                    </div>
-                                {% endif %}
-                            {% endfor %}
+                        {% for app in applications %}
+                        {% if app.experience and app.experience.images %}
+                        {% set has_archive.found = true %}
+                        <div class="archive-item">
+                            <img src="{{ url_for('static', filename='uploads/' + app.experience.images.split(',')[0]) }}"
+                                alt="{{ app.experience.crop }}">
+                            <div class="archive-label">{{ app.experience.crop }} 체험</div>
+                            <div class="archive-date">{{ app.apply_date.strftime('%Y.%m.%d') }}</div>
+                        </div>
                         {% endif %}
+                        {% endfor %}
+                        {% endif %}
+
+                        <!-- 작성된 앨범/기록이 없을 때 -->
                         {% if not has_archive.found %}
-                        <p class="text-muted mt-2" style="font-size:0.88rem; grid-column:1/-1;">신청한 체험 기록이 없습니다.</p>
+                        <div class="no-archive-wrapper text-center py-4 w-100" style="grid-column: 1 / -1;">
+                            <p class="font-weight-bold mb-1" style="font-size: 0.95rem; color: #333;">
+                                아직 작성된 추억 앨범이 없어요! 🌱
+                            </p>
+                            <p class="text-muted mb-3" style="font-size: 0.82rem;">
+                                다녀온 농촌 체험의 특별한 순간을 앨범으로 기록해 보세요.
+                            </p>
+                            <a href="{{ url_for('index') }}" class="btn btn-sm btn-outline-success rounded-pill px-3">
+                                <i class="fa-solid fa-calendar-check mr-1"></i> 첫 체험 예약하러 가기
+                            </a>
+                        </div>
                         {% endif %}
                     </div>
                 </section>
-
             </div>
         </div>
 
@@ -300,7 +324,8 @@
         </div>
         <div class="region-tabs">
             {% for r in ["천안", "공주", "부여", "논산", "아산"] %}
-            <a href="{{ url_for('index', region=r) }}" class="region-tab {% if request.args.get('region') == r %}active{% endif %}">{{ r }}</a>
+            <a href="{{ url_for('index', region=r) }}"
+                class="region-tab {% if request.args.get('region') == r %}active{% endif %}">{{ r }}</a>
             {% endfor %}
             <a href="{{ url_for('index') }}" class="region-tab-more"><i class="fa-solid fa-chevron-right"></i></a>
         </div>
@@ -309,30 +334,30 @@
 </div>
 
 <script>
-function getGpsAndSort(event) {
-    event.preventDefault();
-    const urlParams = new URLSearchParams(window.location.search);
-    urlParams.set('sort', 'recommended');
-    if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-            function(position) {
-                urlParams.set('lat', position.coords.latitude);
-                urlParams.set('lon', position.coords.longitude);
-                window.location.href = window.location.pathname + '?' + urlParams.toString();
-            },
-            function(error) {
-                let errorMsg = "위치 정보를 가져올 수 없습니다.";
-                if (error.code === 1) errorMsg = "위치 정보 제공을 거부하셨습니다.";
-                if (error.code === 2) errorMsg = "PC/네트워크 문제로 위치를 파악할 수 없습니다.";
-                if (error.code === 3) errorMsg = "위치를 찾는 데 시간이 너무 오래 걸렸습니다.";
-                alert(errorMsg + " 기본 위치 기준으로 검색합니다.");
-                window.location.href = window.location.pathname + '?' + urlParams.toString();
-            },
-            { enableHighAccuracy: false, timeout: 15000, maximumAge: 0 }
-        );
-    } else {
-        alert("사용 중인 브라우저가 위치 정보를 지원하지 않습니다.");
+    function getGpsAndSort(event) {
+        event.preventDefault();
+        const urlParams = new URLSearchParams(window.location.search);
+        urlParams.set('sort', 'recommended');
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                function (position) {
+                    urlParams.set('lat', position.coords.latitude);
+                    urlParams.set('lon', position.coords.longitude);
+                    window.location.href = window.location.pathname + '?' + urlParams.toString();
+                },
+                function (error) {
+                    let errorMsg = "위치 정보를 가져올 수 없습니다.";
+                    if (error.code === 1) errorMsg = "위치 정보 제공을 거부하셨습니다.";
+                    if (error.code === 2) errorMsg = "PC/네트워크 문제로 위치를 파악할 수 없습니다.";
+                    if (error.code === 3) errorMsg = "위치를 찾는 데 시간이 너무 오래 걸렸습니다.";
+                    alert(errorMsg + " 기본 위치 기준으로 검색합니다.");
+                    window.location.href = window.location.pathname + '?' + urlParams.toString();
+                },
+                { enableHighAccuracy: false, timeout: 15000, maximumAge: 0 }
+            );
+        } else {
+            alert("사용 중인 브라우저가 위치 정보를 지원하지 않습니다.");
+        }
     }
-}
 </script>
 {% endblock %}

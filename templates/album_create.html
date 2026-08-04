@@ -1,0 +1,439 @@
+{% extends "layout.html" %}
+{% block content %}
+
+<!-- PDF 및 캔버스 라이브러리 -->
+<script src="{{ url_for('static', filename='js/html2canvas.min.js') }}"></script>
+<script src="{{ url_for('static', filename='js/html2pdf.bundle.min.js') }}"></script>
+
+<div class="main-content-wrapper py-4">
+    <!-- 상단 헤더 -->
+    <div class="wizard-header text-center mb-4">
+        <h2 class="font-weight-bold" style="color: #1B4D1B;"><i class="fa-regular fa-images"></i> 추억 아카이브 앨범 에디터</h2>
+        <p class="text-muted small">농촌 여행의 소중한 순간을 나만의 포토 앨범과 고화질 PDF로 간직해보세요.</p>
+    </div>
+
+    <!-- 4단계 진행 스텝바 -->
+    <div class="wizard-steps-container mb-4">
+        <div class="step-box active" id="step-tab-1">
+            <div class="step-num">1</div>
+            <div class="step-text">테마 &amp; 프레임</div>
+        </div>
+        <div class="step-line"></div>
+        <div class="step-box" id="step-tab-2">
+            <div class="step-num">2</div>
+            <div class="step-text">사진 &amp; AI 옵션</div>
+        </div>
+        <div class="step-line"></div>
+        <div class="step-box" id="step-tab-3">
+            <div class="step-num">3</div>
+            <div class="step-text">자유 배치 편집기</div>
+        </div>
+        <div class="step-line"></div>
+        <div class="step-box" id="step-tab-4">
+            <div class="step-num">4</div>
+            <div class="step-text">완성 &amp; PDF 발급</div>
+        </div>
+    </div>
+
+    <!-- 폼 박스 -->
+    <div class="section-card shadow-sm" style="max-width: 900px; margin: 0 auto;">
+
+        <!-- STEP 1: 테마 & 프레임 -->
+        <div class="wizard-step" id="wizard-step-1">
+            <h4 class="font-weight-bold mb-3"><i class="fa-solid fa-palette text-success"></i> 1단계: 테마와 프레임 선택</h4>
+
+            <div class="form-group mb-3">
+                <label class="font-weight-bold small">앨범 제목 / 여행 테마</label>
+                <input type="text" id="albumTitle" class="form-control" placeholder="예: 싱그러운 봄날의 딸기 농장 여행 🍓">
+            </div>
+
+            <div class="form-group mb-4">
+                <label class="font-weight-bold small">다녀온 체험 선택 (데이터 연동)</label>
+                <select id="albumExpSelect" class="form-control" onchange="updateLocationInfo(this)">
+                    <option value="">-- 다녀오신 농장/관광지를 선택해 주세요 --</option>
+                    {% if applications %}
+                    {% for app in applications %}
+                    {% if app.experience %}
+                    <option value="{{ app.experience.crop }}" data-location="{{ app.experience.address_detail }}">
+                        [{{ app.apply_date.strftime('%Y.%m.%d') }}] {{ app.experience.crop }} 체험 ({{
+                        app.experience.address_detail }})
+                    </option>
+                    {% endif %}
+                    {% endfor %}
+                    {% else %}
+                    <option value="농촌 수확 체험" data-location="충청남도 천안시">천안 싱싱 딸기 수확 체험 (샘플)</option>
+                    {% endif %}
+                </select>
+            </div>
+
+            <div class="form-group mb-4">
+                <label class="font-weight-bold small">인생네컷 프레임 레이아웃 선택</label>
+                <div class="row text-center">
+                    <div class="col-md-4 mb-2">
+                        <div class="frame-card active" onclick="selectFrame('4cut', this)">
+                            <div class="frame-preview cut-4"><span></span><span></span><span></span><span></span></div>
+                            <h6 class="font-weight-bold mb-1">🖼️ 클래식 4컷</h6>
+                            <small class="text-muted">인생네컷 시그니처 세로 레이아웃</small>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-2">
+                        <div class="frame-card" onclick="selectFrame('6cut', this)">
+                            <div class="frame-preview cut-6">
+                                <span></span><span></span><span></span><span></span><span></span><span></span>
+                            </div>
+                            <h6 class="font-weight-bold mb-1">📸 6컷 와이드</h6>
+                            <small class="text-muted">풍경과 인물을 다양하게 조합</small>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-2">
+                        <div class="frame-card" onclick="selectFrame('9grid', this)">
+                            <div class="frame-preview cut-9">
+                                <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+                            </div>
+                            <h6 class="font-weight-bold mb-1">▦ 9컷 아카이브</h6>
+                            <small class="text-muted">스냅 사진 위주의 꽉 찬 기록</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="text-right">
+                <button type="button" class="btn btn-success px-4" onclick="goToStep(2)">다음 (사진 등록) <i
+                        class="fa-solid fa-chevron-right"></i></button>
+            </div>
+        </div>
+
+        <!-- STEP 2: 사진 업로드 & API 옵션 -->
+        <div class="wizard-step d-none" id="wizard-step-2">
+            <h4 class="font-weight-bold mb-3"><i class="fa-solid fa-cloud-arrow-up text-success"></i> 2단계: 사진 업로드 &amp;
+                AI 기능</h4>
+
+            <div class="form-group mb-3">
+                <label class="font-weight-bold small">본인 사진 등록 (5장 ~ 20장 권장)</label>
+                <input type="file" id="photoUploader" class="form-control-file border p-2 rounded" multiple
+                    accept="image/*" onchange="previewPhotos(event)">
+            </div>
+
+            <!-- 업로드 이미지 썸네일 리스트 -->
+            <div id="photoThumbnails" class="d-flex flex-wrap gap-2 mb-4 p-2 bg-light border rounded style-scroll"
+                style="min-height: 100px; max-height: 200px; overflow-y: auto;">
+                <p class="text-muted small m-auto" id="noPhotoText">등록된 사진이 없습니다. 사진을 여러 장 올려주세요!</p>
+            </div>
+
+            <!-- 스마트 API 옵션 -->
+            <div class="card p-3 mb-4 bg-light border-0">
+                <h6 class="font-weight-bold mb-2 text-dark"><i class="fa-solid fa-wand-magic-sparkles text-warning"></i>
+                    AI 스마트 아카이브 옵션</h6>
+                <div class="custom-control custom-checkbox mb-2">
+                    <input type="checkbox" class="custom-control-input" id="optFilter" checked>
+                    <label class="custom-control-label small" for="optFilter">🌾 농촌 힐링 따뜻한 감성 필터 자동 적용</label>
+                </div>
+                <div class="custom-control custom-checkbox mb-2">
+                    <input type="checkbox" class="custom-control-input" id="optStamp" checked>
+                    <label class="custom-control-label small" for="optStamp">📍 위치 &amp; 날짜 감성 스탬프 박기</label>
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-between">
+                <button type="button" class="btn btn-outline-secondary px-4" onclick="goToStep(1)"><i
+                        class="fa-solid fa-chevron-left"></i> 이전</button>
+                <button type="button" class="btn btn-success px-4" onclick="goToStep(3)">다음 (배치 편집기) <i
+                        class="fa-solid fa-chevron-right"></i></button>
+            </div>
+        </div>
+
+        <!-- STEP 3: 자유 배치 편집기 -->
+        <div class="wizard-step d-none" id="wizard-step-3">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h4 class="font-weight-bold m-0"><i class="fa-solid fa-sliders text-success"></i> 3단계: 자유 배치 &amp; 스타일
+                    편집기</h4>
+                <!-- 프레임 배경 색상 변경 컨트롤 -->
+                <div class="d-flex align-items-center gap-2">
+                    <span class="small font-weight-bold">배경색:</span>
+                    <button type="button" class="btn-color-dot bg-dark" onclick="changeFrameBg('#1f1f1f')"></button>
+                    <button type="button" class="btn-color-dot bg-white border"
+                        onclick="changeFrameBg('#ffffff')"></button>
+                    <button type="button" class="btn-color-dot" style="background: #E8F5E9;"
+                        onclick="changeFrameBg('#E8F5E9')"></button>
+                    <button type="button" class="btn-color-dot" style="background: #FFF8E1;"
+                        onclick="changeFrameBg('#FFF8E1')"></button>
+                </div>
+            </div>
+            <p class="small text-muted mb-3">사진을 프레임 칸으로 <b>드래그 앤 드롭</b>하여 배치를 자유롭게 바꿔보세요.</p>
+
+            <!-- 실제 앨범 지면 -->
+            <div class="album-paper-container">
+                <div id="albumPaper" class="album-paper frame-4cut-bg">
+                    <div class="album-header-area">
+                        <h3 id="paperTitle" class="album-paper-title">나만의 농촌 여행 기록</h3>
+                        <p id="paperMeta" class="album-paper-meta">📍 천안시 ㆍ 📅 2026.08.03</p>
+                    </div>
+
+                    <!-- 사진 들어가는 Grid -->
+                    <div id="paperGrid" class="paper-grid grid-4cut">
+                        <!-- JS로 슬롯이 생성됨 -->
+                    </div>
+
+                    <div class="album-footer-area">
+                        <span>FarmLink Travel Archive</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-between mt-4">
+                <button type="button" class="btn btn-outline-secondary px-4" onclick="goToStep(2)"><i
+                        class="fa-solid fa-chevron-left"></i> 이전</button>
+                <button type="button" class="btn btn-success px-4" onclick="goToStep(4)">앨범 완성하기 <i
+                        class="fa-solid fa-check"></i></button>
+            </div>
+        </div>
+
+        <!-- STEP 4: 완성 & PDF 발급 -->
+        <div class="wizard-step d-none text-center py-4" id="wizard-step-4">
+            <div class="mb-2 text-success" style="font-size: 3rem;">🎉</div>
+            <h3 class="font-weight-bold text-dark mb-2">추억 아카이브 앨범이 완성되었습니다!</h3>
+            <p class="text-muted small mb-4">제작된 앨범을 고화질 PDF 파일로 간직하거나 자유롭게 수정해 보세요.</p>
+
+            <!-- Step 4 앨범 미리보기 컨테이너 (PDF 변환 대상) -->
+            <div id="finalPaperDisplay" class="d-flex justify-content-center mb-4"></div>
+
+            <div class="d-flex justify-content-center gap-3 mb-2">
+                <button type="button" id="pdfBtn" class="btn btn-success btn-lg px-4" onclick="downloadPDF(event)">
+                    <i class="fa-solid fa-file-pdf mr-1"></i> 고화질 PDF 발급 받기
+                </button>
+                <button type="button" id="imgBtn" class="btn btn-info btn-lg px-4 text-white"
+                    onclick="downloadImage(event)">
+                    <i class="fa-solid fa-file-image mr-1"></i> 이미지(PNG) 저장
+                </button>
+                <button type="button" class="btn btn-outline-dark btn-lg px-4" onclick="goToStep(3)">
+                    <i class="fa-solid fa-rotate-left mr-1"></i> 재시작 (테마/배치 변경)
+                </button>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    let currentStep = 1;
+    let selectedFrame = '4cut';
+    let uploadedImages = [];
+
+    function goToStep(step) {
+        document.getElementById(`wizard-step-${currentStep}`).classList.add('d-none');
+        document.getElementById(`step-tab-${currentStep}`).classList.remove('active');
+
+        currentStep = step;
+
+        document.getElementById(`wizard-step-${currentStep}`).classList.remove('d-none');
+        document.getElementById(`step-tab-${currentStep}`).classList.add('active');
+
+        if (step === 3) renderEditorGrid();
+
+        if (step === 4) {
+            const display = document.getElementById('finalPaperDisplay');
+            display.innerHTML = '';
+            const clone = document.getElementById('albumPaper').cloneNode(true);
+            clone.id = 'albumPaperFinal';
+
+            // PDF/최종 발급용: 사진이 없는 빈 칸은 버튼을 제거하고 완전한 검은색 화면으로 전환
+            const emptySlots = clone.querySelectorAll('.empty-slot-content');
+            emptySlots.forEach(el => {
+                const parent = el.parentElement;
+                parent.innerHTML = '';
+                parent.style.backgroundColor = '#000000';
+            });
+
+            display.appendChild(clone);
+        }
+    }
+
+    function selectFrame(type, element) {
+        selectedFrame = type;
+        document.querySelectorAll('.frame-card').forEach(el => el.classList.remove('active'));
+        element.classList.add('active');
+    }
+
+    function updateLocationInfo(selectEl) {
+        const selectedOption = selectEl.options[selectEl.selectedIndex];
+        if (selectedOption.value) {
+            document.getElementById('albumTitle').value = `${selectedOption.value} 추억 일지 🌱`;
+        }
+    }
+
+    function previewPhotos(event) {
+        const files = event.target.files;
+        const container = document.getElementById('photoThumbnails');
+        container.innerHTML = '';
+        uploadedImages = [];
+
+        if (files.length === 0) {
+            container.innerHTML = '<p class="text-muted small m-auto">등록된 사진이 없습니다.</p>';
+            return;
+        }
+
+        Array.from(files).forEach((file) => {
+            const reader = new FileReader();
+            reader.onload = e => {
+                uploadedImages.push(e.target.result);
+                const img = document.createElement('img');
+                img.src = e.target.result;
+                img.className = 'upload-thumb-img';
+                container.appendChild(img);
+            };
+            reader.readAsDataURL(file);
+        });
+    }
+
+    function renderEditorGrid() {
+        const title = document.getElementById('albumTitle').value || '나만의 농촌 여행 기록';
+        const expSelect = document.getElementById('albumExpSelect');
+        const loc = expSelect.options[expSelect.selectedIndex].getAttribute('data-location') || '대한민국 농촌';
+
+        document.getElementById('paperTitle').innerText = title;
+        document.getElementById('paperMeta').innerText = `📍 ${loc} ㆍ 📅 ${new Date().toLocaleDateString()}`;
+
+        const grid = document.getElementById('paperGrid');
+        grid.className = `paper-grid grid-${selectedFrame}`;
+        grid.innerHTML = '';
+
+        const slotCount = selectedFrame === '4cut' ? 4 : (selectedFrame === '6cut' ? 6 : 9);
+
+        for (let i = 0; i < slotCount; i++) {
+            const slot = document.createElement('div');
+            slot.className = 'grid-slot';
+            slot.setAttribute('draggable', 'true');
+            slot.setAttribute('data-index', i);
+
+            if (uploadedImages[i]) {
+                const isFilter = document.getElementById('optFilter').checked;
+                const filterStyle = isFilter ? 'filter: sepia(0.15) contrast(1.05) brightness(1.02);' : '';
+                slot.innerHTML = `<img src="${uploadedImages[i]}" style="${filterStyle}" alt="추억사진">`;
+            } else {
+                // 사진이 없을 때: 동작하지 않는 "고품질 사진 불러오기" 버튼 UI 표시
+                slot.innerHTML = `
+                    <div class="empty-slot-content d-flex flex-column align-items-center justify-content-center h-100" style="padding: 10px; text-align: center;">
+                        <button type="button" class="btn btn-sm btn-outline-light" style="font-size: 0.72rem; opacity: 0.85; pointer-events: none; border-radius: 20px;">
+                            <i class="fa-solid fa-image mr-1"></i> 고품질 사진 불러오기
+                        </button>
+                    </div>
+                `;
+            }
+
+            slot.addEventListener('dragstart', handleDragStart);
+            slot.addEventListener('dragover', handleDragOver);
+            slot.addEventListener('drop', handleDrop);
+
+            grid.appendChild(slot);
+        }
+    }
+
+    let dragSrcIndex = null;
+    function handleDragStart(e) {
+        dragSrcIndex = this.getAttribute('data-index');
+        e.dataTransfer.setData('text/html', this.innerHTML);
+    }
+    function handleDragOver(e) {
+        if (e.preventDefault) e.preventDefault();
+        return false;
+    }
+    function handleDrop(e) {
+        if (e.stopPropagation) e.stopPropagation();
+        const targetIndex = this.getAttribute('data-index');
+        if (dragSrcIndex !== targetIndex) {
+            const srcSlot = document.querySelector(`.grid-slot[data-index="${dragSrcIndex}"]`);
+            const targetSlot = this;
+
+            const tempHTML = targetSlot.innerHTML;
+            targetSlot.innerHTML = srcSlot.innerHTML;
+            srcSlot.innerHTML = tempHTML;
+        }
+        return false;
+    }
+
+    function changeFrameBg(color) {
+        const targetPaper = document.getElementById('albumPaper');
+        targetPaper.style.backgroundColor = color;
+        if (color === '#ffffff' || color === '#FFF8E1' || color === '#E8F5E9') {
+            targetPaper.style.color = '#222';
+        } else {
+            targetPaper.style.color = '#fff';
+        }
+    }
+
+    function downloadPDF(event) {
+        const element = document.getElementById('albumPaperFinal') || document.getElementById('albumPaper');
+
+        if (!element) {
+            alert("다운로드할 앨범 요소를 찾을 수 없습니다.");
+            return;
+        }
+
+        const btn = event.currentTarget;
+        const originalHTML = btn.innerHTML;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> PDF 생성 중...';
+        btn.disabled = true;
+
+        // html2pdf 본래 파이프라인을 직접 사용하여 이중 캡처 버그 방지
+        const opt = {
+            margin: [8, 8, 8, 8], // 상, 좌, 하, 우 여백 (mm)
+            filename: 'FarmLink_추억_아카이브.pdf',
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: {
+                scale: 2,
+                useCORS: true,
+                logging: false,
+                scrollY: 0
+            },
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+            pagebreak: { mode: 'avoid-all' } // 페이지 잘림 방지
+        };
+
+        // 중간 임시 <img> 생성 과정 없이 원본 element를 직접 html2pdf에 전달
+        html2pdf().set(opt).from(element).save().then(() => {
+            btn.innerHTML = originalHTML;
+            btn.disabled = false;
+        }).catch(err => {
+            console.error("PDF 생성 에러:", err);
+            alert("PDF 다운로드 중 에러가 발생했습니다.");
+            btn.innerHTML = originalHTML;
+            btn.disabled = false;
+        });
+    }
+
+    function downloadImage(event) {
+        const element = document.getElementById('albumPaperFinal') || document.getElementById('albumPaper');
+
+        if (!element) {
+            alert("다운로드할 앨범 요소를 찾을 수 없습니다.");
+            return;
+        }
+
+        const btn = event.currentTarget;
+        const originalHTML = btn.innerHTML;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> 이미지 생성 중...';
+        btn.disabled = true;
+
+        html2canvas(element, {
+            scale: 3,
+            useCORS: true,
+            allowTaint: true,
+            logging: false
+        }).then(canvas => {
+            const link = document.createElement('a');
+            link.download = 'FarmLink_추억_아카이브.png';
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+
+            btn.innerHTML = originalHTML;
+            btn.disabled = false;
+        }).catch(err => {
+            console.error("이미지 저장 에러:", err);
+            alert("이미지 저장 중 에러가 발생했습니다.");
+            btn.innerHTML = originalHTML;
+            btn.disabled = false;
+        });
+    }
+</script>
+
+{% endblock %}

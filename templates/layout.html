@@ -13,17 +13,21 @@
 <header class="site-header">
     <div class="site-header-inner">
         <a href="/" class="site-logo">FarmLink</a>
+        {% if session.get('role') != 'farmer' %}
         <nav class="site-nav">
             <a href="{{ url_for('index') }}" {% if request.endpoint == 'index' %}class="active"{% endif %}>체험 찾기</a>
             <a href="#">AI 여행 추천</a>
             <a href="{{ url_for('my_info') }}" {% if request.endpoint == 'my_info' %}class="active"{% endif %}>예약 내역</a>
         </nav>
+        {% else %}
+        <nav class="site-nav"></nav>
+        {% endif %}
         <div class="site-user-area">
             {% if session.get('user_id') %}
             {% if session.get('role') == 'farmer' %}
             <a href="{{ url_for('toggle_view_mode') }}" class="btn-view-mode-toggle">
                 <i class="fa-solid fa-arrows-rotate mr-1"></i>
-                {% if session.get('view_mode') == 'easy' %}상세모드 변환{% else %}이지모드 변환{% endif %}
+                {% if session.get('view_mode') == 'easy' %}상세모드 변환{% else %}크게보기 변환{% endif %}
             </a>
             {% endif %}
             <div class="user-chip">

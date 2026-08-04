@@ -5,9 +5,8 @@ import requests
 
 from common.constants import HTTP_TIMEOUT_SEC, NEARBY_RESULT_LIMIT
 
-# ⚠️ 현재 활성 키로는 403 Forbidden = 이 계정이 '반려동물 동반여행' 서비스에 활용신청 안 됨.
-#   → data.go.kr에서 해당 서비스 활용신청 후, 샘플 URL로 엔드포인트 확정 필요. (그전까지 실패 시 빈 리스트)
-PET_TRAVEL_URL = "https://apis.data.go.kr/B551011/KorPetTourService2/locationBasedList2"
+# TODO: 실제 키 발급 시 KTO 반려동물 동반여행 서비스의 정확한 위치기반 목록 URL로 확정.
+PET_TRAVEL_URL = "https://apis.data.go.kr/B551011/KorPetTourService/locationBasedList"
 
 
 def find_pet_facilities(lat, lng, radius_m):

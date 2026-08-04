@@ -5,10 +5,9 @@ import requests
 
 from common.constants import HTTP_TIMEOUT_SEC, NEARBY_RESULT_LIMIT
 
-# ⚠️ 확인 필요(미검증): KorService2 이관에 맞춰 v2 형태로 추정 변경.
-#   KorWithService(무장애)의 실제 v2 서비스명/오퍼레이션은 data.go.kr 샘플 URL로 확인해 확정할 것.
-#   휠체어/유모차/장애인화장실 상세 플래그는 detail 계열 응답에 있으므로 실제 응답 확인 후 필드 매핑 확정.
-BARRIER_FREE_URL = "https://apis.data.go.kr/B551011/KorWithService2/locationBasedList2"
+# TODO: 실제 키 발급 시 KTO 무장애 여행(KorWithService) 위치기반 목록 URL로 확정.
+#       휠체어/유모차/장애인화장실 상세 플래그는 detail 계열 응답에 있으므로 실제 키 확보 후 필드 매핑 확정.
+BARRIER_FREE_URL = "https://apis.data.go.kr/B551011/KorWithService/locationBasedList"
 
 
 def find_barrier_free_places(lat, lng, radius_m):

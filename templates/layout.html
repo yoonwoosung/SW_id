@@ -37,6 +37,7 @@
                 <div class="user-chip-dropdown">
                     {% if session.get('role') == 'farmer' %}
                     <a href="{{ url_for('detailed_farmer_dashboard') }}"><i class="fa-solid fa-gauge-high mr-1"></i> 농장주 대시보드</a>
+                    <a href="{{ url_for('farm_manage_page') }}"><i class="fa-solid fa-tractor mr-1"></i> 내 농장 관리</a>
                     {% else %}
                     <a href="{{ url_for('my_info') }}"><i class="fa-solid fa-user mr-1"></i> 내 정보</a>
                     {% endif %}

@@ -66,6 +66,11 @@ with flask_app.app_context():
     else:
         print(f"[seed] 기존 데이터 사용 (체험 {Experience.query.count()}건)")
 
+    # B안: 농장 없는 체험을 '기본 농장'으로 이관(멱등)
+    from services.farm_service import backfill_default_farms
+    linked = backfill_default_farms()
+    print(f"[migrate] 기본 농장 백필: 체험 {linked}건 연결")
+
 if __name__ == '__main__':
     print("로컬 서버 시작: http://127.0.0.1:8000/")
     flask_app.run(host='127.0.0.1', port=8000, debug=False, use_reloader=False)

@@ -19,6 +19,7 @@ class Experience(db.Model):
     lat = db.Column(db.Float, default=36.8583)
     lng = db.Column(db.Float, default=127.2943)
     farmer_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    farm_id = db.Column(db.Integer, db.ForeignKey('farm.id'), nullable=True)  # B안: Experience→Farm→User
     notes = db.Column(db.Text, nullable=True)
     includes = db.Column(db.Text, nullable=True)
     excludes = db.Column(db.Text, nullable=True)
@@ -42,6 +43,7 @@ class Experience(db.Model):
     has_wifi = db.Column(db.Boolean, default=False, nullable=False)  # 와이파이 제공 여부
     barrier_free = db.Column(db.Boolean, default=False, nullable=False)  # 무장애(휠체어 등) 확인 여부 — 코스 무장애 로고용
     farmer = db.relationship('User', back_populates='experiences')
+    farm = db.relationship('Farm', backref='experiences')
 
     def to_dict(self):
         return {

@@ -25,6 +25,7 @@ from services.recommend_reason import recommendation_reason
 from services.review_service import analyze_review_with_clova
 from external.kakao_map import get_coords_from_address
 from common.validators import allowed_file
+from services import farm_service
 
 
 def farmer_easy_mode():
@@ -90,8 +91,10 @@ def easy_create_experience():
         address_detail = request.form.get('address')
         lat, lng = get_coords_from_address(address_detail)
         farmer = User.query.get(session['user_id'])
-            
+        default_farm = farm_service.default_farm_for(session['user_id'])  # B안: 기본 농장에 연결
+
         new_experience = Experience(
+            farm_id=default_farm.id if default_farm else None,
             crop=request.form.get('crop'),
             cost=int(request.form.get('price')),
             max_participants=int(request.form.get('max_participants')),

@@ -13,8 +13,9 @@ from models.proposal import Proposal
 from models.click_log import ClickLog
 from models.wishlist import Wishlist
 from models.point_log import PointLog
+from models.farm import Farm
 
 __all__ = [
     'db', 'User', 'Experience', 'Review', 'Inquiry', 'Application', 'Notification',
-    'UserRequest', 'Proposal', 'ClickLog', 'Wishlist', 'PointLog',
+    'UserRequest', 'Proposal', 'ClickLog', 'Wishlist', 'PointLog', 'Farm',
 ]

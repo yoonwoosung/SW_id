@@ -28,6 +28,7 @@ from common.search_categories import SEARCH_CATEGORIES, CATEGORY_CODES, CATEGORY
 from common.response import success_response
 from external.kakao_map import get_coords_from_address
 from common.validators import allowed_file
+from services import farm_service
 
 
 def index():
@@ -261,7 +262,9 @@ def farmer_register(item_id=None):
             flash("체험 정보가 성공적으로 수정되었습니다!", "success")
         else: # 생성
             farmer = User.query.get(session['user_id'])
+            default_farm = farm_service.default_farm_for(session['user_id'])  # B안: 기본 농장에 연결
             new_experience = Experience(
+                farm_id=default_farm.id if default_farm else None,
                 crop=request.form.get('crop'),
                 phone=request.form.get('phone'),
                 location=farmer.farm_address,

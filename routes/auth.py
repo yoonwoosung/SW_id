@@ -55,6 +55,7 @@ def register_page():
         hashed_password = generate_password_hash(password, method='pbkdf2:sha256')
 
         profile = clean_profile(request.form.get, request.form.getlist)  # 선택 입력, 검증된 값만
+        profile.setdefault('birthdate', request.form.get('birthdate'))   # park_back 가입폼: 생년월일
         new_user = User(
             email=email, nickname=nickname, password=hashed_password,
             role=role, name=name, phone=phone,
@@ -131,6 +132,8 @@ def login_page():
             session['nickname'] = user.nickname
             session['role'] = user.role
             flash(f"{user.nickname}님, 환영합니다!", "success")
+            if user.role == 'farmer':   # park_back: 농장주는 대시보드로
+                return redirect(url_for('detailed_farmer_dashboard'))
             return redirect(url_for('index'))
         else:
             flash("이메일 또는 비밀번호가 올바르지 않습니다.", "danger")

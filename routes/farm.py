@@ -134,8 +134,39 @@ def expired_experiences():
 
     return render_template('expired_experiences.html', user=user, experiences=expired_list)
 
+def farmer_calendar():
+    if 'user_id' not in session or session.get('role') != 'farmer':
+        return redirect(url_for('login_page'))
+
+    farmer_id = session.get('user_id')
+    user = User.query.get(farmer_id)
+    if not user:
+        session.clear()
+        return redirect(url_for('login_page'))
+
+    my_listings = Experience.query.filter(
+        Experience.farmer_id == farmer_id,
+        Experience.status.in_(['recruiting', 'hidden'])
+    ).all()
+    experience_ids = [exp.id for exp in my_listings]
+    
+    applications = Application.query.filter(
+        Application.experience_id.in_(experience_ids),
+        Application.status != '취소'
+    ).all()
+
+    reservations_by_date = defaultdict(list)
+    for app in applications:
+        reservations_by_date[app.apply_date.strftime('%Y-%m-%d')].append({
+            "id": app.id, "name": app.applicant_name, "phone": app.phone_number,
+            "adult": app.count_adult, "teen": app.count_teen, "child": app.count_child,
+            "time": app.apply_time, "crop": app.experience.crop, "status": app.status
+        })
+
+    return render_template('farmer_calendar.html', user=user, reservations_data=reservations_by_date)
 
 def register(app):
     app.add_url_rule('/toggle_view_mode', 'toggle_view_mode', toggle_view_mode)
     app.add_url_rule('/my_farm_detailed', 'detailed_farmer_dashboard', detailed_farmer_dashboard)
     app.add_url_rule('/my_farm/expired', 'expired_experiences', expired_experiences)
+    app.add_url_rule('/my_farm/calendar', 'farmer_calendar', farmer_calendar)

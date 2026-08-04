@@ -162,6 +162,16 @@ def mypage():
     return render_template('mypage.html', user=user, applications=applications)
 
 
+def album_create():
+    # park_back 기능: 다녀온 체험으로 추억 앨범 만들기.
+    if 'user_id' not in session:
+        flash("로그인이 필요합니다.", "warning")
+        return redirect(url_for('login_page'))
+    user = User.query.get_or_404(session['user_id'])
+    applications = Application.query.filter_by(user_id=user.id).order_by(Application.apply_date.desc()).all()
+    return render_template('album_create.html', user=user, applications=applications)
+
+
 def guide_page():
     return render_template('guide.html')
 
@@ -181,3 +191,4 @@ def register(app):
     app.add_url_rule('/api/users/me/points', 'my_points', my_points)
     app.add_url_rule('/guide', 'guide_page', guide_page)
     app.add_url_rule('/farmer_guide', 'farmer_guide', farmer_guide)
+    app.add_url_rule('/album/create', 'album_create', album_create, methods=['GET', 'POST'])

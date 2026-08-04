@@ -2,6 +2,52 @@
 
 document.addEventListener('DOMContentLoaded', function() {
 
+    const cardTrack = document.getElementById('card-slider-track');
+    const cardPrevBtn = document.getElementById('card-prev-btn');
+    const cardNextBtn = document.getElementById('card-next-btn');
+
+    if (cardTrack && cardPrevBtn && cardNextBtn) {
+        let isAnimating = false;
+
+        cardNextBtn.addEventListener('click', function() {
+            if (isAnimating) return;
+            isAnimating = true;
+
+            cardTrack.style.transition = 'transform 0.4s ease-in-out';
+            cardTrack.style.transform = 'translateX(calc(-50% - 12px))';
+
+            cardTrack.addEventListener('transitionend', function handleNext() {
+                cardTrack.removeEventListener('transitionend', handleNext);
+
+                cardTrack.appendChild(cardTrack.firstElementChild);
+                cardTrack.style.transition = 'none';
+                cardTrack.style.transform = 'translateX(0)';
+                
+                void cardTrack.offsetWidth;
+                isAnimating = false;
+            });
+        });
+
+        cardPrevBtn.addEventListener('click', function() {
+            if (isAnimating) return;
+            isAnimating = true;
+
+            cardTrack.insertBefore(cardTrack.lastElementChild, cardTrack.firstElementChild);
+            cardTrack.style.transition = 'none';
+            cardTrack.style.transform = 'translateX(calc(-50% - 12px))';
+
+            void cardTrack.offsetWidth;
+
+            cardTrack.style.transition = 'transform 0.4s ease-in-out';
+            cardTrack.style.transform = 'translateX(0)';
+
+            cardTrack.addEventListener('transitionend', function handlePrev() {
+                cardTrack.removeEventListener('transitionend', handlePrev);
+                isAnimating = false;
+            });
+        });
+    }
+
     // --- 회원가입 페이지 스크립트 ---
     const registerForm = document.getElementById('register-form');
     if (registerForm) {

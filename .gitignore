@@ -10,3 +10,9 @@ local_db.sqlite
 __pycache__/
 *.pyc
 .pytest_cache/
+
+# park_back 병합: 추가 무시 규칙
+*.db
+.env.*
+.vscode/
+venv/

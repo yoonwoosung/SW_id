@@ -1,184 +1,371 @@
 {% extends "layout.html" %}
 {% block content %}
-<div class="container">
-    <div class="row justify-content-center">
-        <div class="col-md-6">
-            <div class="card mt-5 mb-5">
-                <div class="card-header">
-                    <h1 class="text-center">회원가입</h1>
+<div class="signup-v2-bg">
+    <div class="signup-v2-wrapper">
+        <!-- 상단 카드: 회원 정보 입력 -->
+        <form id="register-form" method="POST" action="{{ url_for('register_page') }}" enctype="multipart/form-data" novalidate>
+        <div class="signup-v2-card">
+            <h3 class="signup-v2-title">회원가입하고 다양한 혜택을 누리세요!</h3>
+                
+                <!-- 가입 유형 선택 -->
+                <div class="signup-field-box mb-3">
+                    <label class="small font-weight-bold text-muted mb-1">가입 유형</label>
+                    <div class="d-flex gap-12">
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" name="role" id="role-user" value="experiencer" checked>
+                            <label class="form-check-label font-weight-bold" for="role-user">체험자</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" name="role" id="role-farmer" value="farmer">
+                            <label class="form-check-label font-weight-bold" for="role-farmer">농장주</label>
+                        </div>
+                    </div>
                 </div>
-                <div class="card-body">
-                    <form id="register-form" method="POST" action="{{ url_for('register_page') }}" novalidate>
-                        
-                        <div class="form-group">
-                            <label>가입 유형</label>
-                            <div class="d-flex">
-                                <div class="form-check form-check-inline">
-                                    <input class="form-check-input" type="radio" name="role" id="role-user" value="experiencer" checked>
-                                    <label class="form-check-label" for="role-user">체험자</label>
-                                </div>
-                                <div class="form-check form-check-inline">
-                                    <input class="form-check-input" type="radio" name="role" id="role-farmer" value="farmer">
-                                    <label class="form-check-label" for="role-farmer">농장주</label>
-                                </div>
-                            </div>
-                        </div>
 
-                        <div class="form-group position-relative">
-                            <label for="nickname">닉네임</label>
-                            <input type="text" id="nickname" name="nickname" class="form-control" placeholder="2~10자 사이로 입력하세요" required value="{{ form_data.get('nickname', '') }}">
-                        </div>
+                <!-- 닉네임 -->
+                <div class="signup-field-group">
+                    <div class="signup-field-box">
+                        <input type="text" id="nickname" name="nickname" class="signup-input" placeholder="닉네임 (2~10자)" required value="{{ form_data.get('nickname', '') }}">
+                    </div>
+                    <div class="field-tooltip">필수 정보입니다.</div>
+                </div>
 
-                        <div class="form-group position-relative">
-                            <label for="email">이메일</label>
-                            <span class="validation-message"></span>
-                            <div class="input-group">
-                                <input type="email" id="email" name="email" class="form-control" placeholder="예: farmlink@example.com" required value="{{ form_data.get('email', '') }}">
-                                <div class="input-group-append">
-                                    <button class="btn btn-outline-secondary" type="button" id="check-email-btn">중복확인</button>
-                                </div>
-                            </div>
-                        </div>
+                <!-- 이메일 및 중복확인 -->
+                <div class="signup-field-group">
+                    <div class="signup-field-box d-flex align-items-center">
+                        <input type="email" id="email" name="email" class="signup-input flex-grow-1" placeholder="이메일 (예: farmlink@example.com)" required value="{{ form_data.get('email', '') }}">
+                        <button class="signup-side-btn" type="button" id="check-email-btn">중복확인</button>
+                    </div>
+                    <div class="field-tooltip">필수 정보입니다.</div>
+                </div>
 
-                        <div class="form-group position-relative">
-                            <label for="password">비밀번호</label>
-                            <span class="validation-message"></span>
-                            <div class="input-group">
-                                <input type="password" id="password" name="password" class="form-control" placeholder="영문, 숫자 포함 8자 이상" required>
-                                <div class="input-group-append">
-                                    <button class="btn btn-outline-secondary toggle-password" type="button">
-                                        <i class="fa-solid fa-eye"></i>
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="form-group position-relative">
-                            <label for="password-confirm">비밀번호 확인</label>
-                            <span class="validation-message"></span>
-                             <div class="input-group">
-                                <input type="password" id="password-confirm" name="password_confirm" class="form-control" required>
-                                <div class="input-group-append">
-                                    <button class="btn btn-outline-secondary toggle-password" type="button">
-                                        <i class="fa-solid fa-eye"></i>
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
+                <!-- 비밀번호 -->
+                <div class="signup-field-group">
+                    <div class="signup-field-box d-flex align-items-center">
+                        <input type="password" id="password" name="password" class="signup-input flex-grow-1" placeholder="비밀번호 (8~16자의 영문, 숫자, 특수문자)" required>
+                        <span class="password-show-toggle mr-2" id="toggle-password-btn">
+                            <i class="fa-solid fa-eye-slash text-muted"></i> <small class="text-muted">표시</small>
+                        </span>
+                    </div>
+                    <div class="field-tooltip">필수 정보입니다.</div>
+                </div>
 
-                        <div class="form-group position-relative">
-                            <label for="name">이름</label>
-                            <input type="text" id="name" name="name" class="form-control" required value="{{ form_data.get('name', '') }}">
-                        </div>
+                <!-- 비밀번호 확인 -->
+                <div class="signup-field-group">
+                    <div class="signup-field-box">
+                        <input type="password" id="password-confirm" name="password_confirm" class="signup-input" placeholder="비밀번호 재입력" required>
+                    </div>
+                    <div class="field-tooltip">필수 정보입니다.</div>
+                </div>
 
-                        <div class="form-group position-relative">
-                            <label for="phone">전화번호</label>
-                            <span class="validation-message"></span>
-                            <input type="tel" id="phone" name="phone" class="form-control" placeholder="'-' 없이 숫자만 입력" required value="{{ form_data.get('phone', '') }}">
-                        </div>
+                <!-- 이름(실명) -->
+                <div class="signup-field-group">
+                    <div class="signup-field-box">
+                        <input type="text" id="name" name="name" class="signup-input" placeholder="이름(실명)" required value="{{ form_data.get('name', '') }}">
+                    </div>
+                    <div class="field-tooltip">필수 정보입니다.</div>
+                </div>
 
-                        <div id="farmer-fields" style="display: none;">
-                            <div class="form-group position-relative">
-                                <label for="farm_address">농장 주소</label>
-                                <input type="text" id="farm_address" name="farm_address" class="form-control">
-                            </div>
-                            <div class="form-group position-relative">
-                                <label for="farm_size">농장 규모 (평)</label>
-                                <span class="validation-message"></span>
-                                <input type="text" id="farm_size" name="farm_size" class="form-control">
-                            </div>
+                <!-- 생년월일 + 성별 선택 -->
+                <div class="signup-field-group">
+                    <div class="d-flex">
+                        <div class="signup-field-box flex-grow-1 mr-2">
+                            <input type="text" id="birthdate" name="birthdate" class="signup-input" placeholder="생년월일(예시 : 20000131)" maxlength="8" value="{{ form_data.get('birthdate', '') }}">
                         </div>
-
-                        <div id="profile-fields">
-                            <hr>
-                            <p class="text-muted mb-2" style="font-size:0.9rem;">
-                                맞춤 추천용 정보 (선택) — 입력하면 취향에 맞는 체험을 더 잘 추천해드려요. 입력하지 않아도 가입됩니다.
-                            </p>
-                            <div class="form-group">
-                                <label for="birthdate">생년월일</label>
-                                <input type="text" id="birthdate" name="birthdate" class="form-control" placeholder="예: 20000131" value="{{ form_data.get('birthdate', '') }}">
-                            </div>
-                            <div class="form-group">
-                                <label for="age_group">연령대</label>
-                                <select id="age_group" name="age_group" class="form-control">
-                                    <option value="">선택 안 함</option>
-                                    {% for code, label in reg_options.age_groups %}
-                                    <option value="{{ code }}" {% if form_data.get('age_group')==code %}selected{% endif %}>{{ label }}</option>
-                                    {% endfor %}
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label for="gender">성별</label>
-                                <select id="gender" name="gender" class="form-control">
-                                    <option value="">선택 안 함</option>
-                                    {% for code, label in reg_options.genders %}
-                                    <option value="{{ code }}" {% if form_data.get('gender')==code %}selected{% endif %}>{{ label }}</option>
-                                    {% endfor %}
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label for="family_type">가족 구성</label>
-                                <select id="family_type" name="family_type" class="form-control">
-                                    <option value="">선택 안 함</option>
-                                    {% for code, label in reg_options.family_types %}
-                                    <option value="{{ code }}" {% if form_data.get('family_type')==code %}selected{% endif %}>{{ label }}</option>
-                                    {% endfor %}
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label for="preferred_transport">선호 교통수단</label>
-                                <select id="preferred_transport" name="preferred_transport" class="form-control">
-                                    <option value="">선택 안 함</option>
-                                    {% for code, label in reg_options.transports %}
-                                    <option value="{{ code }}" {% if form_data.get('preferred_transport')==code %}selected{% endif %}>{{ label }}</option>
-                                    {% endfor %}
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label>관심 액티비티 (복수 선택 가능)</label>
-                                <div>
-                                    {% for code, label in reg_options.activities %}
-                                    <label class="form-check-label mr-3" style="margin-right:12px;font-weight:400;">
-                                        <input type="checkbox" name="interest_activities" value="{{ code }}"> {{ label }}
-                                    </label>
-                                    {% endfor %}
-                                </div>
-                            </div>
+                        <div class="gender-btn-group">
+                            <input type="radio" class="btn-check" name="gender" id="gender-m" value="male" checked>
+                            <label class="gender-btn" for="gender-m">남자</label>
+                            
+                            <input type="radio" class="btn-check" name="gender" id="gender-f" value="female">
+                            <label class="gender-btn" for="gender-f">여자</label>
                         </div>
+                    </div>
+                    <div class="field-tooltip">필수 정보입니다.</div>
+                </div>
 
-                        <div class="form-group">
-                            <div class="form-check">
-                                <input type="checkbox" class="form-check-input" id="terms" required>
-                                <label class="form-check-label" for="terms">
-                                    서비스 이용 약관 및 개인정보 처리 방침에 동의합니다. 
-                                    <a href="#" id="view-terms-link">(내용 보기)</a>
-                                </label>
-                            </div>
+                <!-- 맞춤 추천용(선택): 연령대 — 우리 AI 개인화 신호 -->
+                <div class="signup-field-group">
+                    <div class="signup-field-box">
+                        <select name="age_group" class="signup-input">
+                            <option value="">연령대 (선택 · 맞춤 추천용)</option>
+                            {% for code, label in reg_options.age_groups %}
+                            <option value="{{ code }}" {% if form_data.get('age_group')==code %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <!-- 휴대폰 번호 + 인증번호 전송 -->
+                <div class="signup-field-group">
+                    <div class="signup-field-box d-flex align-items-center">
+                        <input type="tel" id="phone" name="phone" class="signup-input flex-grow-1" placeholder="휴대폰번호 ('-' 없이 입력)" required value="{{ form_data.get('phone', '') }}">
+                        <button class="signup-side-btn action-btn" type="button" id="send-auth-btn">인증번호 전송</button>
+                    </div>
+                    <div class="field-tooltip">필수 정보입니다.</div>
+                </div>
+
+                <!-- 인증번호 입력 + 확인 / 재전송 -->
+                <div class="signup-field-group">
+                    <div class="d-flex">
+                        <div class="signup-field-box flex-grow-1 mr-2">
+                            <input type="text" id="auth-code" class="signup-input" placeholder="인증번호 입력 (테스트: 11)">
                         </div>
+                        <button class="signup-side-btn action-btn mr-1" type="button" id="verify-auth-btn">확인</button>
+                        <button class="signup-side-btn action-btn" type="button" id="resend-auth-btn">재전송</button>
+                    </div>
+                    <!-- 본인인증 완료 여부 숨김 파라미터 -->
+                    <input type="hidden" id="phone_verified" name="phone_verified" value="false">
+                    <input type="hidden" id="email_verified" name="email_verified" value="false">
+                </div>
 
-                        <button type="submit" class="btn btn-success btn-block mt-4">가입하기</button>
-                    </form>
-                    <div class="text-center mt-3">
-                        <small>이미 회원이신가요? <a href="{{ url_for('login_page') }}">로그인</a></small>
+                <!-- 농장주 전용 추가 필드 -->
+                <div id="farmer-fields" style="display: none;" class="mt-3 p-3 bg-light rounded border">
+                    <div class="signup-field-box mb-2">
+                        <input type="text" id="farm_address" name="farm_address" class="signup-input" placeholder="농장 주소">
+                    </div>
+                    <div class="signup-field-box mb-2">
+                        <input type="text" id="farm_size" name="farm_size" class="signup-input" placeholder="농장 규모 (평)">
+                    </div>
+                    <div class="mt-2">
+                        <label for="farmer_certificate" class="small font-weight-bold text-muted mb-1">농업인 확인서 제출 <span class="text-danger">*</span></label>
+                        <input type="file" id="farmer_certificate" name="farmer_certificate_pdf" class="form-control-file" accept=".pdf, .png, .jpg, .jpeg">
                     </div>
                 </div>
             </div>
+
+        <!-- 하단 카드: 약관 동의 -->
+        <div class="signup-v2-card mt-3">
+            <div class="terms-master-check pb-3 border-bottom mb-3">
+                <div class="form-check d-flex align-items-center justify-content-between">
+                    <label class="form-check-label font-weight-bold h6 mb-0" for="check-all-terms">
+                        필수동의 항목 및 개인정보 수집 및 이용 동의(선택), 광고성 정보 수신(선택)에 모두 동의합니다.
+                    </label>
+                    <input class="form-check-input terms-checkbox-lg" type="checkbox" id="check-all-terms">
+                </div>
+            </div>
+
+            <div class="terms-sub-list">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="small text-dark"><strong class="text-primary">[필수]</strong> 만 15세 이상입니다</span>
+                    <input type="checkbox" class="sub-term-check" required>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="small text-dark"><strong class="text-primary">[필수]</strong> 이용약관 동의 <a href="#" id="view-terms-link" class="text-muted small">(내용보기)</a></span>
+                    <input type="checkbox" class="sub-term-check" required>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="small text-muted">[선택] 맞춤형 서비스/광고 개인정보 수집 및 이용 동의</span>
+                    <input type="checkbox" class="sub-term-check">
+                </div>
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="small text-muted">[선택] 광고성 정보 수신 동의</span>
+                    <input type="checkbox" class="sub-term-check">
+                </div>
+            </div>
+        </div>
+
+        <!-- 가입하기 대형 버튼 -->
+        <button type="submit" class="signup-submit-btn mt-3">가입하기</button>
+        </form>
+
+        <div class="text-center mt-3">
+            <small class="text-muted">이미 회원이신가요? <a href="{{ url_for('login_page') }}" class="font-weight-bold text-dark">로그인</a></small>
         </div>
     </div>
 </div>
 
+<!-- 약관 모달 -->
 <div id="terms-modal" class="modal-overlay" style="display: none;">
     <div class="modal-content">
         <h4>서비스 이용 약관</h4>
         <div class="terms-content">
             <p><strong>제1조 (목적)</strong> 이 약관은 FarmLink가 제공하는 농장 체험 중개 서비스의 이용과 관련하여 회사와 회원 간의 권리, 의무 및 책임사항을 규정함을 목적으로 합니다.</p>
             <p><strong>제2조 (정의)</strong> "회원"이라 함은 회사에 개인정보를 제공하여 회원등록을 한 자로서, 회사의 정보를 지속적으로 제공받으며, 회사가 제공하는 서비스를 계속적으로 이용할 수 있는 자를 말합니다.</p>
-            <p><strong>제3조 (약관의 명시와 개정)</strong> 회사는 이 약관의 내용을 회원이 쉽게 알 수 있도록 서비스 초기 화면에 게시합니다. 회사는 관련 법령을 위배하지 않는 범위에서 이 약관을 개정할 수 있습니다.</p>
-            <p>...</p>
         </div>
-        <div class="modal-buttons">
+        <div class="modal-buttons mt-3 text-right">
             <button id="modal-close" class="btn btn-success">확인</button>
         </div>
     </div>
 </div>
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+    const roleRadios = document.querySelectorAll('input[name="role"]');
+    const farmerFields = document.getElementById('farmer-fields');
+
+    function toggleFarmerFields() {
+        const selectedRole = document.querySelector('input[name="role"]:checked').value;
+        farmerFields.style.display = (selectedRole === 'farmer') ? 'block' : 'none';
+    }
+
+    roleRadios.forEach(radio => radio.addEventListener('change', toggleFarmerFields));
+    toggleFarmerFields();
+
+    const togglePasswordBtn = document.getElementById('toggle-password-btn');
+    const passwordInput = document.getElementById('password');
+    if(togglePasswordBtn) {
+        togglePasswordBtn.addEventListener('click', function() {
+            const isPassword = passwordInput.type === 'password';
+            passwordInput.type = isPassword ? 'text' : 'password';
+            this.querySelector('i').className = isPassword ? 'fa-solid fa-eye text-primary' : 'fa-solid fa-eye-slash text-muted';
+        });
+    }
+    const sendAuthBtn = document.getElementById('send-auth-btn');
+    const resendAuthBtn = document.getElementById('resend-auth-btn');
+    const verifyAuthBtn = document.getElementById('verify-auth-btn');
+    const authCodeInput = document.getElementById('auth-code');
+    const phoneVerifiedInput = document.getElementById('phone_verified');
+
+    let isAuthCodeSent = false;
+    const phoneInput = document.getElementById('phone');
+    if (phoneInput) {
+        phoneInput.addEventListener('input', function() {
+            isAuthCodeSent = false;
+            phoneVerifiedInput.value = 'false';
+            authCodeInput.disabled = false;
+            verifyAuthBtn.disabled = false;
+            verifyAuthBtn.textContent = '확인';
+        });
+    }
+    function sendMockAuthCode() {
+        const phoneVal = phoneInput.value.trim();
+        if(!phoneVal) {
+            alert('휴대폰 번호를 입력해주세요.');
+            phoneInput.focus();
+            return;
+        }
+        isAuthCodeSent = true;
+        alert('인증번호를 전송했습니다.');
+    }
+
+    const checkEmailBtn = document.getElementById('check-email-btn');
+    const emailInput = document.getElementById('email');
+    const emailVerifiedInput = document.getElementById('email_verified');
+
+    if (emailInput) {
+        emailInput.addEventListener('input', function() {
+            emailVerifiedInput.value = 'false';
+        });
+    }
+
+    if (checkEmailBtn) {
+        checkEmailBtn.addEventListener('click', function() {
+            const emailInput = document.getElementById('email');
+            const emailVal = emailInput.value.trim();
+            if (!emailVal) {
+                alert('이메일을 입력해 주세요.');
+                emailInput.focus();
+                return;
+            }
+
+            fetch('{{ url_for("check_email") }}', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: emailVal })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.exists) {
+                    alert('이미 가입된 이메일입니다. 다른 이메일을 사용해 주세요.');
+                    emailVerifiedInput.value = 'false';
+                } else {
+                    alert('사용 가능한 이메일입니다!');
+                    emailVerifiedInput.value = 'true';
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                alert('중복 확인 중 오류가 발생했습니다.');
+            });
+        });
+    }
+
+    if(sendAuthBtn) sendAuthBtn.addEventListener('click', sendMockAuthCode);
+    if(resendAuthBtn) resendAuthBtn.addEventListener('click', sendMockAuthCode);
+
+    if(verifyAuthBtn) {
+        verifyAuthBtn.addEventListener('click', function() {
+            if (!isAuthCodeSent) {
+                alert('먼저 인증번호 전송 버튼을 눌러주세요.');
+                return;
+            }
+            
+            const code = authCodeInput.value.trim();
+            if(code === '11') {
+                alert('본인인증이 완료되었습니다.');
+                phoneVerifiedInput.value = 'true';
+                authCodeInput.disabled = true;
+                verifyAuthBtn.disabled = true;
+                verifyAuthBtn.textContent = '완료';
+            } else {
+                alert('인증번호가 올바르지 않습니다. (테스트용 번호: 11)');
+            }
+        });
+    }
+
+    // 4. 전체 약관 동의 토글
+    const checkAll = document.getElementById('check-all-terms');
+    const subChecks = document.querySelectorAll('.sub-term-check');
+
+    if(checkAll) {
+        checkAll.addEventListener('change', function() {
+            subChecks.forEach(cb => cb.checked = this.checked);
+        });
+
+        subChecks.forEach(cb => {
+            cb.addEventListener('change', function() {
+                const allChecked = Array.from(subChecks).every(sub => sub.checked);
+                checkAll.checked = allChecked;
+            });
+        });
+    }
+
+    const viewTermsLink = document.getElementById('view-terms-link');
+    const termsModal = document.getElementById('terms-modal');
+    const modalClose = document.getElementById('modal-close');
+
+    if(viewTermsLink) {
+        viewTermsLink.addEventListener('click', function(e) {
+            e.preventDefault();
+            termsModal.style.display = 'flex';
+        });
+    }
+    if(modalClose) {
+        modalClose.addEventListener('click', function() {
+            termsModal.style.display = 'none';
+        });
+    }
+
+    const registerForm = document.getElementById('register-form');
+    if (registerForm) {
+        registerForm.addEventListener('submit', function(e) {
+
+            const emailVerified = document.getElementById('email_verified').value;
+            if (emailVerified !== 'true') {
+                e.preventDefault();
+                alert('이메일 중복확인을 완료해 주세요.');
+                document.getElementById('email').focus();
+                return;
+            }
+
+            const requiredTerms = document.querySelectorAll('.sub-term-check[required]');
+            for (let check of requiredTerms) {
+                if (!check.checked) {
+                    e.preventDefault();
+                    alert('필수 이용약관 및 항목에 동의해 주세요.');
+                    check.focus();
+                    return;
+                }
+            }
+
+            const phoneVerified = document.getElementById('phone_verified').value;
+            if (phoneVerified !== 'true') {
+                e.preventDefault();
+                alert('휴대폰 본인인증을 완료해 주세요. (인증번호 11 입력 후 확인)');
+                document.getElementById('auth-code').focus();
+                return;
+            }
+        });
+    }
+});
+</script>
 {% endblock %}

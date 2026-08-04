@@ -43,8 +43,20 @@
             <form id="info-form" method="POST" action="{{ url_for('my_info') }}">
                 <fieldset id="info-fieldset" disabled>
                     <div class="db-info-row">
+                        <span class="db-info-label">닉네임</span>
+                        <input type="text" name="nickname" class="db-info-input" value="{{ user.nickname }}" required>
+                    </div>
+                    <div class="db-info-row">
                         <span class="db-info-label">이름</span>
                         <input type="text" name="name" class="db-info-input" value="{{ user.name }}">
+                    </div>
+                    <div class="db-info-row">
+                        <span class="db-info-label">생년월일</span>
+                        <input type="text" class="db-info-input text-muted" value="{{ user.birthdate or '미등록' }}" disabled tabindex="-1">
+                    </div>
+                    <div class="db-info-row">
+                        <span class="db-info-label">성별</span>
+                        <input type="text" class="db-info-input text-muted" value="{% if user.gender == 'male' %}남자{% elif user.gender == 'female' %}여자{% else %}미선택{% endif %}" disabled tabindex="-1">
                     </div>
                     <div class="db-info-row">
                         <span class="db-info-label">이메일</span>
@@ -62,6 +74,10 @@
                     <div class="db-info-row">
                         <span class="db-info-label">농장 규모 (평)</span>
                         <input type="text" name="farm_size" class="db-info-input" value="{{ user.farm_size or '' }}">
+                    </div>
+                    <div class="db-info-row">
+                        <span class="db-info-label">한 줄 소개</span>
+                        <input type="text" name="profile_bio" class="db-info-input" value="{{ user.profile_bio or '' }}">
                     </div>
                     {% endif %}
                     <div id="form-buttons" style="display:none; margin-top:0.75rem;">

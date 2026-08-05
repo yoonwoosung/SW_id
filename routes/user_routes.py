@@ -29,6 +29,7 @@ from common.response import success_response
 from common.auth import api_login_required
 from services.trend_service import recent_viewed_experiences
 from services.point_service import get_point_summary
+from services import activity_service
 
 
 def recent_views():
@@ -159,7 +160,10 @@ def mypage():
         return redirect(url_for('login_page'))
     user = User.query.get_or_404(session['user_id'])
     applications = Application.query.filter_by(user_id=user.id).order_by(Application.apply_date.desc()).all()
-    return render_template('mypage.html', user=user, applications=applications)
+    reservation_cards = activity_service.reservation_cards(applications)
+    experienced_count = activity_service.experienced_count(applications)
+    return render_template('mypage.html', user=user, applications=applications,
+                           reservation_cards=reservation_cards, experienced_count=experienced_count)
 
 
 def album_create():

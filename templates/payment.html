@@ -5,62 +5,106 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>간편결제</title>
     <style>
-        :root { --green:#2D5A1B; --orange:#E8960C; }
+        :root { --green:#1d6340; --orange:#E8960C; --cream:#faf8f3; }
         * { box-sizing: border-box; }
-        body { margin:0; font-family:'Noto Sans KR',sans-serif; background:#faf8f3;
-               display:flex; align-items:center; justify-content:center; min-height:100vh; padding:20px; }
-        .pay-card { background:#fff; border-radius:16px; box-shadow:0 4px 24px rgba(0,0,0,0.1);
-                    width:100%; max-width:360px; padding:28px 24px; text-align:center; }
-        .pay-brand { font-size:1.1rem; font-weight:800; color:var(--green); margin-bottom:4px; }
-        .pay-sub { font-size:0.82rem; color:#8a938c; margin-bottom:20px; }
-        .pay-item { font-size:0.9rem; color:#555; margin-bottom:6px; }
-        .pay-amount { font-size:2rem; font-weight:800; color:var(--orange); margin:4px 0 22px; }
-        .pay-btn { width:100%; border:none; border-radius:12px; padding:14px; font-size:1.05rem;
-                   font-weight:700; color:#fff; background:var(--green); cursor:pointer; }
-        .pay-btn:disabled { opacity:0.6; cursor:default; }
-        .pay-done { color:var(--green); font-weight:700; font-size:1.1rem; margin-top:10px; display:none; }
+        body { margin:0; font-family:'Noto Sans KR',sans-serif; background:var(--cream); padding:0; color:#253027; }
+        .pay-wrap { max-width:440px; margin:0 auto; min-height:100vh; display:flex; flex-direction:column; }
+        .pay-head { display:flex; align-items:center; justify-content:space-between; padding:16px 18px; }
+        .pay-head h1 { font-size:1.15rem; font-weight:800; margin:0; color:var(--green); }
+        .pay-close { border:none; background:none; font-size:1.3rem; color:#8a938c; cursor:pointer; line-height:1; text-decoration:none; }
+        .pay-body { flex:1; padding:4px 18px 18px; }
+        .pay-sec { background:#fff; border:1px solid #eef1ee; border-radius:14px; padding:16px; margin-bottom:14px; }
+        .pay-sec__title { font-size:.8rem; font-weight:800; color:#8a938c; margin:0 0 10px; }
+        .pay-row { display:flex; justify-content:space-between; gap:12px; font-size:.92rem; margin:7px 0; }
+        .pay-row .lbl { color:#6a746d; }
+        .pay-row .val { color:#253027; font-weight:600; text-align:right; }
+        .pay-exp-name { font-size:1.05rem; font-weight:800; margin:0 0 10px; }
+        .pay-amount-row { display:flex; justify-content:space-between; align-items:baseline; margin-top:8px; padding-top:12px; border-top:1px solid #f0f0f0; }
+        .pay-amount-row .lbl { font-weight:800; }
+        .pay-amount { font-size:1.7rem; font-weight:800; color:var(--orange); }
+        .pay-methods { display:flex; gap:10px; }
+        .pay-method { flex:1; border:1.5px solid #dbe5dd; border-radius:11px; padding:12px; cursor:pointer;
+                      font-weight:700; font-size:.9rem; text-align:center; color:#45514a; }
+        .pay-method input { display:none; }
+        .pay-method.is-active { border-color:var(--green); background:#eef5f0; color:var(--green); }
+        .pay-foot { padding:14px 18px 22px; }
+        .pay-btn { width:100%; border:none; border-radius:12px; padding:15px; font-size:1.05rem;
+                   font-weight:800; color:#fff; background:var(--green); cursor:pointer; }
+        .pay-btn:disabled { opacity:.6; cursor:default; }
+        .pay-guide { text-align:center; font-size:.8rem; color:#9aa39c; margin:12px 0 0; }
     </style>
 </head>
 <body>
-    <div class="pay-card">
-        <div class="pay-brand">🌿 FarmLink 간편결제</div>
-        <div class="pay-sub">체험 예약 결제</div>
-        <div class="pay-item">{{ experience.crop }} 수확 체험 · {{ application.participants_count }}명</div>
-        <div class="pay-amount">{{ "{:,}".format(amount) }}원</div>
-        <button type="button" id="pay-btn" class="pay-btn">결제하기</button>
-        <div id="pay-done" class="pay-done">✓ 결제가 완료되었습니다</div>
+<div class="pay-wrap">
+    <div class="pay-head">
+        <h1>결제</h1>
+        <a class="pay-close" href="{{ url_for('experience_detail', item_id=experience.id) }}" aria-label="닫기">&times;</a>
     </div>
 
-    <script id="pay-data" type="application/json">{{ {'application_id': application.id}|tojson|safe }}</script>
-    <script>
-    (function () {
-        var DATA = JSON.parse(document.getElementById('pay-data').textContent);
-        var btn = document.getElementById('pay-btn');
-        btn.addEventListener('click', function () {
-            btn.disabled = true;
-            btn.textContent = '결제 중…';
-            fetch('/api/payments', {
-                method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ application_id: DATA.application_id })
-            }).then(function (r) { return r.json(); }).then(function (res) {
-                if (res.success) {
-                    btn.style.display = 'none';
-                    document.getElementById('pay-done').style.display = 'block';
-                    // 부모 창(신청완료 화면) 새로고침 후 창 닫기
-                    if (window.opener && !window.opener.closed) { try { window.opener.location.reload(); } catch (e) {} }
-                    setTimeout(function () { window.close(); }, 1200);
-                } else {
-                    btn.disabled = false;
-                    btn.textContent = '결제하기';
-                    alert((res.error && res.error.message) || '결제에 실패했습니다.');
-                }
-            }).catch(function () {
-                btn.disabled = false;
-                btn.textContent = '결제하기';
-                alert('결제 중 오류가 발생했습니다.');
-            });
+    <div class="pay-body">
+        <div class="pay-sec">
+            <p class="pay-sec__title">예약 정보</p>
+            <p class="pay-exp-name">{{ experience.crop }} 체험</p>
+            <div class="pay-row"><span class="lbl">날짜·시간</span><span class="val">{{ application.apply_date }} {{ application.apply_time }}</span></div>
+            <div class="pay-row"><span class="lbl">인원</span><span class="val">{{ application.participants_count }}명</span></div>
+            <div class="pay-row"><span class="lbl">장소</span><span class="val">{{ experience.address_detail or experience.location or '농장 현장' }}</span></div>
+        </div>
+
+        <div class="pay-sec">
+            <p class="pay-sec__title">결제 금액</p>
+            <div class="pay-row"><span class="lbl">체험비 ({{ "{:,}".format(experience.cost or 0) }}원 × {{ application.participants_count }}명)</span><span class="val">{{ "{:,}".format(amount) }}원</span></div>
+            <div class="pay-amount-row"><span class="lbl">최종 결제 금액</span><span class="pay-amount">{{ "{:,}".format(amount) }}원</span></div>
+        </div>
+
+        <div class="pay-sec">
+            <p class="pay-sec__title">결제 수단</p>
+            <div class="pay-methods">
+                <label class="pay-method is-active"><input type="radio" name="pay-method" value="easy" checked>🌿 간편결제</label>
+                <label class="pay-method"><input type="radio" name="pay-method" value="card">💳 신용·체크카드</label>
+            </div>
+        </div>
+    </div>
+
+    <div class="pay-foot">
+        <button type="button" id="pay-btn" class="pay-btn">{{ "{:,}".format(amount) }}원 결제하기</button>
+        <p class="pay-guide">결제를 마치면 예약이 확정되고 완료 화면으로 이동해요.</p>
+    </div>
+</div>
+
+<script id="pay-data" type="application/json">{{ {'application_id': application.id}|tojson|safe }}</script>
+<script>
+(function () {
+    var DATA = JSON.parse(document.getElementById('pay-data').textContent);
+    var btn = document.getElementById('pay-btn');
+
+    document.querySelectorAll('.pay-method').forEach(function (m) {
+        m.addEventListener('click', function () {
+            document.querySelectorAll('.pay-method').forEach(function (x) { x.classList.remove('is-active'); });
+            m.classList.add('is-active');
         });
-    })();
-    </script>
+    });
+
+    btn.addEventListener('click', function () {
+        btn.disabled = true;
+        btn.textContent = '결제 중…';
+        fetch('/api/payments', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ application_id: DATA.application_id })
+        }).then(function (r) { return r.json(); }).then(function (res) {
+            if (res.success && res.data && res.data.redirect) {
+                window.location.href = res.data.redirect;   // 결제 성공 → 완료 화면
+            } else {
+                btn.disabled = false;
+                btn.textContent = '다시 결제하기';
+                alert((res.error && res.error.message) || '결제에 실패했습니다.');
+            }
+        }).catch(function () {
+            btn.disabled = false;
+            btn.textContent = '다시 결제하기';
+            alert('결제 중 오류가 발생했습니다.');
+        });
+    });
+})();
+</script>
 </body>
 </html>

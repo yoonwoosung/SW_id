@@ -2,9 +2,9 @@
    상세조건 아코디언 드롭박스 + 맞춤 코스 카드. FarmLink 기존 토큰(:root의 --green-*, --orange) 재사용.
    모바일 1순위(PWA). 데스크톱은 미디어쿼리로 확장. */
 
-.ai-rec-wrap { max-width: 760px; margin: 0 auto; padding: 16px 14px 40px; }
+.ai-rec-wrap { max-width: 820px; margin: 0 auto; padding: 18px 16px 48px; }
 
-.ai-rec-head h1 { font-size: 1.35rem; font-weight: 800; color: var(--green-dark); margin: 0 0 4px; }
+.ai-rec-head h1 { font-size: 1.4rem; font-weight: 800; color: var(--green-dark); margin: 0 0 4px; }
 .ai-rec-head p { color: #77807a; font-size: 0.9rem; margin: 0; }
 
 /* ---- 공통 패널(카드) ---- */
@@ -28,28 +28,32 @@
 .fl-chip__x { cursor: pointer; border: none; background: none; color: var(--green-dark); font-size: 1rem; line-height: 1; padding: 0; }
 .fl-chip__x:hover { color: #b33; }
 
-/* ---- 대분류 가로 탭 ---- */
-.fl-tabbar {
-    display: flex; flex-wrap: wrap; gap: 6px; padding: 8px 0 10px;
-    border-bottom: 1px solid #eef1ee; margin-bottom: 10px;
+/* ---- 필터: 세로 탭(왼쪽) + 세부 패널(오른쪽) 2단 ---- */
+.fl-filter { display: flex; gap: 12px; align-items: flex-start; }
+
+/* 세로 탭바 */
+.fl-tabbar--vertical {
+    flex: 0 0 104px; display: flex; flex-direction: column; gap: 2px;
+    border-right: 1px solid #eef1ee; padding-right: 8px;
 }
-.fl-tab {
-    flex: 0 0 auto; display: inline-flex; align-items: center; gap: 5px;
-    border: 1px solid #dbe5dd; background: #fff; color: #45514a;
-    border-radius: 999px; padding: 8px 14px; font-size: 0.88rem; font-weight: 700; cursor: pointer;
-    white-space: nowrap; transition: background 0.15s, color 0.15s, border-color 0.15s;
+.fl-tabbar--vertical .fl-tab {
+    display: flex; align-items: center; justify-content: space-between; gap: 5px;
+    width: 100%; text-align: left; border: none; background: none; color: #55605a;
+    border-radius: 8px; padding: 9px 10px; font-size: 0.9rem; font-weight: 700; cursor: pointer;
+    border-left: 3px solid transparent; transition: background 0.15s, color 0.15s;
 }
-.fl-tab:hover { border-color: var(--green-mid, #4CAF50); }
-.fl-tab.is-active { background: var(--green-dark, #2D5A1B); color: #fff; border-color: var(--green-dark, #2D5A1B); }
+.fl-tabbar--vertical .fl-tab:hover { background: #f4f7f3; }
+.fl-tabbar--vertical .fl-tab.is-active {
+    background: #eef5f0; color: var(--green-dark, #1d6340); border-left-color: var(--green-dark, #1d6340);
+}
 .fl-tab__count {
-    font-size: 0.68rem; font-weight: 800; color: var(--green-dark, #2D5A1B);
-    background: #fff; border-radius: 999px; padding: 0 6px; min-width: 16px; text-align: center;
+    font-size: 0.66rem; font-weight: 800; color: #fff;
+    background: var(--green-dark, #1d6340); border-radius: 999px; padding: 1px 6px; min-width: 16px; text-align: center;
 }
-.fl-tab.is-active .fl-tab__count { color: var(--green-dark, #2D5A1B); background: #fff; }
 
 /* ---- 세부항목: 같은 크기 체크박스 그리드 ---- */
 /* 세부 영역은 높이를 제한해 내부에서만 스크롤(페이지가 길어지지 않게) */
-.fl-panel-body { max-height: 240px; overflow-y: auto; padding-right: 4px; }
+.fl-panel-body { flex: 1 1 auto; min-width: 0; max-height: 300px; overflow-y: auto; padding-right: 4px; }
 .fl-catpanel[hidden] { display: none; }
 .fl-grid {
     display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr));
@@ -64,14 +68,26 @@
 .fl-cell input { accent-color: var(--green-mid, #4CAF50); width: 14px; height: 14px; flex-shrink: 0; }
 .fl-cell:has(input:checked) { background: var(--green-light, #E8F5E9); border-color: var(--green-mid, #4CAF50); color: var(--green-dark, #2D5A1B); font-weight: 700; }
 
-/* 탭 안의 중첩 묶음(지역>도, 반려견>몸무게, 인원>인원수 등) */
-.fl-subgroup { margin: 8px 0 4px; }
-.fl-subgroup__title { font-size: 0.82rem; font-weight: 700; color: #6a746d; margin: 0 0 6px; }
-/* 중분류 '전체' 부모 체크박스 — 한 줄 전체 폭, 굵게 */
-.fl-cell--parent {
-    width: 100%; margin: 0 0 6px; font-weight: 700; color: var(--green-dark, #2D5A1B);
-    background: #f3f8f4; border-color: #d3e3d7;
+/* 탭 안의 중첩 묶음(지역>도, 반려견>몸무게, 인원>인원수 등) = 가로 아코디언 */
+.fl-subgroup { margin: 0; }
+.fl-acc { border-bottom: 1px solid #f0f2ef; }
+.fl-acc__head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.fl-acc__toggle-btn {
+    flex: 1 1 auto; display: flex; align-items: center; gap: 8px;
+    border: none; background: none; cursor: pointer;
+    padding: 10px 4px; font-size: 0.9rem; font-weight: 700; color: #37413a; text-align: left;
 }
+.fl-acc__caret { font-size: 0.72rem; color: #9aa39c; transition: transform 0.15s; }
+.fl-acc__toggle-btn[aria-expanded="true"] .fl-acc__caret { transform: rotate(90deg); color: var(--green-dark, #1d6340); }
+/* 우측 '전체' 부모 체크박스 */
+.fl-acc__check {
+    display: inline-flex; align-items: center; gap: 5px; cursor: pointer;
+    font-size: 0.76rem; font-weight: 700; color: #6a746d; flex-shrink: 0; padding: 4px 2px;
+}
+.fl-acc__check input { accent-color: var(--green-mid, #4CAF50); width: 15px; height: 15px; }
+.fl-acc__check:has(input:checked) { color: var(--green-dark, #1d6340); }
+.fl-acc__body { padding: 2px 0 10px 20px; }
+.fl-acc__body[hidden] { display: none; }
 
 /* 예산대 등 카테고리 주석 */
 .fl-note { font-size: 0.78rem; color: #9aa39c; margin-top: 10px; }
@@ -147,6 +163,61 @@
 
 /* 상태 문구 */
 .fl-empty { color: #8a938c; font-size: 0.9rem; padding: 10px 2px; }
+
+/* ============ 재구성: 검색바 · 단축버튼 · 접힘 상세조건 · 코스 섹션 ============ */
+
+/* ---- 검색바(최상단) ---- */
+.fl-searchbar {
+    display: flex; align-items: center; gap: 10px; margin-top: 14px;
+    background: #fff; border: 1px solid #e2ddd2; border-radius: 12px; padding: 12px 16px;
+    box-shadow: var(--shadow-card, 0 2px 12px rgba(0,0,0,0.05));
+}
+.fl-searchbar i { color: #aab1ab; font-size: 0.95rem; }
+.fl-searchbar input {
+    flex: 1; border: none; outline: none; background: none;
+    font-size: 0.95rem; color: #2c3a32;
+}
+.fl-searchbar input::placeholder { color: #aab1ab; }
+
+/* ---- 인적사항 단축 버튼 2개 ---- */
+.fl-quickbtns { display: flex; gap: 10px; margin-top: 10px; }
+.fl-quickbtn {
+    flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+    background: #eef5f0; border: 1px solid #cfe3d6; color: #1d3d2c;
+    border-radius: 10px; padding: 12px 10px; font-size: 0.9rem; font-weight: 700; cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+}
+.fl-quickbtn:hover { background: #e2efe7; border-color: var(--green-mid, #4CAF50); }
+
+/* ---- 접힘형 상세조건 ---- */
+.fl-collapse { padding: 0; overflow: hidden; }
+.fl-collapse__toggle {
+    width: 100%; display: flex; align-items: center; justify-content: space-between;
+    background: none; border: none; cursor: pointer; padding: 16px;
+    font-size: 1.0rem; font-weight: 700; color: #253027;
+}
+.fl-collapse__toggle .fa-chevron-down { color: #9aa39c; transition: transform 0.15s; font-size: 0.85rem; }
+.fl-collapse__toggle[aria-expanded="true"] .fa-chevron-down { transform: rotate(180deg); }
+.fl-collapse__body { padding: 0 16px 16px; }
+.fl-collapse__body[hidden] { display: none; }
+
+/* ---- 코스 섹션(제목 + 가로 스크롤 카드 행) ---- */
+.fl-sec { margin-top: 18px; }
+.fl-sec[hidden] { display: none; }
+.fl-sec__head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 10px; }
+.fl-sec__title { font-size: 1.06rem; font-weight: 800; color: #1d3d2c; margin: 0; }
+.fl-sec__sub { font-size: 0.78rem; color: #8a9890; }
+.fl-row {
+    display: flex; gap: 14px; overflow-x: auto; padding-bottom: 6px;
+    scroll-snap-type: x proximity; -webkit-overflow-scrolling: touch;
+}
+.fl-row::-webkit-scrollbar { height: 6px; }
+.fl-row::-webkit-scrollbar-thumb { background: #dfe4dd; border-radius: 3px; }
+.fl-row .fl-course-card { flex: 0 0 280px; scroll-snap-align: start; }
+.fl-row .fl-empty { flex: 1; }
+
+/* ESG 등급 배지 */
+.fl-badge--esg { background: var(--green-dark, #1d6340); color: #fff; }
 
 /* ---- 데스크톱 확장 ---- */
 @media (min-width: 720px) {

@@ -109,3 +109,58 @@
 .ed-course-cta:hover { background: #1e3e12; color: #fff; text-decoration: none; }
 .ed-course-cta__title { font-weight: 800; font-size: 1.05rem; }
 .ed-course-cta__sub { font-size: 0.85rem; opacity: 0.85; }
+
+/* ===== Airbnb식 사진 그리드 ===== */
+.ed-photogrid { display: grid; gap: 6px; border-radius: 14px; overflow: hidden; }
+.ed-photogrid--multi { grid-template-columns: 2fr 1fr 1fr; grid-template-rows: 1fr 1fr; height: 300px; }
+.ed-photogrid--single { grid-template-columns: 1fr; height: 300px; }
+.ed-photogrid__main { grid-row: 1 / 3; width: 100%; height: 100%; object-fit: cover; cursor: zoom-in; }
+.ed-photogrid--single .ed-photogrid__main { grid-row: auto; }
+.ed-photogrid__cell { position: relative; overflow: hidden; }
+.ed-photogrid__cell .ed-gallery__thumb { width: 100%; height: 100%; object-fit: cover; cursor: pointer; display: block; }
+.ed-photogrid__more { position: absolute; right: 8px; bottom: 8px; font-size: .72rem; color: #333;
+    background: rgba(255,255,255,.9); border-radius: 6px; padding: 3px 8px; }
+
+/* ESG 칩 */
+.detail-badge.badge-esg { background: #eef7f0; color: #3a8a52; }
+
+/* ===== 예약 카드: 요금 breakdown ===== */
+.ed-book-nocharge { text-align: center; font-size: .78rem; color: #9aa39c; margin: 10px 0; }
+.ed-book-breakdown { border-top: 1px solid #ececec; margin-top: 6px; padding-top: 12px; }
+.ed-book-row { display: flex; justify-content: space-between; font-size: .9rem; color: #444; margin: 6px 0; }
+.ed-book-total { font-weight: 800; color: #222; border-top: 1px solid #ececec; margin-top: 8px; padding-top: 10px; }
+.ed-book-note { font-size: .74rem; color: #a0a89e; margin: 8px 0 0; }
+
+/* ===== 알아두어야 할 사항 (아코디언) ===== */
+.ed-policy-grid { display: flex; flex-direction: column; gap: 10px; }
+.ed-policy { border: 1px solid #ececec; border-radius: 12px; padding: 14px 16px; }
+.ed-policy__head { display: flex; align-items: center; justify-content: space-between; cursor: pointer; list-style: none; }
+.ed-policy__head::-webkit-details-marker { display: none; }
+.ed-policy__title { font-weight: 700; color: #222; font-size: .98rem; }
+.ed-policy__more { font-size: .82rem; color: #1d6340; white-space: nowrap; }
+.ed-policy__more i { transition: transform .15s; }
+.ed-policy[open] .ed-policy__more i { transform: rotate(180deg); }
+.ed-policy__summary { margin: 10px 0 0; font-size: .9rem; color: #555; line-height: 1.6; }
+.ed-policy__details { margin: 10px 0 0; padding-left: 18px; color: #555; font-size: .88rem; line-height: 1.9; }
+.ed-policy:not([open]) .ed-policy__details { display: none; }
+
+/* ===== 주변 맛집·카페·편의점 (개별) ===== */
+.ed-amenities__lead { margin: 0 0 12px; color: #666; font-size: .9rem; }
+.ed-amenities { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; }
+.ed-amenity { display: flex; align-items: center; gap: 11px; border: 1px solid #ececec; border-radius: 12px;
+    padding: 12px 14px; text-decoration: none; color: inherit; transition: border-color .15s, box-shadow .15s; }
+.ed-amenity:hover { border-color: #1d6340; box-shadow: 0 4px 14px rgba(0,0,0,.06); text-decoration: none; }
+.ed-amenity__ico { font-size: 1.3rem; flex-shrink: 0; }
+.ed-amenity__body { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+.ed-amenity__name { font-weight: 700; color: #222; font-size: .92rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ed-amenity__meta { font-size: .8rem; color: #8a9890; margin-top: 2px; }
+.ed-amenity__link { color: #c3ccc5; font-size: .8rem; flex-shrink: 0; }
+
+@media (max-width: 640px) {
+    .ed-photogrid--multi { grid-template-columns: 1fr 1fr; height: 240px; }
+    .ed-photogrid__main { grid-row: 1 / 2; grid-column: 1 / 3; }
+}
+
+/* 찜 버튼: 찜 상태면 하트 채우기(Lucide svg) */
+#ed-wish.is-wished { color: #e24b4a; }
+#ed-wish.is-wished svg { fill: currentColor; }

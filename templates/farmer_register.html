@@ -241,6 +241,49 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
+    // 운영 시간표: 셀에 요일·시각 부여 + 드래그 선택 + hidden 직렬화(예약화면과 동일한 '요일-시각' 형식)
+    const timetable = document.querySelector('.timetable');
+    const timetableHidden = document.getElementById('timetable-data');
+    if (timetable && timetableHidden) {
+        const DAYS = ['월', '화', '수', '목', '금', '토', '일'];
+        timetable.querySelectorAll('tbody tr').forEach(function(tr) {
+            const rowTime = (tr.cells[0].textContent || '').trim().split(' ')[0];  // "09:00 - 10:00" → "09:00"
+            for (let i = 1; i < tr.cells.length; i++) {
+                tr.cells[i].dataset.day = DAYS[i - 1];
+                tr.cells[i].dataset.time = rowTime;
+            }
+        });
+        // 기존값 복원(수정 화면)
+        if (timetableHidden.value) {
+            timetableHidden.value.split(',').forEach(function(sel) {
+                const parts = sel.split('-'), day = parts[0], time = parts[1];
+                const cell = timetable.querySelector('[data-day="' + day + '"][data-time="' + time + '"]');
+                if (cell) cell.classList.add('selected');
+            });
+        }
+        const serialize = function() {
+            const picked = [];
+            timetable.querySelectorAll('.time-slot.selected').forEach(function(c) {
+                picked.push(c.dataset.day + '-' + c.dataset.time);
+            });
+            timetableHidden.value = picked.join(',');
+        };
+        let down = false, mode = 'select';
+        timetable.querySelectorAll('.time-slot').forEach(function(slot) {
+            slot.addEventListener('mousedown', function(e) {
+                e.preventDefault();
+                down = true;
+                mode = this.classList.contains('selected') ? 'deselect' : 'select';
+                this.classList.toggle('selected');
+            });
+            slot.addEventListener('mouseover', function() {
+                if (!down) return;
+                if (mode === 'select') this.classList.add('selected'); else this.classList.remove('selected');
+            });
+        });
+        document.addEventListener('mouseup', function() { if (down) { down = false; serialize(); } });
+    }
+
     // 폼 제출 전 유효성 검사
     form.addEventListener('submit', function(event) {
         if (organicCheckbox.checked && !certInput.value && !certLabel.textContent.includes('.')) {

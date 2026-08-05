@@ -10,12 +10,12 @@
                 <span class="apply-exp-badge">{{ item.crop }} 체험</span>
                 <h2 class="apply-exp-title">{{ item.crop }} 수확 체험 신청</h2>
                 <div class="apply-exp-meta">
-                    <span><i class="fa-solid fa-location-dot"></i> {{ item.address_detail }}</span>
+                    <span><i data-lucide="map-pin"></i> {{ item.address_detail }}</span>
                     {% if item.has_parking %}
-                    <span><i class="fa-solid fa-square-parking"></i> 주차 가능</span>
+                    <span><i data-lucide="square-parking"></i> 주차 가능</span>
                     {% endif %}
                     {% if item.pesticide_free %}
-                    <span><i class="fa-solid fa-leaf"></i> 친환경 농장</span>
+                    <span><i data-lucide="leaf"></i> 친환경 농장</span>
                     {% endif %}
                 </div>
             </div>
@@ -87,7 +87,7 @@
             <div class="apply-form-card">
                 <h3 class="apply-step-title"><span class="apply-step-num">3</span> 체험 날짜 선택</h3>
                 <p class="apply-date-range">
-                    <i class="fa-regular fa-calendar"></i>
+                    <i data-lucide="calendar"></i>
                     체험 가능 기간: {{ item.duration_start.strftime('%Y.%m.%d') }} ~ {{ item.end_date.strftime('%Y.%m.%d') }}
                 </p>
                 <input type="date" id="apply_date" name="apply_date" class="apply-date-input"
@@ -99,7 +99,7 @@
             <div class="apply-form-card">
                 <h3 class="apply-step-title"><span class="apply-step-num">4</span> 체험 시간 선택</h3>
                 <p class="apply-time-guide" id="time-select-guide">
-                    <i class="fa-regular fa-clock"></i> 날짜를 먼저 선택해주세요.
+                    <i data-lucide="clock"></i> 날짜를 먼저 선택해주세요.
                 </p>
                 <div class="time-btn-grid" id="time-btn-grid" style="display:none;"></div>
                 <input type="hidden" id="selected-time" name="apply_time" required>
@@ -114,7 +114,7 @@
     <div class="apply-summary-col">
         <div class="apply-summary-card">
             <div class="apply-summary-exp">
-                <div class="apply-summary-crop-icon">🌱</div>
+                <div class="apply-summary-crop-icon"><i data-lucide="sprout"></i></div>
                 <div>
                     <div class="apply-summary-crop-name">{{ item.crop }} 체험</div>
                     <div class="apply-summary-location">{{ item.location }}</div>
@@ -139,15 +139,15 @@
                 <div class="apply-summary-dt-row" id="summary-time-display"></div>
             </div>
             <div class="apply-summary-spots">
-                <i class="fa-solid fa-user-group"></i>
+                <i data-lucide="users"></i>
                 잔여 {{ item.max_participants - item.current_participants }}석
                 ({{ item.current_participants }}/{{ item.max_participants }}명)
             </div>
             <button type="submit" form="apply-form" class="apply-submit-btn">
-                <i class="fa-solid fa-check-circle"></i> 예약 신청하기
+                <i data-lucide="circle-check"></i> 예약 신청하기
             </button>
             <p class="apply-notice">
-                <i class="fa-solid fa-circle-info"></i>
+                <i data-lucide="info"></i>
                 날짜·시간 선택 후 신청이 완료됩니다.
             </p>
         </div>
@@ -201,7 +201,7 @@ document.getElementById('apply_date').addEventListener('change', function() {
     const val = this.value;
     if (!val) {
         document.getElementById('time-btn-grid').style.display = 'none';
-        document.getElementById('time-select-guide').innerHTML = '<i class="fa-regular fa-clock"></i> 날짜를 먼저 선택해주세요.';
+        document.getElementById('time-select-guide').innerHTML = '<i data-lucide="clock"></i> 날짜를 먼저 선택해주세요.';
         document.getElementById('selected-time').value = '';
         selectedTime = '';
         updateDateTimeDisplay();
@@ -214,7 +214,7 @@ document.getElementById('apply_date').addEventListener('change', function() {
     const availTimes = new Set(slotsByDay[dayName] || []);
 
     document.getElementById('time-select-guide').innerHTML =
-        `<i class="fa-regular fa-calendar-check"></i> <strong>${dayName}요일</strong> 가능한 시간을 선택하세요.`;
+        `<i data-lucide="calendar-check"></i> <strong>${dayName}요일</strong> 가능한 시간을 선택하세요.`;
 
     const grid = document.getElementById('time-btn-grid');
     grid.innerHTML = '';
@@ -252,11 +252,11 @@ function updateDateTimeDisplay() {
     if (dateVal) {
         dtDiv.style.display = 'block';
         document.getElementById('summary-date-display').innerHTML =
-            '<i class="fa-regular fa-calendar"></i> ' + dateVal;
+            '<i data-lucide="calendar"></i> ' + dateVal;
         document.getElementById('summary-time-display').innerHTML =
             selectedTime
-            ? '<i class="fa-regular fa-clock"></i> ' + selectedTime
-            : '<i class="fa-regular fa-clock"></i> 시간 미선택';
+            ? '<i data-lucide="clock"></i> ' + selectedTime
+            : '<i data-lucide="clock"></i> 시간 미선택';
     } else {
         dtDiv.style.display = 'none';
     }

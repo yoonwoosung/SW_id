@@ -7,6 +7,30 @@
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"/>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        /* Lucide 라인 아이콘 공통 테마 (FarmLink 딥그린) — 크기·색은 CSS 변수로 관리 */
+        :root { --fl-icon-size: 1.05em; --fl-icon-color: #1d6340; --fl-icon-stroke: 2; }
+        .lucide { width: var(--fl-icon-size); height: var(--fl-icon-size);
+                  stroke-width: var(--fl-icon-stroke); vertical-align: -0.16em; stroke: currentColor; }
+        /* 단독 아이콘은 딥그린으로(커스텀 세트 느낌). 버튼·유색 배경 안에서는 currentColor로 자연 상속 */
+        .fl-ico { color: var(--fl-icon-color); }
+        i[data-lucide] { display: inline-block; width: var(--fl-icon-size); height: var(--fl-icon-size); }
+    </style>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        // 서버·JS로 렌더된 [data-lucide] 아이콘을 SVG로 치환.
+        window.flIcons = function () { try { if (window.lucide) window.lucide.createIcons(); } catch (e) {} };
+        document.addEventListener('DOMContentLoaded', function () {
+            window.flIcons();
+            // 동적으로 주입된 [data-lucide]도 자동 치환(디바운스). createIcons는 치환 후 data-lucide를 제거해 무한루프 없음.
+            var pending = false;
+            new MutationObserver(function () {
+                if (pending) return;
+                pending = true;
+                requestAnimationFrame(function () { pending = false; window.flIcons(); });
+            }).observe(document.body, { childList: true, subtree: true });
+        });
+    </script>
     {% block head %}{% endblock %}
 </head>
 <body class="{% block page_class %}{% endblock %}">
@@ -23,30 +47,30 @@
             {% if session.get('user_id') %}
             {% if session.get('role') == 'farmer' %}
             <a href="{{ url_for('toggle_view_mode') }}" class="btn-view-mode-toggle">
-                <i class="fa-solid fa-arrows-rotate mr-1"></i>
+                <i data-lucide="refresh-cw" class="mr-1"></i>
                 {% if session.get('view_mode') == 'easy' %}상세모드 변환{% else %}이지모드 변환{% endif %}
             </a>
             <a href="{{ url_for('detailed_farmer_dashboard') }}" class="btn-view-mode-toggle">
-                <i class="fa-solid fa-chart-line"></i> 농장 대시보드
+                <i data-lucide="trending-up"></i> 농장 대시보드
             </a>
             {% endif %}
             <div class="user-chip">
-                <i class="fa-solid fa-circle-user user-chip-icon"></i>
+                <i data-lucide="circle-user-round" class="user-chip-icon"></i>
                 <span>{{ session.get('nickname') }}님</span>
-                <i class="fa-solid fa-chevron-down" style="font-size:0.7rem;"></i>
+                <i data-lucide="chevron-down" style="font-size:0.7rem;"></i>
                 <div class="user-chip-dropdown">
                     {% if session.get('role') == 'farmer' %}
-                    <a href="{{ url_for('detailed_farmer_dashboard') }}"><i class="fa-solid fa-gauge-high mr-1"></i> 농장주 대시보드</a>
-                    <a href="{{ url_for('farm_manage_page') }}"><i class="fa-solid fa-tractor mr-1"></i> 내 농장 관리</a>
+                    <a href="{{ url_for('detailed_farmer_dashboard') }}"><i data-lucide="gauge" class="mr-1"></i> 농장주 대시보드</a>
+                    <a href="{{ url_for('farm_manage_page') }}"><i data-lucide="tractor" class="mr-1"></i> 내 농장 관리</a>
                     {% else %}
-                    <a href="{{ url_for('my_info') }}"><i class="fa-solid fa-user mr-1"></i> 내 정보</a>
+                    <a href="{{ url_for('my_info') }}"><i data-lucide="user" class="mr-1"></i> 내 정보</a>
                     {% endif %}
-                    <a href="{{ url_for('logout') }}"><i class="fa-solid fa-right-from-bracket mr-1"></i> 로그아웃</a>
+                    <a href="{{ url_for('logout') }}"><i data-lucide="log-out" class="mr-1"></i> 로그아웃</a>
                 </div>
             </div>
             {% else %}
             <a href="{{ url_for('login_page') }}" class="btn-header-login">
-                <i class="fa-solid fa-circle-user"></i> 로그인 <i class="fa-solid fa-chevron-down ml-1" style="font-size:0.7rem;"></i>
+                <i data-lucide="circle-user-round"></i> 로그인 <i data-lucide="chevron-down" class="ml-1" style="font-size:0.7rem;"></i>
             </a>
             {% endif %}
         </div>

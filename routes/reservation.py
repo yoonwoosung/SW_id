@@ -82,9 +82,25 @@ def experience_apply(item_id):
 
         db.session.commit()
 
-        return render_template('apply_complete.html', item=item, name=new_application.applicant_name, application=new_application)
+        # 결제가 완료화면보다 앞: 신청 생성 후 곧바로 결제 화면으로 이동한다.
+        return redirect(url_for('payment_page', app_id=new_application.id))
 
     return render_template('experience_apply.html', item=item)
+
+
+def reservation_complete(app_id):
+    # 결제 완료화면. 결제(결제완료/확정)된 본인 예약만 접근 가능. 아직 결제 전이면 결제화면으로 돌린다.
+    if 'user_id' not in session:
+        flash("로그인이 필요합니다.", "warning")
+        return redirect(url_for('login_page'))
+    application = Application.query.get_or_404(app_id)
+    if application.user_id != session['user_id']:
+        abort(403)
+    if application.status == APPLICATION_STATUS_PENDING:
+        return redirect(url_for('payment_page', app_id=app_id))
+    item = Experience.query.get(application.experience_id)
+    return render_template('apply_complete.html', item=item,
+                           name=application.applicant_name, application=application)
 
 
 def confirm_application(app_id):
@@ -144,5 +160,6 @@ def delete_application(app_id):
 
 def register(app):
     app.add_url_rule('/experience/apply/<int:item_id>', 'experience_apply', experience_apply, methods=['GET', 'POST'])
+    app.add_url_rule('/reservations/<int:app_id>/complete', 'reservation_complete', reservation_complete)
     app.add_url_rule('/application/confirm/<int:app_id>', 'confirm_application', confirm_application, methods=['POST'])
     app.add_url_rule('/application/delete/<int:app_id>', 'delete_application', delete_application, methods=['POST'])

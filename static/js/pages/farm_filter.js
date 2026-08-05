@@ -1,7 +1,8 @@
 /* static/js/pages/farm_filter.js
    재사용 상세조건 필터(바닐라 JS, 의존성 0).
-   ★UI: 대분류 = 탭 / 세부 = 그리드 체크박스 / 중분류(도·묶음)도 체크 가능(체크 시 하위 전체 선택) / 선택 = 칩★
-   상세검색 + 역제안 요청글에서 FarmFilter.mount(el, opts)로 사용.
+   ★UI: 대분류 = 세로 탭(왼쪽) / 중분류(도·묶음) = 가로 아코디언(▶/▼, 초기 전부 접힘)
+        · 아코디언 헤더 우측 체크 = 그 중분류의 소분류 전체 선택 / 소분류 = 그리드 체크박스 / 선택 = 칩★
+   FarmFilter.mount(el, opts)로 상세검색·역제안 등에서 재사용.
 */
 window.FarmFilter = (function () {
     'use strict';
@@ -14,7 +15,7 @@ window.FarmFilter = (function () {
 
     function esc(s) { var d = document.createElement('div'); d.textContent = (s == null ? '' : String(s)); return d.innerHTML; }
 
-    // 잎은 그리드 체크박스, 중분류(children 있음)는 '전체' 부모 체크박스 + 재귀 하위.
+    // 잎은 그리드 체크박스, 중분류(children 있음)는 가로 아코디언(헤더 토글 + 우측 '전체' 부모 체크박스 + 재귀 하위).
     function renderPanelNodes(nodes, topCode) {
         var leaves = nodes.filter(function (n) { return !(n.children && n.children.length); });
         var groups = nodes.filter(function (n) { return n.children && n.children.length; });
@@ -26,10 +27,16 @@ window.FarmFilter = (function () {
             }).join('') + '</div>';
         }
         groups.forEach(function (g) {
-            html += '<div class="fl-subgroup">'
-                + '<label class="fl-cell fl-cell--parent"><input type="checkbox" class="fl-parent" data-cat="' + esc(topCode) + '" value="' + esc(g.code) + '">'
-                + '<span>' + esc(g.label) + ' 전체</span></label>'
-                + renderPanelNodes(g.children, topCode) + '</div>';
+            html += '<div class="fl-subgroup fl-acc">'
+                + '<div class="fl-acc__head">'
+                + '<button type="button" class="fl-acc__toggle-btn" aria-expanded="false">'
+                + '<i class="fa-solid fa-chevron-right fl-acc__caret" aria-hidden="true"></i>'
+                + '<span>' + esc(g.label) + '</span></button>'
+                + '<label class="fl-acc__check" title="' + esc(g.label) + ' 전체 선택">'
+                + '<input type="checkbox" class="fl-parent" data-cat="' + esc(topCode) + '" value="' + esc(g.code) + '"><span>전체</span></label>'
+                + '</div>'
+                + '<div class="fl-acc__body" hidden>' + renderPanelNodes(g.children, topCode) + '</div>'
+                + '</div>';
         });
         return html;
     }
@@ -42,7 +49,7 @@ window.FarmFilter = (function () {
         function hasCheckedAncestor(input) {
             var group = input.closest('.fl-subgroup');
             while (group) {
-                var parent = group.querySelector(':scope > .fl-cell--parent > .fl-parent');
+                var parent = group.querySelector(':scope > .fl-acc__head .fl-parent');
                 if (parent && parent !== input && parent.checked) return true;
                 var up = group.parentElement;
                 group = up ? up.closest('.fl-subgroup') : null;
@@ -69,7 +76,12 @@ window.FarmFilter = (function () {
         function refresh() {
             var checked = effectiveChecked();
             chipsEl.innerHTML = checked.map(function (cb) {
-                var label = cb.parentNode.querySelector('span').textContent;
+                var label = cb.closest('label').querySelector('span').textContent;
+                // 아코디언 '전체'(fl-parent) 칩은 중분류 이름으로 표시.
+                if (cb.classList.contains('fl-parent')) {
+                    var head = cb.closest('.fl-subgroup').querySelector('.fl-acc__toggle-btn span');
+                    if (head) label = head.textContent;
+                }
                 return '<span class="fl-chip" data-cat="' + esc(cb.dataset.cat) + '" data-value="' + esc(cb.value) + '">'
                     + esc(label) + '<button type="button" class="fl-chip__x" aria-label="' + esc(label) + ' 제거">&times;</button></span>';
             }).join('');
@@ -98,12 +110,20 @@ window.FarmFilter = (function () {
             root.querySelectorAll('.fl-catpanel').forEach(function (p) { p.hidden = p.dataset.catpanel !== code; });
         }
 
+        function toggleAcc(btn) {
+            var body = btn.closest('.fl-acc').querySelector(':scope > .fl-acc__body');
+            var open = btn.getAttribute('aria-expanded') === 'true';
+            btn.setAttribute('aria-expanded', String(!open));
+            if (body) body.hidden = open;
+        }
+
         function renderTree(tree) {
             root.innerHTML =
                 '<div class="fl-chips" data-role="chips" aria-live="polite"></div>'
-                + '<div class="fl-tabbar" role="tablist">' + tree.map(function (c, i) {
+                + '<div class="fl-filter">'
+                + '<div class="fl-tabbar fl-tabbar--vertical" role="tablist">' + tree.map(function (c, i) {
                     return '<button type="button" class="fl-tab' + (i === 0 ? ' is-active' : '') + '" data-cat="' + esc(c.code) + '">'
-                        + esc(c.label) + '<span class="fl-tab__count" hidden>0</span></button>';
+                        + '<span class="fl-tab__label">' + esc(c.label) + '</span><span class="fl-tab__count" hidden>0</span></button>';
                 }).join('') + '</div>'
                 + '<div class="fl-panel-body">' + tree.map(function (c, i) {
                     return '<div class="fl-catpanel" data-catpanel="' + esc(c.code) + '"' + (i === 0 ? '' : ' hidden') + '>'
@@ -111,6 +131,7 @@ window.FarmFilter = (function () {
                         + (c.note ? '<div class="fl-note">' + esc(c.note) + '</div>' : '')
                         + '</div>';
                 }).join('') + '</div>'
+                + '</div>'
                 + '<div class="fl-actions">'
                 + '<button type="button" class="fl-btn fl-btn--ghost" data-role="reset">초기화</button>'
                 + '<button type="button" class="fl-btn fl-btn--primary" data-role="apply">이 조건으로 추천받기</button>'
@@ -123,6 +144,8 @@ window.FarmFilter = (function () {
             root.addEventListener('click', function (e) {
                 var tab = e.target.closest('.fl-tab');
                 if (tab && root.contains(tab)) { showTab(tab.dataset.cat); return; }
+                var acc = e.target.closest('.fl-acc__toggle-btn');
+                if (acc && root.contains(acc)) { toggleAcc(acc); return; }
                 var x = e.target.closest('.fl-chip__x');
                 if (x) {
                     var chip = x.closest('.fl-chip');
@@ -141,7 +164,7 @@ window.FarmFilter = (function () {
             });
             root.addEventListener('change', function (e) {
                 if (!e.target.matches('input[type=checkbox]')) return;
-                if (e.target.classList.contains('fl-parent')) {   // 중분류 체크 → 하위 전체 선택/해제
+                if (e.target.classList.contains('fl-parent')) {   // 중분류 '전체' 체크 → 하위 소분류 전체 선택/해제
                     e.target.closest('.fl-subgroup').querySelectorAll('input[type=checkbox]').forEach(function (cb) {
                         cb.checked = e.target.checked; cb.indeterminate = false;
                     });

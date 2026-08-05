@@ -24,6 +24,7 @@ from services.recommend_service import matches_specialty, score_components, calc
 from services.recommend_reason import recommendation_reason
 from services.review_service import analyze_review_with_clova
 from services.trend_service import record_click
+from services import policy_service
 from common.search_categories import SEARCH_CATEGORIES, CATEGORY_CODES, CATEGORY_GROUPS
 from common.response import success_response
 from external.kakao_map import get_coords_from_address
@@ -183,7 +184,10 @@ def experience_detail(item_id):
     reviews = Review.query.filter_by(experience_id=item_id).order_by(Review.timestamp.desc()).all()
     inquiries = Inquiry.query.filter_by(experience_id=item_id).order_by(Inquiry.timestamp.desc()).all()
     item_data_for_js = {'lat': item.lat, 'lng': item.lng}
-    return render_template('detail_experience.html', item=item, item_data_for_js=item_data_for_js, reviews=reviews, inquiries=inquiries, review_status=review_status)
+    booking_policies = policy_service.booking_policies()
+    return render_template('detail_experience.html', item=item, item_data_for_js=item_data_for_js,
+                           reviews=reviews, inquiries=inquiries, review_status=review_status,
+                           booking_policies=booking_policies)
 
 
 def farmer_register(item_id=None):

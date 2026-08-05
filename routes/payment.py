@@ -1,5 +1,5 @@
 # routes/payment.py — 더미 '간편결제' 라우트(팝업 결제 페이지 + 결제 처리 API). 얇게 유지.
-from flask import render_template, request, session, abort
+from flask import render_template, request, session, abort, url_for
 
 from common.response import success_response, error_response
 from common.auth import api_login_required
@@ -34,6 +34,7 @@ def create_payment():
         return error_response("FORBIDDEN", "본인의 예약만 결제할 수 있습니다.", 403)
     if status == 'invalid_state':
         return error_response("ALREADY_PROCESSED", "이미 결제되었거나 결제할 수 없는 예약입니다.", 400)
+    payload['redirect'] = url_for('reservation_complete', app_id=application_id)  # 결제 성공 → 완료화면
     return success_response(payload, status=201)
 
 

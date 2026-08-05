@@ -59,6 +59,7 @@ def personalized_recommendations():
         "id": exp.id, "crop": exp.crop, "address": exp.address_detail, "cost": exp.cost,
         "barrier_free": bool(exp.barrier_free),
         "eco": bool(exp.pesticide_free or exp.organic_certification_type),
+        "esg_grade": compute_esg(exp)["grade"],   # ESG 코스 카드 등급 배지(A~D)용
         "d_day": exp.d_day,
         "distance_km": distance, "score": round(score, 3), "reasons": reasons,
     } for exp, distance, score, reasons in ranked]
@@ -77,6 +78,12 @@ def recommendation_segments():
         "segment_label": segment_service.user_segment_label(user),
         "segments": segment_service.auto_segments(user),
     })
+
+
+def segment_buttons_route():
+    # 인적사항(성별·나이대) 기반 단축 추천 버튼 2개. 프론트는 이 응답으로 버튼을 그린다(하드코딩 금지).
+    user = User.query.get(session['user_id']) if 'user_id' in session else None
+    return success_response({"buttons": segment_service.segment_buttons(user)})
 
 
 def create_click_log():
@@ -102,5 +109,6 @@ def register(app):
     app.add_url_rule('/api/experiences/recommendations', 'recommend_experiences', recommend_experiences)
     app.add_url_rule('/api/recommendations/personalized', 'personalized_recommendations', personalized_recommendations)
     app.add_url_rule('/api/recommendations/segments', 'recommendation_segments', recommendation_segments)
+    app.add_url_rule('/api/recommend/segment-buttons', 'segment_buttons', segment_buttons_route)
     app.add_url_rule('/api/click-logs', 'create_click_log', create_click_log, methods=['POST'])
     app.add_url_rule('/api/trend-keywords', 'trend_keywords', trend_keywords_route)

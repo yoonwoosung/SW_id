@@ -34,7 +34,7 @@
                     <option value="5+">5명+</option>
                 </select>
                 <button type="submit" class="hero-unified-btn">
-                    <i class="fa-solid fa-magnifying-glass"></i> 검색
+                    <i data-lucide="search"></i> 검색
                 </button>
             </form>
         </div>
@@ -54,7 +54,7 @@
     <!-- 이번 주 제철 체험 -->
     <section class="section-block">
         <div class="section-header">
-            <h2 class="section-title"><i class="fa-solid fa-seedling text-success"></i> 이번 주 제철 체험</h2>
+            <h2 class="section-title"><i data-lucide="sprout" class="text-success"></i> 이번 주 제철 체험</h2>
             <div class="d-flex align-items-center gap-12">
                 <div class="sort-pills">
                     <a href="#" onclick="getGpsAndSort(event)"
@@ -64,8 +64,7 @@
                     <a href="{{ url_for('index', sort='reviews', region=request.args.get('region'), crop_query=request.args.get('crop_query')) }}"
                         class="sort-pill {% if sort_by == 'reviews' %}active{% endif %}">리뷰 많은순</a>
                 </div>
-                <a href="{{ url_for('index') }}" class="more-link ml-3">더보기 <i
-                        class="fa-solid fa-chevron-right"></i></a>
+                <a href="{{ url_for('index') }}" class="more-link ml-3">더보기 <i data-lucide="chevron-right"></i></a>
             </div>
         </div>
 
@@ -82,7 +81,7 @@
                         class="exp-card-img">
                     {% else %}
                     <div class="exp-card-img-placeholder">
-                        <i class="fa-solid fa-seedling"></i>
+                        <i data-lucide="sprout"></i>
                     </div>
                     {% endif %}
                     <div class="exp-card-badge-wrap">
@@ -98,17 +97,17 @@
                     </div>
                     {% if sort_by == 'recommended' and item.distance is defined %}
                     <div class="exp-card-dist-badge">
-                        <i class="fa-solid fa-location-dot"></i> {{ "%.1f"|format(item.distance) }}km
+                        <i data-lucide="map-pin"></i> {{ "%.1f"|format(item.distance) }}km
                     </div>
                     {% endif %}
                 </div>
                 <div class="exp-card-body">
                     <div class="exp-card-title">{{ item.crop }} 체험</div>
-                    <div class="exp-card-location"><i class="fa-solid fa-location-dot"></i> {{ item.address_detail }}
+                    <div class="exp-card-location"><i data-lucide="map-pin"></i> {{ item.address_detail }}
                     </div>
                     <div class="exp-card-meta">
-                        <span><i class="fa-solid fa-user-group"></i> 2-4인 추천</span>
-                        <span><i class="fa-regular fa-clock"></i>
+                        <span><i data-lucide="users"></i> 2-4인 추천</span>
+                        <span><i data-lucide="clock"></i>
                             {% if item.d_day >= 0 and item.d_day < 999 %} {% if item.d_day <=3 %} <span
                                 class="text-danger font-weight-bold">D-{{ item.d_day }}</span>
                         {% else %}
@@ -125,7 +124,7 @@
             {% endfor %}
             {% else %}
             <div class="no-items-message" style="grid-column: 1 / -1;">
-                <div class="empty-icon">🌱</div>
+                <div class="empty-icon"><i data-lucide="sprout"></i></div>
                 <p>아직 등록된 체험이 없어요.</p>
                 {% if session.get('role') == 'farmer' %}
                 <small>새로운 농장 체험을 등록하고 첫 손님을 맞이해보세요!</small>
@@ -163,7 +162,7 @@
     <!-- 하단 두 섹션 -->
     <div class="main-card-slider-wrapper">
         <button type="button" class="card-slider-btn prev" id="card-prev-btn" aria-label="이전">
-            <i class="fa-solid fa-chevron-left"></i>
+            <i data-lucide="chevron-left"></i>
         </button>
 
         <div class="card-slider-viewport">
@@ -171,30 +170,30 @@
 
                 <!-- 카드 1: 내 상황에 맞는 체험 찾기 -->
                 <section class="section-block mb-0 section-card slider-card">
-                    <h2 class="section-title mb-3"><i class="fa-solid fa-seedling text-success"></i> 내 상황에 맞는 체험 찾기</h2>
+                    <h2 class="section-title mb-3"><i data-lucide="sprout" class="text-success"></i> 내 상황에 맞는 체험 찾기</h2>
                     <div class="situation-grid">
                         <a href="{{ url_for('index') }}" class="situation-card">
-                            <div class="situation-icon">👨‍👩‍👧</div>
+                            <div class="situation-icon"><i data-lucide="users"></i></div>
                             <div class="situation-label">아이와 함께</div>
                             <div class="situation-sub">가족 맞춤 체험</div>
                         </a>
                         <a href="{{ url_for('index') }}" class="situation-card">
-                            <div class="situation-icon">🐕</div>
+                            <div class="situation-icon"><i data-lucide="dog"></i></div>
                             <div class="situation-label">반려견과 함께</div>
                             <div class="situation-sub">펫 프렌들리</div>
                         </a>
                         <a href="{{ url_for('index') }}" class="situation-card">
-                            <div class="situation-icon">🚗</div>
+                            <div class="situation-icon"><i data-lucide="car"></i></div>
                             <div class="situation-label">당일치기 여행</div>
                             <div class="situation-sub">가볍게 떠나요</div>
                         </a>
                         <a href="{{ url_for('index') }}" class="situation-card">
-                            <div class="situation-icon">🛒</div>
+                            <div class="situation-icon"><i data-lucide="shopping-cart"></i></div>
                             <div class="situation-label">유아차 가능</div>
                             <div class="situation-sub">편하게 다녀요</div>
                         </a>
                         <a href="{{ url_for('index') }}" class="situation-card">
-                            <div class="situation-icon">🏠</div>
+                            <div class="situation-icon"><i data-lucide="home"></i></div>
                             <div class="situation-label">숙박 가능한</div>
                             <div class="situation-sub">1박 2일 힐링</div>
                         </a>
@@ -212,7 +211,7 @@
                         <h2 class="section-title">
                             <span class="ai-badge-label">AI</span> AI가 추천하는 농촌 여행 코스
                         </h2>
-                        <a href="#" class="more-link">코스 더보기 <i class="fa-solid fa-chevron-right"></i></a>
+                        <a href="#" class="more-link">코스 더보기 <i data-lucide="chevron-right"></i></a>
                     </div>
                     <div class="ai-course-inner">
                         <div class="ai-timeline">
@@ -223,7 +222,7 @@
                                     <div class="ai-act-name">딸기 수확 체험</div>
                                     <div class="ai-act-sub">싱싱한 딸기 직접 수확</div>
                                 </div>
-                                <div class="ai-thumb">🍓</div>
+                                <div class="ai-thumb"><i data-lucide="cherry"></i></div>
                             </div>
                             <div class="ai-timeline-item">
                                 <div class="ai-time">12:30</div>
@@ -232,7 +231,7 @@
                                     <div class="ai-act-name">천안 향토 음식</div>
                                     <div class="ai-act-sub">병천 순대국 &amp; 로컬 맛집</div>
                                 </div>
-                                <div class="ai-thumb">🍲</div>
+                                <div class="ai-thumb"><i data-lucide="utensils"></i></div>
                             </div>
                             <div class="ai-timeline-item">
                                 <div class="ai-time">15:00</div>
@@ -241,7 +240,7 @@
                                     <div class="ai-act-name">독립기념관 관람</div>
                                     <div class="ai-act-sub">역사와 자연을 함께</div>
                                 </div>
-                                <div class="ai-thumb">🏛️</div>
+                                <div class="ai-thumb"><i data-lucide="landmark"></i></div>
                             </div>
                             <div class="ai-timeline-item">
                                 <div class="ai-time">17:00</div>
@@ -250,12 +249,12 @@
                                     <div class="ai-act-name">로컬 카페 휴식</div>
                                     <div class="ai-act-sub">아늑한 시골 카페에서 힐링</div>
                                 </div>
-                                <div class="ai-thumb">☕</div>
+                                <div class="ai-thumb"><i data-lucide="coffee"></i></div>
                             </div>
                         </div>
                         <div class="ai-map-placeholder">
                             <div class="ai-map-inner">
-                                <i class="fa-solid fa-map-location-dot"></i>
+                                <i data-lucide="map"></i>
                                 <span>지도 영역</span>
                             </div>
                         </div>
@@ -265,11 +264,11 @@
                 <!-- 카드 3: 추억일지 (my_info의 추억 아카이브 활용) -->
                 <section class="section-block mb-0 section-card slider-card">
                     <div class="section-header">
-                        <h2 class="section-title"><i class="fa-regular fa-images text-success"></i> 추억일지</h2>
+                        <h2 class="section-title"><i data-lucide="images" class="text-success"></i> 추억일지</h2>
                         <div class="archive-btns">
                             <!-- 앨범 만들기 (새 페이지 연결 예정) -->
                             <a href="{{ url_for('album_create') }}" class="btn btn-sm btn-success">
-                                <i class="fa-solid fa-plus"></i> 앨범 만들기
+                                <i data-lucide="plus"></i> 앨범 만들기
                             </a>
                             <button type="button" class="btn btn-sm btn-outline-secondary">SNS 공유</button>
                         </div>
@@ -296,13 +295,13 @@
                         {% if not has_archive.found %}
                         <div class="no-archive-wrapper text-center py-4 w-100" style="grid-column: 1 / -1;">
                             <p class="font-weight-bold mb-1" style="font-size: 0.95rem; color: #333;">
-                                아직 작성된 추억 앨범이 없어요! 🌱
+                                아직 작성된 추억 앨범이 없어요! <i data-lucide="sprout"></i>
                             </p>
                             <p class="text-muted mb-3" style="font-size: 0.82rem;">
                                 다녀온 농촌 체험의 특별한 순간을 앨범으로 기록해 보세요.
                             </p>
                             <a href="{{ url_for('index') }}" class="btn btn-sm btn-outline-success rounded-pill px-3">
-                                <i class="fa-solid fa-calendar-check mr-1"></i> 첫 체험 예약하러 가기
+                                <i data-lucide="calendar-check" class="mr-1"></i> 첫 체험 예약하러 가기
                             </a>
                         </div>
                         {% endif %}
@@ -312,22 +311,22 @@
         </div>
 
         <button type="button" class="card-slider-btn next" id="card-next-btn" aria-label="다음">
-            <i class="fa-solid fa-chevron-right"></i>
+            <i data-lucide="chevron-right"></i>
         </button>
     </div>
 
     <!-- 지역별 추천 -->
     <section class="section-block">
         <div class="section-header">
-            <h2 class="section-title"><i class="fa-solid fa-location-dot text-success"></i> 지역별 추천</h2>
-            <a href="{{ url_for('index') }}" class="more-link">지역 전체보기 <i class="fa-solid fa-chevron-right"></i></a>
+            <h2 class="section-title"><i data-lucide="map-pin" class="text-success"></i> 지역별 추천</h2>
+            <a href="{{ url_for('index') }}" class="more-link">지역 전체보기 <i data-lucide="chevron-right"></i></a>
         </div>
         <div class="region-tabs">
             {% for r in ["천안", "공주", "부여", "논산", "아산"] %}
             <a href="{{ url_for('index', region=r) }}"
                 class="region-tab {% if request.args.get('region') == r %}active{% endif %}">{{ r }}</a>
             {% endfor %}
-            <a href="{{ url_for('index') }}" class="region-tab-more"><i class="fa-solid fa-chevron-right"></i></a>
+            <a href="{{ url_for('index') }}" class="region-tab-more"><i data-lucide="chevron-right"></i></a>
         </div>
     </section>
 

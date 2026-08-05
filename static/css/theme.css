@@ -45,14 +45,14 @@ body {
 .header-farmer .logo .brand-sub { color: var(--fl-orange); }
 
 /* ---- 섹션 ---- */
-.fl-section { margin: var(--fl-s8) 0; }
+.fl-section { margin: var(--fl-s6) 0; }
 .fl-section-head { display:flex; align-items:center; justify-content:space-between; margin-bottom: var(--fl-s4); }
 .fl-section-head h2 { font-size: 1.35rem; font-weight: 800; margin: 0; display:flex; align-items:center; gap: var(--fl-s2); }
 .fl-more { color: var(--fl-text-muted); font-size: .9rem; font-weight: 600; }
 
 /* ---- 카드 ---- */
 .fl-card { background: var(--fl-surface); border:1px solid var(--fl-border); border-radius: var(--fl-radius-lg); box-shadow: var(--fl-shadow-sm); overflow:hidden; }
-.fl-card-body { padding: var(--fl-s5); }
+.fl-card-body { padding: var(--fl-s4); }
 .fl-card--hover { transition: transform .15s ease, box-shadow .15s ease; }
 .fl-card--hover:hover { transform: translateY(-3px); box-shadow: var(--fl-shadow-lg); }
 

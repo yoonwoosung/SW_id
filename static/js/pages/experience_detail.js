@@ -18,7 +18,7 @@
 
     function esc(s) { var d = document.createElement('div'); d.textContent = (s == null ? '' : String(s)); return d.innerHTML; }
     function $(id) { return document.getElementById(id); }
-    var TYPE_EMOJI = { experience: '🌱', restaurant: '🍽️', attraction: '🏛️', cafe: '☕' };
+    var TYPE_ICON = { experience: 'sprout', restaurant: 'utensils', attraction: 'landmark', cafe: 'coffee' };
 
     // ---------- 갤러리 & 라이트박스 ----------
     (function gallery() {
@@ -58,7 +58,6 @@
             var on = wishId != null;
             btn.classList.toggle('is-wished', on);
             btn.querySelector('.ed-wish-label').textContent = on ? '찜함' : '찜하기';
-            btn.querySelector('i').className = (on ? 'fa-solid' : 'fa-regular') + ' fa-heart';
         }
         // 초기 상태: 내 찜 목록에서 이 체험 찾아 wishId 확보(비로그인이면 403 → 무시)
         fetch('/api/wishlists').then(function (r) { return r.json(); }).then(function (res) {
@@ -167,7 +166,7 @@
             if (!similar.length) { el.closest('.section-block').hidden = true; return; }
             el.innerHTML = similar.map(function (x) {
                 return '<a class="ed-similar-card" href="/experience/' + x.id + '">'
-                    + '<div class="ed-similar-card__thumb">🌱</div>'
+                    + '<div class="ed-similar-card__thumb"><i data-lucide="sprout"></i></div>'
                     + '<div class="ed-similar-card__body">'
                     + '<div class="ed-similar-card__title">' + esc(x.crop) + ' 체험</div>'
                     + '<div class="ed-similar-card__loc">' + esc(x.location || '') + '</div>'
@@ -192,7 +191,7 @@
                 var sub = it.type === 'experience' ? '이 체험' : (esc(it.address || '') + (it.distance_km != null ? ' · ' + it.distance_km + 'km' : ''));
                 return '<div class="ai-timeline-item"><div class="ai-time">' + esc(it.time) + '</div><div class="ai-dot"></div>'
                     + '<div class="ai-timeline-body"><div class="ai-act-name">' + esc(it.name || '') + '</div><div class="ai-act-sub">' + sub + '</div></div>'
-                    + '<div class="ai-thumb">' + (TYPE_EMOJI[it.type] || '📍') + '</div></div>';
+                    + '<div class="ai-thumb">' + ('<i data-lucide="' + (TYPE_ICON[it.type] || 'map-pin') + '"></i>') + '</div></div>';
             }).join('');
         }).catch(function () { showEmpty('코스를 불러오는 중 오류가 발생했어요.'); });
     })();
@@ -205,6 +204,8 @@
         fetch('/api/experiences/' + DATA.id + '/esg').then(function (r) { return r.json(); }).then(function (res) {
             if (!res.success || !res.data) { esgEl.textContent = 'ESG 점수를 불러올 수 없습니다.'; return; }
             var d = res.data, c = GRADE_COLOR[d.grade] || '#999';
+            var chip = $('ed-esg-chip');   // 상단 칩에 ESG 등급 표시
+            if (chip) { chip.innerHTML = '<i data-lucide="leaf"></i> ESG ' + esc(d.grade); chip.hidden = false; }
             var bars = d.breakdown.map(function (b) {
                 var pct = b.max ? Math.round(b.earned / b.max * 100) : 0;
                 return '<div style="margin:6px 0;"><div style="display:flex;justify-content:space-between;font-size:0.9rem;color:#555;">'
@@ -223,9 +224,9 @@
         var facEl = $('facilities-content');
         if (!facEl) return;
         var FACILITIES = [
-            { ep: 'barrier-free', label: '♿ 무장애 여행지' },
-            { ep: 'pet-facilities', label: '🐾 반려동물 동반 시설' },
-            { ep: 'medical', label: '🏥 주변 의료 시설' }
+            { ep: 'barrier-free', label: '<i data-lucide="accessibility"></i> 무장애 여행지' },
+            { ep: 'pet-facilities', label: '<i data-lucide="paw-print"></i> 반려동물 동반 시설' },
+            { ep: 'medical', label: '<i data-lucide="heart-pulse"></i> 주변 의료 시설' }
         ];
         Promise.all(FACILITIES.map(function (f) {
             return fetch('/api/experiences/' + DATA.id + '/' + f.ep)
@@ -246,6 +247,57 @@
         });
     })();
 
+    // ---------- 주변 맛집·카페·편의점(개별 장소, 코스 아님 · 카카오 카테고리 검색) ----------
+    (function amenities() {
+        var el = $('ed-amenities');
+        if (!el) return;
+        if (!window.kakao || !kakao.maps || DATA.lat == null || DATA.lng == null) {
+            el.innerHTML = '<small class="text-muted">주변 편의시설을 표시할 수 없어요.</small>'; return;
+        }
+        var CATS = [
+            { code: 'FD6', cat: '음식점', icon: 'utensils' },
+            { code: 'CE7', cat: '카페', icon: 'coffee' },
+            { code: 'CS2', cat: '편의점', icon: 'store' },
+            { code: 'MT1', cat: '마트', icon: 'shopping-cart' }
+        ];
+        function distStr(m) {
+            var n = Number(m);
+            if (!n) return '';
+            return n >= 1000 ? (n / 1000).toFixed(1) + 'km' : Math.round(n) + 'm';
+        }
+        function render(list) {
+            if (!list.length) { el.innerHTML = '<small class="text-muted">주변 편의시설 정보를 찾지 못했어요.</small>'; return; }
+            el.innerHTML = list.map(function (p) {
+                var d = distStr(p.distance);
+                return '<a class="ed-amenity" href="https://map.kakao.com/link/map/' + encodeURIComponent(p.name) + ',' + p.y + ',' + p.x + '" target="_blank" rel="noopener">'
+                    + '<span class="ed-amenity__ico"><i data-lucide="' + esc(p.icon) + '"></i></span>'
+                    + '<span class="ed-amenity__body"><span class="ed-amenity__name">' + esc(p.name) + '</span>'
+                    + '<span class="ed-amenity__meta">' + esc(p.cat) + (d ? ' · ' + d : '') + '</span></span>'
+                    + '<i data-lucide="external-link" class="ed-amenity__link"></i></a>';
+            }).join('');
+        }
+        function run() {
+            var center = new kakao.maps.LatLng(DATA.lat, DATA.lng);
+            var ps = new kakao.maps.services.Places();
+            var all = [], done = 0;
+            CATS.forEach(function (c) {
+                ps.categorySearch(c.code, function (result, status) {
+                    if (status === kakao.maps.services.Status.OK) {
+                        result.slice(0, 3).forEach(function (r) {
+                            all.push({ name: r.place_name, x: r.x, y: r.y, distance: r.distance, cat: c.cat, icon: c.icon });
+                        });
+                    }
+                    done++;
+                    if (done === CATS.length) {
+                        all.sort(function (a, b) { return (Number(a.distance) || 0) - (Number(b.distance) || 0); });
+                        render(all.slice(0, 8));
+                    }
+                }, { location: center, radius: 5000, sort: kakao.maps.services.SortBy.DISTANCE });
+            });
+        }
+        if (kakao.maps.load) { kakao.maps.load(run); } else { run(); }
+    })();
+
     // ---------- 카카오맵 + 주변 거리 + 시간표 채우기 ----------
     (function kakaoMap() {
         if (!window.kakao || !kakao.maps || !$('map')) return;
@@ -256,8 +308,8 @@
         new kakao.maps.Marker({ position: center }).setMap(map);
 
         var cats = [
-            { code: 'CS2', name: '편의점', emoji: '🏪' }, { code: 'PM9', name: '약국', emoji: '💊' },
-            { code: 'HP8', name: '병원', emoji: '🏥' }, { code: 'PK6', name: '주차장', emoji: '🅿️' }
+            { code: 'CS2', name: '편의점', emoji: 'store' }, { code: 'PM9', name: '약국', emoji: 'pill' },
+            { code: 'HP8', name: '병원', emoji: 'heart-pulse' }, { code: 'PK6', name: '주차장', emoji: 'square-parking' }
         ];
         var ps = new kakao.maps.services.Places();
         var listEl = $('distance-list');
@@ -272,9 +324,9 @@
                         var line = new kakao.maps.Polyline({ path: [center, new kakao.maps.LatLng(pl.y, pl.x)] });
                         var dist = Math.round(line.getLength());
                         var distStr = dist > 1000 ? '약 ' + (dist / 1000).toFixed(1) + 'km' : '약 ' + dist + 'm';
-                        p.innerHTML = cat.emoji + ' <span class="nearby-name">' + cat.name + '</span> <strong>' + distStr + '</strong> <small>(' + esc(pl.place_name) + ')</small>';
+                        p.innerHTML = '<i data-lucide="' + cat.emoji + '"></i> <span class="nearby-name">' + cat.name + '</span> <strong>' + distStr + '</strong> <small>(' + esc(pl.place_name) + ')</small>';
                     } else {
-                        p.innerHTML = cat.emoji + ' <span class="nearby-name">' + cat.name + '</span> <span class="text-muted">주변에 없음</span>';
+                        p.innerHTML = '<i data-lucide="' + cat.emoji + '"></i> <span class="nearby-name">' + cat.name + '</span> <span class="text-muted">주변에 없음</span>';
                     }
                     listEl.appendChild(p);
                 }, { location: center, radius: 20000, size: 1, sort: kakao.maps.services.SortBy.DISTANCE });

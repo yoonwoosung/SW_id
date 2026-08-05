@@ -15,25 +15,25 @@
     <!-- 왼쪽: 메인 콘텐츠 -->
     <div class="detail-main-col">
 
-        <!-- 1. 이미지 갤러리 (대표 + 썸네일, 클릭 시 확대) -->
+        <!-- 1. 이미지 갤러리 (에어비앤비식 그리드: 대표1 + 썸네일4, 클릭 시 확대) -->
         <div class="detail-gallery-card">
             {% if item.images %}
             {% set imgs = item.images.split(',') %}
-            <div class="ed-gallery">
-                <img id="ed-gallery-main" class="ed-gallery__main"
+            <div class="ed-photogrid ed-photogrid--{{ 'multi' if imgs|length > 1 else 'single' }}">
+                <img id="ed-gallery-main" class="ed-photogrid__main"
                      src="{{ url_for('static', filename='uploads/' + imgs[0]) }}" alt="{{ item.crop }} 체험 사진">
-                {% if imgs|length > 1 %}
-                <div class="ed-gallery__thumbs">
-                    {% for image in imgs %}
-                    <img class="ed-gallery__thumb {% if loop.first %}is-active{% endif %}"
-                         src="{{ url_for('static', filename='uploads/' + image) }}" alt="썸네일 {{ loop.index }}">
-                    {% endfor %}
+                {% for image in imgs[1:5] %}
+                <div class="ed-photogrid__cell">
+                    <img class="ed-gallery__thumb" src="{{ url_for('static', filename='uploads/' + image) }}" alt="썸네일 {{ loop.index + 1 }}">
+                    {% if loop.last and imgs|length > 5 %}
+                    <span class="ed-photogrid__more">사진 {{ imgs|length }}장 →</span>
+                    {% endif %}
                 </div>
-                {% endif %}
+                {% endfor %}
             </div>
             {% else %}
             <div class="detail-img-placeholder">
-                <i class="fa-solid fa-camera"></i><span>아직 등록된 사진이 없습니다.</span>
+                <i data-lucide="camera"></i><span>아직 등록된 사진이 없습니다.</span>
             </div>
             {% endif %}
         </div>
@@ -41,13 +41,14 @@
         <!-- 2~5. 핵심 정보 (첫 화면 간결: 이름·위치·평점·긴박감·찜/공유) -->
         <div class="detail-info-card">
             <div class="detail-info-badges">
-                {% if item.pesticide_free %}<span class="detail-badge badge-eco"><i class="fa-solid fa-leaf"></i> 친환경</span>{% endif %}
-                {% if item.has_parking %}<span class="detail-badge badge-parking"><i class="fa-solid fa-square-parking"></i> 주차 가능</span>{% endif %}
-                {% if item.barrier_free %}<span class="detail-badge badge-family"><i class="fa-solid fa-wheelchair"></i> 무장애</span>{% endif %}
+                {% if item.pesticide_free %}<span class="detail-badge badge-eco"><i data-lucide="leaf"></i> 친환경</span>{% endif %}
+                {% if item.has_parking %}<span class="detail-badge badge-parking"><i data-lucide="square-parking"></i> 주차 가능</span>{% endif %}
+                {% if item.barrier_free %}<span class="detail-badge badge-family"><i data-lucide="accessibility"></i> 무장애</span>{% endif %}
+                <span id="ed-esg-chip" class="detail-badge badge-esg" hidden></span>
             </div>
             <h1 class="detail-crop-title">{{ item.crop }} 수확 체험</h1>
             <div class="detail-info-meta">
-                <span><i class="fa-solid fa-location-dot"></i> {{ item.address_detail }}</span>
+                <span><i data-lucide="map-pin"></i> {{ item.address_detail }}</span>
                 {% if review_count %}
                 <span class="ed-rating"><span class="ed-rating__star">★</span> {{ '%.1f'|format(rating_avg) }}
                     <span class="ed-rating__count">· 후기 {{ review_count }}</span></span>
@@ -59,28 +60,28 @@
             <!-- 긴박감: 마감임박(실제 D-day 기반) + '지금 N명 보는 중'(목업 슬롯) -->
             <div class="ed-urgency">
                 {% if 0 <= item.d_day <= 7 %}
-                <span class="ed-urgency__item ed-urgency__deadline">🔥 마감임박 D-{{ item.d_day }}</span>
+                <span class="ed-urgency__item ed-urgency__deadline"><i data-lucide="flame"></i> 마감임박 D-{{ item.d_day }}</span>
                 {% endif %}
                 <span id="ed-viewers" class="ed-urgency__item ed-urgency__viewers" hidden></span>
             </div>
 
             <!-- 찜하기 / 공유 -->
             <div class="ed-actions">
-                <button type="button" id="ed-wish" class="ed-icon-btn"><i class="fa-regular fa-heart"></i> <span class="ed-wish-label">찜하기</span></button>
-                <button type="button" id="ed-share" class="ed-icon-btn"><i class="fa-solid fa-share-nodes"></i> 공유</button>
+                <button type="button" id="ed-wish" class="ed-icon-btn"><i data-lucide="heart"></i> <span class="ed-wish-label">찜하기</span></button>
+                <button type="button" id="ed-share" class="ed-icon-btn"><i data-lucide="share-2"></i> 공유</button>
             </div>
 
             <!-- 7. 체험 소개(소요·포함·불포함) -->
             {% if item.notes or item.includes or item.excludes %}
             <div class="detail-info-sections">
                 {% if item.notes %}
-                <div class="detail-info-section"><h4><i class="fa-solid fa-bag-shopping"></i> 챙겨오세요 (준비물)</h4><p>{{ item.notes }}</p></div>
+                <div class="detail-info-section"><h4><i data-lucide="shopping-bag"></i> 챙겨오세요 (준비물)</h4><p>{{ item.notes }}</p></div>
                 {% endif %}
                 {% if item.includes %}
-                <div class="detail-info-section"><h4><i class="fa-solid fa-circle-check"></i> 포함 내역</h4><p>{{ item.includes }}</p></div>
+                <div class="detail-info-section"><h4><i data-lucide="circle-check"></i> 포함 내역</h4><p>{{ item.includes }}</p></div>
                 {% endif %}
                 {% if item.excludes %}
-                <div class="detail-info-section"><h4><i class="fa-solid fa-circle-xmark"></i> 불포함 내역</h4><p>{{ item.excludes }}</p></div>
+                <div class="detail-info-section"><h4><i data-lucide="circle-x"></i> 불포함 내역</h4><p>{{ item.excludes }}</p></div>
                 {% endif %}
             </div>
             {% endif %}
@@ -89,7 +90,7 @@
         <!-- 10. 예약 안내: 운영 시간표 -->
         {% if item.timetable_data %}
         <div class="detail-section-card">
-            <h3 class="detail-section-title"><i class="fa-regular fa-calendar-check"></i> 운영 시간표</h3>
+            <h3 class="detail-section-title"><i data-lucide="calendar-check"></i> 운영 시간표</h3>
             <div class="detail-timetable-wrap">
                 <table class="timetable-display">
                     <thead>
@@ -113,9 +114,9 @@
         <!-- 9. 농장 위치 (지도 + 주변 거리) -->
         <div class="detail-section-card">
             <div class="detail-section-header">
-                <h3 class="detail-section-title"><i class="fa-solid fa-map-location-dot"></i> 농장 위치</h3>
+                <h3 class="detail-section-title"><i data-lucide="map"></i> 농장 위치</h3>
                 <a href="https://map.kakao.com/?q={{ item.address_detail }}" target="_blank" class="detail-map-link">
-                    카카오맵에서 보기 <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                    카카오맵에서 보기 <i data-lucide="external-link"></i>
                 </a>
             </div>
             <div id="map" class="detail-map"></div>
@@ -127,7 +128,7 @@
 
         <!-- 11. 방문자 후기 (분포 · AI 요약 · 더보기) -->
         <div class="detail-section-card">
-            <h3 class="detail-section-title"><i class="fa-solid fa-star"></i> 방문자 후기</h3>
+            <h3 class="detail-section-title"><i data-lucide="star"></i> 방문자 후기</h3>
 
             {% if review_count %}
             <div class="ed-review-summary">
@@ -161,7 +162,7 @@
                 <div class="review-item">
                     <div class="review-item-header">
                         <strong>{{ review.user.nickname }}</strong>
-                        <span class="review-rating">{% for i in range(review.rating) %}⭐{% endfor %}</span>
+                        <span class="review-rating">{% for i in range(review.rating) %}★{% endfor %}</span>
                         <small class="text-muted">{{ review.timestamp.strftime('%Y.%m.%d') }}</small>
                     </div>
                     <p class="review-item-content">{{ review.content }}</p>
@@ -175,7 +176,7 @@
 
         <!-- 문의하기 -->
         <div class="detail-section-card">
-            <h3 class="detail-section-title"><i class="fa-solid fa-message"></i> 농장주에게 문의하기</h3>
+            <h3 class="detail-section-title"><i data-lucide="message-circle"></i> 농장주에게 문의하기</h3>
             {% if session.get('user_id') %}
             <form action="{{ url_for('add_inquiry', item_id=item.id) }}" method="POST" class="detail-review-form">
                 <textarea name="content" class="detail-review-textarea" rows="3" placeholder="농장주에게 궁금한 점을 질문해보세요." required></textarea>
@@ -209,21 +210,27 @@
             </div>
             <p style="font-size:0.78rem;color:#9aa39c;margin:-6px 0 10px;">* 1인당 가격입니다</p>
             <div class="detail-booking-stats">
-                <div class="detail-booking-stat"><i class="fa-solid fa-user-group"></i> <span>{{ item.current_participants }}/{{ item.max_participants }}명</span></div>
-                <div class="detail-booking-stat"><i class="fa-regular fa-calendar-xmark"></i> <span>D-{{ item.d_day }}</span></div>
+                <div class="detail-booking-stat"><i data-lucide="users"></i> <span>{{ item.current_participants }}/{{ item.max_participants }}명</span></div>
+                <div class="detail-booking-stat"><i data-lucide="calendar-x"></i> <span>D-{{ item.d_day }}</span></div>
             </div>
             {% set remaining = item.max_participants - item.current_participants %}
             {% if remaining > 0 %}
-            <a href="{{ url_for('experience_apply', item_id=item.id) }}" class="detail-booking-btn"><i class="fa-solid fa-calendar-check"></i> 체험 예약하기</a>
+            <a href="{{ url_for('experience_apply', item_id=item.id) }}" class="detail-booking-btn"><i data-lucide="calendar-check"></i> 예약 신청하기</a>
+            <p class="ed-book-nocharge">예약 확정 전에는 요금이 청구되지 않아요</p>
+            <div class="ed-book-breakdown">
+                <div class="ed-book-row"><span>1인 요금</span><span>{{ "{:,}".format(item.cost) }}원</span></div>
+                <div class="ed-book-row ed-book-total"><span>합계 (1인 기준)</span><span>{{ "{:,}".format(item.cost) }}원</span></div>
+                <p class="ed-book-note">＊날짜·시간·인원은 다음 단계에서 선택해요</p>
+            </div>
             <p class="detail-booking-remaining">잔여 <strong>{{ remaining }}</strong>석 남았습니다.</p>
             {% else %}
             <button class="detail-booking-btn disabled" disabled>마감되었습니다</button>
             {% endif %}
             <div class="detail-booking-info">
-                <div class="detail-booking-info-row"><i class="fa-solid fa-location-dot"></i> <span>{{ item.address_detail }}</span></div>
-                <div class="detail-booking-info-row"><i class="fa-solid fa-leaf"></i> <span>친환경: {{ "예" if item.pesticide_free else "아니오" }}</span></div>
-                <div class="detail-booking-info-row"><i class="fa-solid fa-square-parking"></i> <span>주차: {{ "가능" if item.has_parking else "불가" }}</span></div>
-                <div class="detail-booking-info-row"><i class="fa-regular fa-calendar"></i> <span>마감: {{ item.end_date.strftime('%Y.%m.%d') }}</span></div>
+                <div class="detail-booking-info-row"><i data-lucide="map-pin"></i> <span>{{ item.address_detail }}</span></div>
+                <div class="detail-booking-info-row"><i data-lucide="leaf"></i> <span>친환경: {{ "예" if item.pesticide_free else "아니오" }}</span></div>
+                <div class="detail-booking-info-row"><i data-lucide="square-parking"></i> <span>주차: {{ "가능" if item.has_parking else "불가" }}</span></div>
+                <div class="detail-booking-info-row"><i data-lucide="calendar"></i> <span>마감: {{ item.end_date.strftime('%Y.%m.%d') }}</span></div>
             </div>
         </div>
     </div>
@@ -259,7 +266,7 @@
 <!-- 주변 편의시설 (무장애/반려동물/의료) -->
 <div class="main-content-wrapper">
     <section class="section-block section-card mb-0">
-        <div class="section-header"><h2 class="section-title">🧭 주변 편의시설</h2></div>
+        <div class="section-header"><h2 class="section-title"><i data-lucide="compass"></i> 주변 무장애·반려·의료 시설</h2></div>
         <div id="facilities-content" style="padding:8px 4px;color:#888;">불러오는 중…</div>
     </section>
 </div>
@@ -267,20 +274,39 @@
 <!-- 12. 비슷한 체험 (다음 행동 유도) -->
 <div class="main-content-wrapper">
     <section class="section-block section-card mb-0">
-        <div class="section-header"><h2 class="section-title">🌾 비슷한 체험</h2></div>
+        <div class="section-header"><h2 class="section-title"><i data-lucide="wheat"></i> 비슷한 체험</h2></div>
         <div class="ed-similar-scroll" id="ed-similar"><small class="text-muted">불러오는 중…</small></div>
     </section>
 </div>
 
-<!-- 13. 이 근처 코스로 보기 -->
-<div class="main-content-wrapper" style="padding-bottom:32px;">
-    <a class="ed-course-cta" href="#ai-course-section">
-        <div>
-            <div class="ed-course-cta__title">🗺 이 근처 코스로 보기</div>
-            <div class="ed-course-cta__sub">이 체험을 중심으로 한 하루 코스를 확인하세요</div>
+<!-- 알아두어야 할 사항 (환불·이용규칙·안전) -->
+<div class="main-content-wrapper">
+    <section class="section-block section-card mb-0">
+        <div class="section-header"><h2 class="section-title"><i data-lucide="pin"></i> 알아두어야 할 사항</h2></div>
+        <div class="ed-policy-grid">
+            {% for p in booking_policies %}
+            <details class="ed-policy">
+                <summary class="ed-policy__head">
+                    <span class="ed-policy__title">{{ p.icon }} {{ p.title }}</span>
+                    <span class="ed-policy__more">자세히 알아보기 <i data-lucide="chevron-down"></i></span>
+                </summary>
+                <p class="ed-policy__summary">{{ p.summary }}</p>
+                <ul class="ed-policy__details">
+                    {% for d in p.details %}<li>{{ d }}</li>{% endfor %}
+                </ul>
+            </details>
+            {% endfor %}
         </div>
-        <i class="fa-solid fa-chevron-up"></i>
-    </a>
+    </section>
+</div>
+
+<!-- 주변 맛집·카페·편의점 (개별 장소, 코스 아님) -->
+<div class="main-content-wrapper" style="padding-bottom:32px;">
+    <section class="section-block section-card mb-0">
+        <div class="section-header"><h2 class="section-title"><i data-lucide="store"></i> 주변 맛집·카페·편의점</h2></div>
+        <p class="ed-amenities__lead">체험 농장 반경 안의 편의시설을 가까운 순으로 하나씩 모았어요.</p>
+        <div id="ed-amenities" class="ed-amenities"><small class="text-muted">주변 편의시설을 불러오는 중…</small></div>
+    </section>
 </div>
 
 <!-- 라이트박스 · 토스트 -->

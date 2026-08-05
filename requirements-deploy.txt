@@ -1,0 +1,15 @@
+# FarmLink 배포용 슬림 의존성 (앱이 실제 import하는 것만).
+# 원본 requirements.txt는 로컬/개발 환경용으로 그대로 두고, 서버에는 이 파일을 설치한다.
+#   pip install -r requirements-deploy.txt
+# Jinja2·MarkupSafe·itsdangerous·click·blinker·soupsieve 등은 아래 패키지의 전이 의존성으로 자동 설치됨.
+Flask==3.1.2
+Flask-SQLAlchemy==3.1.1
+SQLAlchemy==2.0.43
+mysql-connector-python==9.4.0
+python-dotenv==1.1.1
+Pillow==10.4.0
+requests==2.32.5
+beautifulsoup4==4.13.5
+lxml==6.0.1
+Flask-APScheduler==1.13.1
+Werkzeug==3.1.3

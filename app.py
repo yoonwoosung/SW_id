@@ -83,4 +83,5 @@ register_routes(app)
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
-    app.run(debug=True, ssl_context='adhoc')
+    debug_mode = os.environ.get('DEBUG', 'False').lower() in ('1', 'true', 'yes')
+    app.run(debug=debug_mode, ssl_context='adhoc')

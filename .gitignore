@@ -14,5 +14,6 @@ __pycache__/
 # park_back 병합: 추가 무시 규칙
 *.db
 .env.*
+!.env.example
 .vscode/
 venv/

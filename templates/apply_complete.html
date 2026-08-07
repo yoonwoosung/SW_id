@@ -1,0 +1,104 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="complete-page-bg">
+    <div class="complete-card">
+        <div class="complete-icon-wrap">
+            <div class="complete-icon"><i data-lucide="circle-check"></i></div>
+        </div>
+        <h2 class="complete-title">예약이 완료되었습니다!</h2>
+        <p class="complete-subtitle"><strong>{{ name }}</strong>님, 농촌 체험을 신청해 주셔서 감사합니다.</p>
+
+        <div class="complete-booking-box">
+            <div class="complete-booking-header">
+                <i data-lucide="receipt"></i> 예약 확인증
+            </div>
+            <div class="complete-booking-body">
+                <div class="complete-booking-row">
+                    <span class="complete-booking-label"><i data-lucide="sprout"></i> 체험</span>
+                    <span class="complete-booking-val">{{ item.crop }} 수확 체험</span>
+                </div>
+                <div class="complete-booking-row">
+                    <span class="complete-booking-label"><i data-lucide="map-pin"></i> 장소</span>
+                    <span class="complete-booking-val">{{ item.address_detail }}</span>
+                </div>
+                <div class="complete-booking-row">
+                    <span class="complete-booking-label"><i data-lucide="banknote"></i> 가격</span>
+                    <span class="complete-booking-val">{{ "{:,}".format(item.cost) }}원 / 1인</span>
+                </div>
+                <div class="complete-booking-row">
+                    <span class="complete-booking-label"><i data-lucide="user"></i> 신청자</span>
+                    <span class="complete-booking-val">{{ name }}</span>
+                </div>
+            </div>
+        </div>
+
+        <p class="complete-notice" style="color:#2D5A1B;">
+            <i data-lucide="circle-check"></i> 결제가 완료되어 예약이 접수되었습니다.
+        </p>
+
+        {# 프로필(나이·성별) 기반 추천 코스 미리보기 #}
+        <div class="complete-course">
+            <div class="complete-course__head">
+                <span class="complete-course__title"><i data-lucide="map"></i> 회원님께 어울리는 추천 코스</span>
+                <span class="complete-course__sub" id="cc-sub"></span>
+            </div>
+            <div class="complete-course__list" id="cc-list">
+                <p class="complete-course__empty">추천 코스를 준비하는 중…</p>
+            </div>
+            <a href="{{ url_for('ai_recommend_page') }}?experience={{ item.id }}" class="complete-btn-primary" style="width:100%;text-align:center;">
+                <i data-lucide="wand-sparkles"></i> 추천코스 상세하게 정하기
+            </a>
+        </div>
+
+        <div class="complete-actions">
+            <a href="{{ url_for('index') }}" class="complete-btn-secondary">
+                <i data-lucide="home"></i> 메인으로 돌아가기
+            </a>
+            <a href="{{ url_for('mypage') }}" class="complete-btn-secondary">
+                <i data-lucide="list-checks"></i> 내 활동 보기
+            </a>
+        </div>
+    </div>
+</div>
+
+<style>
+.complete-course { margin: 18px 0; text-align: left; }
+.complete-course__head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 10px; }
+.complete-course__title { font-weight: 800; color: #1d3d2c; }
+.complete-course__sub { font-size: .78rem; color: #8a9890; }
+.complete-course__list { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+.complete-course__empty { grid-column: 1 / -1; color: #8a938c; font-size: .9rem; margin: 0; }
+.cc-card { border: 1px solid #eef1ee; border-radius: 12px; padding: 12px 14px; }
+.cc-card__name { font-weight: 700; color: #253027; font-size: .92rem; }
+.cc-card__meta { font-size: .8rem; color: #8a9890; margin-top: 3px; }
+.cc-card__price { font-weight: 800; color: #d85a30; margin-top: 6px; font-size: .95rem; }
+@media (max-width: 520px) { .complete-course__list { grid-template-columns: 1fr; } }
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+    function esc(s) { var d = document.createElement('div'); d.textContent = (s == null ? '' : String(s)); return d.innerHTML; }
+    function won(n) { return Number(n || 0).toLocaleString() + '원'; }
+    function shortRegion(a) { if (!a) return ''; var m = a.match(/([가-힣]+?)(시|군|구)/); return m ? m[1] : a.split(' ')[0]; }
+    var listEl = document.getElementById('cc-list'), subEl = document.getElementById('cc-sub');
+
+    fetch('/api/recommendations/segments').then(function (r) { return r.json(); }).then(function (res) {
+        if (res.success && res.data && res.data.segment_label && subEl) subEl.textContent = res.data.segment_label + ' 회원님 맞춤';
+    }).catch(function () {});
+
+    // 또래(peers=나이·성별) 기반 추천 상위 2개를 미리보기 카드로.
+    fetch('/api/recommendations/personalized?segment=peers').then(function (r) { return r.json(); }).then(function (res) {
+        var list = (res.success && res.data.results || []).slice(0, 2);
+        if (!list.length) { listEl.innerHTML = '<p class="complete-course__empty">지금은 추천할 코스를 찾지 못했어요. 아래 버튼에서 직접 골라보세요.</p>'; return; }
+        listEl.innerHTML = list.map(function (x) {
+            var region = shortRegion(x.address);
+            return '<div class="cc-card"><div class="cc-card__name">' + (region ? esc(region) + ' ' : '') + esc(x.crop) + ' 힐링 코스</div>'
+                + '<div class="cc-card__meta">' + (x.distance_km != null ? '약 ' + x.distance_km + 'km · ' : '') + '당일치기</div>'
+                + '<div class="cc-card__price">' + won(x.cost) + '<span style="font-size:.72rem;color:#a0a89e;font-weight:400;"> /1인</span></div></div>';
+        }).join('');
+    }).catch(function () { listEl.innerHTML = '<p class="complete-course__empty">추천 코스를 불러오지 못했어요.</p>'; });
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,30 @@
+{% extends "layout.html" %}
+{% block page_class %}easy-mode-page{% endblock %}
+{% block content %}
+<div class="container easy-mode-container">
+    <div class="easy-header">
+        <h1>✏️ 어떤 체험을 수정할까요?</h1>
+        <p>수정하고 싶은 체험을 선택해 주세요.</p>
+    </div>
+
+    <div class="easy-modify-list">
+        {% for experience in experiences %}
+            <a href="{{ url_for('easy_modify_experience', item_id=experience.id) }}" class="easy-modify-item">
+                <h3>{{ experience.crop }}</h3>
+                <p>마감일: {{ experience.end_date.strftime('%Y년 %m월 %d일') }}</p>
+                <span class="fl-badge {% if experience.status == 'recruiting' %}fl-badge--active{% else %}fl-badge--hidden{% endif %}">
+                    {% if experience.status == 'recruiting' %}✅ 모집중{% else %}🔒 비공개{% endif %}
+                </span>
+            </a>
+        {% else %}
+            <div class="easy-no-item">
+                <div class="easy-no-item-icon">🤷</div>
+                <h2>수정할 체험이 없어요</h2>
+                <p>'체험 만들기'로 새로운 체험을 먼저 만들어보세요.</p>
+            </div>
+        {% endfor %}
+    </div>
+
+    <a href="{{ url_for('farmer_easy_mode', tab='operations') }}" class="easy-back-button mt-4">돌아가기</a>
+</div>
+{% endblock %}

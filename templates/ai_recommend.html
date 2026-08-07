@@ -1,0 +1,79 @@
+{% extends "layout.html" %}
+{% block page_class %}page-ai-recommend{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/pages/search_filter.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="ai-rec-wrap">
+
+    <div class="ai-rec-head">
+        <h1>나에게 맞는 하루 여행 찾기</h1>
+        <p id="rec-note">회원님 정보를 바탕으로 추천 코스를 준비했어요.</p>
+    </div>
+
+    <!-- 1. 검색바 -->
+    <form class="fl-searchbar" id="course-search" role="search" onsubmit="return false;">
+        <i data-lucide="search" aria-hidden="true"></i>
+        <input type="search" id="course-q" placeholder="지역·체험·농장 이름으로 검색" autocomplete="off">
+    </form>
+
+    <!-- 2. 인적사항 단축 버튼 2개 -->
+    <div class="fl-quickbtns" id="quick-segments"></div>
+
+    <!-- 3. 내가 직접 조건 고르기 (기본 접힘) -->
+    <section class="fl-panel fl-collapse">
+        <button type="button" class="fl-collapse__toggle" aria-expanded="false" aria-controls="cond-body">
+            내가 직접 조건 고르기
+            <i data-lucide="chevron-down" aria-hidden="true"></i>
+        </button>
+        <div class="fl-collapse__body" id="cond-body" hidden>
+            <div id="cond-filter" data-endpoint="{{ url_for('search_categories') }}"></div>
+            <div class="fl-trend" id="trend"></div>
+        </div>
+    </section>
+
+    <!-- 방금 예약한 체험 코스 (결제 후 연동 진입 시에만 표시) -->
+    <section class="fl-sec" id="booked-sec" hidden>
+        <div class="fl-sec__head">
+            <h2 class="fl-sec__title"><i data-lucide="calendar-days"></i> 방금 예약한 체험 코스</h2>
+            <span class="fl-sec__sub">예약 확정 · 하루 코스</span>
+        </div>
+        <div class="fl-row" id="sec-booked"></div>
+    </section>
+
+    <!-- 4. 추천 코스 3섹션 (각 가로 스크롤) -->
+    <section class="fl-sec" data-section="nearby">
+        <div class="fl-sec__head">
+            <h2 class="fl-sec__title">지금 내 주변 추천</h2>
+            <span class="fl-sec__sub">가깝고 · 마감임박 · 자리많은 순</span>
+        </div>
+        <div class="fl-row" id="sec-nearby"></div>
+    </section>
+
+    <section class="fl-sec" data-section="peers">
+        <div class="fl-sec__head">
+            <h2 class="fl-sec__title" id="peers-title"><i data-lucide="leaf"></i> 또래가 놀러가기 좋은 코스</h2>
+            <span class="fl-sec__sub">또래 인기순</span>
+        </div>
+        <div class="fl-row" id="sec-peers"></div>
+    </section>
+
+    <section class="fl-sec" data-section="esg">
+        <div class="fl-sec__head">
+            <h2 class="fl-sec__title"><i data-lucide="sprout"></i> 친환경 ESG 코스</h2>
+            <span class="fl-sec__sub">무농약 · 유기농 · 봉사</span>
+        </div>
+        <div class="fl-row" id="sec-esg"></div>
+    </section>
+
+    <p class="fl-empty" id="search-empty" hidden>검색어와 일치하는 코스가 없어요.</p>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/pages/farm_filter.js') }}"></script>
+<script src="{{ url_for('static', filename='js/pages/ai_recommend.js') }}"></script>
+{% endblock %}

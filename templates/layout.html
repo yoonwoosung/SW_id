@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FarmLink Travel</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"/>
+    <!-- [병합 point 1] theme.css 추가 -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/theme.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        /* Lucide 라인 아이콘 공통 테마 (FarmLink 딥그린) */
+        :root { --fl-icon-size: 1.05em; --fl-icon-color: #1d6340; --fl-icon-stroke: 2; }
+        .lucide { width: var(--fl-icon-size); height: var(--fl-icon-size);
+                  stroke-width: var(--fl-icon-stroke); vertical-align: -0.16em; stroke: currentColor; }
+        .fl-ico { color: var(--fl-icon-color); }
+        i[data-lucide] { display: inline-block; width: var(--fl-icon-size); height: var(--fl-icon-size); }
+    </style>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        window.flIcons = function () { try { if (window.lucide) window.lucide.createIcons(); } catch (e) {} };
+        document.addEventListener('DOMContentLoaded', function () {
+            window.flIcons();
+            var pending = false;
+            new MutationObserver(function () {
+                if (pending) return;
+                pending = true;
+                requestAnimationFrame(function () { pending = false; window.flIcons(); });
+            }).observe(document.body, { childList: true, subtree: true });
+        });
+    </script>
+    {% block head %}{% endblock %}
+</head>
+<body class="{% block page_class %}{% endblock %}">
+
+<header class="site-header">
+    <div class="site-header-inner">
+        <!-- [병합 point 2] 로고 클릭 시 농장주는 farmer_easy_mode로 이동 -->
+        <a href="{% if session.get('role') == 'farmer' %}{{ url_for('farmer_easy_mode') }}{% else %}/{% endif %}" class="site-logo">FarmLink</a>
+        
+        <!-- [병합 point 3] 일반 유저 전용 상단 네비게이션 (추억 앨범 추가) -->
+        {% if session.get('role') != 'farmer' %}
+        <nav class="site-nav">
+            <a href="{{ url_for('index') }}" {% if request.endpoint == 'index' %}class="active"{% endif %}>체험 찾기</a>
+            <a href="{{ url_for('ai_recommend_page') }}">오늘의 추천 코스</a>
+            <a href="{{ url_for('mypage') }}" {% if request.endpoint == 'mypage' %}class="active"{% endif %}>내 활동</a>
+            <a href="{{ url_for('album_create') }}" {% if request.endpoint == 'album_create' %}class="active"{% endif %}>추억 앨범</a>
+        </nav>
+        {% else %}
+        <nav class="site-nav"></nav>
+        {% endif %}
+
+        <div class="site-user-area">
+            {% if session.get('user_id') %}
+            <div class="user-chip">
+                <i data-lucide="circle-user-round" class="user-chip-icon"></i>
+                <span>{{ session.get('nickname') }}님</span>
+                <i data-lucide="chevron-down" style="font-size:0.7rem;"></i>
+                <div class="user-chip-dropdown">
+                    {% if session.get('role') != 'farmer' %}
+                    <a href="{{ url_for('my_info') }}"><i data-lucide="user" class="mr-1"></i> 내 정보</a>
+                    <a href="{{ url_for('album_create') }}"><i data-lucide="book-open" class="mr-1"></i> 추억 앨범 만들기</a>
+                    {% endif %}
+                    <a href="{{ url_for('logout') }}"><i data-lucide="log-out" class="mr-1"></i> 로그아웃</a>
+                </div>
+            </div>
+            {% else %}
+            <a href="{{ url_for('login_page') }}" class="btn-header-login">
+                <i data-lucide="circle-user-round"></i> 로그인 <i data-lucide="chevron-down" class="ml-1" style="font-size:0.7rem;"></i>
+            </a>
+            {% endif %}
+        </div>
+    </div>
+</header>
+
+<main>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="container mt-3">
+                {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+    {% block content %}{% endblock %}
+</main>
+
+<footer class="site-footer-bar">
+    <p>&copy; 2025 FarmLink Travel. Farm to Link.</p>
+</footer>
+
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+<script>
+(function() {
+    const chip = document.querySelector('.user-chip');
+    if (!chip) return;
+    const dropdown = chip.querySelector('.user-chip-dropdown');
+    chip.addEventListener('click', function(e) {
+        e.stopPropagation();
+        dropdown.classList.toggle('open');
+    });
+    document.addEventListener('click', function() {
+        dropdown.classList.remove('open');
+    });
+})();
+</script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

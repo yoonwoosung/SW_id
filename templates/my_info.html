@@ -1,0 +1,384 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="dashboard-page">
+
+    <!-- 사이드바 -->
+    <aside class="db-sidebar">
+        <div class="db-profile-card">
+            <div class="db-avatar">
+                {% if user.profile_image and user.profile_image != 'shd.png' %}
+                    <img src="{{ url_for('static', filename='uploads/' + user.profile_image) }}" alt="프로필">
+                {% else %}
+                    <i class="fa-solid fa-circle-user"></i>
+                {% endif %}
+            </div>
+            <div class="db-profile-name">{{ user.nickname }}님</div>
+            <div class="db-profile-welcome">환영합니다!</div>
+            <span class="db-role-badge">{{ '농장주' if user.role == 'farmer' else '일반 회원' }}</span>
+        </div>
+
+        <nav class="db-nav">
+            <a href="{{ url_for('my_info') }}" class="db-nav-item active">
+                <i class="fa-regular fa-calendar-check"></i> 예약 내역
+            </a>
+            <a href="#" class="db-nav-item">
+                <i class="fa-solid fa-route"></i> AI 여행 코스
+            </a>
+            <a href="{{ url_for('album_create') }}" class="db-nav-item">
+                <i class="fa-regular fa-images"></i> 추억 앨범
+            </a>
+            <a href="#" class="db-nav-item">
+                <i class="fa-solid fa-rotate-left"></i> 재방문 추천
+            </a>
+            <a href="#" class="db-nav-item" id="edit-toggle-nav">
+                <i class="fa-regular fa-user"></i> 내 정보 수정
+            </a>
+        </nav>
+
+        <div class="db-info-card">
+            <div class="db-info-header">
+                내 정보
+                <button class="db-info-edit-btn" id="edit-btn">수정</button>
+            </div>
+            <form id="info-form" method="POST" action="{{ url_for('my_info') }}">
+                <fieldset id="info-fieldset" disabled>
+                    <div class="db-info-row">
+                        <span class="db-info-label">닉네임</span>
+                        <input type="text" name="nickname" class="db-info-input" value="{{ user.nickname }}" required>
+                    </div>
+                    <div class="db-info-row">
+                        <span class="db-info-label">이름</span>
+                        <input type="text" name="name" class="db-info-input" value="{{ user.name }}">
+                    </div>
+                    <div class="db-info-row">
+                        <span class="db-info-label">생년월일</span>
+                        <input type="text" class="db-info-input text-muted" value="{{ user.birthdate or '미등록' }}" disabled tabindex="-1">
+                    </div>
+                    <div class="db-info-row">
+                        <span class="db-info-label">성별</span>
+                        <input type="text" class="db-info-input text-muted" value="{% if user.gender == 'male' %}남자{% elif user.gender == 'female' %}여자{% else %}미선택{% endif %}" disabled tabindex="-1">
+                    </div>
+                    <div class="db-info-row">
+                        <span class="db-info-label">이메일</span>
+                        <input type="text" class="db-info-input" value="{{ user.email }}" disabled>
+                    </div>
+                    <div class="db-info-row">
+                        <span class="db-info-label">전화번호</span>
+                        <input type="text" name="phone" class="db-info-input" value="{{ user.phone or '' }}">
+                    </div>
+                    {% if user.role == 'farmer' %}
+                    <div class="db-info-row">
+                        <span class="db-info-label">농장 주소</span>
+                        <input type="text" name="farm_address" class="db-info-input" value="{{ user.farm_address or '' }}">
+                    </div>
+                    <div class="db-info-row">
+                        <span class="db-info-label">농장 규모 (평)</span>
+                        <input type="text" name="farm_size" class="db-info-input" value="{{ user.farm_size or '' }}">
+                    </div>
+                    <div class="db-info-row">
+                        <span class="db-info-label">한 줄 소개</span>
+                        <input type="text" name="profile_bio" class="db-info-input" value="{{ user.profile_bio or '' }}">
+                    </div>
+                    {% endif %}
+                    <div id="form-buttons" style="display:none; margin-top:0.75rem;">
+                        <button type="button" id="cancel-btn" class="btn btn-sm btn-secondary btn-block">취소</button>
+                        <button type="submit" class="btn btn-sm btn-success btn-block mt-1">저장하기</button>
+                    </div>
+                </fieldset>
+            </form>
+        </div>
+
+        <a href="{{ url_for('logout') }}" class="db-logout-btn">로그아웃</a>
+    </aside>
+
+    <!-- 메인 콘텐츠 -->
+    <div class="db-main">
+
+        <!-- 인사 -->
+        <div class="db-greeting-bar">
+            <div>
+                <h2 class="db-greeting-title">
+                    <i class="fa-solid fa-seedling text-success"></i> 안녕하세요, {{ user.nickname }}님
+                </h2>
+                {% set upcoming_list = applications | selectattr('status', 'equalto', '예정') | list %}
+                <p class="db-greeting-sub">
+                    이번 주 예약된 체험이 <strong class="text-success">{{ upcoming_list|length }}개</strong> 있어요.
+                </p>
+            </div>
+            <a href="{{ url_for('my_info') }}" class="btn-outline-dark-sm">
+                전체 예약 내역 보기 <i class="fa-solid fa-chevron-right"></i>
+            </a>
+        </div>
+
+        <!-- 나의 다음 여행 -->
+        {% if upcoming_list %}
+        {% set next_trip = upcoming_list[0] %}
+        <div class="db-card db-next-trip">
+            <h3 class="db-card-title">나의 다음 여행</h3>
+            <div class="next-trip-inner">
+                <div class="next-trip-img-wrap">
+                    <span class="next-trip-badge">예약 확정</span>
+                    {% if next_trip.experience.images %}
+                        <img src="{{ url_for('static', filename='uploads/' + next_trip.experience.images.split(',')[0]) }}"
+                             alt="{{ next_trip.experience.crop }}" class="next-trip-img">
+                    {% else %}
+                        <div class="next-trip-img-placeholder"><i class="fa-solid fa-seedling"></i></div>
+                    {% endif %}
+                </div>
+                <div class="next-trip-info">
+                    <h4 class="next-trip-crop">{{ next_trip.experience.crop }} 체험</h4>
+                    <p><i class="fa-regular fa-calendar mr-1"></i> {{ next_trip.apply_date.strftime('%Y.%m.%d') }} {{ next_trip.apply_time }}</p>
+                    <p><i class="fa-solid fa-user-group mr-1"></i> {{ next_trip.participants_count }}명</p>
+                    <p><i class="fa-solid fa-location-dot mr-1"></i> {{ next_trip.experience.address_detail }}</p>
+                    <p class="next-trip-id">
+                        <small>예약번호 FLT-{{ next_trip.apply_date.strftime('%y%m%d') }}-{{ next_trip.id }}</small>
+                    </p>
+                    <div class="next-trip-btns">
+                        <a href="{{ url_for('experience_detail', item_id=next_trip.experience.id) }}" class="btn btn-success btn-sm">예약 상세</a>
+                        <a href="#" class="btn btn-outline-success btn-sm">
+                            <i class="fa-solid fa-map-location-dot mr-1"></i> AI 여행 코스 보기
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- AI 추천 여행 코스 -->
+        <div class="db-card">
+            <div class="db-card-header">
+                <h3 class="db-card-title">
+                    <span class="ai-badge-label">AI</span> AI 추천 여행 코스
+                    <span class="text-muted ml-1" style="font-size:0.82rem; font-weight:400;">AI가 맞춤 추천한 천안 1일 농촌 여행 코스에요.</span>
+                </h3>
+                <a href="#" class="more-link">AI 코스 전체 보기 <i class="fa-solid fa-chevron-right"></i></a>
+            </div>
+            <div class="ai-course-inner">
+                <div class="ai-timeline">
+                    <div class="ai-timeline-item">
+                        <div class="ai-time">09:00</div>
+                        <div class="ai-dot"></div>
+                        <div class="ai-timeline-body">
+                            <div class="ai-act-name">딸기 수확 체험</div>
+                            <div class="ai-act-sub">천안 행복 딸기 농장</div>
+                        </div>
+                        <div class="ai-thumb">🍓</div>
+                    </div>
+                    <div class="ai-timeline-item">
+                        <div class="ai-time">12:30</div>
+                        <div class="ai-dot"></div>
+                        <div class="ai-timeline-body">
+                            <div class="ai-act-name">천안 향토 음식</div>
+                            <div class="ai-act-sub">병천 순대국 &amp; 로컬 맛집</div>
+                        </div>
+                        <div class="ai-thumb">🍲</div>
+                    </div>
+                    <div class="ai-timeline-item">
+                        <div class="ai-time">15:00</div>
+                        <div class="ai-dot"></div>
+                        <div class="ai-timeline-body">
+                            <div class="ai-act-name">독립기념관 관람</div>
+                            <div class="ai-act-sub">역사와 자연을 함께</div>
+                        </div>
+                        <div class="ai-thumb">🏛️</div>
+                    </div>
+                    <div class="ai-timeline-item">
+                        <div class="ai-time">17:00</div>
+                        <div class="ai-dot"></div>
+                        <div class="ai-timeline-body">
+                            <div class="ai-act-name">로컬 카페 휴식</div>
+                            <div class="ai-act-sub">아늑한 시골 카페에서 힐링</div>
+                        </div>
+                        <div class="ai-thumb">☕</div>
+                    </div>
+                </div>
+                <div class="ai-map-placeholder">
+                    <div class="ai-map-inner">
+                        <i class="fa-solid fa-map-location-dot"></i>
+                        <span>지도 영역</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 추억 아카이브 + 재방문 추천 -->
+        <div class="db-two-col">
+            <div class="db-card">
+                <div class="db-card-header">
+                    <h3 class="db-card-title">추억 아카이브</h3>
+                    <div class="archive-btns">
+                        <button class="btn btn-sm btn-outline-secondary">사진 업로드</button>
+                        <a href="{{ url_for('album_create') }}" class="btn btn-sm btn-outline-success">앨범 만들기</a>
+                        <button class="btn btn-sm btn-outline-secondary">SNS 공유</button>
+                    </div>
+                </div>
+                <p class="text-muted mb-2" style="font-size:0.82rem;">여행의 추억을 사진으로 간직해보세요.</p>
+                <div class="archive-grid">
+                    {% set has_archive = namespace(found=false) %}
+                    {% for app in applications %}
+                        {% if app.experience.images %}
+                            {% set has_archive.found = true %}
+                            <div class="archive-item">
+                                <img src="{{ url_for('static', filename='uploads/' + app.experience.images.split(',')[0]) }}"
+                                     alt="{{ app.experience.crop }}">
+                                <div class="archive-label">{{ app.experience.crop }} 체험</div>
+                                <div class="archive-date">{{ app.apply_date.strftime('%Y.%m.%d') }}</div>
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+                    {% if not has_archive.found %}
+                    <p class="text-muted" style="font-size:0.82rem; grid-column:1/-1;">신청한 체험 기록이 없습니다.</p>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="db-card">
+                <div class="db-card-header">
+                    <h3 class="db-card-title">재방문 추천</h3>
+                </div>
+                <p class="text-muted mb-2" style="font-size:0.82rem;">다시 찾고 싶은 농장과 신선한 농산물을 만나보세요.</p>
+                <div class="revisit-list">
+                    <div class="revisit-item">
+                        <div class="revisit-info">
+                            <div class="revisit-name">신선한 제철 농산물</div>
+                            <div class="revisit-sub">농장에서 직접 키운 신선한 농산물 구매</div>
+                        </div>
+                        <button class="btn btn-sm btn-outline-dark">농산물 구매</button>
+                    </div>
+                    <div class="revisit-item">
+                        <div class="revisit-info">
+                            <div class="revisit-name">제철 꾸러미 정기구독</div>
+                            <div class="revisit-sub">제철 농산물을 정기적으로 받아보세요</div>
+                        </div>
+                        <button class="btn btn-sm btn-outline-dark">정기구독</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 전체 신청 내역 -->
+        <div class="db-card">
+            <h3 class="db-card-title">전체 신청 내역</h3>
+            {% if applications %}
+            <div class="apps-list">
+                {% for app in applications %}
+                <div class="app-item application-detail-trigger"
+                     data-crop="{{ app.experience.crop }}"
+                     data-apply-date="{{ app.apply_date.strftime('%Y-%m-%d') }}"
+                     data-apply-time="{{ app.apply_time }}"
+                     data-participants="{{ app.participants_count }}"
+                     data-status="{{ app.status }}"
+                     data-location="{{ app.experience.address_detail }}">
+                    <div class="app-item-main">
+                        <div class="app-item-title">{{ app.experience.crop }} 체험</div>
+                        <div class="app-item-meta">
+                            <i class="fa-regular fa-calendar mr-1"></i>
+                            {{ app.apply_date.strftime('%Y-%m-%d') }} {{ app.apply_time }} · {{ app.participants_count }}명
+                        </div>
+                    </div>
+                    <div class="app-item-right">
+                        <span class="badge badge-{{ 'primary' if app.status == '예정' else 'success' }} badge-pill">{{ app.status }}</span>
+                        <form action="{{ url_for('delete_application', app_id=app.id) }}" method="POST"
+                              class="d-inline" onsubmit="return confirm('신청을 취소하시겠습니까?');">
+                            <button type="submit" class="btn btn-outline-danger btn-sm ml-2">취소</button>
+                        </form>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-muted">신청한 체험이 없습니다.</p>
+            {% endif %}
+        </div>
+
+        <!-- 하단 스탯 바 -->
+        <div class="db-stats-bar">
+            <div class="db-stat">
+                <div class="db-stat-icon"><i class="fa-solid fa-coins text-warning"></i></div>
+                <div class="db-stat-val text-warning">0P</div>
+                <div class="db-stat-label">포인트 내역 보기 <i class="fa-solid fa-chevron-right"></i></div>
+            </div>
+            <div class="db-stat">
+                <div class="db-stat-icon"><i class="fa-solid fa-heart text-success"></i></div>
+                <div class="db-stat-val">0개</div>
+                <div class="db-stat-label">찜한 목록 보기 <i class="fa-solid fa-chevron-right"></i></div>
+            </div>
+            <div class="db-stat">
+                <div class="db-stat-icon"><i class="fa-regular fa-comment-dots"></i></div>
+                <div class="db-stat-val">{{ applications|length }}개</div>
+                <div class="db-stat-label">작성한 후기 보기 <i class="fa-solid fa-chevron-right"></i></div>
+            </div>
+            <div class="db-stat">
+                <div class="db-stat-icon"><i class="fa-regular fa-bell"></i></div>
+                <div class="db-stat-val">0개</div>
+                <div class="db-stat-label">안 읽은 알림 보기 <i class="fa-solid fa-chevron-right"></i></div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- 신청 내역 모달 -->
+<div id="application-detail-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-content">
+        <h4>신청 내역 상세</h4>
+        <div id="modal-summary" style="margin-top: 1rem;">
+            <p><strong>체험명:</strong> <span id="modal-crop"></span></p>
+            <p><strong>신청일:</strong> <span id="modal-apply-date"></span></p>
+            <p><strong>신청시간:</strong> <span id="modal-apply-time"></span></p>
+            <p><strong>참가인원:</strong> <span id="modal-participants"></span>명</p>
+            <p><strong>상태:</strong> <span id="modal-status"></span></p>
+            <p><strong>장소:</strong> <span id="modal-location"></span></p>
+        </div>
+        <div class="modal-buttons">
+            <button id="modal-close-btn" class="btn btn-success">확인</button>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const editBtn = document.getElementById('edit-btn');
+    const cancelBtn = document.getElementById('cancel-btn');
+    const fieldset = document.getElementById('info-fieldset');
+    const formButtons = document.getElementById('form-buttons');
+
+    if (editBtn) {
+        editBtn.addEventListener('click', function() {
+            fieldset.disabled = false;
+            formButtons.style.display = 'block';
+            editBtn.style.display = 'none';
+        });
+    }
+    if (cancelBtn) {
+        cancelBtn.addEventListener('click', function() {
+            fieldset.disabled = true;
+            formButtons.style.display = 'none';
+            editBtn.style.display = 'block';
+            location.reload();
+        });
+    }
+
+    const modal = document.getElementById('application-detail-modal');
+    const closeModalBtn = document.getElementById('modal-close-btn');
+    const triggers = document.querySelectorAll('.application-detail-trigger');
+
+    triggers.forEach(trigger => {
+        trigger.addEventListener('click', function(e) {
+            if (e.target.closest('form')) return;
+            const d = this.dataset;
+            document.getElementById('modal-crop').textContent = d.crop;
+            document.getElementById('modal-apply-date').textContent = d.applyDate;
+            document.getElementById('modal-apply-time').textContent = d.applyTime;
+            document.getElementById('modal-participants').textContent = d.participants;
+            document.getElementById('modal-status').textContent = d.status;
+            document.getElementById('modal-location').textContent = d.location;
+            modal.style.display = 'flex';
+        });
+    });
+
+    function closeModal() { modal.style.display = 'none'; }
+    if (closeModalBtn) closeModalBtn.addEventListener('click', closeModal);
+    if (modal) modal.addEventListener('click', function(e) { if (e.target === modal) closeModal(); });
+});
+</script>
+{% endblock %}

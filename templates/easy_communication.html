@@ -1,0 +1,97 @@
+{% extends "layout.html" %}
+{% block page_class %}easy-mode-page{% endblock %}
+{% block content %}
+<div class="container easy-mode-container">
+
+    <div class="easy-header" style="display:flex;align-items:center;gap:16px;">
+        <a href="{{ url_for('farmer_easy_mode', tab='operations') }}" class="fl-btn fl-btn-outline"
+            style="flex-shrink:0;">
+            <i class="fa-solid fa-arrow-left"></i> 뒤로가기
+        </a>
+        <div>
+            <h1>💬 문의 관리</h1>
+            <p>손님들이 남긴 문의를 확인하고 답변해 보세요.</p>
+        </div>
+    </div>
+
+    <div class="easy-communication-section">
+        {% for inquiry in inquiries %}
+        <div class="easy-inquiry-card">
+
+            {# 문의 내용 #}
+            <div class="ec-inquiry-meta">
+                <strong class="easy-inquiry-author">{{ inquiry.user.nickname }}</strong>
+                <span class="ec-inquiry-crop">{{ inquiry.experience.crop }}</span>
+                <small>{{ inquiry.timestamp.strftime('%Y.%m.%d') }}</small>
+            </div>
+            <div class="easy-inquiry-content">"{{ inquiry.content }}"</div>
+
+            {# 기존 답변 목록 #}
+            {% if inquiry.replies %}
+            <div class="ec-replies">
+                {% for reply in inquiry.replies | sort(attribute='timestamp') %}
+                <div class="ec-reply-item" id="reply-view-{{ reply.id }}">
+                    <div class="ec-reply-body">
+                        <p class="ec-reply-label">🌾 농장주 답변</p>
+                        <p class="ec-reply-text">{{ reply.content }}</p>
+                        <small class="ec-reply-date">{{ reply.timestamp.strftime('%Y.%m.%d %H:%M') }}</small>
+                    </div>
+                    <div class="ec-reply-actions">
+                        <button type="button" class="fl-btn fl-btn-outline ec-btn-sm"
+                            onclick="openEditForm({{ reply.id }})">수정</button>
+                        <form method="POST" action="{{ url_for('delete_inquiry_reply', reply_id=reply.id) }}"
+                            style="margin:0;" onsubmit="return confirm('답변을 삭제할까요?');">
+                            <button type="submit" class="fl-btn ec-btn-sm ec-btn-del">삭제</button>
+                        </form>
+                    </div>
+                </div>
+                {# 수정 폼 (기본 숨김) #}
+                <div class="ec-edit-form" id="reply-edit-{{ reply.id }}" style="display:none;">
+                    <form method="POST" action="{{ url_for('edit_inquiry_reply', reply_id=reply.id) }}">
+                        <textarea name="content" class="form-control easy-reply-textarea" rows="3"
+                            required>{{ reply.content }}</textarea>
+                        <div style="display:flex;gap:8px;margin-top:8px;">
+                            <button type="submit" class="easy-submit-button"
+                                style="width:auto;padding:10px 20px;">저장</button>
+                            <button type="button" class="easy-back-button"
+                                style="width:auto;padding:10px 20px;margin:0;"
+                                onclick="closeEditForm({{ reply.id }})">취소</button>
+                        </div>
+                    </form>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            {# 새 답변 작성란 #}
+            <form method="POST" action="{{ url_for('reply_inquiry', inquiry_id=inquiry.id) }}"
+                class="ec-new-reply-form">
+                <textarea name="content" class="form-control easy-reply-textarea" placeholder="답변을 입력해주세요..." rows="3"
+                    required></textarea>
+                <button type="submit" class="easy-submit-button" style="margin-top:8px;width:auto;padding:10px 24px;">답변
+                    등록</button>
+            </form>
+
+        </div>
+        {% else %}
+        <div class="easy-no-item-small">
+            <p>아직 문의가 없습니다. 🌱</p>
+        </div>
+        {% endfor %}
+    </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function openEditForm(replyId) {
+        document.getElementById('reply-view-' + replyId).style.display = 'none';
+        document.getElementById('reply-edit-' + replyId).style.display = 'block';
+    }
+    function closeEditForm(replyId) {
+        document.getElementById('reply-edit-' + replyId).style.display = 'none';
+        document.getElementById('reply-view-' + replyId).style.display = 'flex';
+    }
+</script>
+{% endblock %}

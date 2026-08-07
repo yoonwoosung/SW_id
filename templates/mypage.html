@@ -1,0 +1,236 @@
+{% extends "layout.html" %}
+{% block page_class %}page-mypage{% endblock %}
+
+{% block head %}
+<style>
+    .mp-tabs { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:var(--fl-s4,16px); }
+    .mp-tab { border:1px solid #cfe3d6; background:#fff; color:#3a4a40; border-radius:999px;
+              padding:9px 18px; font-weight:700; font-size:.92rem; cursor:pointer; }
+    .mp-tab.is-active { background:var(--fl-green-700,#1d6340); color:#fff; border-color:var(--fl-green-700,#1d6340); }
+    .mp-panel[hidden] { display:none; }
+    .mp-list-item { display:flex; align-items:center; gap:12px; padding:12px 4px;
+                    border-bottom:1px solid #eef1ee; text-decoration:none; color:inherit; }
+    .mp-thumb { width:56px; height:56px; border-radius:10px; object-fit:cover; background:var(--fl-green-100,#e8f5e9);
+                display:flex; align-items:center; justify-content:center; font-size:1.4rem; flex-shrink:0; }
+    .mp-empty { color:#8a938c; padding:16px 4px; }
+    .mp-point-balance { font-size:2.2rem; font-weight:800; color:var(--fl-orange,#E8960C); }
+
+    /* 딥그린 요약 카드 */
+    .mp-summary { display:flex; align-items:center; gap:16px; background:var(--fl-green-700,#1d6340);
+                  color:#fff; border-radius:16px; padding:20px 22px; }
+    .mp-summary__avatar { width:52px; height:52px; border-radius:50%; object-fit:cover; border:2px solid rgba(255,255,255,.5); }
+    .mp-summary__name { font-weight:800; font-size:1.1rem; }
+    .mp-summary__sub { font-size:.82rem; color:rgba(255,255,255,.8); margin-top:2px; }
+    .mp-summary__stats { margin-left:auto; display:flex; gap:26px; text-align:right; }
+    .mp-summary__num { font-size:1.7rem; font-weight:800; line-height:1; }
+    .mp-summary__lbl { font-size:.75rem; color:rgba(255,255,255,.8); margin-top:4px; }
+
+    /* 예약 카드 리스트 */
+    .mp-res-list { display:flex; flex-direction:column; gap:12px; }
+    .mp-res-card { display:flex; gap:14px; background:#fff; border:1px solid #eef1ee;
+                   border-radius:14px; padding:14px; align-items:center; }
+    .mp-res-thumb { width:84px; height:84px; border-radius:11px; object-fit:cover; flex-shrink:0;
+                    background:var(--fl-green-100,#e8f5e9); display:flex; align-items:center; justify-content:center; font-size:1.8rem; }
+    .mp-res-body { flex:1; min-width:0; }
+    .mp-res-title { font-weight:800; margin:6px 0 6px; color:#253027; }
+    .mp-res-meta { font-size:.85rem; color:#55605a; margin-top:2px; }
+    .mp-res-actions { display:flex; flex-direction:column; gap:8px; flex-shrink:0; }
+    .mp-res-actions .fl-btn, .mp-res-actions button { white-space:nowrap; }
+    .mp-cancel-form { margin:0; }
+
+    /* 상태 뱃지 색 */
+    .mp-res-badge { display:inline-block; font-size:.74rem; font-weight:800; border-radius:999px; padding:3px 10px; }
+    .mp-res-badge--pay_pending  { background:#fdeccf; color:#9a6a11; }
+    .mp-res-badge--await_accept { background:#fff3cd; color:#8a6d00; }
+    .mp-res-badge--confirmed    { background:#dcebe1; color:#1d6340; }
+    .mp-res-badge--completed    { background:#e3edf7; color:#1565c0; }
+    .mp-res-badge--cancelled    { background:#eceff0; color:#7a827d; }
+
+    .mp-btn-cancel { border:1px solid #e0b4b4; background:#fff; color:#c0392b; border-radius:9px; padding:8px 14px; font-weight:700; font-size:.86rem; cursor:pointer; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="fl-container fl-scope" style="margin-top:var(--fl-s5);">
+
+        {# ===== 메인(내 활동) ===== #}
+        <main style="display:flex;flex-direction:column;gap:var(--fl-s5);">
+
+            {# 딥그린 요약 카드: 프로필 + 함께한 체험 횟수 + 보유 포인트 #}
+            <div class="mp-summary">
+                <img class="mp-summary__avatar" src="{{ url_for('static', filename='uploads/' + user.profile_image) }}" alt="{{ user.nickname }}">
+                <div>
+                    <div class="mp-summary__name">{{ user.nickname }}님</div>
+                    <div class="mp-summary__sub">FarmLink와 함께한 하루 여행</div>
+                </div>
+                <div class="mp-summary__stats">
+                    <div>
+                        <div class="mp-summary__num">{{ experienced_count }}</div>
+                        <div class="mp-summary__lbl">함께한 체험</div>
+                    </div>
+                    <div>
+                        <div class="mp-summary__num" id="mp-summary-points">–</div>
+                        <div class="mp-summary__lbl">보유 포인트</div>
+                    </div>
+                </div>
+            </div>
+
+            {# ===== 내 활동 탭 ===== #}
+            <div class="mp-tabs" role="tablist">
+                <button type="button" class="mp-tab is-active" data-tab="reservations">예약 내역</button>
+                <button type="button" class="mp-tab" data-tab="wishlist">찜</button>
+                <button type="button" class="mp-tab" data-tab="recent">최근 본 것</button>
+                <button type="button" class="mp-tab" data-tab="points">포인트</button>
+            </div>
+
+            <div class="mp-panel" data-panel="reservations">
+                {% if reservation_cards %}
+                <div class="mp-res-list">
+                    {% for r in reservation_cards %}
+                    <article class="mp-res-card" data-state="{{ r.state }}">
+                        {% if r.image %}
+                        <img class="mp-res-thumb" src="{{ r.image if r.image.startswith('http') else url_for('static', filename='uploads/' + r.image) }}" alt="{{ r.crop }}">
+                        {% else %}
+                        <div class="mp-res-thumb"><i data-lucide="sprout"></i></div>
+                        {% endif %}
+                        <div class="mp-res-body">
+                            <span class="mp-res-badge mp-res-badge--{{ r.state }}">{{ r.badge }}</span>
+                            <h3 class="mp-res-title">{{ r.crop }} 체험</h3>
+                            <div class="mp-res-meta"><i data-lucide="calendar"></i> {{ r.date }} {{ r.time }} · <i data-lucide="users"></i> {{ r.participants }}명</div>
+                            <div class="mp-res-meta"><i data-lucide="map-pin"></i> {{ r.location or '장소 미정' }}</div>
+                            <div class="fl-muted" style="font-size:.8rem;margin-top:4px;">예약번호 FLT-{{ '%06d' | format(r.app_id) }}</div>
+                        </div>
+                        <div class="mp-res-actions">
+                            {% if r.state == 'pay_pending' %}
+                            <button type="button" class="fl-btn fl-btn-primary fl-btn-sm mp-pay-btn" data-pay-url="{{ url_for('payment_page', app_id=r.app_id) }}">결제하기</button>
+                            <form class="mp-cancel-form" action="{{ url_for('delete_application', app_id=r.app_id) }}" method="POST" onsubmit="return confirm('예약을 취소할까요?');">
+                                <button type="submit" class="mp-btn-cancel">예약 취소</button>
+                            </form>
+                            {% elif r.state == 'await_accept' %}
+                            <form class="mp-cancel-form" action="{{ url_for('delete_application', app_id=r.app_id) }}" method="POST" onsubmit="return confirm('예약을 취소할까요?');">
+                                <button type="submit" class="mp-btn-cancel">예약 취소</button>
+                            </form>
+                            <a href="{{ url_for('experience_detail', item_id=r.exp_id) }}" class="fl-btn fl-btn-outline fl-btn-sm">상세</a>
+                            {% elif r.state == 'confirmed' %}
+                            <a href="{{ url_for('ai_recommend_page') }}?experience={{ r.exp_id }}" class="fl-btn fl-btn-primary fl-btn-sm">코스 보기</a>
+                            <a href="{{ url_for('experience_detail', item_id=r.exp_id) }}" class="fl-btn fl-btn-outline fl-btn-sm">상세</a>
+                            {% elif r.state == 'completed' %}
+                            <a href="{{ url_for('experience_detail', item_id=r.exp_id) }}#review" class="fl-btn fl-btn-sm" style="background:var(--fl-orange,#E8960C);color:#fff;">후기 남기기</a>
+                            <a href="{{ url_for('experience_detail', item_id=r.exp_id) }}" class="fl-btn fl-btn-outline fl-btn-sm">상세</a>
+                            {% else %}
+                            <a href="{{ url_for('experience_detail', item_id=r.exp_id) }}" class="fl-btn fl-btn-outline fl-btn-sm">상세</a>
+                            {% endif %}
+                        </div>
+                    </article>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="mp-empty">아직 예약한 체험이 없어요. <a href="{{ url_for('index') }}" style="color:var(--fl-green-700);font-weight:700;">체험 찾아보기 ›</a></p>
+                {% endif %}
+            </div>{# /reservations 패널 #}
+
+            {# 찜 #}
+            <div class="mp-panel" data-panel="wishlist" hidden>
+                <section class="fl-card"><div class="fl-card-body">
+                    <div class="fl-section-head"><h2><i data-lucide="heart"></i> 찜한 체험</h2></div>
+                    <div id="mp-wishlist"><p class="mp-empty">불러오는 중…</p></div>
+                </div></section>
+            </div>
+
+            {# 최근 본 것 #}
+            <div class="mp-panel" data-panel="recent" hidden>
+                <section class="fl-card"><div class="fl-card-body">
+                    <div class="fl-section-head"><h2><i data-lucide="history"></i> 최근 본 체험</h2></div>
+                    <div id="mp-recent"><p class="mp-empty">불러오는 중…</p></div>
+                </div></section>
+            </div>
+
+            {# 포인트 #}
+            <div class="mp-panel" data-panel="points" hidden>
+                <section class="fl-card"><div class="fl-card-body">
+                    <div class="fl-section-head"><h2><i data-lucide="coins"></i> 포인트</h2></div>
+                    <div class="mp-point-balance" id="mp-point-balance">–</div>
+                    <div id="mp-point-logs" style="margin-top:12px;"><p class="mp-empty">불러오는 중…</p></div>
+                </div></section>
+            </div>
+
+        </main>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{# 예약 카드의 '결제하기' → 결제 화면(전체 페이지, 신청→결제→완료 흐름과 동일) #}
+<script>
+(function () {
+    document.querySelectorAll('.mp-pay-btn').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            window.location.href = btn.dataset.payUrl;
+        });
+    });
+})();
+</script>
+
+{# 내 활동 탭: 찜·최근본것·포인트를 실제 API로 채운다 #}
+<script>
+(function () {
+    function esc(s) { var d = document.createElement('div'); d.textContent = (s == null ? '' : String(s)); return d.innerHTML; }
+    function setText(id, v) { var e = document.getElementById(id); if (e) e.textContent = v; }
+    function won(n) { return Number(n || 0).toLocaleString() + '원'; }
+
+    var tabs = document.querySelectorAll('.mp-tab');
+    var panels = document.querySelectorAll('.mp-panel');
+    var loaded = {};
+    function show(name) {
+        tabs.forEach(function (t) { t.classList.toggle('is-active', t.dataset.tab === name); });
+        panels.forEach(function (p) { p.hidden = p.dataset.panel !== name; });
+        if (!loaded[name]) { loaded[name] = true; load(name); }
+    }
+    tabs.forEach(function (t) { t.addEventListener('click', function () { show(t.dataset.tab); }); });
+
+    function expCard(expId, name, image, cost) {
+        var thumb = image ? '<img class="mp-thumb" src="/static/uploads/' + esc(image) + '" alt="">' : '<div class="mp-thumb"><i data-lucide="sprout"></i></div>';
+        return '<a class="mp-list-item" href="/experience/' + expId + '">' + thumb
+            + '<div style="flex:1;"><div style="font-weight:700;">' + esc(name) + '</div>'
+            + '<div style="color:var(--fl-orange,#E8960C);font-weight:800;">' + won(cost) + '</div></div></a>';
+    }
+    function fetchList(url, key, elId, empty, render) {
+        fetch(url).then(function (r) { return r.json(); }).then(function (res) {
+            var el = document.getElementById(elId);
+            if (!res.success) { el.innerHTML = '<p class="mp-empty">로그인이 필요해요.</p>'; return; }
+            var list = res.data[key] || [];
+            el.innerHTML = list.length ? list.map(render).join('') : '<p class="mp-empty">' + empty + '</p>';
+        }).catch(function () { var el = document.getElementById(elId); if (el) el.innerHTML = '<p class="mp-empty">불러오지 못했어요.</p>'; });
+    }
+    function load(name) {
+        if (name === 'wishlist') {
+            fetchList('/api/wishlists', 'wishlists', 'mp-wishlist', '아직 찜한 체험이 없어요.',
+                function (x) { return expCard(x.experience_id, x.name, x.image, x.cost); });
+        } else if (name === 'recent') {
+            fetchList('/api/users/me/recent-views', 'recent_views', 'mp-recent', '최근 본 체험이 없어요.',
+                function (x) { return expCard(x.id, x.name, x.image, x.cost); });
+        } else if (name === 'points') {
+            fetch('/api/users/me/points').then(function (r) { return r.json(); }).then(function (res) {
+                if (!res.success) { setText('mp-point-balance', '로그인 필요'); return; }
+                setText('mp-point-balance', Number(res.data.balance || 0).toLocaleString() + 'P');
+                var logs = res.data.logs || [];
+                document.getElementById('mp-point-logs').innerHTML = logs.length ? logs.map(function (l) {
+                    var pos = l.amount >= 0;
+                    return '<div class="mp-list-item"><div style="flex:1;">' + esc(l.reason)
+                        + ' <small style="color:#999;">' + esc((l.created_at || '').slice(0, 10)) + '</small></div>'
+                        + '<div style="font-weight:800;color:' + (pos ? '#2e7d32' : '#c00') + ';">'
+                        + (pos ? '+' : '') + Number(l.amount).toLocaleString() + 'P</div></div>';
+                }).join('') : '<p class="mp-empty">적립 내역이 없어요.</p>';
+            }).catch(function () {});
+        }
+    }
+
+    // 사이드바·통계 숫자(포인트·찜)를 진입 시 채움
+    fetch('/api/users/me/points').then(function (r) { return r.json(); }).then(function (res) {
+        if (res.success) { var b = Number(res.data.balance || 0).toLocaleString() + 'P'; setText('mp-stat-points', b); setText('mp-side-points', b); setText('mp-summary-points', b); }
+    }).catch(function () {});
+    fetch('/api/wishlists').then(function (r) { return r.json(); }).then(function (res) {
+        if (res.success) { setText('mp-stat-wish', (res.data.wishlists || []).length); }
+    }).catch(function () {});
+})();
+</script>
+{% endblock %}

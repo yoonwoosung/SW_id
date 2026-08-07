@@ -1,0 +1,1333 @@
+{% extends "layout.html" %}
+{% block content %}
+
+<!-- PDF 및 캔버스 라이브러리 -->
+<script src="{{ url_for('static', filename='js/html2canvas.min.js') }}"></script>
+<script src="{{ url_for('static', filename='js/html2pdf.bundle.min.js') }}"></script>
+
+<div class="main-content-wrapper album-editor-wrapper py-3">
+
+    <!-- 메인 2칼럼 통합 레이아웃 -->
+    <div class="album-main-layout">
+
+        <!-- [좌측 패널] 책갈피 탭 + 앨범 요소스토어 -->
+        <div class="album-sidebar-container">
+
+            <!-- 책갈피(Bookmark) 탭 네비게이션 -->
+            <div class="sidebar-bookmark-nav">
+                <button type="button" class="bookmark-tab active" id="tabBtn_design"
+                    onclick="switchSidebarTab('design')" title="디자인 & 레이아웃">
+                    <i class="fa-solid fa-palette"></i>
+                    <span>디자인</span>
+                </button>
+                <button type="button" class="bookmark-tab" id="tabBtn_photo" onclick="switchSidebarTab('photo')"
+                    title="사진 보관함">
+                    <i class="fa-solid fa-images"></i>
+                    <span>사진</span>
+                </button>
+                <button type="button" class="bookmark-tab" id="tabBtn_text" onclick="switchSidebarTab('text')"
+                    title="텍스트 스튜디오">
+                    <i class="fa-solid fa-font"></i>
+                    <span>텍스트</span>
+                </button>
+            </div>
+
+            <!-- 사이드바 패널 본체 -->
+            <div class="card shadow-sm style-scroll album-sidebar-box">
+
+                <!-- 패널 1. 🎨 디자인 & 레이아웃 -->
+                <div id="tabPanel_design" class="tab-panel-content active">
+                    <h6 class="font-weight-bold mb-3 text-dark border-bottom pb-2">
+                        <i class="fa-solid fa-palette text-success mr-2"></i>디자인 & 레이아웃
+                    </h6>
+
+                    <!-- 1. 다녀온 체험 선택 -->
+                    <div class="form-group mb-3">
+                        <label class="small font-weight-bold text-muted mb-1">다녀온 체험 정보</label>
+                        <select id="albumExpSelect" class="form-control form-control-sm" onchange="autoFillTitle(this)">
+                            <option value="">-- 체험 선택 --</option>
+                            {% if applications %}
+                            {% for app in applications %}
+                            {% if app.experience %}
+                            <option value="{{ app.experience.crop }}"
+                                data-location="{{ app.experience.address_detail }}">
+                                [{{ app.apply_date.strftime('%Y.%m.%d') }}] {{ app.experience.crop }}
+                            </option>
+                            {% endif %}
+                            {% endfor %}
+                            {% else %}
+                            <option value="농촌 수확 체험" data-location="충청남도 천안시">천안 딸기 수확 체험 (샘플)</option>
+                            {% endif %}
+                        </select>
+                    </div>
+
+                    <!-- 2. 앨범 모양/규격 선택 -->
+                    <div class="form-group mb-3">
+                        <label class="small font-weight-bold text-muted mb-1"><i
+                                class="fa-solid fa-book-open text-primary"></i> 앨범 모양 / 규격</label>
+                        <select id="shapeThemeSelect" class="form-control form-control-sm"
+                            onchange="changeShapeTheme(this.value)">
+                            <option value="shape-portrait">세로형 앨범</option>
+                            <option value="shape-square">정사각형 앨범(Square)</option>
+                            <option value="shape-landscape">가로형 앨범</option>
+                        </select>
+                    </div>
+
+                    <!-- 3. 겉표지 디자인 선택 -->
+                    <div class="form-group mb-3">
+                        <label class="small font-weight-bold text-muted mb-1"><i
+                                class="fa-solid fa-book text-success"></i> 겉표지 디자인</label>
+                        <select id="coverThemeSelect" class="form-control form-control-sm"
+                            onchange="changeCoverTheme(this.value)">
+                            <option value="cover-green">초록색</option>
+                            <option value="cover-leather">가죽</option>
+                            <option value="cover-linen">살구색</option>
+                            <option value="cover-navy">남색</option>
+                        </select>
+                    </div>
+
+                    <!-- 4. 속지 종이 재질 선택 -->
+                    <div class="form-group mb-3">
+                        <label class="small font-weight-bold text-muted mb-1"><i
+                                class="fa-solid fa-note-sticky text-warning"></i> 속지 종이 재질</label>
+                        <select id="paperThemeSelect" class="form-control form-control-sm"
+                            onchange="changePaperTheme(this.value)">
+                            <option value="paper-white">📄 흰종이</option>
+                            <option value="paper-cream">📜 한지</option>
+                            <option value="paper-kraft">📦 종이 상자</option>
+                            <option value="paper-grid">▦ 모눈 격자</option>
+                        </select>
+                    </div>
+
+                    <!-- 5. 앨범 레이아웃 틀 -->
+                    <div class="form-group mb-3">
+                        <label class="small font-weight-bold text-muted mb-1"><i
+                                class="fa-solid fa-border-all text-info"></i> 앨범 레이아웃 틀</label>
+                        <select id="layoutTemplateSelect" class="form-control form-control-sm"
+                            onchange="applyLayoutTemplate(this.value)">
+                            <option value="free">✨ 자유 배치 (기본)</option>
+                            <option value="grid4">🖼️ 4컷 클래식 레이아웃</option>
+                            <option value="hero1">📸 메인 1컷 + 소형 2컷</option>
+                            <option value="diary">📖 여행 일기 (사진 + 메모)</option>
+                            <option value="fullPage">🖼️ 1페이지 풀채움 (페이지 전체 1컷)</option>
+                            <option value="fullSpread">🌅 양면 파노라마 (2페이지 전체 1컷)</option>
+                            <option value="centerCross">🏞️ 중앙 연결 파노라마 (양면 연속)</option>
+                            <option value="photoStory">✍️ 감성 스토리 (대형+글귀+하단3컷)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- 패널 2. 📷 사진 보관함 -->
+                <div id="tabPanel_photo" class="tab-panel-content">
+                    <h6 class="font-weight-bold mb-3 text-dark border-bottom pb-2">
+                        <i class="fa-solid fa-images text-success mr-2"></i>사진 보관함
+                    </h6>
+
+                    <div class="form-group mb-3">
+                        <label class="small font-weight-bold text-muted mb-1">사진 업로드 (5~20장)</label>
+                        <input type="file" id="photoUploader" class="form-control-file border p-1 rounded small"
+                            multiple accept="image/*" onchange="handlePhotoUpload(event)">
+                        <small id="photoCountNotice" class="text-info d-block mt-1 font-weight-bold"
+                            style="font-size: 0.72rem;">* 최소 5장 이상 권장합니다.</small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="small font-weight-bold text-muted mb-1">사진 클릭 시 앨범에 추가</label>
+                        <div id="photoTray" class="d-flex flex-wrap gap-2 p-2 bg-light border rounded style-scroll"
+                            style="min-height: 180px; max-height: 260px; overflow-y: auto;">
+                            <span class="text-muted small m-auto" id="emptyTrayText">사진을 올려주세요</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 패널 3. ✍️ 텍스트 스튜디오 -->
+                <div id="tabPanel_text" class="tab-panel-content">
+                    <h6 class="font-weight-bold mb-3 text-dark border-bottom pb-2">
+                        <i class="fa-solid fa-font text-success mr-2"></i>텍스트 스튜디오
+                    </h6>
+
+                    <div class="mb-3">
+                        <button type="button" class="btn btn-sm btn-outline-success btn-block font-weight-bold py-2"
+                            onclick="addTextBoxToActivePage()">
+                            <i class="fa-solid fa-plus mr-1"></i> 텍스트 상자 추가
+                        </button>
+                    </div>
+
+                    <div class="p-3 bg-light border rounded mb-3">
+                        <small class="font-weight-bold text-dark d-block mb-2"><i
+                                class="fa-solid fa-lightbulb text-warning mr-1"></i> 텍스트 편집 팁</small>
+                        <ul class="pl-3 mb-0 small text-muted" style="font-size: 0.75rem; line-height: 1.6;">
+                            <li>텍스트 상자를 **마우스로 Drag**하여 원하는 위치나 옆 페이지로 이동할 수 있습니다.</li>
+                            <li>상단 **🔄 핸들**을 끌면 **360도 자유 회전**이 가능합니다.</li>
+                            <li>글자를 직접 클릭하여 자유롭게 내용을 수정하세요.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <hr class="my-2">
+
+                <!-- 고화질 PDF 앨범 발급 버튼 -->
+                <button type="button" class="btn btn-success btn-block font-weight-bold py-2 shadow-sm mt-2"
+                    onclick="downloadBookPDF(event)">
+                    <i class="fa-solid fa-file-pdf mr-1"></i> 고화질 PDF 앨범 발급
+                </button>
+            </div>
+
+        </div>
+
+        <!-- [우측 패널] 대형 앨범 작업대 -->
+        <div class="album-workspace-box">
+
+            <!-- 좌측 이전 화살표 버튼 -->
+            <button type="button" class="book-nav-btn prev-btn" id="bookPrevBtn" onclick="prevPage()" title="이전 페이지">
+                <i class="fa-solid fa-chevron-left"></i>
+            </button>
+
+            <!-- 펼침 크기 전용 스테이지 -->
+            <div class="book-stage">
+                <!-- 실제 포토북 앨범 -->
+                <div id="bookContainer" class="book-container cover-green paper-white shape-portrait">
+                    <!-- JS에 의해 동적 렌더링 -->
+                </div>
+            </div>
+
+            <!-- 우측 다음 화살표 버튼 -->
+            <button type="button" class="book-nav-btn next-btn" id="bookNextBtn" onclick="nextPage()" title="다음 페이지">
+                <i class="fa-solid fa-chevron-right"></i>
+            </button>
+
+        </div>
+
+    </div>
+</div>
+
+<script>
+    // 앨범 상태 관리 데이터
+    let shapeTheme = 'shape-portrait'; // shape-portrait, shape-square, shape-landscape
+    let coverTheme = 'cover-green';
+    let paperTheme = 'paper-white';
+    let currentSpreadIndex = 0; // 0: 겉표지, 1~N: 속지 펼침(각 2p), N+1: 뒤표지
+    let innerPageCount = 2; // 초기 속지 페이지 수 (최대 10p까지 확장)
+
+    // 각 페이지 객체에 template 속성 기본값('free') 부여
+    let albumPagesData = Array.from({ length: 12 }, () => ({ title: '', elements: [], template: 'free' }));
+    let uploadedImageURLs = [];
+    let draggedSlotInfo = null;
+
+    let selectedPageIndex = 1;
+
+    // 💡 [해결 3] 페이지 클릭 시 선택 표시 및 드롭다운 메뉴 글자 자동 동기화
+    function selectPage(pIdx) {
+        if (pIdx > innerPageCount) return;
+        selectedPageIndex = pIdx;
+        document.querySelectorAll('.book-page').forEach(p => p.classList.remove('active-page'));
+        const pageEl = document.getElementById(`pageCanvas_${pIdx}`);
+        if (pageEl) {
+            pageEl.classList.add('active-page');
+        }
+
+        const selectEl = document.getElementById('layoutTemplateSelect');
+        if (selectEl && albumPagesData[pIdx]) {
+            selectEl.value = albumPagesData[pIdx].template || 'free';
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        renderBookView();
+    });
+
+    function clearElementSelection() {
+        document.querySelectorAll('.free-drag-element.selected').forEach(el => {
+            el.classList.remove('selected');
+        });
+    }
+
+    document.addEventListener('mousedown', function (e) {
+        if (!e.target.closest('.free-drag-element') &&
+            !e.target.closest('.album-sidebar-container') &&
+            !e.target.closest('.book-nav-btn')) {
+            clearElementSelection();
+        }
+    });
+
+    function enableTextEdit(el) {
+        el.setAttribute('contenteditable', 'true');
+        const trimmed = el.innerText.trim();
+        if (el.classList.contains('is-placeholder') || trimmed === '✏️ 더블 클릭하여 수정') {
+            el.innerText = '';
+            el.classList.remove('is-placeholder');
+        }
+        el.focus();
+    }
+
+    function disableTextEdit(el, elemId, pageIdx) {
+        el.setAttribute('contenteditable', 'false');
+        const trimmed = el.innerText.trim();
+        if (trimmed === '' || trimmed === '✏️ 더블 클릭하여 수정') {
+            el.innerText = '✏️ 더블 클릭하여 수정';
+            el.classList.add('is-placeholder');
+            updateTextContent(elemId, pageIdx, '✏️ 더블 클릭하여 수정');
+        } else {
+            el.classList.remove('is-placeholder');
+            updateTextContent(elemId, pageIdx, el.innerText);
+        }
+    }
+
+    // 책갈피 탭 전환 함수
+    function switchSidebarTab(tabName) {
+        document.querySelectorAll('.bookmark-tab').forEach(btn => btn.classList.remove('active'));
+        document.querySelectorAll('.tab-panel-content').forEach(panel => panel.classList.remove('active'));
+
+        const targetBtn = document.getElementById(`tabBtn_${tabName}`);
+        const targetPanel = document.getElementById(`tabPanel_${tabName}`);
+
+        if (targetBtn && targetPanel) {
+            targetBtn.classList.add('active');
+            targetPanel.classList.add('active');
+        }
+    }
+
+    // 💡 [해결 1] 앨범 모양/규격 변경 시 펼침면 전체 페이지 레이아웃 재계산
+    function changeShapeTheme(shape) {
+        shapeTheme = shape;        
+        if (currentSpreadIndex > 0 && currentSpreadIndex <= Math.ceil(innerPageCount / 2)) {
+            const leftPageIndex = (currentSpreadIndex - 1) * 2 + 1;
+            const rightPageIndex = leftPageIndex + 1;
+
+            const leftTpl = albumPagesData[leftPageIndex]?.template || 'free';
+            const rightTpl = albumPagesData[rightPageIndex]?.template || 'free';
+
+            if (leftTpl === 'fullSpread' || leftTpl === 'centerCross') {
+                applyLayoutTemplate(leftTpl, true);
+            } else {
+                const origSelected = selectedPageIndex;
+                
+                if (leftTpl !== 'free') {
+                    selectedPageIndex = leftPageIndex;
+                    applyLayoutTemplate(leftTpl, true);
+                }
+                if (rightTpl !== 'free') {
+                    selectedPageIndex = rightPageIndex;
+                    applyLayoutTemplate(rightTpl, true);
+                }
+                
+                selectedPageIndex = origSelected;
+            }
+        }
+        renderBookView();
+    }
+
+    // 💡 [해결 2 & 3] 레이아웃 템플릿 적용 (파노라마 잔재 삭제 & 단일/양면 독립 적용)
+    function applyLayoutTemplate(templateType, isSilent = false) {
+        const maxSpreads = Math.floor(innerPageCount / 2) + 1;
+        if (currentSpreadIndex === 0 || currentSpreadIndex > maxSpreads + 1) {
+            if (!isSilent) {
+                alert("속지 페이지(1p~10p)로 이동한 후 레이아웃 틀을 적용해 주세요!");
+            }
+            renderBookView();
+            return;
+        }
+
+        const leftPageIndex = (currentSpreadIndex - 1) * 2 + 1;
+        const rightPageIndex = leftPageIndex + 1;
+
+        const singlePageLayouts = ['free', 'grid4', 'hero1', 'diary', 'fullPage', 'photoStory'];
+        const isSinglePageLayout = singlePageLayouts.includes(templateType);
+
+        if (leftPageIndex > innerPageCount) {
+            addNewSpread();
+        }
+
+        let targetPageIndex = selectedPageIndex;
+        if (targetPageIndex !== leftPageIndex && targetPageIndex !== rightPageIndex) {
+            targetPageIndex = leftPageIndex;
+            selectedPageIndex = leftPageIndex;
+        }
+
+        const prevLeftTpl = albumPagesData[leftPageIndex]?.template || 'free';
+        const prevRightTpl = albumPagesData[rightPageIndex]?.template || 'free';
+        const hadSpreadLayout = (prevLeftTpl === 'fullSpread' || prevLeftTpl === 'centerCross' || prevRightTpl === 'fullSpread' || prevRightTpl === 'centerCross');
+
+        if (!isSilent) {
+            const confirmMsg = (!isSinglePageLayout || hadSpreadLayout)
+                ? "양면 전체의 틀 레이아웃이 변경됩니다. 적용하시겠습니까?"
+                : `${targetPageIndex}페이지의 틀 레이아웃이 변경됩니다. 적용하시겠습니까?`;
+            if (!confirm(confirmMsg)) return;
+        }
+
+        // 이전 레이아웃이 양면 파노라마였거나 새로 양면 파노라마를 적용하는 경우 지면 완전히 청소
+        if (hadSpreadLayout || !isSinglePageLayout) {
+            albumPagesData[leftPageIndex].elements = [];
+            albumPagesData[rightPageIndex].elements = [];
+            albumPagesData[leftPageIndex].template = 'free';
+            albumPagesData[rightPageIndex].template = 'free';
+        }
+
+        if (templateType === 'free') {
+            const targetPages = (isSinglePageLayout && !hadSpreadLayout) ? [targetPageIndex] : [leftPageIndex, rightPageIndex];
+            targetPages.forEach(pIdx => {
+                const newElements = [];
+                albumPagesData[pIdx].elements.forEach(el => {
+                    if (el.type === 'slot') {
+                        if (el.src) {
+                            newElements.push({
+                                id: 'el_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+                                type: 'image',
+                                src: el.src,
+                                top: el.top || 50,
+                                left: el.left || 50,
+                                width: el.width || 200,
+                                rotation: 0
+                            });
+                        }
+                    } else {
+                        newElements.push(el);
+                    }
+                });
+                albumPagesData[pIdx].elements = newElements;
+                albumPagesData[pIdx].template = 'free';
+            });
+
+            renderBookView();
+            selectPage(selectedPageIndex);
+            return;
+        }
+
+        let slotConfig = {};
+
+        if (shapeTheme === 'shape-square') {
+            slotConfig = {
+                grid4: {
+                    left: [
+                        { label: '사진 1', top: 25, left: 20, width: 205, height: 205 },
+                        { label: '사진 2', top: 25, left: 250, width: 205, height: 205 },
+                        { label: '사진 3', top: 250, left: 20, width: 205, height: 205 },
+                        { label: '사진 4', top: 250, left: 250, width: 205, height: 205 }
+                    ],
+                    right: [
+                        { label: '사진 1', top: 25, left: 20, width: 205, height: 205 },
+                        { label: '사진 2', top: 25, left: 250, width: 205, height: 205 },
+                        { label: '사진 3', top: 250, left: 20, width: 205, height: 205 },
+                        { label: '사진 4', top: 250, left: 250, width: 205, height: 205 }
+                    ]
+                },
+                hero1: {
+                    left: [
+                        { label: '🌟 대표 메인 사진', top: 25, left: 20, width: 440, height: 240 },
+                        { label: '사진 2', top: 280, left: 20, width: 210, height: 175 },
+                        { label: '사진 3', top: 280, left: 250, width: 210, height: 175 }
+                    ],
+                    right: [
+                        { label: '🌟 대표 메인 사진', top: 25, left: 20, width: 440, height: 240 },
+                        { label: '사진 2', top: 280, left: 20, width: 210, height: 175 },
+                        { label: '사진 3', top: 280, left: 250, width: 210, height: 175 }
+                    ]
+                },
+                diary: {
+                    left: [
+                        { label: '🌾 대표 추억 사진', top: 25, left: 20, width: 440, height: 260 },
+                        { type: 'text', text: '✍️ 오늘의 농촌 여행 기록\n\n날씨도 좋고 가족들과 함께해서 더욱 특별했던 하루!', top: 300, left: 20, width: 440, height: 155 }
+                    ],
+                    right: [
+                        { label: '🌾 대표 추억 사진', top: 25, left: 20, width: 440, height: 260 },
+                        { type: 'text', text: '✍️ 오늘의 농촌 여행 기록\n\n날씨도 좋고 가족들과 함께해서 더욱 특별했던 하루!', top: 300, left: 20, width: 440, height: 155 }
+                    ]
+                },
+                fullPage: {
+                    left: [{ label: '🖼️ 1페이지 전체 사진', top: 0, left: 0, width: 480, height: 480 }],
+                    right: [{ label: '🖼️ 1페이지 전체 사진', top: 0, left: 0, width: 480, height: 480 }]
+                },
+                fullSpread: {
+                    left: [{ label: '🌅 2페이지 전체 파노라마 사진', top: 0, left: 0, width: 962, height: 480 }],
+                    right: []
+                },
+                centerCross: {
+                    left: [
+                        { label: '사진 1', top: 20, left: 15, width: 145, height: 440 },
+                        { label: '🏞️ 중앙 연결 사진', top: 20, left: 170, width: 460, height: 440 }
+                    ],
+                    right: [
+                        { type: 'text', text: '여행은 계속된다! ✈️', top: 60, left: 320, width: 145, height: 70 },
+                        { label: '사진 2', top: 150, left: 320, width: 145, height: 310 }
+                    ]
+                },
+                photoStory: {
+                    left: [
+                        { label: '🌟 메인 대표 사진', top: 20, left: 20, width: 440, height: 230 },
+                        { type: 'text', text: '✏️ 더블 클릭하여 수정', top: 260, left: 20, width: 440, height: 50 },
+                        { label: '사진 1', top: 320, left: 20, width: 136, height: 135 },
+                        { label: '사진 2', top: 320, left: 172, width: 136, height: 135 },
+                        { label: '사진 3', top: 320, left: 324, width: 136, height: 135 }
+                    ],
+                    right: [
+                        { label: '🌟 메인 대표 사진', top: 20, left: 20, width: 440, height: 230 },
+                        { type: 'text', text: '✏️ 더블 클릭하여 수정', top: 260, left: 20, width: 440, height: 50 },
+                        { label: '사진 1', top: 320, left: 20, width: 136, height: 135 },
+                        { label: '사진 2', top: 320, left: 172, width: 136, height: 135 },
+                        { label: '사진 3', top: 320, left: 324, width: 136, height: 135 }
+                    ]
+                }
+            };
+        } else if (shapeTheme === 'shape-landscape') {
+            slotConfig = {
+                grid4: {
+                    left: [
+                        { label: '사진 1', top: 25, left: 20, width: 245, height: 170 },
+                        { label: '사진 2', top: 25, left: 285, width: 245, height: 170 },
+                        { label: '사진 3', top: 215, left: 20, width: 245, height: 170 },
+                        { label: '사진 4', top: 215, left: 285, width: 245, height: 170 }
+                    ],
+                    right: [
+                        { label: '사진 1', top: 25, left: 20, width: 245, height: 170 },
+                        { label: '사진 2', top: 25, left: 285, width: 245, height: 170 },
+                        { label: '사진 3', top: 215, left: 20, width: 245, height: 170 },
+                        { label: '사진 4', top: 215, left: 285, width: 245, height: 170 }
+                    ]
+                },
+                hero1: {
+                    left: [
+                        { label: '🌟 대표 메인 사진', top: 25, left: 20, width: 310, height: 360 },
+                        { label: '사진 2', top: 25, left: 345, width: 185, height: 170 },
+                        { label: '사진 3', top: 215, left: 345, width: 185, height: 170 }
+                    ],
+                    right: [
+                        { label: '🌟 대표 메인 사진', top: 25, left: 20, width: 310, height: 360 },
+                        { label: '사진 2', top: 25, left: 345, width: 185, height: 170 },
+                        { label: '사진 3', top: 215, left: 345, width: 185, height: 170 }
+                    ]
+                },
+                diary: {
+                    left: [
+                        { label: '🌾 대표 추억 사진', top: 25, left: 20, width: 310, height: 360 },
+                        { type: 'text', text: '✍️ 오늘의 농촌 여행 기록\n\n날씨도 좋고 가족들과 함께해서 더욱 특별했던 하루!', top: 25, left: 345, width: 185, height: 360 }
+                    ],
+                    right: [
+                        { label: '🌾 대표 추억 사진', top: 25, left: 20, width: 310, height: 360 },
+                        { type: 'text', text: '✍️ 오늘의 농촌 여행 기록\n\n날씨도 좋고 가족들과 함께해서 더욱 특별했던 하루!', top: 25, left: 345, width: 185, height: 360 }
+                    ]
+                },
+                fullPage: {
+                    left: [{ label: '🖼️ 1페이지 전체 사진', top: 0, left: 0, width: 550, height: 420 }],
+                    right: [{ label: '🖼️ 1페이지 전체 사진', top: 0, left: 0, width: 550, height: 420 }]
+                },
+                fullSpread: {
+                    left: [{ label: '🌅 2페이지 전체 파노라마 사진', top: 0, left: 0, width: 1102, height: 420 }],
+                    right: []
+                },
+                centerCross: {
+                    left: [
+                        { label: '사진 1', top: 20, left: 15, width: 165, height: 380 },
+                        { label: '🏞️ 중앙 연결 사진', top: 20, left: 190, width: 520, height: 380 }
+                    ],
+                    right: [
+                        { type: 'text', text: '여행은 계속된다! ✈️', top: 40, left: 370, width: 165, height: 60 },
+                        { label: '사진 2', top: 110, left: 370, width: 165, height: 290 }
+                    ]
+                },
+                photoStory: {
+                    left: [
+                        { label: '🌟 메인 대표 사진', top: 20, left: 20, width: 510, height: 200 },
+                        { type: 'text', text: '✏️ 더블 클릭하여 수정', top: 230, left: 20, width: 510, height: 45 },
+                        { label: '사진 1', top: 285, left: 20, width: 158, height: 115 },
+                        { label: '사진 2', top: 285, left: 196, width: 158, height: 115 },
+                        { label: '사진 3', top: 285, left: 372, width: 158, height: 115 }
+                    ],
+                    right: [
+                        { label: '🌟 메인 대표 사진', top: 20, left: 20, width: 510, height: 200 },
+                        { type: 'text', text: '✏️ 더블 클릭하여 수정', top: 230, left: 20, width: 510, height: 45 },
+                        { label: '사진 1', top: 285, left: 20, width: 158, height: 115 },
+                        { label: '사진 2', top: 285, left: 196, width: 158, height: 115 },
+                        { label: '사진 3', top: 285, left: 372, width: 158, height: 115 }
+                    ]
+                }
+            };
+        } else {
+            slotConfig = {
+                grid4: {
+                    left: [
+                        { label: '사진 1', top: 30, left: 20, width: 180, height: 250 },
+                        { label: '사진 2', top: 30, left: 220, width: 180, height: 250 },
+                        { label: '사진 3', top: 310, left: 20, width: 180, height: 250 },
+                        { label: '사진 4', top: 310, left: 220, width: 180, height: 250 }
+                    ],
+                    right: [
+                        { label: '사진 1', top: 30, left: 20, width: 180, height: 250 },
+                        { label: '사진 2', top: 30, left: 220, width: 180, height: 250 },
+                        { label: '사진 3', top: 310, left: 20, width: 180, height: 250 },
+                        { label: '사진 4', top: 310, left: 220, width: 180, height: 250 }
+                    ]
+                },
+                hero1: {
+                    left: [
+                        { label: '🌟 대표 메인 사진', top: 30, left: 20, width: 380, height: 300 },
+                        { label: '사진 2', top: 350, left: 20, width: 180, height: 210 },
+                        { label: '사진 3', top: 350, left: 220, width: 180, height: 210 }
+                    ],
+                    right: [
+                        { label: '🌟 대표 메인 사진', top: 30, left: 20, width: 380, height: 300 },
+                        { label: '사진 2', top: 350, left: 20, width: 180, height: 210 },
+                        { label: '사진 3', top: 350, left: 220, width: 180, height: 210 }
+                    ]
+                },
+                diary: {
+                    left: [
+                        { label: '🌾 대표 추억 사진', top: 30, left: 20, width: 380, height: 320 },
+                        { type: 'text', text: '✍️ 오늘의 농촌 여행 기록\n\n날씨도 좋고 가족들과 함께해서 더욱 특별했던 하루!', top: 370, left: 20, width: 380, height: 180 }
+                    ],
+                    right: [
+                        { label: '🌾 대표 추억 사진', top: 30, left: 20, width: 380, height: 320 },
+                        { type: 'text', text: '✍️ 오늘의 농촌 여행 기록\n\n날씨도 좋고 가족들과 함께해서 더욱 특별했던 하루!', top: 370, left: 20, width: 380, height: 180 }
+                    ]
+                },
+                fullPage: {
+                    left: [{ label: '🖼️ 1페이지 전체 사진', top: 0, left: 0, width: 436, height: 640 }],
+                    right: [{ label: '🖼️ 1페이지 전체 사진', top: 0, left: 0, width: 436, height: 640 }]
+                },
+                fullSpread: {
+                    left: [{ label: '🌅 2페이지 전체 파노라마 사진', top: 0, left: 0, width: 874, height: 640 }],
+                    right: []
+                },
+                centerCross: {
+                    left: [
+                        { label: '사진 1', top: 30, left: 15, width: 140, height: 580 },
+                        { label: '🏞️ 중앙 연결 사진', top: 30, left: 165, width: 420, height: 580 }
+                    ],
+                    right: [
+                        { type: 'text', text: '여행은 계속된다! ✈️', top: 120, left: 280, width: 140, height: 80 },
+                        { label: '사진 2', top: 220, left: 280, width: 140, height: 390 }
+                    ]
+                },
+                photoStory: {
+                    left: [
+                        { label: '🌟 메인 대표 사진', top: 25, left: 20, width: 396, height: 320 },
+                        { type: 'text', text: '✏️ 더블 클릭하여 수정', top: 360, left: 20, width: 396, height: 60 },
+                        { label: '사진 1', top: 435, left: 20, width: 124, height: 175 },
+                        { label: '사진 2', top: 435, left: 156, width: 124, height: 175 },
+                        { label: '사진 3', top: 435, left: 292, width: 124, height: 175 }
+                    ],
+                    right: [
+                        { label: '🌟 메인 대표 사진', top: 25, left: 20, width: 396, height: 320 },
+                        { type: 'text', text: '✏️ 더블 클릭하여 수정', top: 360, left: 20, width: 396, height: 60 },
+                        { label: '사진 1', top: 435, left: 20, width: 124, height: 175 },
+                        { label: '사진 2', top: 435, left: 156, width: 124, height: 175 },
+                        { label: '사진 3', top: 320, left: 292, width: 124, height: 175 }
+                    ]
+                }
+            };
+        }
+
+        const selectedLayout = slotConfig[templateType];
+        if (selectedLayout) {
+            if (isSinglePageLayout && !hadSpreadLayout) {
+                const existingSrcs = (albumPagesData[targetPageIndex].elements || [])
+                    .filter(el => el.type === 'slot')
+                    .map(el => el.src);
+
+                albumPagesData[targetPageIndex].elements = selectedLayout.left.map((item, idx) => {
+                    const id = (item.type === 'text' ? 'text_' : 'slot_') + Date.now() + '_' + targetPageIndex + '_' + idx;
+                    return item.type === 'text' ? {
+                        id: id, type: 'text', text: item.text, top: item.top, left: item.left, width: item.width, height: item.height, rotation: 0
+                    } : {
+                        id: id, type: 'slot', label: item.label, top: item.top, left: item.left, width: item.width, height: item.height,
+                        src: existingSrcs[idx] || null
+                    };
+                });
+                albumPagesData[targetPageIndex].template = templateType;
+            } else {
+                const existingLeftSrcs = (albumPagesData[leftPageIndex].elements || []).filter(el => el.type === 'slot').map(el => el.src);
+                const existingRightSrcs = (albumPagesData[rightPageIndex].elements || []).filter(el => el.type === 'slot').map(el => el.src);
+
+                albumPagesData[leftPageIndex].elements = selectedLayout.left.map((item, idx) => {
+                    const id = (item.type === 'text' ? 'text_' : 'slot_') + Date.now() + '_L_' + idx;
+                    return item.type === 'text' ? {
+                        id: id, type: 'text', text: item.text, top: item.top, left: item.left, width: item.width, height: item.height, rotation: 0
+                    } : {
+                        id: id, type: 'slot', label: item.label, top: item.top, left: item.left, width: item.width, height: item.height,
+                        src: existingLeftSrcs[idx] || null
+                    };
+                });
+
+                albumPagesData[rightPageIndex].elements = selectedLayout.right.map((item, idx) => {
+                    const id = (item.type === 'text' ? 'text_' : 'slot_') + Date.now() + '_R_' + idx;
+                    return item.type === 'text' ? {
+                        id: id, type: 'text', text: item.text, top: item.top, left: item.left, width: item.width, height: item.height, rotation: 0
+                    } : {
+                        id: id, type: 'slot', label: item.label, top: item.top, left: item.left, width: item.width, height: item.height,
+                        src: existingRightSrcs[idx] || null
+                    };
+                });
+
+                albumPagesData[leftPageIndex].template = templateType;
+                albumPagesData[rightPageIndex].template = templateType;
+            }
+        }
+
+        renderBookView();
+        selectPage(selectedPageIndex);
+    }
+
+    function changeCoverTheme(theme) {
+        coverTheme = theme;
+        renderBookView();
+    }
+
+    function changePaperTheme(theme) {
+        paperTheme = theme;
+        renderBookView();
+    }
+
+    function autoFillTitle(selectEl) {
+        const selectedOption = selectEl.options[selectEl.selectedIndex];
+        if (selectedOption.value) {
+            let fullTitle = `${selectedOption.value} 추억 앨범`;
+            if (fullTitle.length > 15) {
+                fullTitle = fullTitle.substring(0, 15);
+            }
+            const titleInput = document.getElementById('coverTitleInput');
+            if (titleInput) {
+                titleInput.value = fullTitle;
+            }
+            albumPagesData[0].title = fullTitle;
+        }
+    }
+
+    function addImageToActivePage(imgUrl) {
+        if (currentSpreadIndex === 0 || currentSpreadIndex > Math.ceil(innerPageCount / 2)) {
+            alert("속지 페이지(1p~10p)로 이동한 후 사진을 추가해 주세요!");
+            return;
+        }
+
+        const leftPageIndex = (currentSpreadIndex - 1) * 2 + 1;
+        const rightPageIndex = leftPageIndex + 1;
+
+        let emptySlot = null;
+
+        for (let pIdx of [leftPageIndex, rightPageIndex]) {
+            const found = albumPagesData[pIdx].elements.find(el => el.type === 'slot' && !el.src);
+            if (found) {
+                emptySlot = found;
+                break;
+            }
+        }
+
+        if (emptySlot) {
+            emptySlot.src = imgUrl;
+            renderBookView();
+        } else {
+            const canvas = document.getElementById(`pageCanvas_${leftPageIndex}`);
+            const elemData = {
+                id: 'el_' + Date.now(),
+                type: 'image',
+                src: imgUrl,
+                top: 50,
+                left: 50,
+                width: 200,
+                rotation: 0
+            };
+            albumPagesData[leftPageIndex].elements.push(elemData);
+            renderSingleElement(canvas, elemData, leftPageIndex);
+        }
+    }
+
+    function handlePhotoUpload(e) {
+        const files = e.target.files;
+        const tray = document.getElementById('photoTray');
+        const countNotice = document.getElementById('photoCountNotice');
+
+        if (files.length < 5 || files.length > 20) {
+            alert("사진은 최소 5장에서 최대 20장까지 등록 가능합니다.");
+        }
+
+        tray.innerHTML = '';
+        uploadedImageURLs = [];
+
+        Array.from(files).forEach((file) => {
+            const reader = new FileReader();
+            reader.onload = event => {
+                const url = event.target.result;
+                uploadedImageURLs.push(url);
+
+                const imgThumb = document.createElement('img');
+                imgThumb.src = url;
+                imgThumb.className = 'upload-thumb-img cursor-pointer';
+                imgThumb.title = '클릭하여 빈 사진 틀에 순서대로 추가';
+                imgThumb.onclick = () => addImageToActivePage(url);
+                tray.appendChild(imgThumb);
+            };
+            reader.readAsDataURL(file);
+        });
+
+        countNotice.innerText = `현재 업로드된 사진: ${files.length}장`;
+    }
+
+    function renderBookView() {
+        const container = document.getElementById('bookContainer');
+        const bookStage = document.querySelector('.book-stage');
+        const maxPages = 10;
+        const totalSpreads = (innerPageCount < maxPages) 
+            ? Math.floor(innerPageCount / 2) + 2 
+            : Math.floor(innerPageCount / 2) + 1;
+
+        if (bookStage) {
+            if (shapeTheme === 'shape-square') {
+                bookStage.style.width = '962px';
+            } else if (shapeTheme === 'shape-landscape') {
+                bookStage.style.width = '1102px';
+            } else {
+                bookStage.style.width = '874px';
+            }
+        }
+
+        document.getElementById('bookPrevBtn').style.opacity = (currentSpreadIndex === 0) ? '0.3' : '1';
+        document.getElementById('bookNextBtn').style.opacity = (currentSpreadIndex === totalSpreads) ? '0.3' : '1';
+
+        if (currentSpreadIndex === 0 || currentSpreadIndex === totalSpreads) {
+            container.className = `book-container is-closed ${coverTheme} ${paperTheme} ${shapeTheme}`;
+        } else {
+            container.className = `book-container ${coverTheme} ${paperTheme} ${shapeTheme}`;
+        }
+
+        container.innerHTML = '';
+
+        if (currentSpreadIndex === 0) {
+            container.innerHTML = `
+                <div class="book-page single-page book-cover-page d-flex flex-column align-items-center justify-content-center p-4">
+                    <div class="cover-emboss-border text-center p-4 w-100 h-100 d-flex flex-column align-items-center justify-content-center">
+                        <i class="fa-solid fa-camera-retro fa-4x mb-4 text-gold"></i>
+                        <div class="position-relative w-100 mb-3">
+                            <input type="text" id="coverTitleInput" class="form-control text-center font-weight-bold cover-title-input px-2" 
+                                placeholder="제목을 입력하세요 ✏️" maxlength="15"
+                                value="${albumPagesData[0].title || ''}" 
+                                oninput="albumPagesData[0].title = this.value">
+                            <small class="text-gold opacity-75 d-block mt-1" style="font-size: 0.72rem;">* 클릭하여 제목 수정 (최대 15자)</small>
+                        </div>
+                        <p class="small text-gold mb-0">FarmLink Memory Photo Book</p>
+                    </div>
+                </div>
+            `;
+        } else if (currentSpreadIndex === totalSpreads) {
+            container.innerHTML = `
+                <div class="book-page single-page book-cover-page d-flex flex-column align-items-center justify-content-center p-4">
+                    <div class="text-center text-gold">
+                        <i class="fa-solid fa-heart fa-3x mb-3"></i>
+                        <h4 class="font-weight-bold">소중한 순간을 기억하며</h4>
+                        <p class="small opacity-75">FarmLink Travel Archive</p>
+                    </div>
+                </div>
+            `;
+        } else {
+            const leftPageIndex = (currentSpreadIndex - 1) * 2 + 1;
+            const rightPageIndex = leftPageIndex + 1;
+
+            if (leftPageIndex <= innerPageCount) {
+                container.innerHTML = `
+                    <div class="book-page left-page" id="pageCanvas_${leftPageIndex}" data-page-idx="${leftPageIndex}" onclick="selectPage(${leftPageIndex})">
+                        <span class="page-num-tag">${leftPageIndex}p</span>
+                    </div>
+                    <div class="book-spine"></div>
+                    <div class="book-page right-page" id="pageCanvas_${rightPageIndex}" data-page-idx="${rightPageIndex}" onclick="selectPage(${rightPageIndex})">
+                        <span class="page-num-tag">${rightPageIndex}p</span>
+                    </div>
+                `;
+
+                restorePageElements(leftPageIndex);
+                restorePageElements(rightPageIndex);
+
+                if (selectedPageIndex !== leftPageIndex && selectedPageIndex !== rightPageIndex) {
+                    selectedPageIndex = leftPageIndex;
+                }
+                selectPage(selectedPageIndex);
+            } else {
+                container.innerHTML = `
+                    <div class="book-page left-page" id="pageCanvas_${leftPageIndex}" data-page-idx="${leftPageIndex}">
+                        <span class="page-num-tag">${leftPageIndex}p</span>
+                        <div class="add-spread-overlay" onclick="addNewSpread()">
+                            <i class="fa-solid fa-plus-circle"></i>
+                            <span>페이지 추가 (현재 ${innerPageCount}p / 최대 10p)</span>
+                        </div>
+                    </div>
+                    <div class="book-spine"></div>
+                    <div class="book-page right-page disabled-page" id="pageCanvas_${rightPageIndex}" data-page-idx="${rightPageIndex}">
+                        <span class="page-num-tag">${rightPageIndex}p</span>
+                    </div>
+                `;
+            }
+        }
+    }
+
+    function addTextBoxToActivePage() {
+        if (currentSpreadIndex === 0 || currentSpreadIndex > Math.ceil(innerPageCount / 2)) {
+            alert("속지 페이지(1p~10p)로 이동한 후 텍스트를 추가해 주세요!");
+            return;
+        }
+
+        const leftPageIndex = (currentSpreadIndex - 1) * 2 + 1;
+        const targetPageIdx = leftPageIndex;
+        const canvas = document.getElementById(`pageCanvas_${targetPageIdx}`);
+
+        const elemData = {
+            id: 'el_' + Date.now(),
+            type: 'text',
+            text: '✏️ 더블 클릭하여 수정',
+            top: 120,
+            left: 50,
+            width: 220,
+            rotation: 0
+        };
+
+        albumPagesData[targetPageIdx].elements.push(elemData);
+        renderSingleElement(canvas, elemData, targetPageIdx);
+    }
+
+    function startResizeElement(e, elemId, pageIdx) {
+        e.preventDefault();
+        e.stopPropagation();
+
+        const wrapper = document.getElementById(elemId);
+        if (!wrapper) return;
+
+        const startX = e.clientX;
+        const startWidth = wrapper.offsetWidth;
+        const startHeight = wrapper.offsetHeight;
+        const aspectRatio = startWidth / (startHeight || 1);
+
+        const targetData = albumPagesData[pageIdx].elements.find(el => el.id === elemId);
+
+        function doResize(moveEvent) {
+            const diffX = moveEvent.clientX - startX;
+            let newWidth = Math.max(60, startWidth + diffX);
+            let newHeight = newWidth / aspectRatio;
+
+            wrapper.style.width = newWidth + 'px';
+            wrapper.style.height = newHeight + 'px';
+
+            if (targetData) {
+                targetData.width = newWidth;
+                targetData.height = newHeight;
+            }
+        }
+
+        function stopResize() {
+            document.removeEventListener('mousemove', doResize);
+            document.removeEventListener('mouseup', stopResize);
+        }
+
+        document.addEventListener('mousemove', doResize);
+        document.addEventListener('mouseup', stopResize);
+    }
+
+    function renderSingleElement(parentCanvas, data, pageIdx) {
+        if (!parentCanvas) return;
+        const wrapper = document.createElement('div');
+        wrapper.className = 'free-drag-element';
+        wrapper.id = data.id;
+        wrapper.style.top = data.top + 'px';
+        wrapper.style.left = data.left + 'px';
+        wrapper.style.width = data.width + 'px';
+        if (data.height) wrapper.style.height = data.height + 'px';
+        if (data.rotation) wrapper.style.transform = `rotate(${data.rotation}deg)`;
+
+        if (data.type === 'slot') {
+            if (data.src) {
+                wrapper.innerHTML = `
+                    <div class="photo-slot-card has-image"
+                         ondragover="handleSlotDragOver(event)"
+                         ondragleave="handleSlotDragLeave(event)"
+                         ondrop="handleSlotDrop(event, '${data.id}', ${pageIdx})">
+                        <img src="${data.src}" class="photo-slot-img" draggable="true"
+                             ondragstart="handleSlotDragStart(event, '${data.id}', ${pageIdx})"
+                             ondragover="handleSlotDragOver(event)"
+                             ondrop="handleSlotDrop(event, '${data.id}', ${pageIdx})">
+                        <button type="button" class="slot-clear-btn" onclick="clearSlotImage('${data.id}', ${pageIdx})" title="사진 삭제">&times;</button>
+                    </div>
+                `;
+            } else {
+                wrapper.innerHTML = `
+                    <div class="photo-slot-card"
+                         ondragover="handleSlotDragOver(event)"
+                         ondragleave="handleSlotDragLeave(event)"
+                         ondrop="handleSlotDrop(event, '${data.id}', ${pageIdx})">
+                        <i class="fa-solid fa-camera mb-1" style="pointer-events:none;"></i>
+                        <span style="pointer-events:none;">${data.label || '사진 추가'}</span>
+                    </div>
+                `;
+            }
+        }
+        else if (data.type === 'image') {
+            wrapper.innerHTML = `
+                <button type="button" class="elem-rotate-handle" onmousedown="startRotateElement(event, '${data.id}', ${pageIdx})" title="360도 회전">
+                    <i class="fa-solid fa-rotate-right"></i>
+                </button>
+                
+                <img src="${data.src}" class="w-100 h-100 rounded shadow-sm" style="pointer-events: none; object-fit: cover;">
+                
+                <button type="button" class="elem-resize-handle" onmousedown="startResizeElement(event, '${data.id}', ${pageIdx})" title="크기 조절">
+                    <i class="fa-solid fa-up-right-and-down-left-from-center"></i>
+                </button>
+                
+                <button type="button" class="elem-delete-btn" onclick="deleteElement('${data.id}', ${pageIdx})">&times;</button>
+            `;
+            makeDraggable(wrapper, pageIdx, data.id);
+        }
+        else {
+            const isPlaceholder = (!data.text || data.text.trim() === '' || data.text.trim() === '✏️ 더블 클릭하여 수정');
+            const displayText = isPlaceholder ? '✏️ 더블 클릭하여 수정' : data.text;
+            const placeholderClass = isPlaceholder ? ' is-placeholder' : '';
+
+            wrapper.innerHTML = `
+                <button type="button" class="elem-rotate-handle" onmousedown="startRotateElement(event, '${data.id}', ${pageIdx})" title="360도 회전">
+                    <i class="fa-solid fa-rotate-right"></i>
+                </button>
+                <div contenteditable="false" class="editable-text-box${placeholderClass}" 
+                     ondblclick="enableTextEdit(this)" 
+                     onblur="disableTextEdit(this, '${data.id}', ${pageIdx})">${displayText}</div>
+                <button type="button" class="elem-delete-btn" onclick="deleteElement('${data.id}', ${pageIdx})">&times;</button>
+            `;
+            makeDraggable(wrapper, pageIdx, data.id);
+        }
+
+        parentCanvas.appendChild(wrapper);
+    }
+
+    function startRotateElement(e, elemId, pageIdx) {
+        e.preventDefault();
+        e.stopPropagation();
+
+        const wrapper = document.getElementById(elemId);
+        if (!wrapper) return;
+
+        const rect = wrapper.getBoundingClientRect();
+        const centerX = rect.left + rect.width / 2;
+        const centerY = rect.top + rect.height / 2;
+
+        const targetData = albumPagesData[pageIdx].elements.find(el => el.id === elemId);
+
+        function doRotate(moveEvent) {
+            const radians = Math.atan2(moveEvent.clientY - centerY, moveEvent.clientX - centerX);
+            let degrees = Math.round(radians * (180 / Math.PI)) + 90;
+            if (degrees < 0) degrees += 360;
+
+            wrapper.style.transform = `rotate(${degrees}deg)`;
+            if (targetData) targetData.rotation = degrees;
+        }
+
+        function stopRotate() {
+            document.removeEventListener('mousemove', doRotate);
+            document.removeEventListener('mouseup', stopRotate);
+        }
+
+        document.addEventListener('mousemove', doRotate);
+        document.addEventListener('mouseup', stopRotate);
+    }
+
+    function handleSlotDragStart(e, slotId, pageIdx) {
+        draggedSlotInfo = { slotId, pageIdx };
+        e.dataTransfer.setData('text/plain', slotId);
+        e.dataTransfer.effectAllowed = 'move';
+    }
+
+    function handleSlotDragOver(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        e.dataTransfer.dropEffect = 'move';
+
+        const card = e.currentTarget.classList.contains('photo-slot-card') ? e.currentTarget : e.currentTarget.closest('.photo-slot-card');
+        if (card) card.classList.add('drag-over');
+    }
+
+    function handleSlotDragLeave(e) {
+        e.preventDefault();
+        const card = e.currentTarget.classList.contains('photo-slot-card') ? e.currentTarget : e.currentTarget.closest('.photo-slot-card');
+        if (card) card.classList.remove('drag-over');
+    }
+
+    function handleSlotDrop(e, targetSlotId, targetPageIdx) {
+        e.preventDefault();
+        e.stopPropagation();
+
+        const card = e.currentTarget.classList.contains('photo-slot-card') ? e.currentTarget : e.currentTarget.closest('.photo-slot-card');
+        if (card) card.classList.remove('drag-over');
+
+        if (!draggedSlotInfo) return;
+
+        const srcPageIdx = draggedSlotInfo.pageIdx;
+        const srcSlotId = draggedSlotInfo.slotId;
+
+        if (srcPageIdx === targetPageIdx && srcSlotId === targetSlotId) return;
+
+        const srcSlot = albumPagesData[srcPageIdx].elements.find(el => el.id === srcSlotId);
+        const targetSlot = albumPagesData[targetPageIdx].elements.find(el => el.id === targetSlotId);
+
+        if (srcSlot && targetSlot) {
+            const tempSrc = srcSlot.src;
+            srcSlot.src = targetSlot.src;
+            targetSlot.src = tempSrc;
+
+            draggedSlotInfo = null;
+            renderBookView();
+        }
+    }
+
+    function clearSlotImage(slotId, pageIdx) {
+        const slot = albumPagesData[pageIdx].elements.find(el => el.id === slotId);
+        if (slot) {
+            slot.src = null;
+            renderBookView();
+        }
+    }
+
+    function restorePageElements(pageIdx) {
+        const canvas = document.getElementById(`pageCanvas_${pageIdx}`);
+        if (!canvas) return;
+        albumPagesData[pageIdx].elements.forEach(data => {
+            renderSingleElement(canvas, data, pageIdx);
+        });
+    }
+
+    function makeDraggable(element, pageIdx, elemId) {
+        let posX = 0, posY = 0, mouseX = 0, mouseY = 0;
+
+        element.onmousedown = dragMouseDown;
+
+        function dragMouseDown(e) {
+            if (!element.classList.contains('selected')) {
+                clearElementSelection();
+                element.classList.add('selected');
+            }
+
+            if (e.target.classList.contains('elem-delete-btn') ||
+                e.target.classList.contains('elem-rotate-handle') ||
+                e.target.classList.contains('elem-resize-handle') ||
+                e.target.closest('.elem-rotate-handle') ||
+                e.target.closest('.elem-resize-handle') ||
+                e.target.classList.contains('slot-clear-btn') ||
+                e.target.getAttribute('contenteditable') === 'true') return;
+
+            e.preventDefault();
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+
+            element.style.zIndex = '9999';
+
+            document.onmouseup = closeDragElement;
+            document.onmousemove = elementDrag;
+        }
+
+        function elementDrag(e) {
+            e.preventDefault();
+            posX = mouseX - e.clientX;
+            posY = mouseY - e.clientY;
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+
+            const newTop = element.offsetTop - posY;
+            const newLeft = element.offsetLeft - posX;
+
+            element.style.top = newTop + "px";
+            element.style.left = newLeft + "px";
+
+            const targetData = albumPagesData[pageIdx].elements.find(el => el.id === elemId);
+            if (targetData) {
+                targetData.top = newTop;
+                targetData.left = newLeft;
+            }
+        }
+
+        function closeDragElement() {
+            document.onmouseup = null;
+            document.onmousemove = null;
+
+            element.style.zIndex = '30';
+
+            const leftPageIndex = (currentSpreadIndex - 1) * 2 + 1;
+            const rightPageIndex = leftPageIndex + 1;
+
+            const leftCanvas = document.getElementById(`pageCanvas_${leftPageIndex}`);
+            const rightCanvas = document.getElementById(`pageCanvas_${rightPageIndex}`);
+
+            if (leftCanvas && rightCanvas) {
+                const elemRect = element.getBoundingClientRect();
+                const elemCenterX = elemRect.left + elemRect.width / 2;
+
+                const leftRect = leftCanvas.getBoundingClientRect();
+                const rightRect = rightCanvas.getBoundingClientRect();
+
+                let targetPageIdx = pageIdx;
+                let targetCanvas = (pageIdx === leftPageIndex) ? leftCanvas : rightCanvas;
+
+                if (pageIdx === leftPageIndex && elemCenterX >= rightRect.left) {
+                    targetPageIdx = rightPageIndex;
+                    targetCanvas = rightCanvas;
+                } 
+
+                else if (pageIdx === rightPageIndex && elemCenterX <= leftRect.right) {
+                    targetPageIdx = leftPageIndex;
+                    targetCanvas = leftCanvas;
+                }
+
+                if (targetPageIdx !== pageIdx) {
+                    const srcIndex = albumPagesData[pageIdx].elements.findIndex(el => el.id === elemId);
+                    if (srcIndex !== -1) {
+                        const [movedElem] = albumPagesData[pageIdx].elements.splice(srcIndex, 1);
+
+                        const targetRect = targetCanvas.getBoundingClientRect();
+                        const newCalculatedLeft = elemRect.left - targetRect.left;
+                        const newCalculatedTop = elemRect.top - targetRect.top;
+
+                        movedElem.left = newCalculatedLeft;
+                        movedElem.top = newCalculatedTop;
+
+                        albumPagesData[targetPageIdx].elements.push(movedElem);
+
+                        targetCanvas.appendChild(element);
+                        element.style.left = newCalculatedLeft + 'px';
+                        element.style.top = newCalculatedTop + 'px';
+
+                        makeDraggable(element, targetPageIdx, elemId);
+                    }
+                }
+            }
+        }
+    }
+
+    function updateTextContent(elemId, pageIdx, newText) {
+        const targetData = albumPagesData[pageIdx].elements.find(el => el.id === elemId);
+        if (targetData) targetData.text = newText;
+    }
+
+    function deleteElement(elemId, pageIdx) {
+        albumPagesData[pageIdx].elements = albumPagesData[pageIdx].elements.filter(el => el.id !== elemId);
+        const domEl = document.getElementById(elemId);
+        if (domEl) domEl.remove();
+    }
+
+    function addNewSpread() {
+        if (innerPageCount >= 10) {
+            alert("포토북 속지는 최대 10페이지까지만 생성 가능합니다.");
+            return;
+        }
+        innerPageCount += 2;
+        renderBookView();
+    }
+
+    function nextPage() {
+        const totalSpreads = Math.ceil(innerPageCount / 2) + 1;
+        if (currentSpreadIndex < totalSpreads) {
+            currentSpreadIndex++;
+            renderBookView();
+        }
+    }
+
+    function prevPage() {
+        if (currentSpreadIndex > 0) {
+            currentSpreadIndex--;
+            renderBookView();
+        }
+    }
+
+    function downloadBookPDF(event) {
+        const btn = event.currentTarget;
+        const originalHTML = btn.innerHTML;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> PDF 생성 중...';
+        btn.disabled = true;
+
+        const tempContainer = document.createElement('div');
+        tempContainer.style.width = '1000px';
+        tempContainer.style.position = 'absolute';
+        tempContainer.style.top = '-9999px';
+        document.body.appendChild(tempContainer);
+
+        const totalSpreads = Math.ceil(innerPageCount / 2) + 1;
+
+        for (let s = 0; s <= totalSpreads; s++) {
+            const pageBox = document.createElement('div');
+            pageBox.className = `book-container ${coverTheme} ${paperTheme} ${shapeTheme} mb-4`;
+            pageBox.style.pageBreakAfter = 'always';
+            pageBox.style.margin = '0 auto';
+
+            if (s === 0) {
+                pageBox.innerHTML = `
+                    <div class="book-page single-page book-cover-page d-flex flex-column align-items-center justify-content-center p-4">
+                        <div class="cover-emboss-border text-center p-4 w-100 h-100 d-flex flex-column align-items-center justify-content-center">
+                            <h3 class="font-weight-bold text-gold mb-3">${albumPagesData[0].title || '우리가족 농촌 여행 기록'}</h3>
+                            <p class="small text-gold mb-0">FarmLink Memory Photo Book</p>
+                        </div>
+                    </div>
+                `;
+            } else if (s === totalSpreads) {
+                pageBox.innerHTML = `
+                    <div class="book-page single-page book-cover-page d-flex flex-column align-items-center justify-content-center p-4">
+                        <div class="text-center text-gold">
+                            <h4 class="font-weight-bold">소중한 순간을 기억하며</h4>
+                            <p class="small opacity-75">FarmLink Travel Archive</p>
+                        </div>
+                    </div>
+                `;
+            } else {
+                const lIdx = (s - 1) * 2 + 1;
+                const rIdx = lIdx + 1;
+                pageBox.innerHTML = `
+                    <div class="book-page left-page" id="pdfCanvas_${lIdx}"><span class="page-num-tag">${lIdx}p</span></div>
+                    <div class="book-spine"></div>
+                    <div class="book-page right-page" id="pdfCanvas_${rIdx}"><span class="page-num-tag">${rIdx}p</span></div>
+                `;
+            }
+
+            tempContainer.appendChild(pageBox);
+
+            if (s > 0 && s < totalSpreads) {
+                const lIdx = (s - 1) * 2 + 1;
+                const rIdx = lIdx + 1;
+
+                [lIdx, rIdx].forEach(pIdx => {
+                    const pdfCanvas = tempContainer.querySelector(`#pdfCanvas_${pIdx}`);
+                    if (pdfCanvas) {
+                        albumPagesData[pIdx].elements.forEach(data => {
+                            const wrapper = document.createElement('div');
+                            wrapper.className = 'free-drag-element';
+                            wrapper.style.top = data.top + 'px';
+                            wrapper.style.left = data.left + 'px';
+                            wrapper.style.width = data.width + 'px';
+                            if (data.height) wrapper.style.height = data.height + 'px';
+                            if (data.rotation) wrapper.style.transform = `rotate(${data.rotation}deg)`;
+
+                            if (data.type === 'slot') {
+                                if (data.src) {
+                                    wrapper.innerHTML = `<img src="${data.src}" style="width:100%;height:100%;object-fit:cover;border-radius:6px;">`;
+                                }
+                            } else if (data.type === 'image') {
+                                wrapper.innerHTML = `<img src="${data.src}" class="w-100 rounded">`;
+                            } else {
+                                wrapper.innerHTML = `<div class="editable-text-box p-2">${data.text}</div>`;
+                            }
+                            pdfCanvas.appendChild(wrapper);
+                        });
+                    }
+                });
+            }
+        }
+
+        const opt = {
+            margin: [5, 5, 5, 5],
+            filename: 'FarmLink_가족_포토북_앨범.pdf',
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 2, useCORS: true, logging: false },
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' },
+            pagebreak: { mode: 'always' }
+        };
+
+        html2pdf().set(opt).from(tempContainer).save().then(() => {
+            document.body.removeChild(tempContainer);
+            btn.innerHTML = originalHTML;
+            btn.disabled = false;
+        }).catch(err => {
+            console.error("PDF 생성 에러:", err);
+            alert("PDF 발급 중 오류가 발생했습니다.");
+            if (tempContainer.parentNode) document.body.removeChild(tempContainer);
+            btn.innerHTML = originalHTML;
+            btn.disabled = false;
+        });
+    }
+</script>
+
+{% endblock %}

@@ -1,0 +1,168 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="container mt-4 mb-5">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2><i class="fa-regular fa-calendar-days text-success mr-2"></i>농장 예약 달력</h2>
+        <a href="{{ url_for('detailed_farmer_dashboard') }}" class="btn btn-outline-secondary btn-sm">
+            <i class="fa-solid fa-arrow-left mr-1"></i> 대시보드로 돌아가기
+        </a>
+    </div>
+
+    <div class="card shadow-sm p-3 bg-white rounded">
+        <!-- 툴바 영역 (월/주/일/오늘, 날짜 이동, 오늘의 일정 버튼) -->
+        <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 pb-2 border-bottom">
+            <!-- 좌측: 월 / 주 / 일 / 오늘 탭 -->
+            <div class="btn-group mb-2 mb-md-0" role="group">
+                <button type="button" class="btn btn-outline-primary active" id="view-month-btn">월</button>
+                <button type="button" class="btn btn-outline-primary" id="view-week-btn">주</button>
+                <button type="button" class="btn btn-outline-primary" id="view-day-btn">일</button>
+                <button type="button" class="btn btn-outline-secondary ml-1" id="view-today-btn">오늘</button>
+            </div>
+
+            <!-- 중앙: 날짜 이동 버튼 & 타이틀 -->
+            <div class="d-flex align-items-center mb-2 mb-md-0">
+                <button type="button" class="btn btn-sm btn-light border mr-2" id="cal-prev-btn">
+                    <i class="fa-solid fa-chevron-left"></i>
+                </button>
+                <h4 class="mb-0 font-weight-bold px-2 text-dark" id="cal-title-display">2026년 8월</h4>
+                <button type="button" class="btn btn-sm btn-light border ml-2" id="cal-next-btn">
+                    <i class="fa-solid fa-chevron-right"></i>
+                </button>
+            </div>
+
+            <!-- 우측: 오늘의 일정 탭 버튼 -->
+            <div>
+                <button type="button" class="btn btn-outline-info" id="view-agenda-btn">
+                    <i class="fa-solid fa-list-check mr-1"></i> 오늘의 일정
+                </button>
+            </div>
+        </div>
+
+        <!-- FullCalendar가 렌더링될 영역 -->
+        <div id="full-calendar-container" style="min-height: 650px;"></div>
+    </div>
+</div>
+
+<!-- 예약 정보 숨김 데이터 -->
+<div id="reservations-data" style="display:none;">{{ reservations_data | tojson | safe }}</div>
+
+<!-- FullCalendar 6 라이브러리 CDN -->
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const rawData = JSON.parse(document.getElementById('reservations-data').textContent || '{}');
+    const calendarEl = document.getElementById('full-calendar-container');
+
+    // 예약 데이터를 FullCalendar 이벤트 포맷으로 변환
+    const eventsList = [];
+    for (const dateKey in rawData) {
+        const list = rawData[dateKey];
+        list.forEach(res => {
+            const total = (res.adult || 0) + (res.teen || 0) + (res.child || 0);
+            let startDateTime = dateKey;
+            if (res.time && res.time.includes(':')) {
+                startDateTime = `${dateKey}T${res.time}:00`;
+            }
+            eventsList.push({
+                id: res.id,
+                title: `[${res.crop}] ${res.name}님 (${total}명)`,
+                start: startDateTime,
+                extendedProps: {
+                    name: res.name,
+                    phone: res.phone,
+                    adult: res.adult,
+                    teen: res.teen,
+                    child: res.child,
+                    time: res.time,
+                    crop: res.crop
+                }
+            });
+        });
+    }
+
+    // FullCalendar 초기화
+    const calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'dayGridMonth',
+        locale: 'ko',
+        headerToolbar: false, // 커스텀 툴바를 사용하므로 기본 헤더 숨김
+        noEventsText: '🍃 등록된 예정된 일정이 없습니다. 정성껏 농장을 가꾸며 다음 손님을 맞이해 보는 건 어떨까요?',
+        events: eventsList,
+        editable: false,
+        dayMaxEvents: true,
+        datesSet: function(info) {
+            // 타이틀 갱신
+            document.getElementById('cal-title-display').textContent = info.view.title;
+        },
+        eventClick: function(info) {
+            const p = info.event.extendedProps;
+            alert(`[예약 상세 정보]\n- 체험명: ${p.crop}\n- 예약자: ${p.name} (${p.phone})\n- 시간: ${p.time || '시간미지정'}\n- 인원: 성인 ${p.adult}명, 청소년 ${p.teen}명, 아동 ${p.child}명`);
+        }
+    });
+
+    calendar.render();
+
+    // 뷰 전환 버튼 액션 및 활성화 스타일 변경 함수
+    function setActiveButton(activeBtn) {
+        [
+            document.getElementById('view-month-btn'),
+            document.getElementById('view-week-btn'),
+            document.getElementById('view-day-btn'),
+            document.getElementById('view-agenda-btn')
+        ].forEach(btn => {
+            if (btn) {
+                btn.classList.remove('active', 'btn-primary', 'btn-info');
+                if (btn.id === 'view-agenda-btn') {
+                    btn.classList.add('btn-outline-info');
+                } else {
+                    btn.classList.add('btn-outline-primary');
+                }
+            }
+        });
+
+        if (activeBtn) {
+            if (activeBtn.id === 'view-agenda-btn') {
+                activeBtn.classList.remove('btn-outline-info');
+                activeBtn.classList.add('btn-info', 'active');
+            } else {
+                activeBtn.classList.remove('btn-outline-primary');
+                activeBtn.classList.add('btn-primary', 'active');
+            }
+        }
+    }
+
+    // 버튼 이벤트 리스너 연결
+    document.getElementById('view-month-btn').addEventListener('click', function() {
+        calendar.changeView('dayGridMonth');
+        setActiveButton(this);
+    });
+
+    document.getElementById('view-week-btn').addEventListener('click', function() {
+        calendar.changeView('timeGridWeek');
+        setActiveButton(this);
+    });
+
+    document.getElementById('view-day-btn').addEventListener('click', function() {
+        calendar.changeView('timeGridDay');
+        setActiveButton(this);
+    });
+
+    document.getElementById('view-agenda-btn').addEventListener('click', function() {
+        calendar.changeView('listMonth');
+        setActiveButton(this);
+    });
+
+    document.getElementById('view-today-btn').addEventListener('click', function() {
+        calendar.today();
+    });
+
+    document.getElementById('cal-prev-btn').addEventListener('click', function() {
+        calendar.prev();
+    });
+
+    document.getElementById('cal-next-btn').addEventListener('click', function() {
+        calendar.next();
+    });
+});
+</script>
+{% endblock %}

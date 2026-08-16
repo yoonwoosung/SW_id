@@ -170,7 +170,7 @@
 .terms-content {
     max-height: 300px;
     overflow-y: auto;
-    border: 1px solid #eee;
+    border: 1px solid var(--fl-border);
     padding: 1rem;
     margin-top: 1rem;
     background-color: #f9f9f9;
@@ -182,7 +182,7 @@
     height: 100px;
     object-fit: cover;
     border-radius: 50%;
-    border: 3px solid #eee;
+    border: 3px solid var(--fl-border);
 }
 
 .farm-photo-label {
@@ -746,7 +746,7 @@
 /* --- SITE HEADER --- */
 .site-header {
     background: #fff;
-    border-bottom: 1px solid #eee;
+    border-bottom: 1px solid #f0f0f0;
     position: sticky;
     top: 0;
     z-index: 100;
@@ -810,7 +810,7 @@
     top: calc(100% + 6px);
     right: 0;
     background: #fff;
-    border: 1px solid #eee;
+    border: 1px solid var(--fl-border);
     border-radius: 8px;
     box-shadow: 0 4px 14px rgba(0,0,0,0.12);
     min-width: 140px;
@@ -1058,7 +1058,8 @@
     box-shadow: var(--shadow-card);
 }
 
-.section-block { margin-bottom: 52px; }
+.section-block { padding: 44px 0; margin-bottom: 0; }
+.section-block + .section-block { border-top: 1px solid #f0f0f0; }
 .section-header {
     display: flex;
     justify-content: space-between;
@@ -1082,19 +1083,21 @@
 }
 .more-link:hover { color: var(--green-dark); text-decoration: none; }
 
-.sort-pills { display: flex; gap: 6px; }
+.sort-pills { display: flex; gap: 20px; }
 .sort-pill {
-    font-size: 0.8rem;
-    padding: 4px 12px;
-    border-radius: 20px;
-    border: 1px solid #ddd;
-    color: #666;
+    font-size: 0.88rem;
+    padding: 6px 0;
+    border-radius: 0;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: #999;
+    font-weight: 600;
     text-decoration: none;
     transition: all 0.15s;
     white-space: nowrap;
 }
-.sort-pill:hover { background: #f0f0f0; text-decoration: none; color: #333; }
-.sort-pill.active { background: var(--green-dark); color: #fff; border-color: var(--green-dark); }
+.sort-pill:hover { background: none; text-decoration: none; color: #333; }
+.sort-pill.active { background: none; color: #1a1a1a; border-bottom-color: #1a1a1a; font-weight: 700; }
 
 .gap-12 { gap: 12px; }
 
@@ -1111,13 +1114,10 @@
     border-radius: var(--radius-card);
     overflow: hidden;
     background: #fff;
-    box-shadow: var(--shadow-card);
-    border: 1px solid #f0f0f0;
-    transition: transform 0.2s, box-shadow 0.2s;
+    transition: transform 0.2s;
 }
 .exp-card:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 8px 24px rgba(0,0,0,0.13);
+    transform: translateY(-4px);
     text-decoration: none;
     color: inherit;
 }
@@ -1127,6 +1127,7 @@
     height: 175px;
     overflow: hidden;
     background: var(--fl-green-100);
+    border-radius: var(--radius-card) var(--radius-card) 0 0;
 }
 .exp-card-img { width: 100%; height: 100%; object-fit: cover; }
 .exp-card-img-placeholder {
@@ -1198,7 +1199,7 @@
     padding: 20px 10px;
     background: #fff;
     border-radius: var(--radius-card);
-    border: 1px solid #eee;
+    border: 1px solid var(--fl-border);
     text-decoration: none;
     color: inherit;
     transition: box-shadow 0.2s, transform 0.2s;
@@ -1275,25 +1276,27 @@
 .ai-map-inner i { font-size: 2rem; }
 
 /* --- REGION SECTION --- */
-.region-tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+.region-tabs { display: flex; gap: 24px; flex-wrap: wrap; margin-top: 12px; border-bottom: 1px solid #f0f0f0; }
 .region-tab {
-    padding: 6px 18px;
-    border-radius: 20px;
-    font-size: 0.85rem;
-    font-weight: 500;
-    color: #555;
-    border: 1px solid #ddd;
+    padding: 8px 0;
+    border-radius: 0;
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: #999;
+    border: none;
+    border-bottom: 2px solid transparent;
     text-decoration: none;
-    background: #fff;
+    background: none;
     transition: all 0.15s;
+    margin-bottom: -1px;
 }
-.region-tab:hover { background: var(--green-light); border-color: var(--green-mid); color: var(--green-dark); text-decoration: none; }
-.region-tab.active { background: var(--green-mid); color: #fff; border-color: var(--green-mid); font-weight: 700; }
+.region-tab:hover { background: none; color: #333; text-decoration: none; }
+.region-tab.active { color: #1a1a1a; border-bottom-color: #1a1a1a; font-weight: 700; }
 .region-tab-more {
     padding: 6px 12px;
     border-radius: 20px;
     color: #999;
-    border: 1px solid #eee;
+    border: 1px solid var(--fl-border);
     text-decoration: none;
     background: #fff;
 }
@@ -1329,7 +1332,7 @@
 .db-profile-card {
     background: #fff;
     border-radius: var(--radius-card);
-    border: 1px solid #eee;
+    border: 1px solid var(--fl-border);
     padding: 22px 18px;
     text-align: center;
     margin-bottom: 10px;
@@ -1347,7 +1350,7 @@
     justify-content: center;
     font-size: 2.8rem;
     color: #bbb;
-    border: 2px solid #eee;
+    border: 2px solid var(--fl-border);
 }
 .db-avatar img { width: 100%; height: 100%; object-fit: cover; }
 .db-profile-name { font-size: 1rem; font-weight: 700; color: #1a1a1a; }
@@ -1366,7 +1369,7 @@
 .db-nav {
     background: #fff;
     border-radius: var(--radius-card);
-    border: 1px solid #eee;
+    border: 1px solid var(--fl-border);
     overflow: hidden;
     margin-bottom: 10px;
     box-shadow: var(--shadow-card);
@@ -1389,7 +1392,7 @@
 .db-info-card {
     background: #fff;
     border-radius: var(--radius-card);
-    border: 1px solid #eee;
+    border: 1px solid var(--fl-border);
     padding: 16px 18px;
     margin-bottom: 10px;
     box-shadow: var(--shadow-card);
@@ -1435,7 +1438,7 @@
     text-align: center;
     padding: 10px;
     background: #fff;
-    border: 1px solid #eee;
+    border: 1px solid var(--fl-border);
     border-radius: 8px;
     font-size: 0.83rem;
     color: #999;
@@ -1454,7 +1457,7 @@
     align-items: flex-start;
     background: #fff;
     border-radius: var(--radius-card);
-    border: 1px solid #eee;
+    border: 1px solid var(--fl-border);
     padding: 20px 22px;
     margin-bottom: 18px;
     box-shadow: var(--shadow-card);
@@ -1481,7 +1484,7 @@
 .db-card {
     background: #fff;
     border-radius: var(--radius-card);
-    border: 1px solid #eee;
+    border: 1px solid var(--fl-border);
     padding: 20px 22px;
     margin-bottom: 18px;
     box-shadow: var(--shadow-card);
@@ -1598,7 +1601,7 @@
     grid-template-columns: repeat(4, 1fr);
     background: #fff;
     border-radius: var(--radius-card);
-    border: 1px solid #eee;
+    border: 1px solid var(--fl-border);
     overflow: hidden;
     box-shadow: var(--shadow-card);
 }
@@ -1616,7 +1619,7 @@
    EXPERIENCE APPLY PAGE
    ============================================================ */
 .apply-page-bg {
-    background: #f5f4ef;
+    background: #ffffff;
     min-height: calc(100vh - 64px);
     padding: 40px 24px 60px;
 }
@@ -1878,7 +1881,7 @@
    APPLY COMPLETE PAGE
    ============================================================ */
 .complete-page-bg {
-    background: #f5f4ef;
+    background: #ffffff;
     min-height: calc(100vh - 64px);
     display: flex;
     align-items: center;
@@ -1993,7 +1996,7 @@
    DETAIL EXPERIENCE PAGE
    ============================================================ */
 .detail-page-bg {
-    background: #f5f4ef;
+    background: #ffffff;
     min-height: calc(100vh - 64px);
     padding: 32px 24px 60px;
 }
@@ -2267,7 +2270,7 @@
 }
 
 .signup-v2-bg {
-    background-color: #f5f4ef;
+    background-color: #ffffff;
     min-height: calc(100vh - 80px);
     padding: 40px 15px;
     display: flex;
@@ -2524,7 +2527,7 @@
 
 /* 프레임 옵션 카드 */
 .frame-card {
-    border: 2px solid #eee;
+    border: 2px solid var(--fl-border);
     border-radius: 10px;
     padding: 12px;
     cursor: pointer;
@@ -3568,7 +3571,7 @@
 }
 
 body {
-    background-color: #f5f4ef;
+    background-color: #ffffff;
 }
 
 /* ============================================================
@@ -3576,9 +3579,9 @@ body {
    ============================================================ */
 header {
     background-color: #fff;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    box-shadow: none;
     transition: border-color 0.3s ease;
-    border-bottom: 4px solid #f8f9fa;
+    border-bottom: 1px solid #f0f0f0;
 }
 
 header.header-experiencer { border-bottom-color: #2196F3; }
@@ -3743,7 +3746,7 @@ header.header-volunteer { border-bottom-color: #FF9800; }
 .main-content-wrapper {
     max-width: 1200px;
     margin: 0 auto;
-    padding: 44px 24px 60px;
+    padding: 0 24px 60px;
     background: transparent;
 }
 

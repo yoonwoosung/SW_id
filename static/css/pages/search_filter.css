@@ -34,7 +34,7 @@
 /* 세로 탭바 */
 .fl-tabbar--vertical {
     flex: 0 0 104px; display: flex; flex-direction: column; gap: 2px;
-    border-right: 1px solid #eef1ee; padding-right: 8px;
+    border-right: 1px solid var(--fl-border); padding-right: 8px;
 }
 .fl-tabbar--vertical .fl-tab {
     display: flex; align-items: center; justify-content: space-between; gap: 5px;
@@ -44,7 +44,7 @@
 }
 .fl-tabbar--vertical .fl-tab:hover { background: #f4f7f3; }
 .fl-tabbar--vertical .fl-tab.is-active {
-    background: #eef5f0; color: var(--green-dark, var(--fl-green-700)); border-left-color: var(--green-dark, var(--fl-green-700));
+    background: var(--fl-green-100); color: var(--green-dark, var(--fl-green-700)); border-left-color: var(--green-dark, var(--fl-green-700));
 }
 .fl-tab__count {
     font-size: 0.66rem; font-weight: 800; color: #fff;
@@ -61,7 +61,7 @@
 }
 .fl-cell {
     display: flex; align-items: center; gap: 5px; cursor: pointer;
-    border: 1px solid #e2e7e2; border-radius: 8px; padding: 5px 8px;
+    border: 1px solid var(--fl-border); border-radius: 8px; padding: 5px 8px;
     font-size: 0.8rem; color: #37413a; font-weight: 500; line-height: 1.2;
     transition: background 0.15s, border-color 0.15s;
 }
@@ -107,11 +107,11 @@
 .fl-trend__tag b { color: var(--orange, #E8960C); }
 
 /* ---- 회원정보 기반 자동 추천 세그먼트 ---- */
-.ai-seg-panel { background: #eef5f0; border: 1px solid #cfe3d6; }
+.ai-seg-panel { background: var(--fl-green-100); border: 1px solid rgba(76,175,80,.25); }
 .ai-seg-head { font-size: 0.9rem; font-weight: 700; color: var(--green-dark, var(--fl-green-700)); margin-bottom: 10px; }
 .ai-seg-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
 .ai-seg-card {
-    background: #fff; border: 1px solid #dbe8df; border-radius: 10px; padding: 12px 8px;
+    background: #fff; border: 1px solid var(--fl-border); border-radius: 10px; padding: 12px 8px;
     text-align: center; cursor: pointer; transition: border-color 0.15s, box-shadow 0.15s;
 }
 .ai-seg-card:hover { border-color: var(--green-mid, var(--fl-green-700)); }
@@ -136,7 +136,7 @@
 .fl-course-price .fl-cost { font-size: 1.15rem; font-weight: 800; color: #d85a30; }
 .fl-course-price .fl-per { font-size: 0.72rem; color: #a0a89e; margin-left: 6px; }
 .fl-course-card {
-    background: #fff; border: 1px solid #eef1ee; border-radius: var(--radius-card, 14px);
+    background: #fff; border: 1px solid var(--fl-border); border-radius: var(--radius-card, 14px);
     box-shadow: var(--shadow-card, 0 2px 12px rgba(0,0,0,0.06)); overflow: hidden;
 }
 .fl-course-card__head { padding: 14px 16px; }
@@ -146,14 +146,14 @@
     background: var(--green-light, var(--fl-green-100)); border-radius: 6px; padding: 2px 7px; margin-left: 6px; vertical-align: middle;
 }
 .fl-reasons { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 4px; }
-.fl-reason { font-size: 0.76rem; color: var(--green-dark, var(--fl-green-700)); background: #eef7ee; border-radius: 8px; padding: 2px 8px; }
+.fl-reason { font-size: 0.76rem; color: var(--green-dark, var(--fl-green-700)); background: var(--fl-green-100); border-radius: 8px; padding: 2px 8px; }
 .fl-course-meta { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 10px; font-size: 0.85rem; color: #55605a; }
 .fl-course-meta .fl-cost { color: var(--orange, #E8960C); font-weight: 800; }
 .fl-barrier { display: inline-flex; align-items: center; gap: 4px; color: #1565c0; font-weight: 700; }
 
 .fl-course-card__toggle {
     width: 100%; display: flex; align-items: center; justify-content: center; gap: 6px;
-    background: #f7f9f6; border: none; border-top: 1px solid #eef1ee; cursor: pointer;
+    background: #f7f9f6; border: none; border-top: 1px solid var(--fl-border); cursor: pointer;
     padding: 11px; font-size: 0.9rem; font-weight: 700; color: var(--green-dark, var(--fl-green-700));
 }
 .fl-course-card__toggle .fl-acc__toggle { color: inherit; }
@@ -183,11 +183,11 @@
 .fl-quickbtns { display: flex; gap: 10px; margin-top: 10px; }
 .fl-quickbtn {
     flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 7px;
-    background: #eef5f0; border: 1px solid #cfe3d6; color: #1d3d2c;
+    background: var(--fl-green-100); border: 1px solid rgba(76,175,80,.25); color: var(--fl-green-700);
     border-radius: 10px; padding: 12px 10px; font-size: 0.9rem; font-weight: 700; cursor: pointer;
     transition: background 0.15s, border-color 0.15s;
 }
-.fl-quickbtn:hover { background: #e2efe7; border-color: var(--green-mid, var(--fl-green-700)); }
+.fl-quickbtn:hover { filter: brightness(0.95); border-color: var(--green-mid, var(--fl-green-700)); }
 
 /* ---- 접힘형 상세조건 ---- */
 .fl-collapse { padding: 0; overflow: hidden; }

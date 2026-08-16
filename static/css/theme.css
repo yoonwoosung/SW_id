@@ -9,17 +9,17 @@
   --fl-green-700:#4CAF50;
   --fl-green-100:#E8F5E9;
   /* 배경/서피스 */
-  --fl-bg:#faf8f3; --fl-surface:#ffffff; --fl-surface-2:#fffdf8;
+  --fl-bg:#ffffff; --fl-surface:#ffffff; --fl-surface-2:#f7f7f7;
   /* 포인트 */
   --fl-orange:#ea6a1e; --fl-orange-100:#fdeee2; --fl-danger:#e5484d; --fl-danger-100:#fdecec;
   /* 텍스트/보더 */
-  --fl-text:#26302b; --fl-text-muted:#6b7770; --fl-border:#ece7dd;
+  --fl-text:#1a1a1a; --fl-text-muted:#717171; --fl-border:#f0f0f0;
   /* 라운드 */
   --fl-radius-sm:8px; --fl-radius:12px; --fl-radius-lg:16px; --fl-pill:999px;
-  /* 그림자 */
-  --fl-shadow-sm:0 1px 2px rgba(20,40,30,.06);
-  --fl-shadow:0 4px 16px rgba(20,40,30,.08);
-  --fl-shadow-lg:0 8px 28px rgba(20,40,30,.10);
+  /* 그림자 — 미니멀: 필요한 곳에만 */
+  --fl-shadow-sm:none;
+  --fl-shadow:0 2px 12px rgba(0,0,0,.08);
+  --fl-shadow-lg:0 6px 20px rgba(0,0,0,.12);
   /* 간격 */
   --fl-s1:4px; --fl-s2:8px; --fl-s3:12px; --fl-s4:16px; --fl-s5:24px; --fl-s6:32px; --fl-s8:48px;
   /* 폰트 */
@@ -62,10 +62,10 @@ body {
 .fl-more { color: var(--fl-text-muted); font-size: .9rem; font-weight: 600; }
 
 /* ---- 카드 ---- */
-.fl-card { background: var(--fl-surface); border:1px solid var(--fl-border); border-radius: var(--fl-radius-lg); box-shadow: var(--fl-shadow-sm); overflow:hidden; }
+.fl-card { background: var(--fl-surface); border:1px solid var(--fl-border); border-radius: var(--fl-radius-lg); overflow:hidden; }
 .fl-card-body { padding: var(--fl-s5); }
-.fl-card--hover { transition: transform .15s ease, box-shadow .15s ease; }
-.fl-card--hover:hover { transform: translateY(-3px); box-shadow: var(--fl-shadow-lg); }
+.fl-card--hover { transition: transform .15s ease; }
+.fl-card--hover:hover { transform: translateY(-4px); }
 
 /* ---- 뱃지 ---- */
 .fl-badge { display:inline-flex; align-items:center; gap:4px; padding:4px 10px; border-radius: var(--fl-pill); font-size:.78rem; font-weight:700; line-height:1; }
@@ -107,7 +107,7 @@ body {
 @media (min-width:768px){ .fl-rail { grid-auto-columns: minmax(0,1fr); overflow:visible; } }
 
 /* ---- 체험 카드 ---- */
-.fl-exp-thumb { position:relative; aspect-ratio:4/3; background:#eee var(--_bg) center/cover no-repeat; }
+.fl-exp-thumb { position:relative; aspect-ratio:4/3; background:var(--fl-border) var(--_bg) center/cover no-repeat; }
 .fl-exp-thumb img { width:100%; height:100%; object-fit:cover; display:block; }
 .fl-exp-thumb .fl-badge { position:absolute; top:10px; left:10px; box-shadow: var(--fl-shadow-sm); }
 .fl-exp-meta { display:flex; align-items:center; gap:6px; color: var(--fl-text-muted); font-size:.85rem; margin-top:4px; }

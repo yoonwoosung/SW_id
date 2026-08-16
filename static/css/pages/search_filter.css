@@ -22,7 +22,7 @@
 .fl-chips:empty { display: none; }
 .fl-chip {
     display: inline-flex; align-items: center; gap: 6px;
-    background: var(--green-light, #E8F5E9); color: var(--green-dark, #2D5A1B);
+    background: var(--green-light, var(--fl-green-100)); color: var(--green-dark, var(--fl-green-700));
     border-radius: 999px; padding: 5px 10px; font-size: 0.82rem; font-weight: 600;
 }
 .fl-chip__x { cursor: pointer; border: none; background: none; color: var(--green-dark); font-size: 1rem; line-height: 1; padding: 0; }
@@ -44,11 +44,11 @@
 }
 .fl-tabbar--vertical .fl-tab:hover { background: #f4f7f3; }
 .fl-tabbar--vertical .fl-tab.is-active {
-    background: #eef5f0; color: var(--green-dark, #1d6340); border-left-color: var(--green-dark, #1d6340);
+    background: #eef5f0; color: var(--green-dark, var(--fl-green-700)); border-left-color: var(--green-dark, var(--fl-green-700));
 }
 .fl-tab__count {
     font-size: 0.66rem; font-weight: 800; color: #fff;
-    background: var(--green-dark, #1d6340); border-radius: 999px; padding: 1px 6px; min-width: 16px; text-align: center;
+    background: var(--green-dark, var(--fl-green-700)); border-radius: 999px; padding: 1px 6px; min-width: 16px; text-align: center;
 }
 
 /* ---- 세부항목: 같은 크기 체크박스 그리드 ---- */
@@ -65,8 +65,8 @@
     font-size: 0.8rem; color: #37413a; font-weight: 500; line-height: 1.2;
     transition: background 0.15s, border-color 0.15s;
 }
-.fl-cell input { accent-color: var(--green-mid, #4CAF50); width: 14px; height: 14px; flex-shrink: 0; }
-.fl-cell:has(input:checked) { background: var(--green-light, #E8F5E9); border-color: var(--green-mid, #4CAF50); color: var(--green-dark, #2D5A1B); font-weight: 700; }
+.fl-cell input { accent-color: var(--green-mid, var(--fl-green-700)); width: 14px; height: 14px; flex-shrink: 0; }
+.fl-cell:has(input:checked) { background: var(--green-light, var(--fl-green-100)); border-color: var(--green-mid, var(--fl-green-700)); color: var(--green-dark, var(--fl-green-700)); font-weight: 700; }
 
 /* 탭 안의 중첩 묶음(지역>도, 반려견>몸무게, 인원>인원수 등) = 가로 아코디언 */
 .fl-subgroup { margin: 0; }
@@ -78,14 +78,14 @@
     padding: 10px 4px; font-size: 0.9rem; font-weight: 700; color: #37413a; text-align: left;
 }
 .fl-acc__caret { font-size: 0.72rem; color: #9aa39c; transition: transform 0.15s; }
-.fl-acc__toggle-btn[aria-expanded="true"] .fl-acc__caret { transform: rotate(90deg); color: var(--green-dark, #1d6340); }
+.fl-acc__toggle-btn[aria-expanded="true"] .fl-acc__caret { transform: rotate(90deg); color: var(--green-dark, var(--fl-green-700)); }
 /* 우측 '전체' 부모 체크박스 */
 .fl-acc__check {
     display: inline-flex; align-items: center; gap: 5px; cursor: pointer;
     font-size: 0.76rem; font-weight: 700; color: #6a746d; flex-shrink: 0; padding: 4px 2px;
 }
-.fl-acc__check input { accent-color: var(--green-mid, #4CAF50); width: 15px; height: 15px; }
-.fl-acc__check:has(input:checked) { color: var(--green-dark, #1d6340); }
+.fl-acc__check input { accent-color: var(--green-mid, var(--fl-green-700)); width: 15px; height: 15px; }
+.fl-acc__check:has(input:checked) { color: var(--green-dark, var(--fl-green-700)); }
 .fl-acc__body { padding: 2px 0 10px 20px; }
 .fl-acc__body[hidden] { display: none; }
 
@@ -95,8 +95,8 @@
 /* ---- 액션 버튼 ---- */
 .fl-actions { display: flex; gap: 10px; margin-top: 14px; }
 .fl-btn { flex: 1; border: none; border-radius: 12px; padding: 13px 12px; font-size: 0.98rem; font-weight: 700; cursor: pointer; }
-.fl-btn--primary { background: var(--green-dark, #2D5A1B); color: #fff; flex: 2; }
-.fl-btn--primary:hover { background: #1e3e12; }
+.fl-btn--primary { background: var(--green-dark, var(--fl-green-700)); color: #fff; flex: 2; }
+.fl-btn--primary:hover { filter: brightness(0.88); }
 .fl-btn--primary:disabled { opacity: 0.6; cursor: default; }
 .fl-btn--ghost { background: #f2f4f1; color: #55605a; }
 .fl-btn--ghost:hover { background: #e7ebe6; }
@@ -108,14 +108,14 @@
 
 /* ---- 회원정보 기반 자동 추천 세그먼트 ---- */
 .ai-seg-panel { background: #eef5f0; border: 1px solid #cfe3d6; }
-.ai-seg-head { font-size: 0.9rem; font-weight: 700; color: var(--green-dark, #1d6340); margin-bottom: 10px; }
+.ai-seg-head { font-size: 0.9rem; font-weight: 700; color: var(--green-dark, var(--fl-green-700)); margin-bottom: 10px; }
 .ai-seg-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
 .ai-seg-card {
     background: #fff; border: 1px solid #dbe8df; border-radius: 10px; padding: 12px 8px;
     text-align: center; cursor: pointer; transition: border-color 0.15s, box-shadow 0.15s;
 }
-.ai-seg-card:hover { border-color: var(--green-mid, #4CAF50); }
-.ai-seg-card.is-active { border-color: var(--green-dark, #1d6340); box-shadow: 0 0 0 1px var(--green-dark, #1d6340) inset; }
+.ai-seg-card:hover { border-color: var(--green-mid, var(--fl-green-700)); }
+.ai-seg-card.is-active { border-color: var(--green-dark, var(--fl-green-700)); box-shadow: 0 0 0 1px var(--green-dark, var(--fl-green-700)) inset; }
 .ai-seg-emoji { font-size: 1.4rem; margin-bottom: 3px; }
 .ai-seg-title { font-size: 0.82rem; font-weight: 700; color: #1d3d2c; line-height: 1.25; }
 .ai-seg-sub { font-size: 0.72rem; color: #8a9890; margin-top: 2px; }
@@ -142,11 +142,11 @@
 .fl-course-card__head { padding: 14px 16px; }
 .fl-course-card__title { font-size: 1.02rem; font-weight: 800; color: #253027; margin: 0 0 8px; }
 .fl-course-badge {
-    display: inline-block; font-size: 0.72rem; font-weight: 700; color: var(--green-dark, #2D5A1B);
-    background: var(--green-light, #E8F5E9); border-radius: 6px; padding: 2px 7px; margin-left: 6px; vertical-align: middle;
+    display: inline-block; font-size: 0.72rem; font-weight: 700; color: var(--green-dark, var(--fl-green-700));
+    background: var(--green-light, var(--fl-green-100)); border-radius: 6px; padding: 2px 7px; margin-left: 6px; vertical-align: middle;
 }
 .fl-reasons { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 4px; }
-.fl-reason { font-size: 0.76rem; color: var(--green-dark, #2D5A1B); background: #eef7ee; border-radius: 8px; padding: 2px 8px; }
+.fl-reason { font-size: 0.76rem; color: var(--green-dark, var(--fl-green-700)); background: #eef7ee; border-radius: 8px; padding: 2px 8px; }
 .fl-course-meta { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 10px; font-size: 0.85rem; color: #55605a; }
 .fl-course-meta .fl-cost { color: var(--orange, #E8960C); font-weight: 800; }
 .fl-barrier { display: inline-flex; align-items: center; gap: 4px; color: #1565c0; font-weight: 700; }
@@ -154,7 +154,7 @@
 .fl-course-card__toggle {
     width: 100%; display: flex; align-items: center; justify-content: center; gap: 6px;
     background: #f7f9f6; border: none; border-top: 1px solid #eef1ee; cursor: pointer;
-    padding: 11px; font-size: 0.9rem; font-weight: 700; color: var(--green-dark, #2D5A1B);
+    padding: 11px; font-size: 0.9rem; font-weight: 700; color: var(--green-dark, var(--fl-green-700));
 }
 .fl-course-card__toggle .fl-acc__toggle { color: inherit; }
 .fl-course-card__toggle[aria-expanded="true"] .fl-acc__toggle { transform: rotate(180deg); }
@@ -187,7 +187,7 @@
     border-radius: 10px; padding: 12px 10px; font-size: 0.9rem; font-weight: 700; cursor: pointer;
     transition: background 0.15s, border-color 0.15s;
 }
-.fl-quickbtn:hover { background: #e2efe7; border-color: var(--green-mid, #4CAF50); }
+.fl-quickbtn:hover { background: #e2efe7; border-color: var(--green-mid, var(--fl-green-700)); }
 
 /* ---- 접힘형 상세조건 ---- */
 .fl-collapse { padding: 0; overflow: hidden; }
@@ -217,7 +217,7 @@
 .fl-row .fl-empty { flex: 1; }
 
 /* ESG 등급 배지 */
-.fl-badge--esg { background: var(--green-dark, #1d6340); color: #fff; }
+.fl-badge--esg { background: var(--green-dark, var(--fl-green-700)); color: #fff; }
 
 /* ---- 데스크톱 확장 ---- */
 @media (min-width: 720px) {

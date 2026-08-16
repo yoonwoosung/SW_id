@@ -15,7 +15,7 @@
     border: 2px solid transparent; opacity: 0.7; transition: opacity 0.15s, border-color 0.15s;
 }
 .ed-gallery__thumb:hover { opacity: 1; }
-.ed-gallery__thumb.is-active { opacity: 1; border-color: var(--green-dark, #2D5A1B); }
+.ed-gallery__thumb.is-active { opacity: 1; border-color: var(--green-dark, var(--fl-green-700)); }
 
 .ed-lightbox {
     position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 2000;
@@ -40,7 +40,7 @@
     border-radius: 8px; padding: 4px 10px;
 }
 .ed-urgency__deadline { background: #fdecea; color: #d3462f; }
-.ed-urgency__viewers { background: var(--green-light, #E8F5E9); color: var(--green-dark, #2D5A1B); }
+.ed-urgency__viewers { background: var(--green-light, var(--fl-green-100)); color: var(--green-dark, var(--fl-green-700)); }
 
 /* ---- 찜 / 공유 ---- */
 .ed-actions { display: flex; gap: 8px; margin-top: 12px; }
@@ -49,7 +49,7 @@
     background: #fff; border: 1px solid #e2e7e2; border-radius: 10px; padding: 9px 14px;
     font-size: 0.9rem; font-weight: 600; color: #45514a; transition: border-color 0.15s, color 0.15s;
 }
-.ed-icon-btn:hover { border-color: var(--green-mid, #4CAF50); }
+.ed-icon-btn:hover { border-color: var(--green-mid, var(--fl-green-700)); }
 .ed-icon-btn.is-wished { color: #e0245e; border-color: #f3c6d3; }
 .ed-icon-btn.is-wished .fa-heart { font-weight: 900; }
 
@@ -63,19 +63,19 @@
 /* ---- 리뷰: 별점 분포 · AI 요약 · 더보기 ---- */
 .ed-review-summary { display: flex; gap: 24px; align-items: center; flex-wrap: wrap; margin-bottom: 14px; }
 .ed-review-avg { text-align: center; }
-.ed-review-avg__num { font-size: 2.4rem; font-weight: 800; color: var(--green-dark, #2D5A1B); line-height: 1; }
+.ed-review-avg__num { font-size: 2.4rem; font-weight: 800; color: var(--green-dark, var(--fl-green-700)); line-height: 1; }
 .ed-review-avg__stars { color: var(--orange, #E8960C); font-size: 0.9rem; }
 .ed-review-avg__count { font-size: 0.82rem; color: #8a938c; }
 .ed-review-dist { flex: 1; min-width: 220px; }
 .ed-review-dist__row { display: flex; align-items: center; gap: 8px; font-size: 0.8rem; color: #666; margin: 3px 0; }
 .ed-review-dist__bar { flex: 1; height: 7px; background: #eee; border-radius: 4px; overflow: hidden; }
-.ed-review-dist__fill { height: 100%; background: var(--green-mid, #4CAF50); }
+.ed-review-dist__fill { height: 100%; background: var(--green-mid, var(--fl-green-700)); }
 
 .ed-ai-summary {
-    background: var(--green-light, #E8F5E9); border-radius: 10px; padding: 12px 14px; margin-bottom: 14px;
+    background: var(--green-light, var(--fl-green-100)); border-radius: 10px; padding: 12px 14px; margin-bottom: 14px;
     font-size: 0.9rem; color: #2c4030;
 }
-.ed-ai-summary .ai-badge-label { background: var(--green-dark, #2D5A1B); }
+.ed-ai-summary .ai-badge-label { background: var(--green-dark, var(--fl-green-700)); }
 
 .ed-review-more {
     display: block; width: 100%; margin-top: 10px; background: #f2f4f1; border: none;
@@ -93,7 +93,7 @@
 }
 .ed-similar-card:hover { transform: translateY(-3px); }
 .ed-similar-card__thumb {
-    height: 96px; background: var(--green-light, #E8F5E9); display: flex;
+    height: 96px; background: var(--green-light, var(--fl-green-100)); display: flex;
     align-items: center; justify-content: center; font-size: 2rem;
 }
 .ed-similar-card__body { padding: 10px 12px; }
@@ -103,10 +103,10 @@
 
 .ed-course-cta {
     display: flex; align-items: center; justify-content: space-between; gap: 12px;
-    background: var(--green-dark, #2D5A1B); color: #fff; border-radius: 14px; padding: 18px 22px;
+    background: var(--green-dark, var(--fl-green-700)); color: #fff; border-radius: 14px; padding: 18px 22px;
     cursor: pointer; text-decoration: none;
 }
-.ed-course-cta:hover { background: #1e3e12; color: #fff; text-decoration: none; }
+.ed-course-cta:hover { filter: brightness(0.88); color: #fff; text-decoration: none; }
 .ed-course-cta__title { font-weight: 800; font-size: 1.05rem; }
 .ed-course-cta__sub { font-size: 0.85rem; opacity: 0.85; }
 
@@ -137,7 +137,7 @@
 .ed-policy__head { display: flex; align-items: center; justify-content: space-between; cursor: pointer; list-style: none; }
 .ed-policy__head::-webkit-details-marker { display: none; }
 .ed-policy__title { font-weight: 700; color: #222; font-size: .98rem; }
-.ed-policy__more { font-size: .82rem; color: #1d6340; white-space: nowrap; }
+.ed-policy__more { font-size: .82rem; color: var(--fl-green-700); white-space: nowrap; }
 .ed-policy__more i { transition: transform .15s; }
 .ed-policy[open] .ed-policy__more i { transform: rotate(180deg); }
 .ed-policy__summary { margin: 10px 0 0; font-size: .9rem; color: #555; line-height: 1.6; }
@@ -149,7 +149,7 @@
 .ed-amenities { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; }
 .ed-amenity { display: flex; align-items: center; gap: 11px; border: 1px solid #ececec; border-radius: 12px;
     padding: 12px 14px; text-decoration: none; color: inherit; transition: border-color .15s, box-shadow .15s; }
-.ed-amenity:hover { border-color: #1d6340; box-shadow: 0 4px 14px rgba(0,0,0,.06); text-decoration: none; }
+.ed-amenity:hover { border-color: var(--fl-green-700); box-shadow: 0 4px 14px rgba(0,0,0,.06); text-decoration: none; }
 .ed-amenity__ico { font-size: 1.3rem; flex-shrink: 0; }
 .ed-amenity__body { display: flex; flex-direction: column; min-width: 0; flex: 1; }
 .ed-amenity__name { font-weight: 700; color: #222; font-size: .92rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

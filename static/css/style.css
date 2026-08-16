@@ -110,7 +110,7 @@
 }
 
 .timetable .time-slot.selected {
-    background-color: #28a745;
+    background-color: var(--fl-green-700);
     color: white;
     font-weight: bold;
 }
@@ -152,7 +152,7 @@
 }
 
 .text-success {
-    color: #28a745;
+    color: var(--fl-green-700);
 }
 
 .text-danger {
@@ -274,7 +274,7 @@
 .timetable-display { width: 100%; text-align: center; }
 .timetable-display th, .timetable-display td { border: 1px solid #dee2e6; padding: 8px; }
 .timetable-display thead th { background-color: #f8f9fa; }
-.timetable-display td.selected { background-color: #28a745; color: white; }
+.timetable-display td.selected { background-color: var(--fl-green-700); color: white; }
 
 @media (max-width: 1200px) {
     .dashboard-grid {
@@ -467,7 +467,7 @@
 }
 
 .fc .is-available .fc-daygrid-day-frame {
-    background-color: #d4edda;
+    background-color: var(--fl-green-100);
 }
 
 .fc .fc-day-today .fc-daygrid-day-frame {
@@ -475,14 +475,14 @@
 }
 
 .fc .fc-day-today.is-available .fc-daygrid-day-frame {
-    background-color: #98d89e;
-    border: 2px solid #28a745;
+    background-color: var(--fl-green-100);
+    border: 2px solid var(--fl-green-700);
 }
 
 .fc-event {
     cursor: pointer;
-    background-color: #28a745 !important;
-    border: 1px solid #218838 !important;
+    background-color: var(--fl-green-700) !important;
+    border: 1px solid var(--fl-green-700) !important;
     color: #fff !important;
     font-weight: 500;
     padding: 4px 6px;
@@ -507,7 +507,7 @@
 }
 .reservation-item-header span {
     font-weight: bold;
-    color: #28a745;
+    color: var(--fl-green-700);
 }
 
 /* 메인 슬라이드 배너(캐러셀) 스타일 */
@@ -768,7 +768,7 @@
     text-decoration: none;
     white-space: nowrap;
 }
-.site-logo:hover { text-decoration: none; color: #45a049 !important; }
+.site-logo:hover { text-decoration: none; color: var(--fl-green-700) !important; }
 
 .site-nav {
     display: flex;
@@ -959,7 +959,7 @@
     transition: background 0.2s;
     flex-shrink: 0;
 }
-.hero-search-btn:hover { background: #143d14; }
+.hero-search-btn:hover { filter: brightness(0.88); }
 .hero-tags {
     display: flex;
     flex-wrap: wrap;
@@ -1027,7 +1027,7 @@
 .hero-unified-select-wide { min-width: 160px; }
 
 .hero-unified-btn {
-    background: #6a8f3a;
+    background: var(--fl-green-700);
     color: #fff;
     border: none;
     height: 100%;
@@ -1042,7 +1042,7 @@
     transition: background 0.2s;
     flex-shrink: 0;
 }
-.hero-unified-btn:hover { background: #5a7a2e; }
+.hero-unified-btn:hover { filter: brightness(0.88); }
 
 /* 태그는 박스 바깥에 */
 .hero-tags {
@@ -1150,7 +1150,7 @@
 }
 .badge-closed { background: #e53935; }
 .badge-family { background: var(--fl-green-700); }
-.badge-eco    { background: #00695c; }
+.badge-eco    { background: var(--fl-green-700); }
 .badge-open   { background: #1565c0; }
 .exp-card-dist-badge {
     position: absolute;
@@ -1864,7 +1864,7 @@
     transition: background 0.2s;
     margin-bottom: 12px;
 }
-.apply-submit-btn:hover { background: #1e3e12; }
+.apply-submit-btn:hover { filter: brightness(0.88); }
 .apply-submit-btn i { margin-right: 6px; }
 .apply-notice {
     font-size: 0.75rem;
@@ -1972,7 +1972,7 @@
     text-decoration: none;
     transition: background 0.2s;
 }
-.complete-btn-primary:hover { background: #1e3e12; color: #fff; text-decoration: none; }
+.complete-btn-primary:hover { filter: brightness(0.88); color: #fff; text-decoration: none; }
 .complete-btn-primary i { margin-right: 6px; }
 .complete-btn-secondary {
     display: block;
@@ -2159,7 +2159,7 @@
     cursor: pointer;
     transition: background 0.15s;
 }
-.detail-review-submit:hover { background: #1e3e12; }
+.detail-review-submit:hover { filter: brightness(0.88); }
 .detail-login-notice { font-size: 0.85rem; color: #888; margin-bottom: 16px; }
 .detail-login-notice a { color: var(--green-dark); }
 .review-item-header {
@@ -2214,7 +2214,7 @@
     cursor: pointer;
     margin-bottom: 8px;
 }
-.detail-booking-btn:hover { background: #1e3e12; color: #fff; text-decoration: none; }
+.detail-booking-btn:hover { filter: brightness(0.88); color: #fff; text-decoration: none; }
 .detail-booking-btn.disabled { background: #ccc; cursor: not-allowed; }
 .detail-booking-remaining { font-size: 0.78rem; color: #e53935; text-align: center; margin-bottom: 16px; }
 .detail-booking-info { border-top: 1px solid #f0f0f0; padding-top: 16px; }
@@ -3598,7 +3598,7 @@ header.header-volunteer { border-bottom-color: #FF9800; }
     color: var(--fl-green-700) !important;
     text-decoration: none;
 }
-.logo:hover { text-decoration: none; color: #45a049 !important; }
+.logo:hover { text-decoration: none; color: var(--fl-green-700) !important; }
 
 .user-menu a { color: #555; margin: 0 8px; text-decoration: none; }
 .user-menu a:hover { text-decoration: underline; }

@@ -30,7 +30,7 @@
 
 /* ---- 헤더: 평점 · 긴박감 ---- */
 .ed-rating { display: inline-flex; align-items: center; gap: 6px; font-size: 0.95rem; color: #333; }
-.ed-rating__star { color: var(--orange, #E8960C); }
+.ed-rating__star { color: var(--orange, #ea6a1e); }
 .ed-rating__count { color: #8a938c; }
 .ed-rating--empty { color: #9aa39c; font-size: 0.9rem; }
 
@@ -39,7 +39,7 @@
     display: inline-flex; align-items: center; gap: 5px; font-size: 0.82rem; font-weight: 700;
     border-radius: 8px; padding: 4px 10px;
 }
-.ed-urgency__deadline { background: #fdecea; color: #d3462f; }
+.ed-urgency__deadline { background: var(--fl-danger-100, #fdecec); color: var(--fl-danger, #e5484d); }
 .ed-urgency__viewers { background: var(--green-light, var(--fl-green-100)); color: var(--green-dark, var(--fl-green-700)); }
 
 /* ---- 찜 / 공유 ---- */
@@ -64,7 +64,7 @@
 .ed-review-summary { display: flex; gap: 24px; align-items: center; flex-wrap: wrap; margin-bottom: 14px; }
 .ed-review-avg { text-align: center; }
 .ed-review-avg__num { font-size: 2.4rem; font-weight: 800; color: var(--green-dark, var(--fl-green-700)); line-height: 1; }
-.ed-review-avg__stars { color: var(--orange, #E8960C); font-size: 0.9rem; }
+.ed-review-avg__stars { color: var(--orange, #ea6a1e); font-size: 0.9rem; }
 .ed-review-avg__count { font-size: 0.82rem; color: #8a938c; }
 .ed-review-dist { flex: 1; min-width: 220px; }
 .ed-review-dist__row { display: flex; align-items: center; gap: 8px; font-size: 0.8rem; color: #666; margin: 3px 0; }
@@ -99,7 +99,7 @@
 .ed-similar-card__body { padding: 10px 12px; }
 .ed-similar-card__title { font-weight: 700; font-size: 0.95rem; color: #253027; }
 .ed-similar-card__loc { font-size: 0.8rem; color: #8a938c; margin: 2px 0 6px; }
-.ed-similar-card__price { font-weight: 800; color: var(--orange, #E8960C); font-size: 0.95rem; }
+.ed-similar-card__price { font-weight: 800; color: var(--orange, #ea6a1e); font-size: 0.95rem; }
 
 .ed-course-cta {
     display: flex; align-items: center; justify-content: space-between; gap: 12px;
@@ -162,5 +162,5 @@
 }
 
 /* 찜 버튼: 찜 상태면 하트 채우기(Lucide svg) */
-#ed-wish.is-wished { color: #e24b4a; }
+#ed-wish.is-wished { color: var(--fl-danger, #e5484d); }
 #ed-wish.is-wished svg { fill: currentColor; }

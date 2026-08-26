@@ -200,7 +200,7 @@
     (function esg() {
         var esgEl = $('esg-content');
         if (!esgEl) return;
-        var GRADE_COLOR = { A: '#2e7d32', B: '#66bb6a', C: '#fbc02d', D: '#bbb' };
+        var GRADE_COLOR = { A: '#4CAF50', B: '#81C784', C: '#fbc02d', D: '#bbb' };
         fetch('/api/experiences/' + DATA.id + '/esg').then(function (r) { return r.json(); }).then(function (res) {
             if (!res.success || !res.data) { esgEl.textContent = 'ESG 점수를 불러올 수 없습니다.'; return; }
             var d = res.data, c = GRADE_COLOR[d.grade] || '#999';

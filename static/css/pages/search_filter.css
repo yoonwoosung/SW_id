@@ -104,7 +104,7 @@
 /* ---- 트렌드 키워드 ---- */
 .fl-trend { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
 .fl-trend__tag { font-size: 0.82rem; color: #55605a; background: #f4f6f2; border-radius: 999px; padding: 5px 11px; }
-.fl-trend__tag b { color: var(--orange, #E8960C); }
+.fl-trend__tag b { color: var(--orange, #ea6a1e); }
 
 /* ---- 회원정보 기반 자동 추천 세그먼트 ---- */
 .ai-seg-panel { background: var(--fl-green-100); border: 1px solid rgba(76,175,80,.25); }
@@ -117,7 +117,7 @@
 .ai-seg-card:hover { border-color: var(--green-mid, var(--fl-green-700)); }
 .ai-seg-card.is-active { border-color: var(--green-dark, var(--fl-green-700)); box-shadow: 0 0 0 1px var(--green-dark, var(--fl-green-700)) inset; }
 .ai-seg-emoji { font-size: 1.4rem; margin-bottom: 3px; }
-.ai-seg-title { font-size: 0.82rem; font-weight: 700; color: #1d3d2c; line-height: 1.25; }
+.ai-seg-title { font-size: 0.82rem; font-weight: 700; color: var(--fl-text, #1a1a1a); line-height: 1.25; }
 .ai-seg-sub { font-size: 0.72rem; color: #8a9890; margin-top: 2px; }
 
 /* ---- 코스 카드 ---- */
@@ -128,12 +128,12 @@
     position: relative; display: flex; align-items: flex-start; gap: 6px; padding: 10px; flex-wrap: wrap;
 }
 .fl-badge { font-size: 0.7rem; font-weight: 700; border-radius: 6px; padding: 3px 8px; }
-.fl-badge--urgent { background: #e24b4a; color: #fff; }
-.fl-badge--eco { background: rgba(255,255,255,0.92); color: #04342c; }
-.fl-badge--day { background: rgba(255,255,255,0.85); color: #173404; }
+.fl-badge--urgent { background: var(--fl-danger, #e5484d); color: #fff; }
+.fl-badge--eco { background: rgba(255,255,255,0.92); color: var(--fl-text, #1a1a1a); }
+.fl-badge--day { background: rgba(255,255,255,0.85); color: var(--fl-text, #1a1a1a); }
 .fl-course-viewers { margin: 0 0 8px; font-size: 0.8rem; color: #8a5a1a; }
 .fl-course-price { margin-top: 12px; padding-top: 10px; border-top: 1px solid #f0f0f0; }
-.fl-course-price .fl-cost { font-size: 1.15rem; font-weight: 800; color: #d85a30; }
+.fl-course-price .fl-cost { font-size: 1.15rem; font-weight: 800; color: var(--orange, #ea6a1e); }
 .fl-course-price .fl-per { font-size: 0.72rem; color: #a0a89e; margin-left: 6px; }
 .fl-course-card {
     background: #fff; border: 1px solid var(--fl-border); border-radius: var(--radius-card, 14px);
@@ -148,7 +148,7 @@
 .fl-reasons { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 4px; }
 .fl-reason { font-size: 0.76rem; color: var(--green-dark, var(--fl-green-700)); background: var(--fl-green-100); border-radius: 8px; padding: 2px 8px; }
 .fl-course-meta { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 10px; font-size: 0.85rem; color: #55605a; }
-.fl-course-meta .fl-cost { color: var(--orange, #E8960C); font-weight: 800; }
+.fl-course-meta .fl-cost { color: var(--orange, #ea6a1e); font-weight: 800; }
 .fl-barrier { display: inline-flex; align-items: center; gap: 4px; color: #1565c0; font-weight: 700; }
 
 .fl-course-card__toggle {
@@ -205,7 +205,7 @@
 .fl-sec { margin-top: 18px; }
 .fl-sec[hidden] { display: none; }
 .fl-sec__head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 10px; }
-.fl-sec__title { font-size: 1.06rem; font-weight: 800; color: #1d3d2c; margin: 0; }
+.fl-sec__title { font-size: 1.06rem; font-weight: 800; color: var(--fl-text, #1a1a1a); margin: 0; }
 .fl-sec__sub { font-size: 0.78rem; color: #8a9890; }
 .fl-row {
     display: flex; gap: 14px; overflow-x: auto; padding-bottom: 6px;
@@ -219,7 +219,8 @@
 /* ESG 등급 배지 */
 .fl-badge--esg { background: var(--green-dark, var(--fl-green-700)); color: #fff; }
 
-/* ---- 데스크톱 확장 ---- */
-@media (min-width: 720px) {
-    .fl-course-list { grid-template-columns: repeat(2, 1fr); }
+/* ---- 모바일 단일 컬럼 ---- */
+.fl-course-list { grid-template-columns: repeat(2, 1fr); }
+@media (max-width: 719px) {
+    .fl-course-list { grid-template-columns: 1fr; }
 }

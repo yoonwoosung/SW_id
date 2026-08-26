@@ -960,29 +960,6 @@
     flex-shrink: 0;
 }
 .hero-search-btn:hover { filter: brightness(0.88); }
-.hero-tags {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin-top: 14px;
-}
-.hero-tag {
-    font-size: 0.8rem;
-    color: #555;
-    background: rgba(255,255,255,0.92);
-    padding: 4px 12px;
-    border-radius: 20px;
-    cursor: pointer;
-    border: 1px solid #e0e0e0;
-    text-decoration: none;
-    transition: all 0.15s;
-}
-.hero-tag:hover {
-    background: var(--green-light);
-    border-color: var(--green-mid);
-    color: var(--green-dark);
-    text-decoration: none;
-}
 
 /* 통합 검색바 */
 .hero-search-box {
@@ -1044,11 +1021,6 @@
 }
 .hero-unified-btn:hover { filter: brightness(0.88); }
 
-/* 태그는 박스 바깥에 */
-.hero-tags {
-    margin-top: 14px;
-    padding: 0 4px;
-}
 
 /* 흰 카드 섹션 */
 .section-card {
@@ -4236,4 +4208,84 @@ header.header-volunteer { border-bottom-color: #FF9800; }
     background-color: #f8fafc !important;
     opacity: 0.5;
     pointer-events: none;
+}
+
+/* ── 검색 결과 헤더 ── */
+.search-result-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 10px 0 14px;
+    border-bottom: 1px solid #e8e8e8;
+    margin-bottom: 16px;
+}
+.search-result-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    font-size: 14px;
+    color: #555;
+}
+.search-result-info b { color: var(--green-dark); }
+.search-filter-chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.search-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: var(--green-light);
+    color: var(--green-dark);
+    font-size: 12px;
+    padding: 3px 10px;
+    border-radius: 20px;
+}
+.search-chip button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: inherit;
+    opacity: 0.6;
+    padding: 0;
+    font-size: 11px;
+    line-height: 1;
+}
+.search-chip button:hover { opacity: 1; }
+.sort-select {
+    font-size: 13px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    padding: 5px 10px;
+    color: #555;
+    background: #fff;
+}
+
+/* ── 스켈레톤 로딩 ── */
+.skeleton-card {
+    background: #fff;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+}
+.skeleton-img {
+    height: 175px;
+    background: linear-gradient(90deg, #eeeeee 25%, #f5f5f5 50%, #eeeeee 75%);
+    background-size: 200% 100%;
+    animation: skeleton-shimmer 1.2s infinite;
+}
+.skeleton-body { padding: 14px; }
+.skeleton-line {
+    height: 12px;
+    border-radius: 6px;
+    margin-bottom: 10px;
+    background: linear-gradient(90deg, #eeeeee 25%, #f5f5f5 50%, #eeeeee 75%);
+    background-size: 200% 100%;
+    animation: skeleton-shimmer 1.2s infinite;
+}
+.skeleton-line.short  { width: 65%; }
+.skeleton-line.shorter { width: 40%; }
+@keyframes skeleton-shimmer {
+    0%   { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
 }

@@ -337,6 +337,119 @@ def search_categories():
     return success_response({"categories": SEARCH_CATEGORIES, "groups": CATEGORY_GROUPS})
 
 
+# TODO: 임시 구현 — 프론트 확인 후 이 함수 전체 삭제하고 백엔드 팀에 api_search_spec.md 기준으로 구현 요청
+def search_api():
+    page = request.args.get('page', 1, type=int)
+    sort_by = request.args.get('sort', 'deadline', type=str)
+    region = request.args.get('region', type=str)
+    crop_query = request.args.get('crop_query', type=str)
+    date_filter_str = request.args.get('date_filter', type=str)
+    people_count_str = request.args.get('people_count', type=str)
+    user_lat = request.args.get('lat', type=float)
+    user_lon = request.args.get('lon', type=float)
+
+    today = date.today()
+    base_query = Experience.query.filter(Experience.status == 'recruiting', Experience.end_date >= today)
+
+    if region:
+        base_query = base_query.filter(Experience.address_detail.like(f"%{region}%"))
+    if crop_query:
+        base_query = base_query.filter(Experience.crop.like(f"%{crop_query}%"))
+    if date_filter_str:
+        try:
+            filter_date = date.fromisoformat(date_filter_str)
+            base_query = base_query.filter(
+                Experience.duration_start <= filter_date,
+                Experience.end_date >= filter_date
+            )
+        except ValueError:
+            pass
+    if people_count_str and people_count_str not in ('', '5+'):
+        try:
+            min_spots = int(people_count_str)
+            base_query = base_query.filter(
+                (Experience.max_participants - Experience.current_participants) >= min_spots
+            )
+        except ValueError:
+            pass
+
+    PER_PAGE = 15
+    is_closed = case(
+        (Experience.current_participants >= Experience.max_participants, 1),
+        else_=0
+    ).label("is_closed")
+
+    items_on_page = []
+    total_items = 0
+    total_pages = 1
+
+    if sort_by == 'recommended' and user_lat and user_lon:
+        lat_range = 1.5
+        lon_range = 1.5
+        base_query = base_query.filter(
+            Experience.lat.between(user_lat - lat_range, user_lat + lat_range),
+            Experience.lng.between(user_lon - lon_range, user_lon + lon_range),
+            Experience.current_participants < Experience.max_participants
+        )
+        all_exps = base_query.all()
+        ranked = []
+        for exp in all_exps:
+            dist = haversine(user_lat, user_lon, exp.lat, exp.lng)
+            if dist > 150:
+                continue
+            is_spec = matches_specialty(exp.address_detail, exp.crop)
+            exp._distance = dist
+            exp._is_specialty = is_spec
+            exp._score = calculate_score(dist, exp.max_participants, exp.current_participants, is_spec)
+            ranked.append(exp)
+        ranked.sort(key=lambda x: x._score, reverse=True)
+        total_items = len(ranked)
+        total_pages = math.ceil(total_items / PER_PAGE) if total_items > 0 else 1
+        start = (page - 1) * PER_PAGE
+        items_on_page = ranked[start:start + PER_PAGE]
+    elif sort_by == 'reviews':
+        review_count = func.count(Review.id).label('review_count')
+        q = base_query.outerjoin(Review).group_by(Experience.id).order_by(is_closed.asc(), review_count.desc())
+        pag = q.paginate(page=page, per_page=PER_PAGE, error_out=False)
+        items_on_page = pag.items
+        total_items = pag.total
+        total_pages = pag.pages
+    else:
+        q = base_query.order_by(is_closed.asc(), Experience.end_date.asc())
+        pag = q.paginate(page=page, per_page=PER_PAGE, error_out=False)
+        items_on_page = pag.items
+        total_items = pag.total
+        total_pages = pag.pages
+
+    result = []
+    for item in items_on_page:
+        is_spec = getattr(item, '_is_specialty', None)
+        if is_spec is None:
+            is_spec = False
+            for r, specialties in REGIONAL_SPECIALTIES.items():
+                if r in (item.address_detail or '') and any(sc in item.crop for sc in specialties):
+                    is_spec = True
+                    break
+        first_image = item.images.split(',')[0] if item.images else None
+        remaining = item.max_participants - item.current_participants
+        distance = round(getattr(item, '_distance', 0), 1) if hasattr(item, '_distance') else None
+        result.append({
+            'id': item.id,
+            'crop': item.crop,
+            'address_detail': item.address_detail or '',
+            'cost': item.cost,
+            'first_image': first_image,
+            'remaining_spots': remaining,
+            'pesticide_free': bool(item.pesticide_free),
+            'is_specialty': is_spec,
+            'd_day': item.d_day,
+            'distance': distance,
+        })
+
+    return jsonify({'success': True, 'items': result, 'total': total_items, 'pages': total_pages, 'page': page})
+
+
+
 def register(app):
     app.add_url_rule('/', 'index', index)
     app.add_url_rule('/api/search-categories', 'search_categories', search_categories)
@@ -346,3 +459,4 @@ def register(app):
     app.add_url_rule('/experience/delete/<int:item_id>', 'delete_experience', delete_experience, methods=['POST'])
     app.add_url_rule('/api/experience/<int:item_id>/toggle_visibility', 'toggle_visibility', toggle_visibility, methods=['PATCH'])
     app.add_url_rule('/api/experiences', 'get_experiences_json', get_experiences_json)
+    app.add_url_rule('/api/search', 'search_api', search_api)  # TODO: 프론트 확인 후 삭제 → 백엔드 팀 구현 요청

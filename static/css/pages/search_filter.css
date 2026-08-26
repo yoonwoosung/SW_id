@@ -2,7 +2,7 @@
    상세조건 아코디언 드롭박스 + 맞춤 코스 카드. FarmLink 기존 토큰(:root의 --green-*, --orange) 재사용.
    모바일 1순위(PWA). 데스크톱은 미디어쿼리로 확장. */
 
-.ai-rec-wrap { max-width: 820px; margin: 0 auto; padding: 18px 16px 48px; }
+.ai-rec-wrap { max-width: 1200px; margin: 0 auto; padding: 18px 24px 48px; }
 
 .ai-rec-head h1 { font-size: 1.4rem; font-weight: 800; color: var(--green-dark); margin: 0 0 4px; }
 .ai-rec-head p { color: #77807a; font-size: 0.9rem; margin: 0; }

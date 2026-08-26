@@ -5,203 +5,415 @@
 <script src="{{ url_for('static', filename='js/html2canvas.min.js') }}"></script>
 <script src="{{ url_for('static', filename='js/html2pdf.bundle.min.js') }}"></script>
 
-<div class="main-content-wrapper album-editor-wrapper py-3">
+<!-- ===== 앨범 목록 화면 (1200px, 최초 진입 시 표시) ===== -->
+<div class="main-content-wrapper" id="album-landing" style="padding-top:var(--fl-s5);padding-bottom:60px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;">
+        <div>
+            <h1 style="font-size:1.5rem;font-weight:800;color:var(--green-dark);margin:0 0 4px;">
+                <i data-lucide="book-open"></i> 내 추억 앨범
+            </h1>
+            <p style="color:#717171;font-size:.9rem;margin:0;">농촌 체험의 소중한 기억을 담은 나만의 포토북</p>
+        </div>
+        <button type="button" onclick="startNewAlbum()"
+            style="background:var(--green-dark);color:#fff;border:none;border-radius:10px;
+                   padding:10px 20px;font-size:.95rem;font-weight:800;cursor:pointer;
+                   display:inline-flex;align-items:center;gap:6px;flex-shrink:0;">
+            <i data-lucide="plus"></i> 새 앨범 만들기
+        </button>
+    </div>
 
-    <!-- 메인 2칼럼 통합 레이아웃 -->
-    <div class="album-main-layout">
+    <!-- 앨범 카드 그리드 -->
+    <div id="album-list-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px;">
+        <!-- JS로 렌더링 -->
+    </div>
+</div>
 
-        <!-- [좌측 패널] 책갈피 탭 + 앨범 요소스토어 -->
-        <div class="album-sidebar-container">
+<!-- ===== 에디터 (Miri Canvas 스타일, 시작 버튼 클릭 후 표시) ===== -->
+<div class="ae-wrap" id="album-editor" style="display:none;">
 
-            <!-- 책갈피(Bookmark) 탭 네비게이션 -->
-            <div class="sidebar-bookmark-nav">
-                <button type="button" class="bookmark-tab active" id="tabBtn_design"
-                    onclick="switchSidebarTab('design')" title="디자인 & 레이아웃">
-                    <i class="fa-solid fa-palette"></i>
-                    <span>디자인</span>
-                </button>
-                <button type="button" class="bookmark-tab" id="tabBtn_photo" onclick="switchSidebarTab('photo')"
-                    title="사진 보관함">
-                    <i class="fa-solid fa-images"></i>
-                    <span>사진</span>
-                </button>
-                <button type="button" class="bookmark-tab" id="tabBtn_text" onclick="switchSidebarTab('text')"
-                    title="텍스트 스튜디오">
-                    <i class="fa-solid fa-font"></i>
-                    <span>텍스트</span>
-                </button>
+    <!-- 상단 바 -->
+    <div class="ae-topbar">
+        <button class="ae-topbar-back" type="button"
+            onclick="if(confirm('저장하지 않은 변경사항은 사라집니다. 목록으로 돌아갈까요?')) showAlbumList();">
+            <i class="fa-solid fa-chevron-left"></i> 목록
+        </button>
+        <div class="ae-topbar-divider"></div>
+        <span class="ae-topbar-title" id="ae-title-display" onclick="startTitleEdit()" title="클릭하여 제목 수정">새 앨범</span>
+        <button type="button" class="ae-title-edit-btn" onclick="startTitleEdit()" title="제목 수정">
+            <i class="fa-solid fa-pencil"></i>
+        </button>
+        <input type="text" id="ae-title-input" class="ae-title-input" maxlength="20"
+            style="display:none;" onblur="commitTitleEdit()" onkeydown="if(event.key==='Enter')this.blur();if(event.key==='Escape'){cancelTitleEdit();}">
+        <div style="margin-left:auto;display:flex;gap:8px;">
+            <button class="ae-topbar-btn" type="button" onclick="saveAlbum()">
+                <i class="fa-solid fa-floppy-disk"></i> 저장
+            </button>
+            <button class="ae-topbar-btn ae-topbar-btn--primary" type="button" onclick="downloadBookPDF(event)">
+                <i class="fa-solid fa-file-pdf"></i> PDF 발급
+            </button>
+        </div>
+    </div>
+
+    <!-- 3단 레이아웃: 아이콘바 | 패널 | 캔버스 -->
+    <div class="ae-layout">
+
+        <!-- 아이콘 사이드바 (64px) -->
+        <div class="ae-icon-nav">
+            <button class="ae-icon active" id="ae-icon-design" type="button" onclick="switchAeTab('design')" title="디자인">
+                <i class="fa-solid fa-palette"></i>
+                <span>디자인</span>
+            </button>
+            <button class="ae-icon" id="ae-icon-photo" type="button" onclick="switchAeTab('photo')" title="사진">
+                <i class="fa-solid fa-images"></i>
+                <span>사진</span>
+            </button>
+            <button class="ae-icon" id="ae-icon-text" type="button" onclick="switchAeTab('text')" title="텍스트">
+                <i class="fa-solid fa-font"></i>
+                <span>텍스트</span>
+            </button>
+        </div>
+
+        <!-- 콘텐츠 패널 (280px) -->
+        <div class="ae-panel">
+
+            <!-- 디자인 패널 -->
+            <div class="ae-panel-content" id="ae-panel-design">
+                <p class="ae-panel-title">디자인 & 레이아웃</p>
+
+                <div class="ae-form-group">
+                    <label class="ae-label">다녀온 체험 정보</label>
+                    <select id="albumExpSelect" class="form-control form-control-sm" onchange="autoFillTitle(this)">
+                        <option value="">-- 체험 선택 --</option>
+                        {% if applications %}
+                        {% for app in applications %}
+                        {% if app.experience %}
+                        <option value="{{ app.experience.crop }}" data-location="{{ app.experience.address_detail }}">
+                            [{{ app.apply_date.strftime('%Y.%m.%d') }}] {{ app.experience.crop }}
+                        </option>
+                        {% endif %}
+                        {% endfor %}
+                        {% else %}
+                        <option value="농촌 수확 체험" data-location="충청남도 천안시">천안 딸기 수확 체험 (샘플)</option>
+                        {% endif %}
+                    </select>
+                </div>
+
+                <div class="ae-form-group">
+                    <label class="ae-label">앨범 모양 / 규격</label>
+                    <select id="shapeThemeSelect" class="form-control form-control-sm" onchange="changeShapeTheme(this.value)">
+                        <option value="shape-portrait">세로형 앨범</option>
+                        <option value="shape-square">정사각형 앨범(Square)</option>
+                        <option value="shape-landscape">가로형 앨범</option>
+                    </select>
+                </div>
+
+                <div class="ae-form-group">
+                    <label class="ae-label">겉표지 디자인</label>
+                    <select id="coverThemeSelect" class="form-control form-control-sm" onchange="changeCoverTheme(this.value)">
+                        <option value="cover-green">초록색</option>
+                        <option value="cover-leather">가죽</option>
+                        <option value="cover-linen">살구색</option>
+                        <option value="cover-navy">남색</option>
+                    </select>
+                </div>
+
+                <div class="ae-form-group">
+                    <label class="ae-label">속지 종이 재질</label>
+                    <select id="paperThemeSelect" class="form-control form-control-sm" onchange="changePaperTheme(this.value)">
+                        <option value="paper-white">📄 흰종이</option>
+                        <option value="paper-cream">📜 한지</option>
+                        <option value="paper-kraft">📦 종이 상자</option>
+                        <option value="paper-grid">▦ 모눈 격자</option>
+                    </select>
+                </div>
+
+                <div class="ae-form-group">
+                    <label class="ae-label">앨범 레이아웃 틀</label>
+                    <select id="layoutTemplateSelect" class="form-control form-control-sm" onchange="applyLayoutTemplate(this.value)">
+                        <option value="free">✨ 자유 배치 (기본)</option>
+                        <option value="grid4">🖼️ 4컷 클래식 레이아웃</option>
+                        <option value="hero1">📸 메인 1컷 + 소형 2컷</option>
+                        <option value="diary">📖 여행 일기 (사진 + 메모)</option>
+                        <option value="fullPage">🖼️ 1페이지 풀채움</option>
+                        <option value="fullSpread">🌅 양면 파노라마</option>
+                        <option value="centerCross">🏞️ 중앙 연결 파노라마</option>
+                        <option value="photoStory">✍️ 감성 스토리</option>
+                    </select>
+                </div>
             </div>
 
-            <!-- 사이드바 패널 본체 -->
-            <div class="card shadow-sm style-scroll album-sidebar-box">
+            <!-- 사진 패널 -->
+            <div class="ae-panel-content" id="ae-panel-photo" style="display:none;">
+                <p class="ae-panel-title">사진 보관함</p>
 
-                <!-- 패널 1. 🎨 디자인 & 레이아웃 -->
-                <div id="tabPanel_design" class="tab-panel-content active">
-                    <h6 class="font-weight-bold mb-3 text-dark border-bottom pb-2">
-                        <i class="fa-solid fa-palette text-success mr-2"></i>디자인 & 레이아웃
-                    </h6>
-
-                    <!-- 1. 다녀온 체험 선택 -->
-                    <div class="form-group mb-3">
-                        <label class="small font-weight-bold text-muted mb-1">다녀온 체험 정보</label>
-                        <select id="albumExpSelect" class="form-control form-control-sm" onchange="autoFillTitle(this)">
-                            <option value="">-- 체험 선택 --</option>
-                            {% if applications %}
-                            {% for app in applications %}
-                            {% if app.experience %}
-                            <option value="{{ app.experience.crop }}"
-                                data-location="{{ app.experience.address_detail }}">
-                                [{{ app.apply_date.strftime('%Y.%m.%d') }}] {{ app.experience.crop }}
-                            </option>
-                            {% endif %}
-                            {% endfor %}
-                            {% else %}
-                            <option value="농촌 수확 체험" data-location="충청남도 천안시">천안 딸기 수확 체험 (샘플)</option>
-                            {% endif %}
-                        </select>
-                    </div>
-
-                    <!-- 2. 앨범 모양/규격 선택 -->
-                    <div class="form-group mb-3">
-                        <label class="small font-weight-bold text-muted mb-1"><i
-                                class="fa-solid fa-book-open text-primary"></i> 앨범 모양 / 규격</label>
-                        <select id="shapeThemeSelect" class="form-control form-control-sm"
-                            onchange="changeShapeTheme(this.value)">
-                            <option value="shape-portrait">세로형 앨범</option>
-                            <option value="shape-square">정사각형 앨범(Square)</option>
-                            <option value="shape-landscape">가로형 앨범</option>
-                        </select>
-                    </div>
-
-                    <!-- 3. 겉표지 디자인 선택 -->
-                    <div class="form-group mb-3">
-                        <label class="small font-weight-bold text-muted mb-1"><i
-                                class="fa-solid fa-book text-success"></i> 겉표지 디자인</label>
-                        <select id="coverThemeSelect" class="form-control form-control-sm"
-                            onchange="changeCoverTheme(this.value)">
-                            <option value="cover-green">초록색</option>
-                            <option value="cover-leather">가죽</option>
-                            <option value="cover-linen">살구색</option>
-                            <option value="cover-navy">남색</option>
-                        </select>
-                    </div>
-
-                    <!-- 4. 속지 종이 재질 선택 -->
-                    <div class="form-group mb-3">
-                        <label class="small font-weight-bold text-muted mb-1"><i
-                                class="fa-solid fa-note-sticky text-warning"></i> 속지 종이 재질</label>
-                        <select id="paperThemeSelect" class="form-control form-control-sm"
-                            onchange="changePaperTheme(this.value)">
-                            <option value="paper-white">📄 흰종이</option>
-                            <option value="paper-cream">📜 한지</option>
-                            <option value="paper-kraft">📦 종이 상자</option>
-                            <option value="paper-grid">▦ 모눈 격자</option>
-                        </select>
-                    </div>
-
-                    <!-- 5. 앨범 레이아웃 틀 -->
-                    <div class="form-group mb-3">
-                        <label class="small font-weight-bold text-muted mb-1"><i
-                                class="fa-solid fa-border-all text-info"></i> 앨범 레이아웃 틀</label>
-                        <select id="layoutTemplateSelect" class="form-control form-control-sm"
-                            onchange="applyLayoutTemplate(this.value)">
-                            <option value="free">✨ 자유 배치 (기본)</option>
-                            <option value="grid4">🖼️ 4컷 클래식 레이아웃</option>
-                            <option value="hero1">📸 메인 1컷 + 소형 2컷</option>
-                            <option value="diary">📖 여행 일기 (사진 + 메모)</option>
-                            <option value="fullPage">🖼️ 1페이지 풀채움 (페이지 전체 1컷)</option>
-                            <option value="fullSpread">🌅 양면 파노라마 (2페이지 전체 1컷)</option>
-                            <option value="centerCross">🏞️ 중앙 연결 파노라마 (양면 연속)</option>
-                            <option value="photoStory">✍️ 감성 스토리 (대형+글귀+하단3컷)</option>
-                        </select>
-                    </div>
+                <div class="ae-form-group">
+                    <label class="ae-label">사진 업로드 (5~20장)</label>
+                    <input type="file" id="photoUploader" class="form-control-file border p-1 rounded small"
+                        multiple accept="image/*" onchange="handlePhotoUpload(event)">
+                    <small id="photoCountNotice" class="text-info d-block mt-1" style="font-size:.72rem;">* 최소 5장 이상 권장합니다.</small>
                 </div>
 
-                <!-- 패널 2. 📷 사진 보관함 -->
-                <div id="tabPanel_photo" class="tab-panel-content">
-                    <h6 class="font-weight-bold mb-3 text-dark border-bottom pb-2">
-                        <i class="fa-solid fa-images text-success mr-2"></i>사진 보관함
-                    </h6>
-
-                    <div class="form-group mb-3">
-                        <label class="small font-weight-bold text-muted mb-1">사진 업로드 (5~20장)</label>
-                        <input type="file" id="photoUploader" class="form-control-file border p-1 rounded small"
-                            multiple accept="image/*" onchange="handlePhotoUpload(event)">
-                        <small id="photoCountNotice" class="text-info d-block mt-1 font-weight-bold"
-                            style="font-size: 0.72rem;">* 최소 5장 이상 권장합니다.</small>
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="small font-weight-bold text-muted mb-1">사진 클릭 시 앨범에 추가</label>
-                        <div id="photoTray" class="d-flex flex-wrap gap-2 p-2 bg-light border rounded style-scroll"
-                            style="min-height: 180px; max-height: 260px; overflow-y: auto;">
-                            <span class="text-muted small m-auto" id="emptyTrayText">사진을 올려주세요</span>
-                        </div>
+                <div class="ae-form-group">
+                    <label class="ae-label">클릭하면 앨범에 추가</label>
+                    <div id="photoTray" class="d-flex flex-wrap gap-2 p-2 bg-light border rounded style-scroll"
+                        style="min-height:180px;max-height:320px;overflow-y:auto;">
+                        <span class="text-muted small m-auto" id="emptyTrayText">사진을 올려주세요</span>
                     </div>
                 </div>
+            </div>
 
-                <!-- 패널 3. ✍️ 텍스트 스튜디오 -->
-                <div id="tabPanel_text" class="tab-panel-content">
-                    <h6 class="font-weight-bold mb-3 text-dark border-bottom pb-2">
-                        <i class="fa-solid fa-font text-success mr-2"></i>텍스트 스튜디오
-                    </h6>
+            <!-- 텍스트 패널 -->
+            <div class="ae-panel-content" id="ae-panel-text" style="display:none;">
+                <p class="ae-panel-title">텍스트 스튜디오</p>
 
-                    <div class="mb-3">
-                        <button type="button" class="btn btn-sm btn-outline-success btn-block font-weight-bold py-2"
-                            onclick="addTextBoxToActivePage()">
-                            <i class="fa-solid fa-plus mr-1"></i> 텍스트 상자 추가
-                        </button>
-                    </div>
-
-                    <div class="p-3 bg-light border rounded mb-3">
-                        <small class="font-weight-bold text-dark d-block mb-2"><i
-                                class="fa-solid fa-lightbulb text-warning mr-1"></i> 텍스트 편집 팁</small>
-                        <ul class="pl-3 mb-0 small text-muted" style="font-size: 0.75rem; line-height: 1.6;">
-                            <li>텍스트 상자를 **마우스로 Drag**하여 원하는 위치나 옆 페이지로 이동할 수 있습니다.</li>
-                            <li>상단 **🔄 핸들**을 끌면 **360도 자유 회전**이 가능합니다.</li>
-                            <li>글자를 직접 클릭하여 자유롭게 내용을 수정하세요.</li>
-                        </ul>
-                    </div>
-                </div>
-
-                <hr class="my-2">
-
-                <!-- 고화질 PDF 앨범 발급 버튼 -->
-                <button type="button" class="btn btn-success btn-block font-weight-bold py-2 shadow-sm mt-2"
-                    onclick="downloadBookPDF(event)">
-                    <i class="fa-solid fa-file-pdf mr-1"></i> 고화질 PDF 앨범 발급
+                <button type="button" class="btn btn-outline-success btn-block font-weight-bold py-2 mb-3"
+                    onclick="addTextBoxToActivePage()">
+                    <i class="fa-solid fa-plus mr-1"></i> 텍스트 상자 추가
                 </button>
+
+                <div class="p-3 bg-light border rounded" style="font-size:.78rem;color:#666;line-height:1.7;">
+                    <div style="font-weight:700;margin-bottom:6px;color:#444;">✏️ 편집 팁</div>
+                    <ul class="pl-3 mb-0">
+                        <li>텍스트 상자를 드래그하여 이동</li>
+                        <li>🔄 핸들로 360도 회전 가능</li>
+                        <li>더블클릭하여 내용 수정</li>
+                    </ul>
+                </div>
             </div>
 
         </div>
 
-        <!-- [우측 패널] 대형 앨범 작업대 -->
-        <div class="album-workspace-box">
-
-            <!-- 좌측 이전 화살표 버튼 -->
-            <button type="button" class="book-nav-btn prev-btn" id="bookPrevBtn" onclick="prevPage()" title="이전 페이지">
+        <!-- 대형 캔버스 영역 -->
+        <div class="ae-canvas-area">
+            <button type="button" class="ae-nav-btn" id="bookPrevBtn" onclick="prevPage()" title="이전 페이지">
                 <i class="fa-solid fa-chevron-left"></i>
             </button>
 
-            <!-- 펼침 크기 전용 스테이지 -->
-            <div class="book-stage">
-                <!-- 실제 포토북 앨범 -->
+            <div class="ae-book-stage">
                 <div id="bookContainer" class="book-container cover-green paper-white shape-portrait">
                     <!-- JS에 의해 동적 렌더링 -->
                 </div>
             </div>
 
-            <!-- 우측 다음 화살표 버튼 -->
-            <button type="button" class="book-nav-btn next-btn" id="bookNextBtn" onclick="nextPage()" title="다음 페이지">
+            <button type="button" class="ae-nav-btn" id="bookNextBtn" onclick="nextPage()" title="다음 페이지">
                 <i class="fa-solid fa-chevron-right"></i>
             </button>
-
         </div>
 
     </div>
 </div>
 
 <script>
+    function esc(s) { var d = document.createElement('div'); d.textContent = (s == null ? '' : String(s)); return d.innerHTML; }
+
+    // ===== localStorage 앨범 관리 =====
+    var FL_ALBUMS_KEY = 'fl_albums';
+    var currentAlbumId = null;
+
+    var COVER_COLORS = {
+        'cover-green': '#4CAF50', 'cover-leather': '#8B5E3C',
+        'cover-linen': '#E8B89A', 'cover-navy': '#1a2d5a'
+    };
+
+    function getAllAlbums() {
+        try { return JSON.parse(localStorage.getItem(FL_ALBUMS_KEY) || '[]'); }
+        catch(e) { return []; }
+    }
+
+    function saveAllAlbums(list) {
+        localStorage.setItem(FL_ALBUMS_KEY, JSON.stringify(list));
+    }
+
+    function renderAlbumList() {
+        var grid = document.getElementById('album-list-grid');
+        var albums = getAllAlbums();
+        var html = '';
+
+        if (albums.length === 0) {
+            html = '<div style="grid-column:1/-1;text-align:center;padding:60px 0;color:#9aa39c;">'
+                + '<div style="font-size:3rem;margin-bottom:12px;">📖</div>'
+                + '<div style="font-weight:700;font-size:1rem;margin-bottom:6px;">아직 만든 앨범이 없어요</div>'
+                + '<div style="font-size:.9rem;">"새 앨범 만들기" 버튼으로 첫 앨범을 만들어 보세요!</div>'
+                + '</div>';
+        } else {
+            albums.forEach(function(album) {
+                var color = COVER_COLORS[album.coverTheme] || '#4CAF50';
+                var dateStr = album.updatedAt ? album.updatedAt.slice(0, 10) : '';
+                html += '<div style="border:1px solid #eef1ee;border-radius:14px;overflow:hidden;background:#fff;'
+                    + 'box-shadow:0 2px 8px rgba(0,0,0,.06);">'
+                    + '<div style="height:120px;background:' + color + ';display:flex;align-items:center;justify-content:center;'
+                    + 'color:#fff;font-size:.8rem;font-weight:700;flex-direction:column;gap:6px;">'
+                    + '<i class="fa-solid fa-book-open" style="font-size:2rem;"></i>'
+                    + '<span>' + esc(album.title || '제목 없음') + '</span>'
+                    + '</div>'
+                    + '<div style="padding:12px 14px;">'
+                    + '<div style="font-weight:800;font-size:.95rem;color:#253027;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'
+                    + esc(album.title || '제목 없음') + '</div>'
+                    + '<div style="font-size:.78rem;color:#9aa39c;margin-bottom:12px;">' + dateStr + ' 수정</div>'
+                    + '<div style="display:flex;gap:8px;">'
+                    + '<button onclick="loadAlbum(\'' + album.id + '\')" '
+                    + 'style="flex:1;background:var(--green-dark);color:#fff;border:none;border-radius:8px;padding:7px;font-size:.85rem;font-weight:700;cursor:pointer;">'
+                    + '편집하기</button>'
+                    + '<button onclick="deleteAlbum(\'' + album.id + '\')" '
+                    + 'style="background:#fff;color:#e5484d;border:1px solid #f3c6c6;border-radius:8px;padding:7px 10px;font-size:.85rem;cursor:pointer;">'
+                    + '<i class="fa-solid fa-trash"></i></button>'
+                    + '</div></div></div>';
+            });
+        }
+        grid.innerHTML = html;
+    }
+
+    function showAlbumList() {
+        document.getElementById('album-editor').style.display = 'none';
+        document.getElementById('album-landing').style.display = 'block';
+        currentAlbumId = null;
+        renderAlbumList();
+        if (window.lucide) lucide.createIcons();
+    }
+
+    function startNewAlbum() {
+        currentAlbumId = 'album_' + Date.now();
+        resetEditorState();
+        startAlbumEditor();
+    }
+
+    function switchAeTab(name) {
+        ['design', 'photo', 'text'].forEach(function(t) {
+            document.getElementById('ae-panel-' + t).style.display = t === name ? 'block' : 'none';
+            var icon = document.getElementById('ae-icon-' + t);
+            if (icon) icon.classList.toggle('active', t === name);
+        });
+    }
+
+    function startAlbumEditor() {
+        document.getElementById('album-landing').style.display = 'none';
+        document.getElementById('album-editor').style.display = 'flex';
+        if (window.lucide) lucide.createIcons();
+    }
+
+    function updateTitleDisplay() {
+        var title = albumPagesData[0] && albumPagesData[0].title;
+        var el = document.getElementById('ae-title-display');
+        if (el) el.textContent = title || '새 앨범';
+    }
+
+    function startTitleEdit() {
+        var display = document.getElementById('ae-title-display');
+        var editBtn = document.querySelector('.ae-title-edit-btn');
+        var input = document.getElementById('ae-title-input');
+        input.value = albumPagesData[0].title || '';
+        display.style.display = 'none';
+        editBtn.style.display = 'none';
+        input.style.display = 'inline-block';
+        input.focus();
+        input.select();
+    }
+
+    function commitTitleEdit() {
+        var display = document.getElementById('ae-title-display');
+        var editBtn = document.querySelector('.ae-title-edit-btn');
+        var input = document.getElementById('ae-title-input');
+        var newTitle = input.value.trim() || '새 앨범';
+        albumPagesData[0].title = newTitle;
+        display.textContent = newTitle;
+        display.style.display = '';
+        editBtn.style.display = '';
+        input.style.display = 'none';
+        // 표지 제목 입력창에도 동기화
+        var coverInput = document.getElementById('coverTitleInput');
+        if (coverInput) coverInput.value = newTitle;
+    }
+
+    function cancelTitleEdit() {
+        var display = document.getElementById('ae-title-display');
+        var editBtn = document.querySelector('.ae-title-edit-btn');
+        var input = document.getElementById('ae-title-input');
+        display.style.display = '';
+        editBtn.style.display = '';
+        input.style.display = 'none';
+    }
+
+    function loadAlbum(id) {
+        var albums = getAllAlbums();
+        var album = albums.find(function(a) { return a.id === id; });
+        if (!album) { alert('앨범을 찾을 수 없어요.'); return; }
+
+        currentAlbumId = id;
+        shapeTheme = album.shapeTheme || 'shape-portrait';
+        coverTheme = album.coverTheme || 'cover-green';
+        paperTheme = album.paperTheme || 'paper-white';
+        innerPageCount = album.innerPageCount || 2;
+        currentSpreadIndex = 0;
+        albumPagesData = album.pagesData || Array.from({ length: 12 }, function() { return { title: '', elements: [], template: 'free' }; });
+
+        // 사이드바 셀렉트 동기화
+        var s = document.getElementById('shapeThemeSelect');
+        var c = document.getElementById('coverThemeSelect');
+        var p = document.getElementById('paperThemeSelect');
+        if (s) s.value = shapeTheme;
+        if (c) c.value = coverTheme;
+        if (p) p.value = paperTheme;
+
+        startAlbumEditor();
+        renderBookView();
+        updateTitleDisplay();
+    }
+
+    function saveAlbum() {
+        var titleInput = document.getElementById('coverTitleInput');
+        var title = (titleInput ? titleInput.value : '') || albumPagesData[0].title || '제목 없음';
+        albumPagesData[0].title = title;
+
+        var albums = getAllAlbums();
+        var now = new Date().toISOString();
+        var idx = albums.findIndex(function(a) { return a.id === currentAlbumId; });
+
+        var albumData = {
+            id: currentAlbumId,
+            title: title,
+            shapeTheme: shapeTheme,
+            coverTheme: coverTheme,
+            paperTheme: paperTheme,
+            innerPageCount: innerPageCount,
+            pagesData: albumPagesData,
+            updatedAt: now
+        };
+
+        if (idx >= 0) {
+            albumData.createdAt = albums[idx].createdAt;
+            albums[idx] = albumData;
+        } else {
+            albumData.createdAt = now;
+            albums.unshift(albumData);
+        }
+
+        saveAllAlbums(albums);
+        alert('앨범이 저장되었어요!');
+    }
+
+    function deleteAlbum(id) {
+        if (!confirm('앨범을 삭제할까요? 이 작업은 되돌릴 수 없어요.')) return;
+        var albums = getAllAlbums().filter(function(a) { return a.id !== id; });
+        saveAllAlbums(albums);
+        renderAlbumList();
+        if (window.lucide) lucide.createIcons();
+    }
+
+    function resetEditorState() {
+        shapeTheme = 'shape-portrait';
+        coverTheme = 'cover-green';
+        paperTheme = 'paper-white';
+        currentSpreadIndex = 0;
+        innerPageCount = 2;
+        albumPagesData = Array.from({ length: 12 }, function() { return { title: '', elements: [], template: 'free' }; });
+        var s = document.getElementById('shapeThemeSelect');
+        var c = document.getElementById('coverThemeSelect');
+        var p = document.getElementById('paperThemeSelect');
+        if (s) s.value = shapeTheme;
+        if (c) c.value = coverTheme;
+        if (p) p.value = paperTheme;
+    }
+
     // 앨범 상태 관리 데이터
     let shapeTheme = 'shape-portrait'; // shape-portrait, shape-square, shape-landscape
     let coverTheme = 'cover-green';
@@ -233,7 +445,9 @@
     }
 
     document.addEventListener('DOMContentLoaded', function () {
+        renderAlbumList();
         renderBookView();
+        if (window.lucide) lucide.createIcons();
     });
 
     function clearElementSelection() {
@@ -619,11 +833,12 @@
         const selectedLayout = slotConfig[templateType];
         if (selectedLayout) {
             if (isSinglePageLayout && !hadSpreadLayout) {
-                const existingSrcs = (albumPagesData[targetPageIndex].elements || [])
-                    .filter(el => el.type === 'slot')
-                    .map(el => el.src);
+                const existingEls = albumPagesData[targetPageIndex].elements || [];
+                const existingSrcs = existingEls.filter(el => el.type === 'slot').map(el => el.src);
+                const existingImages = existingEls.filter(el => el.type === 'image');
+                const existingTexts = existingEls.filter(el => el.type === 'text');
 
-                albumPagesData[targetPageIndex].elements = selectedLayout.left.map((item, idx) => {
+                const newSlots = selectedLayout.left.map((item, idx) => {
                     const id = (item.type === 'text' ? 'text_' : 'slot_') + Date.now() + '_' + targetPageIndex + '_' + idx;
                     return item.type === 'text' ? {
                         id: id, type: 'text', text: item.text, top: item.top, left: item.left, width: item.width, height: item.height, rotation: 0
@@ -632,12 +847,19 @@
                         src: existingSrcs[idx] || null
                     };
                 });
+                albumPagesData[targetPageIndex].elements = [...newSlots, ...existingImages, ...existingTexts];
                 albumPagesData[targetPageIndex].template = templateType;
             } else {
-                const existingLeftSrcs = (albumPagesData[leftPageIndex].elements || []).filter(el => el.type === 'slot').map(el => el.src);
-                const existingRightSrcs = (albumPagesData[rightPageIndex].elements || []).filter(el => el.type === 'slot').map(el => el.src);
+                const existingLeftEls = albumPagesData[leftPageIndex].elements || [];
+                const existingRightEls = albumPagesData[rightPageIndex].elements || [];
+                const existingLeftSrcs = existingLeftEls.filter(el => el.type === 'slot').map(el => el.src);
+                const existingRightSrcs = existingRightEls.filter(el => el.type === 'slot').map(el => el.src);
+                const existingLeftImages = existingLeftEls.filter(el => el.type === 'image');
+                const existingLeftTexts = existingLeftEls.filter(el => el.type === 'text');
+                const existingRightImages = existingRightEls.filter(el => el.type === 'image');
+                const existingRightTexts = existingRightEls.filter(el => el.type === 'text');
 
-                albumPagesData[leftPageIndex].elements = selectedLayout.left.map((item, idx) => {
+                const newLeftSlots = selectedLayout.left.map((item, idx) => {
                     const id = (item.type === 'text' ? 'text_' : 'slot_') + Date.now() + '_L_' + idx;
                     return item.type === 'text' ? {
                         id: id, type: 'text', text: item.text, top: item.top, left: item.left, width: item.width, height: item.height, rotation: 0
@@ -646,8 +868,9 @@
                         src: existingLeftSrcs[idx] || null
                     };
                 });
+                albumPagesData[leftPageIndex].elements = [...newLeftSlots, ...existingLeftImages, ...existingLeftTexts];
 
-                albumPagesData[rightPageIndex].elements = selectedLayout.right.map((item, idx) => {
+                const newRightSlots = selectedLayout.right.map((item, idx) => {
                     const id = (item.type === 'text' ? 'text_' : 'slot_') + Date.now() + '_R_' + idx;
                     return item.type === 'text' ? {
                         id: id, type: 'text', text: item.text, top: item.top, left: item.left, width: item.width, height: item.height, rotation: 0
@@ -656,6 +879,7 @@
                         src: existingRightSrcs[idx] || null
                     };
                 });
+                albumPagesData[rightPageIndex].elements = [...newRightSlots, ...existingRightImages, ...existingRightTexts];
 
                 albumPagesData[leftPageIndex].template = templateType;
                 albumPagesData[rightPageIndex].template = templateType;
@@ -688,6 +912,7 @@
                 titleInput.value = fullTitle;
             }
             albumPagesData[0].title = fullTitle;
+            updateTitleDisplay();
         }
     }
 
@@ -762,7 +987,7 @@
 
     function renderBookView() {
         const container = document.getElementById('bookContainer');
-        const bookStage = document.querySelector('.book-stage');
+        const bookStage = document.querySelector('.ae-book-stage');
         const maxPages = 10;
         const totalSpreads = (innerPageCount < maxPages) 
             ? Math.floor(innerPageCount / 2) + 2 
@@ -940,6 +1165,9 @@
                              ondrop="handleSlotDrop(event, '${data.id}', ${pageIdx})">
                         <button type="button" class="slot-clear-btn" onclick="clearSlotImage('${data.id}', ${pageIdx})" title="사진 삭제">&times;</button>
                     </div>
+                    <button type="button" class="elem-resize-handle" onmousedown="startResizeElement(event, '${data.id}', ${pageIdx})" title="크기 조절">
+                        <i class="fa-solid fa-up-right-and-down-left-from-center"></i>
+                    </button>
                 `;
             } else {
                 wrapper.innerHTML = `
@@ -950,8 +1178,12 @@
                         <i class="fa-solid fa-camera mb-1" style="pointer-events:none;"></i>
                         <span style="pointer-events:none;">${data.label || '사진 추가'}</span>
                     </div>
+                    <button type="button" class="elem-resize-handle" onmousedown="startResizeElement(event, '${data.id}', ${pageIdx})" title="크기 조절">
+                        <i class="fa-solid fa-up-right-and-down-left-from-center"></i>
+                    </button>
                 `;
             }
+            makeDraggable(wrapper, pageIdx, data.id);
         }
         else if (data.type === 'image') {
             wrapper.innerHTML = `

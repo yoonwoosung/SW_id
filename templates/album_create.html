@@ -1,6 +1,60 @@
 {% extends "layout.html" %}
 {% block head %}
+<link href="https://fonts.googleapis.com/css2?family=Nanum+Gothic:wght@400;700;800&family=Nanum+Myeongjo:wght@400;700&family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
 <style>
+/* ─── 텍스트 패널 ─── */
+.ae-text-add-btn {
+    width:100%; padding:10px; border:1.5px dashed #b0d4b8; background:#f7fbf8;
+    border-radius:10px; font-size:.88rem; font-weight:700; color:var(--fl-green-700,#2e7d32);
+    cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px;
+    transition:background .15s;
+}
+.ae-text-add-btn:hover { background:#edf7ef; }
+.ae-text-tip { font-size:.74rem; color:#9aa39c; line-height:1.6; margin-top:8px; }
+.txt-divider { height:1px; background:#eef1ee; margin:4px 0; }
+/* 크기 조절 row */
+.txt-size-row { display:flex; align-items:center; gap:4px; }
+.txt-size-btn {
+    width:28px; height:28px; border:1px solid #dde2de; background:#fff; border-radius:6px;
+    font-size:1rem; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center;
+    flex-shrink:0; color:#444;
+}
+.txt-size-btn:hover { background:#f4fbf6; }
+.txt-size-input {
+    flex:1; text-align:center; border:1px solid #dde2de; border-radius:6px;
+    padding:4px 0; font-size:.85rem; font-weight:700; color:#333; min-width:0;
+}
+/* 스타일/정렬 버튼 row */
+.txt-btn-row { display:flex; gap:4px; flex-wrap:wrap; }
+.txt-style-btn {
+    min-width:34px; height:32px; border:1px solid #dde2de; background:#fff; border-radius:6px;
+    font-size:.85rem; cursor:pointer; display:flex; align-items:center; justify-content:center;
+    color:#444; padding:0 6px; transition:background .12s;
+}
+.txt-style-btn:hover { background:#f4fbf6; }
+.txt-style-btn.is-active { background:var(--fl-green-700,#2e7d32); color:#fff; border-color:var(--fl-green-700,#2e7d32); }
+/* 색상 인풋 */
+.txt-color-row { display:flex; align-items:center; gap:8px; }
+.txt-color-input { width:36px; height:32px; border:1px solid #dde2de; border-radius:6px; cursor:pointer; padding:2px; }
+.txt-transparent-btn {
+    font-size:.75rem; font-weight:700; color:#888; background:#f5f5f5;
+    border:1px solid #ddd; border-radius:6px; padding:4px 8px; cursor:pointer;
+}
+.txt-transparent-btn:hover { background:#eee; }
+/* 순서 버튼 */
+.txt-order-row { display:flex; gap:6px; }
+.txt-order-btn {
+    flex:1; padding:6px; border:1px solid #dde2de; background:#fff; border-radius:7px;
+    font-size:.78rem; font-weight:700; color:#444; cursor:pointer; text-align:center;
+}
+.txt-order-btn:hover { background:#f4fbf6; }
+/* 새로쓰기 */
+.txt-clear-btn {
+    width:100%; padding:8px; border:1px solid #f3c6c6; background:#fff;
+    border-radius:8px; font-size:.82rem; font-weight:700; color:#c0392b;
+    cursor:pointer; display:flex; align-items:center; justify-content:center; gap:5px;
+}
+.txt-clear-btn:hover { background:#fff5f5; }
 /* ─── 앨범 뷰어 모달 ─── */
 .album-viewer-modal { position:fixed; inset:0; z-index:2000; display:flex; align-items:center; justify-content:center; }
 .av-overlay { position:absolute; inset:0; background:rgba(0,0,0,.72); }
@@ -213,19 +267,131 @@
 
             <!-- 텍스트 패널 -->
             <div class="ae-panel-content" id="ae-panel-text" style="display:none;">
-                <p class="ae-panel-title">텍스트 스튜디오</p>
-                <button type="button" class="btn btn-outline-success btn-block font-weight-bold py-2 mb-3"
-                    onclick="addTextBoxToActivePage()">
-                    <i class="fa-solid fa-plus mr-1"></i> 텍스트 상자 추가
-                </button>
-                <div class="p-3 bg-light border rounded" style="font-size:.78rem;color:#666;line-height:1.7;">
-                    <div style="font-weight:700;margin-bottom:6px;color:#444;">✏️ 편집 팁</div>
-                    <ul class="pl-3 mb-0">
-                        <li>텍스트 상자를 드래그하여 이동</li>
-                        <li>🔄 핸들로 360도 회전 가능</li>
-                        <li>더블클릭하여 내용 수정</li>
-                    </ul>
+
+                <!-- 기본 뷰: 텍스트 상자 없을 때 -->
+                <div id="text-panel-default">
+                    <p class="ae-panel-title">텍스트</p>
+                    <button type="button" class="ae-text-add-btn" onclick="addTextBoxToActivePage()">
+                        <i class="fa-solid fa-plus"></i> 텍스트 상자 추가
+                    </button>
+                    <p class="ae-text-tip">텍스트 상자를 클릭하면<br>서식 옵션이 표시됩니다.</p>
                 </div>
+
+                <!-- 서식 뷰: 텍스트 박스 선택 시 -->
+                <div id="text-panel-format" style="display:none;flex-direction:column;gap:12px;">
+                    <p class="ae-panel-title" style="margin-bottom:0;">텍스트 속성</p>
+
+                    <!-- 글꼴 -->
+                    <div class="ae-form-group">
+                        <label class="ae-label">글꼴</label>
+                        <select id="txt-font-family" class="form-control form-control-sm"
+                            onchange="applyTextProp('fontFamily', this.value)">
+                            <option value="Nanum Gothic">나눔고딕</option>
+                            <option value="Nanum Myeongjo">나눔명조</option>
+                            <option value="Noto Sans KR">Noto Sans KR</option>
+                            <option value="'Malgun Gothic','Apple SD Gothic Neo',sans-serif">맑은고딕</option>
+                            <option value="Georgia,serif">Georgia</option>
+                            <option value="Arial,sans-serif">Arial</option>
+                            <option value="'Times New Roman',serif">Times New Roman</option>
+                        </select>
+                    </div>
+
+                    <!-- 크기 -->
+                    <div class="ae-form-group">
+                        <label class="ae-label">크기</label>
+                        <div class="txt-size-row">
+                            <button class="txt-size-btn" type="button" onclick="stepFontSize(-1)">−</button>
+                            <input type="number" id="txt-font-size" class="txt-size-input"
+                                min="8" max="120" value="16"
+                                oninput="applyTextProp('fontSize', Math.max(8,Math.min(120,parseInt(this.value)||16)))">
+                            <button class="txt-size-btn" type="button" onclick="stepFontSize(1)">+</button>
+                        </div>
+                    </div>
+
+                    <div class="txt-divider"></div>
+
+                    <!-- 스타일 -->
+                    <div class="ae-form-group">
+                        <label class="ae-label">스타일</label>
+                        <div class="txt-btn-row">
+                            <button id="txt-btn-bold" class="txt-style-btn" type="button"
+                                onclick="toggleTextProp('fontWeight','bold','normal')" title="굵게"><b>B</b></button>
+                            <button id="txt-btn-italic" class="txt-style-btn" type="button"
+                                onclick="toggleTextProp('fontStyle','italic','normal')" title="기울이기"><i>I</i></button>
+                            <button id="txt-btn-underline" class="txt-style-btn" type="button"
+                                onclick="toggleTextDecor('underline')" title="밑줄"><u>U</u></button>
+                            <button id="txt-btn-strike" class="txt-style-btn" type="button"
+                                onclick="toggleTextDecor('line-through')" title="취소선"><s>S</s></button>
+                        </div>
+                    </div>
+
+                    <!-- 정렬 -->
+                    <div class="ae-form-group">
+                        <label class="ae-label">정렬</label>
+                        <div class="txt-btn-row">
+                            <button id="txt-align-left" class="txt-style-btn" type="button"
+                                onclick="applyTextProp('textAlign','left')" title="왼쪽 정렬">
+                                <i class="fa-solid fa-align-left"></i></button>
+                            <button id="txt-align-center" class="txt-style-btn" type="button"
+                                onclick="applyTextProp('textAlign','center')" title="가운데 정렬">
+                                <i class="fa-solid fa-align-center"></i></button>
+                            <button id="txt-align-right" class="txt-style-btn" type="button"
+                                onclick="applyTextProp('textAlign','right')" title="오른쪽 정렬">
+                                <i class="fa-solid fa-align-right"></i></button>
+                            <button id="txt-align-justify" class="txt-style-btn" type="button"
+                                onclick="applyTextProp('textAlign','justify')" title="양쪽 정렬">
+                                <i class="fa-solid fa-align-justify"></i></button>
+                        </div>
+                    </div>
+
+                    <div class="txt-divider"></div>
+
+                    <!-- 순서 -->
+                    <div class="ae-form-group">
+                        <label class="ae-label">순서</label>
+                        <div class="txt-order-row">
+                            <button class="txt-order-btn" type="button" onclick="changeElementOrder('front')">
+                                <i class="fa-solid fa-arrow-up"></i> 맨 앞으로
+                            </button>
+                            <button class="txt-order-btn" type="button" onclick="changeElementOrder('back')">
+                                <i class="fa-solid fa-arrow-down"></i> 맨 뒤로
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="txt-divider"></div>
+
+                    <!-- 글자색 -->
+                    <div class="ae-form-group">
+                        <label class="ae-label">글자색</label>
+                        <div class="txt-color-row">
+                            <input type="color" id="txt-color" class="txt-color-input" value="#333333"
+                                oninput="applyTextProp('color', this.value)">
+                            <span id="txt-color-hex" style="font-size:.78rem;color:#666;">#333333</span>
+                        </div>
+                    </div>
+
+                    <!-- 배경색 -->
+                    <div class="ae-form-group">
+                        <label class="ae-label">배경색</label>
+                        <div class="txt-color-row">
+                            <input type="color" id="txt-bg-color" class="txt-color-input" value="#ffffff"
+                                oninput="applyTextProp('backgroundColor', this.value)">
+                            <button class="txt-transparent-btn" type="button"
+                                onclick="applyTextProp('backgroundColor','transparent')">투명</button>
+                        </div>
+                    </div>
+
+                    <div class="txt-divider"></div>
+
+                    <!-- 새로쓰기 -->
+                    <div class="ae-form-group">
+                        <button class="txt-clear-btn" type="button" onclick="clearSelectedText()">
+                            <i class="fa-solid fa-eraser"></i> 새로 쓰기
+                        </button>
+                    </div>
+                </div>
+
             </div>
 
         </div>
@@ -640,6 +806,7 @@
             el.classList.remove('selected');
         });
         hideShapeContextBar();
+        hideTextFormatPanel();
     }
 
     document.addEventListener('mousedown', function (e) {
@@ -1355,7 +1522,15 @@
             top: 120,
             left: 50,
             width: 220,
-            rotation: 0
+            rotation: 0,
+            fontFamily: 'Nanum Gothic',
+            fontSize: 16,
+            fontWeight: 'normal',
+            fontStyle: 'normal',
+            textDecoration: 'none',
+            textAlign: 'left',
+            color: '#333333',
+            backgroundColor: 'transparent'
         };
 
         albumPagesData[targetPageIdx].elements.push(elemData);
@@ -1469,14 +1644,19 @@
             const isPlaceholder = (!data.text || data.text.trim() === '' || data.text.trim() === '✏️ 더블 클릭하여 수정');
             const displayText = isPlaceholder ? '✏️ 더블 클릭하여 수정' : data.text;
             const placeholderClass = isPlaceholder ? ' is-placeholder' : '';
+            const txtInlineStyle = buildTextInlineStyle(data);
 
             wrapper.innerHTML = `
                 <button type="button" class="elem-rotate-handle" onmousedown="startRotateElement(event, '${data.id}', ${pageIdx})" title="360도 회전">
                     <i class="fa-solid fa-rotate-right"></i>
                 </button>
-                <div contenteditable="false" class="editable-text-box${placeholderClass}" 
-                     ondblclick="enableTextEdit(this)" 
+                <div contenteditable="false" class="editable-text-box${placeholderClass}"
+                     style="${txtInlineStyle}"
+                     ondblclick="enableTextEdit(this)"
                      onblur="disableTextEdit(this, '${data.id}', ${pageIdx})">${displayText}</div>
+                <button type="button" class="elem-resize-handle" onmousedown="startResizeElement(event, '${data.id}', ${pageIdx})" title="크기 조절">
+                    <i class="fa-solid fa-up-right-and-down-left-from-center"></i>
+                </button>
                 <button type="button" class="elem-delete-btn" onclick="deleteElement('${data.id}', ${pageIdx})">&times;</button>
             `;
             makeDraggable(wrapper, pageIdx, data.id);
@@ -1590,7 +1770,11 @@
                 clearElementSelection();
                 element.classList.add('selected');
                 var elemData = albumPagesData[pageIdx] && albumPagesData[pageIdx].elements.find(function(el) { return el.id === elemId; });
-                showShapeContextBar(elemId, pageIdx, elemData && elemData.shape);
+                if (elemData && elemData.type === 'text') {
+                    showTextFormatPanel(elemId, pageIdx);
+                } else {
+                    showShapeContextBar(elemId, pageIdx, elemData && elemData.shape);
+                }
             }
 
             if (e.target.classList.contains('elem-delete-btn') ||
@@ -1722,6 +1906,155 @@
         if (currentSpreadIndex > 0) {
             currentSpreadIndex--;
             renderBookView();
+        }
+    }
+
+    // ══════════════════════════════════════════════
+    //  텍스트 패널 로직
+    // ══════════════════════════════════════════════
+
+    var selectedTextElemId = null;
+    var selectedTextPageIdx = null;
+
+    function buildTextInlineStyle(data) {
+        return 'font-family:' + (data.fontFamily || 'Nanum Gothic') + ';'
+            + 'font-size:' + (data.fontSize || 16) + 'px;'
+            + 'font-weight:' + (data.fontWeight || 'normal') + ';'
+            + 'font-style:' + (data.fontStyle || 'normal') + ';'
+            + 'text-decoration:' + (data.textDecoration || 'none') + ';'
+            + 'text-align:' + (data.textAlign || 'left') + ';'
+            + 'color:' + (data.color || '#333333') + ';'
+            + 'background-color:' + (data.backgroundColor || 'transparent') + ';'
+            + 'width:100%;height:100%;padding:8px;box-sizing:border-box;overflow:hidden;word-break:break-word;white-space:pre-wrap;';
+    }
+
+    function showTextFormatPanel(elemId, pageIdx) {
+        selectedTextElemId = elemId;
+        selectedTextPageIdx = pageIdx;
+
+        // 텍스트 탭으로 자동 전환
+        switchAeTab('text');
+
+        document.getElementById('text-panel-default').style.display = 'none';
+        document.getElementById('text-panel-format').style.display = 'flex';
+
+        var data = albumPagesData[pageIdx] && albumPagesData[pageIdx].elements.find(function(el) { return el.id === elemId; });
+        if (!data) return;
+
+        // 컨트롤 값 채우기
+        setTxtCtrl('txt-font-family', data.fontFamily || 'Nanum Gothic');
+        setTxtCtrl('txt-font-size', data.fontSize || 16);
+        setTxtCtrl('txt-color', colorToHex(data.color || '#333333'));
+        setTxtCtrl('txt-bg-color', colorToHex(data.backgroundColor && data.backgroundColor !== 'transparent' ? data.backgroundColor : '#ffffff'));
+        var hexEl = document.getElementById('txt-color-hex');
+        if (hexEl) hexEl.textContent = data.color || '#333333';
+        syncTextStyleBtns(data);
+    }
+
+    function hideTextFormatPanel() {
+        selectedTextElemId = null;
+        selectedTextPageIdx = null;
+        var def = document.getElementById('text-panel-default');
+        var fmt = document.getElementById('text-panel-format');
+        if (def) def.style.display = 'block';
+        if (fmt) fmt.style.display = 'none';
+    }
+
+    function setTxtCtrl(id, val) {
+        var el = document.getElementById(id);
+        if (el) el.value = val;
+    }
+
+    function colorToHex(c) {
+        if (!c || c === 'transparent') return '#ffffff';
+        return c;
+    }
+
+    function syncTextStyleBtns(data) {
+        toggleTxtBtn('txt-btn-bold',      (data.fontWeight || 'normal') === 'bold');
+        toggleTxtBtn('txt-btn-italic',    (data.fontStyle  || 'normal') === 'italic');
+        toggleTxtBtn('txt-btn-underline', (data.textDecoration || 'none') === 'underline');
+        toggleTxtBtn('txt-btn-strike',    (data.textDecoration || 'none') === 'line-through');
+        ['left','center','right','justify'].forEach(function(a) {
+            toggleTxtBtn('txt-align-' + a, (data.textAlign || 'left') === a);
+        });
+    }
+
+    function toggleTxtBtn(id, isActive) {
+        var el = document.getElementById(id);
+        if (el) el.classList.toggle('is-active', isActive);
+    }
+
+    function applyTextProp(prop, value) {
+        if (selectedTextElemId === null || selectedTextPageIdx === null) return;
+        var data = albumPagesData[selectedTextPageIdx] && albumPagesData[selectedTextPageIdx].elements.find(function(el) { return el.id === selectedTextElemId; });
+        if (!data) return;
+        data[prop] = value;
+        // DOM 적용
+        var wrapper = document.getElementById(selectedTextElemId);
+        if (wrapper) {
+            var textEl = wrapper.querySelector('.editable-text-box');
+            if (textEl) textEl.style.cssText = buildTextInlineStyle(data);
+        }
+        syncTextStyleBtns(data);
+        if (prop === 'color') {
+            var hexEl = document.getElementById('txt-color-hex');
+            if (hexEl) hexEl.textContent = value;
+        }
+    }
+
+    function toggleTextProp(prop, activeVal, inactiveVal) {
+        if (selectedTextElemId === null) return;
+        var data = albumPagesData[selectedTextPageIdx] && albumPagesData[selectedTextPageIdx].elements.find(function(el) { return el.id === selectedTextElemId; });
+        if (!data) return;
+        data[prop] = (data[prop] === activeVal) ? inactiveVal : activeVal;
+        applyTextProp(prop, data[prop]);
+        setTxtCtrl(prop === 'fontWeight' ? 'txt-font-size' : '', data[prop]); // no-op for non-size
+    }
+
+    function toggleTextDecor(val) {
+        if (selectedTextElemId === null) return;
+        var data = albumPagesData[selectedTextPageIdx] && albumPagesData[selectedTextPageIdx].elements.find(function(el) { return el.id === selectedTextElemId; });
+        if (!data) return;
+        data.textDecoration = (data.textDecoration === val) ? 'none' : val;
+        applyTextProp('textDecoration', data.textDecoration);
+    }
+
+    function stepFontSize(delta) {
+        if (selectedTextElemId === null) return;
+        var data = albumPagesData[selectedTextPageIdx] && albumPagesData[selectedTextPageIdx].elements.find(function(el) { return el.id === selectedTextElemId; });
+        if (!data) return;
+        var newSize = Math.max(8, Math.min(120, (data.fontSize || 16) + delta));
+        data.fontSize = newSize;
+        setTxtCtrl('txt-font-size', newSize);
+        applyTextProp('fontSize', newSize);
+    }
+
+    function changeElementOrder(dir) {
+        if (selectedTextElemId === null || selectedTextPageIdx === null) return;
+        var elements = albumPagesData[selectedTextPageIdx].elements;
+        var idx = elements.findIndex(function(el) { return el.id === selectedTextElemId; });
+        if (idx === -1) return;
+        var domEl = document.getElementById(selectedTextElemId);
+        var canvas = domEl && domEl.parentElement;
+        if (dir === 'front') {
+            elements.push(elements.splice(idx, 1)[0]);
+            if (domEl && canvas) canvas.appendChild(domEl);
+        } else {
+            elements.unshift(elements.splice(idx, 1)[0]);
+            if (domEl && canvas) canvas.insertBefore(domEl, canvas.firstChild);
+        }
+    }
+
+    function clearSelectedText() {
+        if (selectedTextElemId === null || selectedTextPageIdx === null) return;
+        var data = albumPagesData[selectedTextPageIdx] && albumPagesData[selectedTextPageIdx].elements.find(function(el) { return el.id === selectedTextElemId; });
+        if (!data) return;
+        data.text = '✏️ 더블 클릭하여 수정';
+        var wrapper = document.getElementById(selectedTextElemId);
+        if (wrapper) {
+            var textEl = wrapper.querySelector('.editable-text-box');
+            if (textEl) { textEl.innerText = '✏️ 더블 클릭하여 수정'; textEl.classList.add('is-placeholder'); }
         }
     }
 

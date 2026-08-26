@@ -28,12 +28,23 @@
 
 /* ─── 썸네일 스트립 (뷰어 & 에디터 공용) ─── */
 .av-thumb-strip, .editor-thumb-strip {
-    display:flex; gap:10px; overflow-x:auto; padding:10px 16px 12px;
-    background:#dadada; border-top:1px solid #c4c4c4; width:100%;
+    display:flex; gap:10px; overflow-x:auto; padding:10px 4px 12px;
+    background:#dadada; border-top:1px solid #c4c4c4;
     scrollbar-width:thin; scrollbar-color:#bbb #ddd;
-    box-sizing:border-box; flex-shrink:0;
+    flex:1; min-width:0;
 }
-.editor-thumb-strip { border-top:2px solid #bbb; border-radius:0; }
+/* 에디터 썸네일 래퍼 (스크롤 버튼 포함) */
+.editor-thumb-wrap {
+    display:flex; align-items:center;
+    background:#dadada; border-top:2px solid #bbb;
+    flex-shrink:0; padding:0 2px;
+}
+.et-scroll-btn {
+    flex-shrink:0; background:none; border:none; cursor:pointer;
+    color:#888; font-size:.85rem; padding:0 8px; align-self:stretch;
+    display:flex; align-items:center; transition:color .15s;
+}
+.et-scroll-btn:hover { color:#333; }
 .av-thumb, .et-thumb {
     flex-shrink:0; cursor:pointer; display:flex; flex-direction:column;
     align-items:center; gap:5px; padding:3px; border-radius:6px;
@@ -267,7 +278,15 @@
             </div>
 
             <!-- 에디터 페이지 썸네일 스트립 -->
-            <div class="editor-thumb-strip" id="editor-thumb-strip"></div>
+            <div class="editor-thumb-wrap">
+                <button type="button" class="et-scroll-btn" onclick="scrollEditorThumbs(-1)" title="이전">
+                    <i class="fa-solid fa-chevron-left"></i>
+                </button>
+                <div class="editor-thumb-strip" id="editor-thumb-strip"></div>
+                <button type="button" class="et-scroll-btn" onclick="scrollEditorThumbs(1)" title="다음">
+                    <i class="fa-solid fa-chevron-right"></i>
+                </button>
+            </div>
 
         </div>
 
@@ -445,8 +464,8 @@
         ['design', 'photo', 'text'].forEach(function(t) {
             var panel = document.getElementById('ae-panel-' + t);
             if (panel) panel.style.display = t === name ? 'flex' : 'none';
-            var tab = document.getElementById('ae-ptab-' + t);
-            if (tab) tab.classList.toggle('is-active', t === name);
+            var icon = document.getElementById('ae-icon-' + t);
+            if (icon) icon.classList.toggle('active', t === name);
         });
     }
 
@@ -1766,6 +1785,11 @@
         // 현재 썸네일로 스크롤
         var activeThumb = strip.querySelector('.et-thumb.is-active');
         if (activeThumb) activeThumb.scrollIntoView({ block: 'nearest', inline: 'center', behavior: 'smooth' });
+    }
+
+    function scrollEditorThumbs(dir) {
+        var strip = document.getElementById('editor-thumb-strip');
+        if (strip) strip.scrollBy({ left: dir * 160, behavior: 'smooth' });
     }
 
     function editorGotoSpread(idx) {

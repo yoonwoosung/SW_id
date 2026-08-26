@@ -812,7 +812,10 @@
     document.addEventListener('mousedown', function (e) {
         if (!e.target.closest('.free-drag-element') &&
             !e.target.closest('.album-sidebar-container') &&
-            !e.target.closest('.book-nav-btn')) {
+            !e.target.closest('.book-nav-btn') &&
+            !e.target.closest('.ae-panel') &&
+            !e.target.closest('.ae-icon-nav') &&
+            !e.target.closest('.shape-context-bar')) {
             clearElementSelection();
         }
     });

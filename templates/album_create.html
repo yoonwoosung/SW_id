@@ -1,4 +1,63 @@
 {% extends "layout.html" %}
+{% block head %}
+<style>
+/* ─── 앨범 뷰어 모달 ─── */
+.album-viewer-modal { position:fixed; inset:0; z-index:2000; display:flex; align-items:center; justify-content:center; }
+.av-overlay { position:absolute; inset:0; background:rgba(0,0,0,.72); }
+.av-dialog {
+    position:relative; z-index:1; background:#e8e8e8;
+    border-radius:20px; padding:28px 28px 0;
+    display:flex; flex-direction:column; align-items:center;
+    gap:14px; max-width:96vw; max-height:96vh; overflow:hidden;
+    box-shadow:0 12px 48px rgba(0,0,0,.4);
+}
+.av-close {
+    position:absolute; top:10px; right:14px; background:none; border:none;
+    font-size:1.8rem; color:#666; cursor:pointer; line-height:1; z-index:10;
+}
+.av-close:hover { color:#222; }
+.av-book-row { display:flex; align-items:center; gap:18px; flex-shrink:0; }
+.av-nav-btn {
+    background:rgba(255,255,255,.9); border:1px solid #ddd; border-radius:50%;
+    width:44px; height:44px; cursor:pointer; display:flex; align-items:center; justify-content:center;
+    font-size:1rem; flex-shrink:0; transition:background .15s;
+}
+.av-nav-btn:hover { background:#fff; }
+.av-nav-btn:disabled { opacity:.3; cursor:default; }
+.av-album-title { font-weight:800; font-size:.95rem; color:#333; text-align:center; flex-shrink:0; }
+
+/* ─── 썸네일 스트립 (뷰어 & 에디터 공용) ─── */
+.av-thumb-strip, .editor-thumb-strip {
+    display:flex; gap:10px; overflow-x:auto; padding:10px 16px 12px;
+    background:#dadada; border-top:1px solid #c4c4c4; width:100%;
+    scrollbar-width:thin; scrollbar-color:#bbb #ddd;
+    box-sizing:border-box; flex-shrink:0;
+}
+.editor-thumb-strip { border-top:2px solid #bbb; border-radius:0; }
+.av-thumb, .et-thumb {
+    flex-shrink:0; cursor:pointer; display:flex; flex-direction:column;
+    align-items:center; gap:5px; padding:3px; border-radius:6px;
+    transition:opacity .15s;
+}
+.av-thumb:hover, .et-thumb:hover { opacity:.8; }
+.av-thumb.is-active .av-thumb-spread, .et-thumb.is-active .et-thumb-spread {
+    outline:2.5px solid #e53935; outline-offset:1px;
+}
+.av-thumb-spread, .et-thumb-spread {
+    display:flex; border-radius:5px; overflow:hidden;
+    box-shadow:0 1px 5px rgba(0,0,0,.25); height:56px;
+}
+.av-thumb-page, .et-thumb-page {
+    width:38px; height:56px; background:#f5f5f5;
+    background-size:cover; background-position:center; flex-shrink:0;
+}
+.av-thumb-page.is-single, .et-thumb-page.is-single { width:52px; }
+.av-spine { width:2px; background:#c8c8c8; flex-shrink:0; }
+.av-thumb-label, .et-thumb-label {
+    font-size:.65rem; color:#666; font-weight:700; white-space:nowrap;
+}
+</style>
+{% endblock %}
 {% block content %}
 
 <!-- PDF 및 캔버스 라이브러리 -->
@@ -207,8 +266,32 @@
                 </button>
             </div>
 
+            <!-- 에디터 페이지 썸네일 스트립 -->
+            <div class="editor-thumb-strip" id="editor-thumb-strip"></div>
+
         </div>
 
+    </div>
+</div>
+
+<!-- ===== 앨범 뷰어 모달 ===== -->
+<div id="album-viewer-modal" class="album-viewer-modal" style="display:none;">
+    <div class="av-overlay" onclick="closeAlbumViewer()"></div>
+    <div class="av-dialog">
+        <button class="av-close" onclick="closeAlbumViewer()" title="닫기">×</button>
+        <div class="av-book-row">
+            <button class="av-nav-btn" id="av-prev-btn" onclick="viewerPrevSpread()">
+                <i class="fa-solid fa-chevron-left"></i>
+            </button>
+            <div class="ae-book-stage" id="av-book-stage">
+                <div id="av-book-container" class="book-container cover-green paper-white shape-portrait"></div>
+            </div>
+            <button class="av-nav-btn" id="av-next-btn" onclick="viewerNextSpread()">
+                <i class="fa-solid fa-chevron-right"></i>
+            </button>
+        </div>
+        <div class="av-album-title" id="av-album-title"></div>
+        <div class="av-thumb-strip" id="av-thumb-strip"></div>
     </div>
 </div>
 
@@ -329,6 +412,9 @@
                     + esc(album.title || '제목 없음') + '</div>'
                     + '<div style="font-size:.78rem;color:#9aa39c;margin-bottom:12px;">' + dateStr + ' 수정</div>'
                     + '<div style="display:flex;gap:8px;">'
+                    + '<button onclick="openAlbumViewer(\'' + album.id + '\')" '
+                    + 'style="flex:1;background:#f5f5f5;color:#333;border:1px solid #ddd;border-radius:8px;padding:7px;font-size:.85rem;font-weight:700;cursor:pointer;">'
+                    + '<i class="fa-solid fa-eye" style="margin-right:4px;"></i>보기</button>'
                     + '<button onclick="loadAlbum(\'' + album.id + '\')" '
                     + 'style="flex:1;background:var(--green-dark);color:#fff;border:none;border-radius:8px;padding:7px;font-size:.85rem;font-weight:700;cursor:pointer;">'
                     + '편집하기</button>'
@@ -1152,6 +1238,7 @@
 
         document.getElementById('bookPrevBtn').style.opacity = (currentSpreadIndex === 0) ? '0.3' : '1';
         document.getElementById('bookNextBtn').style.opacity = (currentSpreadIndex === totalSpreads) ? '0.3' : '1';
+        renderEditorThumbs();
 
         if (currentSpreadIndex === 0 || currentSpreadIndex === totalSpreads) {
             container.className = `book-container is-closed ${coverTheme} ${paperTheme} ${shapeTheme}`;
@@ -1615,6 +1702,259 @@
             renderBookView();
         }
     }
+
+    // ══════════════════════════════════════════════
+    //  썸네일 공용 헬퍼
+    // ══════════════════════════════════════════════
+
+    /** 스프레드 하나의 썸네일 HTML을 반환 */
+    function buildThumbHTML(spreadIdx, totalSpreads, albumObj, isActive, onclickStr, thumbClass, spreadClass, pageClass, labelClass) {
+        var coverColor = COVER_COLORS[albumObj.coverTheme] || '#4CAF50';
+        var label, pagesHTML;
+
+        if (spreadIdx === 0) {
+            label = '커버';
+            pagesHTML = '<div class="' + pageClass + ' is-single" style="background:' + coverColor + ';"></div>';
+        } else if (spreadIdx === totalSpreads) {
+            label = '뒤표지';
+            pagesHTML = '<div class="' + pageClass + ' is-single" style="background:' + coverColor + ';opacity:.55;"></div>';
+        } else {
+            var lIdx = (spreadIdx - 1) * 2 + 1;
+            var rIdx = lIdx + 1;
+            label = lIdx + '-' + rIdx;
+            var lEls = albumObj.pagesData[lIdx] ? albumObj.pagesData[lIdx].elements : [];
+            var rEls = albumObj.pagesData[rIdx] ? albumObj.pagesData[rIdx].elements : [];
+            var lImg = lEls.find(function(e) { return (e.type === 'slot' || e.type === 'image') && e.src; });
+            var rImg = rEls.find(function(e) { return (e.type === 'slot' || e.type === 'image') && e.src; });
+            var lStyle = lImg ? 'background-image:url("' + lImg.src.replace(/"/g, '&quot;') + '");' : 'background:#e8e8e8;';
+            var rStyle = rImg ? 'background-image:url("' + rImg.src.replace(/"/g, '&quot;') + '");' : 'background:#e8e8e8;';
+            pagesHTML = '<div class="' + pageClass + '" style="' + lStyle + '"></div>'
+                      + '<div class="av-spine"></div>'
+                      + '<div class="' + pageClass + '" style="' + rStyle + '"></div>';
+        }
+
+        return '<div class="' + thumbClass + (isActive ? ' is-active' : '') + '" onclick="' + onclickStr + '">'
+            + '<div class="' + spreadClass + '">' + pagesHTML + '</div>'
+            + '<div class="' + labelClass + '">' + esc(label) + '</div>'
+            + '</div>';
+    }
+
+    // ══════════════════════════════════════════════
+    //  에디터 썸네일 스트립
+    // ══════════════════════════════════════════════
+
+    function renderEditorThumbs() {
+        var strip = document.getElementById('editor-thumb-strip');
+        if (!strip) return;
+
+        var totalSpreads = Math.ceil(innerPageCount / 2) + 1;
+        var albumObj = {
+            coverTheme: coverTheme,
+            innerPageCount: innerPageCount,
+            pagesData: albumPagesData
+        };
+
+        var html = '';
+        for (var i = 0; i <= totalSpreads; i++) {
+            var isActive = (i === currentSpreadIndex);
+            html += buildThumbHTML(i, totalSpreads, albumObj, isActive,
+                'editorGotoSpread(' + i + ')',
+                'et-thumb', 'et-thumb-spread', 'et-thumb-page', 'et-thumb-label');
+        }
+        strip.innerHTML = html;
+
+        // 현재 썸네일로 스크롤
+        var activeThumb = strip.querySelector('.et-thumb.is-active');
+        if (activeThumb) activeThumb.scrollIntoView({ block: 'nearest', inline: 'center', behavior: 'smooth' });
+    }
+
+    function editorGotoSpread(idx) {
+        var totalSpreads = Math.ceil(innerPageCount / 2) + 1;
+        if (idx < 0 || idx > totalSpreads) return;
+        currentSpreadIndex = idx;
+        renderBookView();
+    }
+
+    // ══════════════════════════════════════════════
+    //  앨범 뷰어 모달
+    // ══════════════════════════════════════════════
+
+    var viewerAlbum = null;
+    var viewerSpreadIdx = 0;
+
+    function openAlbumViewer(albumId) {
+        var albums = getAllAlbums();
+        var album = albums.find(function(a) { return a.id === albumId; });
+        if (!album) { alert('앨범을 찾을 수 없어요.'); return; }
+
+        viewerAlbum = album;
+        viewerSpreadIdx = 0;
+
+        // 제목
+        document.getElementById('av-album-title').textContent = album.title || '제목 없음';
+
+        // 모달 표시
+        document.getElementById('album-viewer-modal').style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+
+        renderViewerBook();
+        renderViewerThumbs();
+
+        if (window.lucide) lucide.createIcons();
+    }
+
+    function closeAlbumViewer() {
+        document.getElementById('album-viewer-modal').style.display = 'none';
+        document.body.style.overflow = '';
+        viewerAlbum = null;
+    }
+
+    /** 뷰어 책 스프레드 렌더링 */
+    function renderViewerBook() {
+        if (!viewerAlbum) return;
+        var container = document.getElementById('av-book-container');
+        var stage = document.getElementById('av-book-stage');
+        var totalSpreads = Math.ceil(viewerAlbum.innerPageCount / 2) + 1;
+
+        // 크기 설정
+        if (stage) {
+            if (viewerAlbum.shapeTheme === 'shape-square') stage.style.width = '962px';
+            else if (viewerAlbum.shapeTheme === 'shape-landscape') stage.style.width = '1102px';
+            else stage.style.width = '874px';
+        }
+
+        // 앞/뒤 버튼
+        document.getElementById('av-prev-btn').disabled = (viewerSpreadIdx === 0);
+        document.getElementById('av-next-btn').disabled = (viewerSpreadIdx === totalSpreads);
+
+        // 뷰포트에 맞게 책 스테이지 스케일 조정
+        requestAnimationFrame(function() {
+            if (!stage) return;
+            var stageW = parseFloat(stage.style.width) || 874;
+            var maxW = window.innerWidth - 160; // nav 버튼 + 여백
+            var maxH = window.innerHeight - 260; // 제목 + 썸네일 + 여백
+            var scaleW = maxW / stageW;
+            // 책 높이 추정 (portrait: 640, square: 480, landscape: 420)
+            var bookH = viewerAlbum.shapeTheme === 'shape-portrait' ? 640 : viewerAlbum.shapeTheme === 'shape-square' ? 480 : 420;
+            var scaleH = maxH / bookH;
+            var scale = Math.min(1, scaleW, scaleH);
+            stage.style.transform = scale < 1 ? 'scale(' + scale.toFixed(3) + ')' : '';
+            stage.style.transformOrigin = 'top center';
+            // 실제 점유 높이 보정
+            stage.style.height = scale < 1 ? Math.round(bookH * scale) + 'px' : '';
+        });
+
+        container.className = 'book-container '
+            + viewerAlbum.coverTheme + ' '
+            + (viewerAlbum.paperTheme || 'paper-white') + ' '
+            + (viewerAlbum.shapeTheme || 'shape-portrait')
+            + (viewerSpreadIdx === 0 || viewerSpreadIdx === totalSpreads ? ' is-closed' : '');
+
+        container.innerHTML = '';
+
+        if (viewerSpreadIdx === 0) {
+            container.innerHTML = '<div class="book-page single-page book-cover-page" style="position:relative;">'
+                + '<div class="cover-emboss-border text-center p-4 w-100 h-100 d-flex flex-column align-items-center justify-content-center" style="pointer-events:none;">'
+                + '<i class="fa-solid fa-camera-retro fa-4x mb-4 text-gold"></i>'
+                + '<h3 class="font-weight-bold text-gold mb-3">' + esc(viewerAlbum.title || '') + '</h3>'
+                + '<p class="small text-gold mb-0">FarmLink Memory Photo Book</p>'
+                + '</div></div>';
+            var cv0 = container.querySelector('.book-cover-page');
+            if (cv0) renderPageElementsStatic(cv0, viewerAlbum.pagesData[0] ? viewerAlbum.pagesData[0].elements : []);
+
+        } else if (viewerSpreadIdx === totalSpreads) {
+            container.innerHTML = '<div class="book-page single-page book-cover-page d-flex flex-column align-items-center justify-content-center p-4">'
+                + '<div class="text-center text-gold"><i class="fa-solid fa-heart fa-3x mb-3"></i>'
+                + '<h4 class="font-weight-bold">소중한 순간을 기억하며</h4>'
+                + '<p class="small opacity-75">FarmLink Travel Archive</p></div></div>';
+
+        } else {
+            var lIdx = (viewerSpreadIdx - 1) * 2 + 1;
+            var rIdx = lIdx + 1;
+            container.innerHTML = '<div class="book-page left-page" id="av-pageL" style="position:relative;">'
+                + '<span class="page-num-tag">' + lIdx + 'p</span></div>'
+                + '<div class="book-spine"></div>'
+                + '<div class="book-page right-page" id="av-pageR" style="position:relative;">'
+                + '<span class="page-num-tag">' + rIdx + 'p</span></div>';
+            var lCanvas = document.getElementById('av-pageL');
+            var rCanvas = document.getElementById('av-pageR');
+            if (lCanvas) renderPageElementsStatic(lCanvas, viewerAlbum.pagesData[lIdx] ? viewerAlbum.pagesData[lIdx].elements : []);
+            if (rCanvas) renderPageElementsStatic(rCanvas, viewerAlbum.pagesData[rIdx] ? viewerAlbum.pagesData[rIdx].elements : []);
+        }
+
+        // 썸네일 active 갱신
+        renderViewerThumbs();
+    }
+
+    /** 뷰어용 페이지 요소 정적 렌더링 (핸들 없음, pointer-events:none) */
+    function renderPageElementsStatic(canvas, elements) {
+        if (!elements || !elements.length) return;
+        elements.forEach(function(data) {
+            if (!data.src && data.type !== 'text') return; // src 없는 슬롯은 스킵
+            var wrapper = document.createElement('div');
+            wrapper.style.cssText = 'position:absolute;top:' + data.top + 'px;left:' + data.left + 'px;'
+                + 'width:' + data.width + 'px;'
+                + (data.height ? 'height:' + data.height + 'px;' : '')
+                + (data.rotation ? 'transform:rotate(' + data.rotation + 'deg);' : '')
+                + 'overflow:hidden;pointer-events:none;';
+
+            var clipStyle = '';
+            if (data.shape && data.shape !== 'rect') {
+                var shapeObj = SHAPES.find(function(s) { return s.id === data.shape; });
+                if (shapeObj) clipStyle = 'clip-path:' + shapeObj.clip + ';';
+            }
+
+            if (data.type === 'slot' && data.src) {
+                wrapper.innerHTML = '<img src="' + data.src + '" style="width:100%;height:100%;object-fit:cover;border-radius:6px;' + clipStyle + '">';
+            } else if (data.type === 'image' && data.src) {
+                wrapper.innerHTML = '<img src="' + data.src + '" style="width:100%;height:100%;object-fit:cover;border-radius:4px;' + clipStyle + '">';
+            } else if (data.type === 'text') {
+                wrapper.innerHTML = '<div style="width:100%;height:100%;padding:8px;font-size:.85rem;white-space:pre-wrap;overflow:hidden;word-break:break-word;">' + esc(data.text || '') + '</div>';
+            }
+            canvas.appendChild(wrapper);
+        });
+    }
+
+    function viewerPrevSpread() {
+        if (viewerSpreadIdx > 0) { viewerSpreadIdx--; renderViewerBook(); }
+    }
+
+    function viewerNextSpread() {
+        var totalSpreads = Math.ceil(viewerAlbum.innerPageCount / 2) + 1;
+        if (viewerSpreadIdx < totalSpreads) { viewerSpreadIdx++; renderViewerBook(); }
+    }
+
+    function viewerGotoSpread(idx) {
+        viewerSpreadIdx = idx;
+        renderViewerBook();
+        // 썸네일 스크롤
+        var strip = document.getElementById('av-thumb-strip');
+        if (strip) {
+            var active = strip.querySelector('.av-thumb.is-active');
+            if (active) active.scrollIntoView({ block: 'nearest', inline: 'center', behavior: 'smooth' });
+        }
+    }
+
+    function renderViewerThumbs() {
+        if (!viewerAlbum) return;
+        var strip = document.getElementById('av-thumb-strip');
+        if (!strip) return;
+        var totalSpreads = Math.ceil(viewerAlbum.innerPageCount / 2) + 1;
+        var html = '';
+        for (var i = 0; i <= totalSpreads; i++) {
+            html += buildThumbHTML(i, totalSpreads, viewerAlbum, i === viewerSpreadIdx,
+                'viewerGotoSpread(' + i + ')',
+                'av-thumb', 'av-thumb-spread', 'av-thumb-page', 'av-thumb-label');
+        }
+        strip.innerHTML = html;
+    }
+
+    // ESC 키로 뷰어 닫기
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && document.getElementById('album-viewer-modal').style.display !== 'none') {
+            closeAlbumViewer();
+        }
+    });
 
     function downloadBookPDF(event) {
         const btn = event.currentTarget;

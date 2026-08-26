@@ -3778,6 +3778,15 @@ header.header-volunteer { border-bottom-color: #FF9800; }
     padding: 28px;
 }
 .ae-book-stage { display: flex; align-items: center; justify-content: center; }
+/* 뷰어 모달 내 책 스테이지: 뷰포트 초과 시 스케일 축소 */
+#av-book-stage {
+    transform-origin: top center;
+    max-width: calc(100vw - 140px);
+    overflow: visible;
+}
+.av-dialog .ae-book-stage {
+    transform-origin: top center;
+}
 .ae-canvas-area { flex-direction: column !important; align-items: stretch !important; justify-content: flex-start !important; padding: 0 !important; }
 .ae-book-row { display: flex; flex: 1; align-items: center; justify-content: center; gap: 18px; padding: 28px; overflow: auto; min-height: 0; }
 .shape-context-bar {

@@ -1119,6 +1119,7 @@
             albumPagesData[pIdx].elements.push(elemData);
             renderSingleElement(canvas, elemData, pIdx);
         });
+        renderEditorThumbs();
     }
 
     function changeCoverTheme(theme) {
@@ -1162,6 +1163,7 @@
             };
             albumPagesData[0].elements.push(elemData);
             renderSingleElement(canvas, elemData, 0);
+            renderEditorThumbs();
             return;
         }
 
@@ -1203,6 +1205,7 @@
             };
             albumPagesData[targetIdx].elements.push(elemData);
             renderSingleElement(canvas, elemData, targetIdx);
+            renderEditorThumbs();
         }
     }
 

@@ -3765,56 +3765,6 @@ header.header-volunteer { border-bottom-color: #FF9800; }
 .ae-topbar-btn:hover { background: #f5f5f5; }
 .ae-topbar-btn--primary { background: var(--green-dark); color: #fff; border-color: var(--green-dark); }
 .ae-topbar-btn--primary:hover { filter: brightness(.92); }
-.ae-layout {
-    flex: 1;
-    display: flex;
-    overflow: hidden;
-}
-/* 아이콘 사이드바 (64px) */
-.ae-icon-nav {
-    width: 64px;
-    background: #fff;
-    border-right: 1px solid #e8e8e8;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 10px 0;
-    gap: 2px;
-    flex-shrink: 0;
-}
-.ae-icon {
-    width: 52px;
-    border: none;
-    background: none;
-    border-radius: 10px;
-    padding: 8px 4px 6px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 3px;
-    cursor: pointer;
-    color: #666;
-    font-size: .68rem;
-    font-weight: 600;
-}
-.ae-icon i { font-size: 1.2rem; margin: 0; }
-.ae-icon.active { background: var(--green-light, #E8F5E9); color: var(--green-dark, #4CAF50); }
-.ae-icon:hover:not(.active) { background: #f5f5f5; }
-/* 콘텐츠 패널 (280px) */
-.ae-panel {
-    width: 280px;
-    background: #fff;
-    border-right: 1px solid #e8e8e8;
-    overflow-y: auto;
-    flex-shrink: 0;
-}
-.ae-panel-content { padding: 16px; }
-.ae-panel-title {
-    font-size: .72rem; font-weight: 800; color: #9aa39c;
-    text-transform: uppercase; letter-spacing: .06em; margin: 0 0 14px;
-}
-.ae-form-group { margin-bottom: 14px; }
-.ae-label { font-size: .8rem; font-weight: 700; color: #55605a; display: block; margin-bottom: 4px; }
 /* 캔버스 영역 */
 .ae-canvas-area {
     flex: 1;
@@ -3828,6 +3778,25 @@ header.header-volunteer { border-bottom-color: #FF9800; }
     padding: 28px;
 }
 .ae-book-stage { display: flex; align-items: center; justify-content: center; }
+.ae-canvas-area { flex-direction: column !important; align-items: stretch !important; justify-content: flex-start !important; padding: 0 !important; }
+.ae-book-row { display: flex; flex: 1; align-items: center; justify-content: center; gap: 18px; padding: 28px; overflow: auto; min-height: 0; }
+.shape-context-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(255,255,255,0.92);
+    backdrop-filter: blur(6px);
+    border-bottom: 1px solid rgba(0,0,0,0.08);
+    padding: 7px 20px;
+    flex-shrink: 0;
+}
+.shape-context-label {
+    font-size: .78rem;
+    font-weight: 700;
+    color: #666;
+    white-space: nowrap;
+}
+.shape-context-btns { display: flex; gap: 4px; }
 .ae-nav-btn {
     width: 40px; height: 40px; border-radius: 50%;
     background: rgba(255,255,255,.9); border: none; cursor: pointer;
@@ -4268,6 +4237,24 @@ header.header-volunteer { border-bottom-color: #FF9800; }
     color: #999 !important;
     font-weight: 400 !important;
 }
+
+/* ── 사진 모양 버튼 ── */
+.shape-btn {
+    width: 26px;
+    height: 26px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font-size: 13px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background .12s;
+    color: #555;
+}
+.shape-btn:hover { background: #f0f0f0; }
+.shape-btn-active { background: var(--fl-green-700) !important; color: #fff !important; }
 
 .elem-resize-handle {
     position: absolute;

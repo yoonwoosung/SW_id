@@ -29,30 +29,16 @@
 </div>
 
 <!-- ===== 에디터 (Miri Canvas 스타일, 시작 버튼 클릭 후 표시) ===== -->
-<div class="ae-wrap" id="album-editor" style="display:none;">
+<!-- 하트 모양 clip-path 정의 (objectBoundingBox = 0~1 좌표로 요소 크기에 맞게 자동 스케일) -->
+<svg width="0" height="0" style="position:absolute;overflow:hidden;">
+    <defs>
+        <clipPath id="shape-clip-heart" clipPathUnits="objectBoundingBox">
+            <path d="M0.5,0.27 C0.5,0.15 0.37,0.04 0.22,0.04 C0.07,0.04 0,0.18 0,0.28 C0,0.48 0.18,0.62 0.5,0.85 C0.82,0.62 1,0.48 1,0.28 C1,0.18 0.93,0.04 0.78,0.04 C0.63,0.04 0.5,0.15 0.5,0.27 Z"/>
+        </clipPath>
+    </defs>
+</svg>
 
-    <!-- 상단 바 -->
-    <div class="ae-topbar">
-        <button class="ae-topbar-back" type="button"
-            onclick="if(confirm('저장하지 않은 변경사항은 사라집니다. 목록으로 돌아갈까요?')) showAlbumList();">
-            <i class="fa-solid fa-chevron-left"></i> 목록
-        </button>
-        <div class="ae-topbar-divider"></div>
-        <span class="ae-topbar-title" id="ae-title-display" onclick="startTitleEdit()" title="클릭하여 제목 수정">새 앨범</span>
-        <button type="button" class="ae-title-edit-btn" onclick="startTitleEdit()" title="제목 수정">
-            <i class="fa-solid fa-pencil"></i>
-        </button>
-        <input type="text" id="ae-title-input" class="ae-title-input" maxlength="20"
-            style="display:none;" onblur="commitTitleEdit()" onkeydown="if(event.key==='Enter')this.blur();if(event.key==='Escape'){cancelTitleEdit();}">
-        <div style="margin-left:auto;display:flex;gap:8px;">
-            <button class="ae-topbar-btn" type="button" onclick="saveAlbum()">
-                <i class="fa-solid fa-floppy-disk"></i> 저장
-            </button>
-            <button class="ae-topbar-btn ae-topbar-btn--primary" type="button" onclick="downloadBookPDF(event)">
-                <i class="fa-solid fa-file-pdf"></i> PDF 발급
-            </button>
-        </div>
-    </div>
+<div class="ae-wrap" id="album-editor" style="display:none;">
 
     <!-- 3단 레이아웃: 아이콘바 | 패널 | 캔버스 -->
     <div class="ae-layout">
@@ -79,7 +65,6 @@
             <!-- 디자인 패널 -->
             <div class="ae-panel-content" id="ae-panel-design">
                 <p class="ae-panel-title">디자인 & 레이아웃</p>
-
                 <div class="ae-form-group">
                     <label class="ae-label">다녀온 체험 정보</label>
                     <select id="albumExpSelect" class="form-control form-control-sm" onchange="autoFillTitle(this)">
@@ -97,7 +82,6 @@
                         {% endif %}
                     </select>
                 </div>
-
                 <div class="ae-form-group">
                     <label class="ae-label">앨범 모양 / 규격</label>
                     <select id="shapeThemeSelect" class="form-control form-control-sm" onchange="changeShapeTheme(this.value)">
@@ -106,7 +90,6 @@
                         <option value="shape-landscape">가로형 앨범</option>
                     </select>
                 </div>
-
                 <div class="ae-form-group">
                     <label class="ae-label">겉표지 디자인</label>
                     <select id="coverThemeSelect" class="form-control form-control-sm" onchange="changeCoverTheme(this.value)">
@@ -116,7 +99,6 @@
                         <option value="cover-navy">남색</option>
                     </select>
                 </div>
-
                 <div class="ae-form-group">
                     <label class="ae-label">속지 종이 재질</label>
                     <select id="paperThemeSelect" class="form-control form-control-sm" onchange="changePaperTheme(this.value)">
@@ -126,7 +108,6 @@
                         <option value="paper-grid">▦ 모눈 격자</option>
                     </select>
                 </div>
-
                 <div class="ae-form-group">
                     <label class="ae-label">앨범 레이아웃 틀</label>
                     <select id="layoutTemplateSelect" class="form-control form-control-sm" onchange="applyLayoutTemplate(this.value)">
@@ -145,14 +126,12 @@
             <!-- 사진 패널 -->
             <div class="ae-panel-content" id="ae-panel-photo" style="display:none;">
                 <p class="ae-panel-title">사진 보관함</p>
-
                 <div class="ae-form-group">
                     <label class="ae-label">사진 업로드 (5~20장)</label>
                     <input type="file" id="photoUploader" class="form-control-file border p-1 rounded small"
                         multiple accept="image/*" onchange="handlePhotoUpload(event)">
                     <small id="photoCountNotice" class="text-info d-block mt-1" style="font-size:.72rem;">* 최소 5장 이상 권장합니다.</small>
                 </div>
-
                 <div class="ae-form-group">
                     <label class="ae-label">클릭하면 앨범에 추가</label>
                     <div id="photoTray" class="d-flex flex-wrap gap-2 p-2 bg-light border rounded style-scroll"
@@ -165,12 +144,10 @@
             <!-- 텍스트 패널 -->
             <div class="ae-panel-content" id="ae-panel-text" style="display:none;">
                 <p class="ae-panel-title">텍스트 스튜디오</p>
-
                 <button type="button" class="btn btn-outline-success btn-block font-weight-bold py-2 mb-3"
                     onclick="addTextBoxToActivePage()">
                     <i class="fa-solid fa-plus mr-1"></i> 텍스트 상자 추가
                 </button>
-
                 <div class="p-3 bg-light border rounded" style="font-size:.78rem;color:#666;line-height:1.7;">
                     <div style="font-weight:700;margin-bottom:6px;color:#444;">✏️ 편집 팁</div>
                     <ul class="pl-3 mb-0">
@@ -183,21 +160,53 @@
 
         </div>
 
-        <!-- 대형 캔버스 영역 -->
+        <!-- 캔버스 영역 -->
         <div class="ae-canvas-area">
-            <button type="button" class="ae-nav-btn" id="bookPrevBtn" onclick="prevPage()" title="이전 페이지">
-                <i class="fa-solid fa-chevron-left"></i>
-            </button>
 
-            <div class="ae-book-stage">
-                <div id="bookContainer" class="book-container cover-green paper-white shape-portrait">
-                    <!-- JS에 의해 동적 렌더링 -->
+            <!-- topbar: 목록·제목·저장·PDF (캔버스 상단) -->
+            <div class="ae-topbar">
+                <button class="ae-topbar-back" type="button"
+                    onclick="if(confirm('저장하지 않은 변경사항은 사라집니다. 목록으로 돌아갈까요?')) showAlbumList();">
+                    <i class="fa-solid fa-chevron-left"></i> 목록
+                </button>
+                <div class="ae-topbar-divider"></div>
+                <span class="ae-topbar-title" id="ae-title-display" onclick="startTitleEdit()" title="클릭하여 제목 수정">새 앨범</span>
+                <button type="button" class="ae-title-edit-btn" onclick="startTitleEdit()" title="제목 수정">
+                    <i class="fa-solid fa-pencil"></i>
+                </button>
+                <input type="text" id="ae-title-input" class="ae-title-input" maxlength="20"
+                    style="display:none;" onblur="commitTitleEdit()" onkeydown="if(event.key==='Enter')this.blur();if(event.key==='Escape'){cancelTitleEdit();}">
+                <div style="margin-left:auto;display:flex;gap:8px;">
+                    <button class="ae-topbar-btn" type="button" onclick="saveAlbum()">
+                        <i class="fa-solid fa-floppy-disk"></i> 저장
+                    </button>
+                    <button class="ae-topbar-btn ae-topbar-btn--primary" type="button" onclick="downloadBookPDF(event)">
+                        <i class="fa-solid fa-file-pdf"></i> PDF 발급
+                    </button>
                 </div>
             </div>
 
-            <button type="button" class="ae-nav-btn" id="bookNextBtn" onclick="nextPage()" title="다음 페이지">
-                <i class="fa-solid fa-chevron-right"></i>
-            </button>
+            <!-- 사진 선택 시 나타나는 모양 선택 바 -->
+            <div id="shape-context-bar" class="shape-context-bar" hidden>
+                <span class="shape-context-label">사진 모양</span>
+                <div class="shape-context-btns" id="shape-context-btns"></div>
+            </div>
+
+            <!-- 책 + 이전/다음 버튼 -->
+            <div class="ae-book-row">
+                <button type="button" class="ae-nav-btn" id="bookPrevBtn" onclick="prevPage()" title="이전 페이지">
+                    <i class="fa-solid fa-chevron-left"></i>
+                </button>
+                <div class="ae-book-stage">
+                    <div id="bookContainer" class="book-container cover-green paper-white shape-portrait">
+                        <!-- JS에 의해 동적 렌더링 -->
+                    </div>
+                </div>
+                <button type="button" class="ae-nav-btn" id="bookNextBtn" onclick="nextPage()" title="다음 페이지">
+                    <i class="fa-solid fa-chevron-right"></i>
+                </button>
+            </div>
+
         </div>
 
     </div>
@@ -208,6 +217,75 @@
 
     // ===== localStorage 앨범 관리 =====
     var FL_ALBUMS_KEY = 'fl_albums';
+
+    // ── 사진 모양 정의 ──────────────────────────────────────────
+    var SHAPES = [
+        { id: 'rect',    label: '■', title: '기본',   clip: 'none' },
+        { id: 'circle',  label: '●', title: '원형',   clip: 'circle(50%)' },
+        { id: 'star',    label: '★', title: '별',     clip: 'polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%)' },
+        { id: 'heart',   label: '♥', title: '하트',   clip: 'url(#shape-clip-heart)' },
+        { id: 'hexagon', label: '⬡', title: '육각형', clip: 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)' },
+        { id: 'diamond', label: '◆', title: '다이아', clip: 'polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)' },
+    ];
+
+    // 현재 선택된 요소 추적
+    var selectedElemId = null;
+    var selectedElemPageIdx = null;
+
+    function initShapeContextBar() {
+        var btns = document.getElementById('shape-context-btns');
+        if (!btns) return;
+        btns.innerHTML = SHAPES.map(function(s) {
+            return '<button type="button" class="shape-btn" data-shape="' + s.id + '" title="' + s.title + '" onclick="applyElementShape(null,null,\'' + s.id + '\')">' + s.label + '</button>';
+        }).join('');
+    }
+
+    function showShapeContextBar(elemId, pageIdx, currentShape) {
+        selectedElemId = elemId;
+        selectedElemPageIdx = pageIdx;
+        var bar = document.getElementById('shape-context-bar');
+        if (!bar) return;
+        bar.hidden = false;
+        // active 상태 갱신
+        bar.querySelectorAll('.shape-btn').forEach(function(btn) {
+            btn.classList.toggle('shape-btn-active', btn.dataset.shape === (currentShape || 'rect'));
+        });
+    }
+
+    function hideShapeContextBar() {
+        selectedElemId = null;
+        selectedElemPageIdx = null;
+        var bar = document.getElementById('shape-context-bar');
+        if (bar) bar.hidden = true;
+    }
+
+    function applyElementShape(elemId, pageIdx, shapeId) {
+        // 인자 없으면 현재 선택된 요소에 적용
+        var id  = elemId  || selectedElemId;
+        var idx = (pageIdx !== null && pageIdx !== undefined) ? pageIdx : selectedElemPageIdx;
+        if (!id || idx === null || idx === undefined) return;
+
+        var data = albumPagesData[idx].elements.find(function(el) { return el.id === id; });
+        if (!data) return;
+        data.shape = shapeId;
+
+        var shape = SHAPES.find(function(s) { return s.id === shapeId; });
+        if (!shape) return;
+
+        // 클립 대상: slot → .photo-slot-card, image → img
+        var wrapper = document.getElementById(id);
+        if (!wrapper) return;
+        var clipTarget = wrapper.querySelector('.photo-slot-card') || wrapper.querySelector('img');
+        if (clipTarget) clipTarget.style.clipPath = shape.clip;
+
+        // 컨텍스트 바 active 갱신
+        var bar = document.getElementById('shape-context-bar');
+        if (bar) {
+            bar.querySelectorAll('.shape-btn').forEach(function(btn) {
+                btn.classList.toggle('shape-btn-active', btn.dataset.shape === shapeId);
+            });
+        }
+    }
     var currentAlbumId = null;
 
     var COVER_COLORS = {
@@ -279,9 +357,10 @@
 
     function switchAeTab(name) {
         ['design', 'photo', 'text'].forEach(function(t) {
-            document.getElementById('ae-panel-' + t).style.display = t === name ? 'block' : 'none';
-            var icon = document.getElementById('ae-icon-' + t);
-            if (icon) icon.classList.toggle('active', t === name);
+            var panel = document.getElementById('ae-panel-' + t);
+            if (panel) panel.style.display = t === name ? 'flex' : 'none';
+            var tab = document.getElementById('ae-ptab-' + t);
+            if (tab) tab.classList.toggle('is-active', t === name);
         });
     }
 
@@ -430,7 +509,7 @@
 
     // 💡 [해결 3] 페이지 클릭 시 선택 표시 및 드롭다운 메뉴 글자 자동 동기화
     function selectPage(pIdx) {
-        if (pIdx > innerPageCount) return;
+        if (pIdx !== 0 && pIdx > innerPageCount) return;
         selectedPageIndex = pIdx;
         document.querySelectorAll('.book-page').forEach(p => p.classList.remove('active-page'));
         const pageEl = document.getElementById(`pageCanvas_${pIdx}`);
@@ -447,6 +526,7 @@
     document.addEventListener('DOMContentLoaded', function () {
         renderAlbumList();
         renderBookView();
+        initShapeContextBar();
         if (window.lucide) lucide.createIcons();
     });
 
@@ -454,6 +534,7 @@
         document.querySelectorAll('.free-drag-element.selected').forEach(el => {
             el.classList.remove('selected');
         });
+        hideShapeContextBar();
     }
 
     document.addEventListener('mousedown', function (e) {
@@ -832,23 +913,29 @@
 
         const selectedLayout = slotConfig[templateType];
         if (selectedLayout) {
+            function buildSlots(layoutItems, existingSrcs, suffix) {
+                let srcIdx = 0;
+                const slots = layoutItems.map(function(item, idx) {
+                    const id = (item.type === 'text' ? 'text_' : 'slot_') + Date.now() + '_' + suffix + '_' + idx;
+                    if (item.type === 'text') {
+                        return { id: id, type: 'text', text: item.text, top: item.top, left: item.left, width: item.width, height: item.height, rotation: 0 };
+                    }
+                    return { id: id, type: 'slot', label: item.label, top: item.top, left: item.left, width: item.width, height: item.height, src: existingSrcs[srcIdx++] || null };
+                });
+                const overflowSrcs = existingSrcs.slice(srcIdx).filter(Boolean);
+                return { slots: slots, overflow: overflowSrcs };
+            }
+
             if (isSinglePageLayout && !hadSpreadLayout) {
                 const existingEls = albumPagesData[targetPageIndex].elements || [];
                 const existingSrcs = existingEls.filter(el => el.type === 'slot').map(el => el.src);
                 const existingImages = existingEls.filter(el => el.type === 'image');
                 const existingTexts = existingEls.filter(el => el.type === 'text');
 
-                const newSlots = selectedLayout.left.map((item, idx) => {
-                    const id = (item.type === 'text' ? 'text_' : 'slot_') + Date.now() + '_' + targetPageIndex + '_' + idx;
-                    return item.type === 'text' ? {
-                        id: id, type: 'text', text: item.text, top: item.top, left: item.left, width: item.width, height: item.height, rotation: 0
-                    } : {
-                        id: id, type: 'slot', label: item.label, top: item.top, left: item.left, width: item.width, height: item.height,
-                        src: existingSrcs[idx] || null
-                    };
-                });
-                albumPagesData[targetPageIndex].elements = [...newSlots, ...existingImages, ...existingTexts];
+                const built = buildSlots(selectedLayout.left, existingSrcs, targetPageIndex);
+                albumPagesData[targetPageIndex].elements = [...built.slots, ...existingImages, ...existingTexts];
                 albumPagesData[targetPageIndex].template = templateType;
+                addToOverflowShelf(built.overflow);
             } else {
                 const existingLeftEls = albumPagesData[leftPageIndex].elements || [];
                 const existingRightEls = albumPagesData[rightPageIndex].elements || [];
@@ -859,27 +946,13 @@
                 const existingRightImages = existingRightEls.filter(el => el.type === 'image');
                 const existingRightTexts = existingRightEls.filter(el => el.type === 'text');
 
-                const newLeftSlots = selectedLayout.left.map((item, idx) => {
-                    const id = (item.type === 'text' ? 'text_' : 'slot_') + Date.now() + '_L_' + idx;
-                    return item.type === 'text' ? {
-                        id: id, type: 'text', text: item.text, top: item.top, left: item.left, width: item.width, height: item.height, rotation: 0
-                    } : {
-                        id: id, type: 'slot', label: item.label, top: item.top, left: item.left, width: item.width, height: item.height,
-                        src: existingLeftSrcs[idx] || null
-                    };
-                });
-                albumPagesData[leftPageIndex].elements = [...newLeftSlots, ...existingLeftImages, ...existingLeftTexts];
+                const builtLeft = buildSlots(selectedLayout.left, existingLeftSrcs, 'L');
+                albumPagesData[leftPageIndex].elements = [...builtLeft.slots, ...existingLeftImages, ...existingLeftTexts];
+                addToOverflowShelf(builtLeft.overflow);
 
-                const newRightSlots = selectedLayout.right.map((item, idx) => {
-                    const id = (item.type === 'text' ? 'text_' : 'slot_') + Date.now() + '_R_' + idx;
-                    return item.type === 'text' ? {
-                        id: id, type: 'text', text: item.text, top: item.top, left: item.left, width: item.width, height: item.height, rotation: 0
-                    } : {
-                        id: id, type: 'slot', label: item.label, top: item.top, left: item.left, width: item.width, height: item.height,
-                        src: existingRightSrcs[idx] || null
-                    };
-                });
-                albumPagesData[rightPageIndex].elements = [...newRightSlots, ...existingRightImages, ...existingRightTexts];
+                const builtRight = buildSlots(selectedLayout.right, existingRightSrcs, 'R');
+                albumPagesData[rightPageIndex].elements = [...builtRight.slots, ...existingRightImages, ...existingRightTexts];
+                addToOverflowShelf(builtRight.overflow);
 
                 albumPagesData[leftPageIndex].template = templateType;
                 albumPagesData[rightPageIndex].template = templateType;
@@ -888,6 +961,59 @@
 
         renderBookView();
         selectPage(selectedPageIndex);
+    }
+
+    function addToOverflowShelf(srcs) {
+        const validSrcs = srcs.filter(Boolean);
+        if (!validSrcs.length) return;
+
+        // 현재 스프레드의 페이지 캔버스와 크기 파악
+        const leftPageIndex  = currentSpreadIndex === 0 ? 0 : (currentSpreadIndex - 1) * 2 + 1;
+        const rightPageIndex = leftPageIndex + 1;
+
+        const shapeMap = { 'shape-portrait': { w: 436, h: 640 }, 'shape-square': { w: 480, h: 480 }, 'shape-landscape': { w: 550, h: 420 } };
+        const dim = shapeMap[shapeTheme] || shapeMap['shape-portrait'];
+        const thumbW = 100, thumbH = 80;
+
+        // 배치 후보 canvas 목록 (좌·우 번갈아)
+        const canvases = [
+            { pIdx: leftPageIndex,  side: 'left'  },
+            { pIdx: rightPageIndex, side: 'right' }
+        ];
+
+        validSrcs.forEach(function(src, i) {
+            const target = canvases[i % 2];
+            const pIdx   = target.pIdx;
+            const canvas = document.getElementById('pageCanvas_' + pIdx);
+            if (!canvas || !albumPagesData[pIdx]) return;
+
+            // 흩뿌릴 위치: 좌우 페이지 바깥 가장자리에 걸치도록
+            let top, left;
+            const rand = function(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; };
+
+            if (target.side === 'left') {
+                // 왼쪽 페이지 왼쪽 바깥으로 삐져나오게
+                left = rand(-thumbW + 20, -20);
+                top  = rand(20, dim.h - thumbH - 20);
+            } else {
+                // 오른쪽 페이지 오른쪽 바깥으로 삐져나오게
+                left = rand(dim.w - 40, dim.w + thumbW - 40);
+                top  = rand(20, dim.h - thumbH - 20);
+            }
+
+            const elemData = {
+                id: 'overflow_' + Date.now() + '_' + i,
+                type: 'image',
+                src: src,
+                top: top,
+                left: left,
+                width: thumbW,
+                height: thumbH,
+                rotation: rand(-8, 8)
+            };
+            albumPagesData[pIdx].elements.push(elemData);
+            renderSingleElement(canvas, elemData, pIdx);
+        });
     }
 
     function changeCoverTheme(theme) {
@@ -917,40 +1043,61 @@
     }
 
     function addImageToActivePage(imgUrl) {
-        if (currentSpreadIndex === 0 || currentSpreadIndex > Math.ceil(innerPageCount / 2)) {
-            alert("속지 페이지(1p~10p)로 이동한 후 사진을 추가해 주세요!");
-            return;
-        }
-
-        const leftPageIndex = (currentSpreadIndex - 1) * 2 + 1;
-        const rightPageIndex = leftPageIndex + 1;
-
-        let emptySlot = null;
-
-        for (let pIdx of [leftPageIndex, rightPageIndex]) {
-            const found = albumPagesData[pIdx].elements.find(el => el.type === 'slot' && !el.src);
-            if (found) {
-                emptySlot = found;
-                break;
-            }
-        }
-
-        if (emptySlot) {
-            emptySlot.src = imgUrl;
-            renderBookView();
-        } else {
-            const canvas = document.getElementById(`pageCanvas_${leftPageIndex}`);
+        // 표지(spread 0)는 pageCanvas_0 에 자유 배치
+        if (currentSpreadIndex === 0) {
+            const canvas = document.getElementById('pageCanvas_0');
             const elemData = {
                 id: 'el_' + Date.now(),
                 type: 'image',
                 src: imgUrl,
-                top: 50,
-                left: 50,
+                top: 40 + Math.floor(Math.random() * 60),
+                left: 40 + Math.floor(Math.random() * 60),
+                width: 180,
+                rotation: 0
+            };
+            albumPagesData[0].elements.push(elemData);
+            renderSingleElement(canvas, elemData, 0);
+            return;
+        }
+
+        // 뒷표지 스프레드는 무시
+        const maxSpread = Math.ceil(innerPageCount / 2);
+        if (currentSpreadIndex > maxSpread) return;
+
+        const leftPageIndex = (currentSpreadIndex - 1) * 2 + 1;
+        const rightPageIndex = leftPageIndex + 1;
+
+        // 선택된 페이지 우선, 없으면 반대쪽 빈 슬롯 탐색
+        const pageOrder = selectedPageIndex === rightPageIndex
+            ? [rightPageIndex, leftPageIndex]
+            : [leftPageIndex, rightPageIndex];
+
+        let emptySlot = null;
+        for (const pIdx of pageOrder) {
+            const found = (albumPagesData[pIdx] && albumPagesData[pIdx].elements || [])
+                .find(el => el.type === 'slot' && !el.src);
+            if (found) { emptySlot = { slot: found, pIdx }; break; }
+        }
+
+        if (emptySlot) {
+            emptySlot.slot.src = imgUrl;
+            renderBookView();
+        } else {
+            // 빈 슬롯 없으면 선택 페이지에 자유 배치
+            const targetIdx = (selectedPageIndex === leftPageIndex || selectedPageIndex === rightPageIndex)
+                ? selectedPageIndex : leftPageIndex;
+            const canvas = document.getElementById(`pageCanvas_${targetIdx}`);
+            const elemData = {
+                id: 'el_' + Date.now(),
+                type: 'image',
+                src: imgUrl,
+                top: 40 + Math.floor(Math.random() * 60),
+                left: 40 + Math.floor(Math.random() * 60),
                 width: 200,
                 rotation: 0
             };
-            albumPagesData[leftPageIndex].elements.push(elemData);
-            renderSingleElement(canvas, elemData, leftPageIndex);
+            albumPagesData[targetIdx].elements.push(elemData);
+            renderSingleElement(canvas, elemData, targetIdx);
         }
     }
 
@@ -1016,20 +1163,22 @@
 
         if (currentSpreadIndex === 0) {
             container.innerHTML = `
-                <div class="book-page single-page book-cover-page d-flex flex-column align-items-center justify-content-center p-4">
-                    <div class="cover-emboss-border text-center p-4 w-100 h-100 d-flex flex-column align-items-center justify-content-center">
+                <div class="book-page single-page book-cover-page" id="pageCanvas_0" onclick="selectPage(0)" style="position:relative;">
+                    <div class="cover-emboss-border text-center p-4 w-100 h-100 d-flex flex-column align-items-center justify-content-center" style="pointer-events:none;">
                         <i class="fa-solid fa-camera-retro fa-4x mb-4 text-gold"></i>
                         <div class="position-relative w-100 mb-3">
-                            <input type="text" id="coverTitleInput" class="form-control text-center font-weight-bold cover-title-input px-2" 
+                            <input type="text" id="coverTitleInput" class="form-control text-center font-weight-bold cover-title-input px-2"
                                 placeholder="제목을 입력하세요 ✏️" maxlength="15"
-                                value="${albumPagesData[0].title || ''}" 
-                                oninput="albumPagesData[0].title = this.value">
+                                value="${albumPagesData[0].title || ''}"
+                                oninput="albumPagesData[0].title = this.value"
+                                style="pointer-events:auto;">
                             <small class="text-gold opacity-75 d-block mt-1" style="font-size: 0.72rem;">* 클릭하여 제목 수정 (최대 15자)</small>
                         </div>
                         <p class="small text-gold mb-0">FarmLink Memory Photo Book</p>
                     </div>
                 </div>
             `;
+            restorePageElements(0);
         } else if (currentSpreadIndex === totalSpreads) {
             container.innerHTML = `
                 <div class="book-page single-page book-cover-page d-flex flex-column align-items-center justify-content-center p-4">
@@ -1112,16 +1261,15 @@
         if (!wrapper) return;
 
         const startX = e.clientX;
+        const startY = e.clientY;
         const startWidth = wrapper.offsetWidth;
         const startHeight = wrapper.offsetHeight;
-        const aspectRatio = startWidth / (startHeight || 1);
 
         const targetData = albumPagesData[pageIdx].elements.find(el => el.id === elemId);
 
         function doResize(moveEvent) {
-            const diffX = moveEvent.clientX - startX;
-            let newWidth = Math.max(60, startWidth + diffX);
-            let newHeight = newWidth / aspectRatio;
+            const newWidth = Math.max(60, startWidth + (moveEvent.clientX - startX));
+            const newHeight = Math.max(40, startHeight + (moveEvent.clientY - startY));
 
             wrapper.style.width = newWidth + 'px';
             wrapper.style.height = newHeight + 'px';
@@ -1153,9 +1301,14 @@
         if (data.rotation) wrapper.style.transform = `rotate(${data.rotation}deg)`;
 
         if (data.type === 'slot') {
+            var slotClipStyle = '';
+            if (data.shape && data.shape !== 'rect') {
+                var slotShapeObj = SHAPES.find(function(s) { return s.id === data.shape; });
+                if (slotShapeObj) slotClipStyle = 'clip-path:' + slotShapeObj.clip + ';';
+            }
             if (data.src) {
                 wrapper.innerHTML = `
-                    <div class="photo-slot-card has-image"
+                    <div class="photo-slot-card has-image" style="${slotClipStyle}"
                          ondragover="handleSlotDragOver(event)"
                          ondragleave="handleSlotDragLeave(event)"
                          ondrop="handleSlotDrop(event, '${data.id}', ${pageIdx})">
@@ -1171,7 +1324,7 @@
                 `;
             } else {
                 wrapper.innerHTML = `
-                    <div class="photo-slot-card"
+                    <div class="photo-slot-card" style="${slotClipStyle}"
                          ondragover="handleSlotDragOver(event)"
                          ondragleave="handleSlotDragLeave(event)"
                          ondrop="handleSlotDrop(event, '${data.id}', ${pageIdx})">
@@ -1186,17 +1339,19 @@
             makeDraggable(wrapper, pageIdx, data.id);
         }
         else if (data.type === 'image') {
+            var imgClipStyle = '';
+            if (data.shape && data.shape !== 'rect') {
+                var imgShapeObj = SHAPES.find(function(s) { return s.id === data.shape; });
+                if (imgShapeObj) imgClipStyle = 'clip-path:' + imgShapeObj.clip + ';';
+            }
             wrapper.innerHTML = `
                 <button type="button" class="elem-rotate-handle" onmousedown="startRotateElement(event, '${data.id}', ${pageIdx})" title="360도 회전">
                     <i class="fa-solid fa-rotate-right"></i>
                 </button>
-                
-                <img src="${data.src}" class="w-100 h-100 rounded shadow-sm" style="pointer-events: none; object-fit: cover;">
-                
+                <img src="${data.src}" class="w-100 h-100 rounded shadow-sm" style="pointer-events:none; object-fit:cover; ${imgClipStyle}">
                 <button type="button" class="elem-resize-handle" onmousedown="startResizeElement(event, '${data.id}', ${pageIdx})" title="크기 조절">
                     <i class="fa-solid fa-up-right-and-down-left-from-center"></i>
                 </button>
-                
                 <button type="button" class="elem-delete-btn" onclick="deleteElement('${data.id}', ${pageIdx})">&times;</button>
             `;
             makeDraggable(wrapper, pageIdx, data.id);
@@ -1325,13 +1480,17 @@
             if (!element.classList.contains('selected')) {
                 clearElementSelection();
                 element.classList.add('selected');
+                var elemData = albumPagesData[pageIdx] && albumPagesData[pageIdx].elements.find(function(el) { return el.id === elemId; });
+                showShapeContextBar(elemId, pageIdx, elemData && elemData.shape);
             }
 
             if (e.target.classList.contains('elem-delete-btn') ||
                 e.target.classList.contains('elem-rotate-handle') ||
                 e.target.classList.contains('elem-resize-handle') ||
+                e.target.classList.contains('shape-btn') ||
                 e.target.closest('.elem-rotate-handle') ||
                 e.target.closest('.elem-resize-handle') ||
+                e.target.closest('.elem-shape-bar') ||
                 e.target.classList.contains('slot-clear-btn') ||
                 e.target.getAttribute('contenteditable') === 'true') return;
 

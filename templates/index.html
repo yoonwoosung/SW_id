@@ -94,7 +94,7 @@
                         <a href="{{ url_for('index', sort='reviews') }}"
                             class="sort-pill {% if sort_by == 'reviews' %}active{% endif %}">리뷰 많은순</a>
                     </div>
-                    <a href="{{ url_for('index') }}" class="more-link ml-3">더보기 <i data-lucide="chevron-right"></i></a>
+                    <a href="#" class="more-link ml-3" onclick="showAllExperiences(event)">더보기 <i data-lucide="chevron-right"></i></a>
                 </div>
             </div>
 
@@ -185,7 +185,100 @@
             <div class="card-slider-viewport">
                 <div class="card-slider-track" id="card-slider-track">
 
-                    <!-- 카드 1: 추억일지 -->
+                    <!-- 카드 1: 내 상황에 맞는 체험 찾기 -->
+                    <section class="section-block mb-0 section-card slider-card">
+                        <h2 class="section-title mb-3"><i data-lucide="sprout" class="text-success"></i> 내 상황에 맞는 체험 찾기</h2>
+                        <div class="situation-grid">
+                            <a href="{{ url_for('index') }}" class="situation-card">
+                                <div class="situation-icon"><i data-lucide="users"></i></div>
+                                <div class="situation-label">아이와 함께</div>
+                                <div class="situation-sub">가족 맞춤 체험</div>
+                            </a>
+                            <a href="{{ url_for('index') }}" class="situation-card">
+                                <div class="situation-icon"><i data-lucide="dog"></i></div>
+                                <div class="situation-label">반려견과 함께</div>
+                                <div class="situation-sub">펫 프렌들리</div>
+                            </a>
+                            <a href="{{ url_for('index') }}" class="situation-card">
+                                <div class="situation-icon"><i data-lucide="car"></i></div>
+                                <div class="situation-label">당일치기 여행</div>
+                                <div class="situation-sub">가볍게 떠나요</div>
+                            </a>
+                            <a href="{{ url_for('index') }}" class="situation-card">
+                                <div class="situation-icon"><i data-lucide="shopping-cart"></i></div>
+                                <div class="situation-label">유아차 가능</div>
+                                <div class="situation-sub">편하게 다녀요</div>
+                            </a>
+                            <a href="{{ url_for('index') }}" class="situation-card">
+                                <div class="situation-icon"><i data-lucide="home"></i></div>
+                                <div class="situation-label">숙박 가능한</div>
+                                <div class="situation-sub">1박 2일 힐링</div>
+                            </a>
+                            <a href="{{ url_for('index') }}" class="situation-card">
+                                <div class="situation-icon situation-parking">P</div>
+                                <div class="situation-label">주차 가능한</div>
+                                <div class="situation-sub">편리한 주차</div>
+                            </a>
+                        </div>
+                    </section>
+
+                    <!-- 카드 2: AI 추천 여행 코스 -->
+                    <section class="section-block mb-0 section-card slider-card">
+                        <div class="section-header">
+                            <h2 class="section-title">
+                                <span class="ai-badge-label">AI</span> AI가 추천하는 농촌 여행 코스
+                            </h2>
+                            <a href="#" class="more-link">코스 더보기 <i data-lucide="chevron-right"></i></a>
+                        </div>
+                        <div class="ai-course-inner">
+                            <div class="ai-timeline">
+                                <div class="ai-timeline-item">
+                                    <div class="ai-time">09:00</div>
+                                    <div class="ai-dot"></div>
+                                    <div class="ai-timeline-body">
+                                        <div class="ai-act-name">딸기 수확 체험</div>
+                                        <div class="ai-act-sub">싱싱한 딸기 직접 수확</div>
+                                    </div>
+                                    <div class="ai-thumb"><i data-lucide="cherry"></i></div>
+                                </div>
+                                <div class="ai-timeline-item">
+                                    <div class="ai-time">12:30</div>
+                                    <div class="ai-dot"></div>
+                                    <div class="ai-timeline-body">
+                                        <div class="ai-act-name">천안 향토 음식</div>
+                                        <div class="ai-act-sub">병천 순대국 &amp; 로컬 맛집</div>
+                                    </div>
+                                    <div class="ai-thumb"><i data-lucide="utensils"></i></div>
+                                </div>
+                                <div class="ai-timeline-item">
+                                    <div class="ai-time">15:00</div>
+                                    <div class="ai-dot"></div>
+                                    <div class="ai-timeline-body">
+                                        <div class="ai-act-name">독립기념관 관람</div>
+                                        <div class="ai-act-sub">역사와 자연을 함께</div>
+                                    </div>
+                                    <div class="ai-thumb"><i data-lucide="landmark"></i></div>
+                                </div>
+                                <div class="ai-timeline-item">
+                                    <div class="ai-time">17:00</div>
+                                    <div class="ai-dot"></div>
+                                    <div class="ai-timeline-body">
+                                        <div class="ai-act-name">로컬 카페 휴식</div>
+                                        <div class="ai-act-sub">아늑한 시골 카페에서 힐링</div>
+                                    </div>
+                                    <div class="ai-thumb"><i data-lucide="coffee"></i></div>
+                                </div>
+                            </div>
+                            <div class="ai-map-placeholder">
+                                <div class="ai-map-inner">
+                                    <i data-lucide="map"></i>
+                                    <span>지도 영역</span>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- 카드 3: 추억일지 -->
                     <section class="section-block mb-0 section-card slider-card">
                         <div class="section-header">
                             <h2 class="section-title"><i data-lucide="images" class="text-success"></i> 추억일지</h2>
@@ -193,7 +286,9 @@
                                 <a href="{{ url_for('album_create') }}" class="btn btn-sm btn-success">
                                     <i data-lucide="plus"></i> 앨범 만들기
                                 </a>
-                                <button type="button" class="btn btn-sm btn-outline-secondary">SNS 공유</button>
+                                <a href="/community" class="btn btn-sm btn-outline-secondary">
+                                    <i data-lucide="images"></i> 추억 공유
+                                </a>
                             </div>
                         </div>
                         <p class="text-muted mb-2" style="font-size:0.82rem;">여행의 추억을 사진으로 간직해보세요.</p>
@@ -236,19 +331,157 @@
         <section class="section-block">
             <div class="section-header">
                 <h2 class="section-title"><i data-lucide="map-pin" class="text-success"></i> 지역별 추천</h2>
-                <a href="{{ url_for('index') }}" class="more-link">지역 전체보기 <i data-lucide="chevron-right"></i></a>
+                <a href="#" class="more-link" onclick="openRegionModal(event)">지역 전체보기 <i data-lucide="chevron-right"></i></a>
             </div>
             <div class="region-tabs">
                 {% for r in ["천안", "공주", "부여", "논산", "아산"] %}
-                <a href="{{ url_for('index', region=r) }}" class="region-tab">{{ r }}</a>
+                <a href="#" class="region-tab" onclick="event.preventDefault(); openOverlay('{{ r }} 체험', {sort:'deadline', region:'{{ r }}', showRegionStrip:true})">{{ r }}</a>
                 {% endfor %}
-                <a href="{{ url_for('index') }}" class="region-tab-more"><i data-lucide="chevron-right"></i></a>
+                <a href="#" class="region-tab-more" onclick="openRegionModal(event)"><i data-lucide="chevron-right"></i></a>
             </div>
         </section>
 
     </div><!-- /#default-content -->
 
 </div>
+
+<!-- ── 전체화면 탐색 오버레이 ── -->
+<div id="fl-overlay" style="display:none; position:fixed; inset:0; z-index:1100; background:#f5f8f5; flex-direction:column;">
+
+    <!-- 상단 바 -->
+    <div class="fl-ov-topbar">
+        <button type="button" class="fl-ov-back" onclick="closeOverlay()" aria-label="닫기">
+            <i data-lucide="arrow-left"></i>
+        </button>
+        <h2 class="fl-ov-title" id="fl-overlay-title">체험 전체보기</h2>
+    </div>
+
+    <!-- 필터 바 -->
+    <div class="fl-ov-filterbar">
+        <div class="fl-ov-sort-pills">
+            <button type="button" class="fl-ov-sort-pill active" data-sort="deadline"  onclick="setOverlaySort(event,'deadline')">모집임박순</button>
+            <button type="button" class="fl-ov-sort-pill"        data-sort="reviews"   onclick="setOverlaySort(event,'reviews')">리뷰많은순</button>
+            <button type="button" class="fl-ov-sort-pill"        data-sort="recommended" onclick="setOverlaySortGps(event)">내 주변</button>
+        </div>
+        <div class="fl-ov-filter-divider"></div>
+        <div class="fl-ov-dropdowns">
+            <select id="ol-region-select" class="fl-ov-dropdown" onchange="overlayPage=1;fetchOverlay()">
+                <option value="">지역 전체</option>
+                {% for r in ["서울","경기","인천","강원","대전","세종","충북","충남","부산","대구","울산","경북","경남","광주","전북","전남","제주"] %}
+                <option value="{{ r }}">{{ r }}</option>
+                {% endfor %}
+            </select>
+            <div class="fl-ov-date-wrap">
+                <i data-lucide="calendar" class="fl-ov-dropdown-icon"></i>
+                <input type="date" id="ol-date-input" class="fl-ov-dropdown fl-ov-date" onchange="overlayPage=1;fetchOverlay()">
+            </div>
+            <select id="ol-people-select" class="fl-ov-dropdown" onchange="overlayPage=1;fetchOverlay()">
+                <option value="">인원</option>
+                <option value="1">1명</option>
+                <option value="2">2명</option>
+                <option value="3">3명</option>
+                <option value="4">4명</option>
+                <option value="5+">5명+</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- 본문 -->
+    <div class="fl-ov-body" id="fl-ov-body">
+        <!-- 지역별 탐색일 때 지역 칩 행 -->
+        <div id="ol-region-strip" class="ol-region-strip" style="display:none;">
+            {% for r in ["서울","경기","인천","강원","대전","세종","충북","충남","부산","대구","울산","경북","경남","광주","전북","전남","제주"] %}
+            <button type="button" class="ol-region-chip" data-region="{{ r }}" onclick="setOverlayRegion('{{ r }}')">{{ r }}</button>
+            {% endfor %}
+        </div>
+
+        <div id="ol-result-header" class="fl-ov-result-header" style="display:none;"></div>
+
+        <!-- 스켈레톤 -->
+        <div id="ol-skeleton" class="experience-card-grid" style="display:none;">
+            {% for _ in range(8) %}
+            <div class="skeleton-card">
+                <div class="skeleton-img"></div>
+                <div class="skeleton-body">
+                    <div class="skeleton-line"></div>
+                    <div class="skeleton-line short"></div>
+                    <div class="skeleton-line shorter"></div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <div id="ol-card-grid" class="experience-card-grid"></div>
+        <nav id="ol-pagination" class="pagination-container mt-4" style="display:none;"></nav>
+    </div>
+</div>
+
+<style>
+/* ── 전체화면 오버레이 ── */
+#fl-overlay { animation: fl-ov-fadein .18s ease; }
+@keyframes fl-ov-fadein { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:none; } }
+
+.fl-ov-topbar {
+    display: flex; align-items: center; gap: 12px;
+    padding: 14px 20px; background: #fff;
+    border-bottom: 1px solid #e3ece5; flex-shrink: 0;
+}
+.fl-ov-back {
+    border: none; background: none; cursor: pointer;
+    width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;
+    border-radius: 50%; color: #333; flex-shrink: 0; transition: background .15s;
+}
+.fl-ov-back:hover { background: #f0f5f1; }
+.fl-ov-title { font-size: 1.05rem; font-weight: 800; margin: 0; color: #1a2a1e; }
+
+.fl-ov-filterbar {
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px 20px; background: #fff;
+    border-bottom: 1px solid #e3ece5; flex-shrink: 0; flex-wrap: wrap;
+}
+.fl-ov-sort-pills { display: flex; gap: 6px; }
+.fl-ov-sort-pill {
+    border: 1px solid #c8e0d0; background: #fff; color: #2e5c38;
+    border-radius: 999px; padding: 6px 14px; font-size: .83rem; font-weight: 700;
+    cursor: pointer; white-space: nowrap; transition: all .15s;
+}
+.fl-ov-sort-pill.active { background: var(--fl-green-700,#2e7d32); color: #fff; border-color: var(--fl-green-700,#2e7d32); }
+.fl-ov-sort-pill:not(.active):hover { background: #edf5ef; }
+.fl-ov-filter-divider { width: 1px; height: 22px; background: #dde8de; margin: 0 4px; flex-shrink: 0; }
+.fl-ov-dropdowns { display: flex; gap: 8px; flex-wrap: wrap; }
+.fl-ov-dropdown {
+    border: 1px solid #c8e0d0; background: #fff; color: #2e5c38;
+    border-radius: 999px; padding: 6px 28px 6px 14px; font-size: .83rem; font-weight: 600;
+    cursor: pointer; outline: none; -webkit-appearance: none; appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%236a9c72' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 10px center;
+}
+.fl-ov-date-wrap { position: relative; display: flex; align-items: center; }
+.fl-ov-dropdown-icon { position: absolute; left: 12px; width: 14px; height: 14px; color: #6a9c72; pointer-events: none; }
+.fl-ov-date { padding-left: 30px; }
+
+.fl-ov-body {
+    flex: 1; overflow-y: auto; padding: 20px;
+    max-width: 1200px; width: 100%; margin: 0 auto;
+    box-sizing: border-box;
+}
+.fl-ov-result-header {
+    font-size: .88rem; color: #6a7a6e; font-weight: 600; margin-bottom: 14px;
+}
+
+/* 지역 칩 스트립 */
+.ol-region-strip {
+    display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 18px;
+    padding-bottom: 16px; border-bottom: 1px solid #e3ece5;
+}
+.ol-region-chip {
+    border: 1px solid #c8e0d0; background: #fff; color: #2e5c38;
+    border-radius: 999px; padding: 7px 16px; font-size: .85rem; font-weight: 700;
+    cursor: pointer; transition: all .15s;
+}
+.ol-region-chip.active,
+.ol-region-chip:hover { background: var(--fl-green-700,#2e7d32); color: #fff; border-color: var(--fl-green-700,#2e7d32); }
+</style>
 
 <script src="{{ url_for('static', filename='js/pages/search.js') }}"></script>
 <script>
@@ -296,6 +529,165 @@
     function searchWithSort(event, sort) {
         event.preventDefault();
         doSearch({ sort });
+    }
+
+    // ── 전체화면 오버레이 ──────────────────────────────
+    var overlaySort = 'deadline';
+    var overlayPage = 1;
+    var overlayExtraParams = {};
+
+    function openOverlay(title, initParams) {
+        overlaySort = (initParams && initParams.sort) || 'deadline';
+        overlayPage = 1;
+        overlayExtraParams = initParams || {};
+
+        document.getElementById('fl-overlay-title').textContent = title;
+        document.getElementById('fl-overlay').style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+
+        // 필터 초기값 세팅
+        document.getElementById('ol-region-select').value = (initParams && initParams.region) || '';
+        document.getElementById('ol-date-input').value   = '';
+        document.getElementById('ol-people-select').value = '';
+
+        // 정렬 pill 상태
+        document.querySelectorAll('.fl-ov-sort-pill').forEach(function(p) {
+            p.classList.toggle('active', p.dataset.sort === overlaySort);
+        });
+
+        // 지역 칩 스트립 (지역별 탐색일 때만 표시)
+        var strip = document.getElementById('ol-region-strip');
+        if (initParams && initParams.showRegionStrip) {
+            strip.style.display = 'flex';
+            var chips = strip.querySelectorAll('.ol-region-chip');
+            chips.forEach(function(c) { c.classList.remove('active'); });
+            if (initParams.region) {
+                var active = strip.querySelector('[data-region="' + initParams.region + '"]');
+                if (active) active.classList.add('active');
+            }
+        } else {
+            strip.style.display = 'none';
+        }
+
+        if (window.lucide) lucide.createIcons();
+        fetchOverlay();
+    }
+
+    function closeOverlay() {
+        document.getElementById('fl-overlay').style.display = 'none';
+        document.body.style.overflow = '';
+    }
+
+    function fetchOverlay() {
+        var params = new URLSearchParams({
+            crop_query:   '',
+            region:       document.getElementById('ol-region-select').value,
+            date_filter:  document.getElementById('ol-date-input').value,
+            people_count: document.getElementById('ol-people-select').value,
+            sort:  overlaySort,
+            page:  overlayPage,
+        });
+        if (overlayExtraParams.lat) params.set('lat', overlayExtraParams.lat);
+        if (overlayExtraParams.lon) params.set('lon', overlayExtraParams.lon);
+
+        var grid     = document.getElementById('ol-card-grid');
+        var skeleton = document.getElementById('ol-skeleton');
+        var header   = document.getElementById('ol-result-header');
+        var pag      = document.getElementById('ol-pagination');
+
+        grid.style.display     = 'none';
+        skeleton.style.display = 'grid';
+        header.style.display   = 'none';
+        pag.style.display      = 'none';
+
+        fetch('/api/search?' + params)
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                skeleton.style.display = 'none';
+                grid.style.display     = 'grid';
+                grid.innerHTML = (data.items && data.items.length)
+                    ? data.items.map(buildCard).join('')
+                    : buildEmpty();
+
+                header.style.display = 'block';
+                header.innerHTML = '결과 <b>' + (data.total || 0) + '건</b>';
+
+                if (data.pages > 1) {
+                    pag.style.display = 'block';
+                    pag.innerHTML = buildOverlayPagination(data.page, data.pages);
+                }
+                if (window.lucide) lucide.createIcons();
+                document.getElementById('fl-ov-body').scrollTop = 0;
+            })
+            .catch(function() {
+                skeleton.style.display = 'none';
+                grid.style.display = 'grid';
+                grid.innerHTML = buildEmpty();
+            });
+    }
+
+    function setOverlaySort(event, sort) {
+        event.preventDefault();
+        overlaySort = sort;
+        overlayPage = 1;
+        document.querySelectorAll('.fl-ov-sort-pill').forEach(function(p) {
+            p.classList.toggle('active', p.dataset.sort === sort);
+        });
+        fetchOverlay();
+    }
+
+    function setOverlaySortGps(event) {
+        event.preventDefault();
+        if (!navigator.geolocation) { alert('위치 정보를 지원하지 않는 브라우저입니다.'); return; }
+        navigator.geolocation.getCurrentPosition(
+            function(pos) {
+                overlaySort = 'recommended';
+                overlayPage = 1;
+                overlayExtraParams.lat = pos.coords.latitude;
+                overlayExtraParams.lon = pos.coords.longitude;
+                document.querySelectorAll('.fl-ov-sort-pill').forEach(function(p) {
+                    p.classList.toggle('active', p.dataset.sort === 'recommended');
+                });
+                fetchOverlay();
+            },
+            function() { alert('위치 정보를 가져올 수 없습니다.'); }
+        );
+    }
+
+    function setOverlayRegion(region) {
+        document.getElementById('ol-region-select').value = region;
+        document.querySelectorAll('.ol-region-chip').forEach(function(c) {
+            c.classList.toggle('active', c.dataset.region === region);
+        });
+        overlayPage = 1;
+        fetchOverlay();
+    }
+
+    function buildOverlayPagination(page, pages) {
+        var html = '<ul class="pagination justify-content-center">';
+        html += '<li class="page-item' + (page <= 1 ? ' disabled' : '') + '"><a class="page-link" href="#" onclick="overlayChangePage(event,' + (page-1) + ')">&laquo;</a></li>';
+        for (var i = 1; i <= pages; i++) {
+            html += '<li class="page-item' + (i === page ? ' active' : '') + '"><a class="page-link" href="#" onclick="overlayChangePage(event,' + i + ')">' + i + '</a></li>';
+        }
+        html += '<li class="page-item' + (page >= pages ? ' disabled' : '') + '"><a class="page-link" href="#" onclick="overlayChangePage(event,' + (page+1) + ')">&raquo;</a></li>';
+        html += '</ul>';
+        return html;
+    }
+
+    function overlayChangePage(event, page) {
+        event.preventDefault();
+        overlayPage = page;
+        fetchOverlay();
+    }
+
+    function showAllExperiences(event) {
+        event.preventDefault();
+        openOverlay('이번 주 제철 체험', { sort: 'deadline' });
+    }
+
+    function openRegionModal(event) {
+        event.preventDefault();
+        openOverlay('지역별 체험', { sort: 'deadline', showRegionStrip: true });
     }
 
     function resetSearch() {

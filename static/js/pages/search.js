@@ -32,6 +32,7 @@ function doSearch(extraParams) {
     });
     if (extraParams.lat) params.set('lat', extraParams.lat);
     if (extraParams.lon) params.set('lon', extraParams.lon);
+    if (extraParams.region) params.set('region', extraParams.region);
 
     document.getElementById('default-content').style.display = 'none';
     document.getElementById('search-result-section').style.display = 'block';
@@ -89,7 +90,7 @@ function renderResults(data, params) {
     }
 
     if (window.lucide) lucide.createIcons();
-    document.getElementById('experience-list-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    document.getElementById('search-result-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 function buildCard(item) {

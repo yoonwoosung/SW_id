@@ -1,0 +1,245 @@
+{% extends "layout.html" %}
+{% block page_class %}page-community{% endblock %}
+
+{% block head %}
+<style>
+/* ── 커뮤니티 페이지 ── */
+.cm-wrap { max-width: 1100px; margin: 0 auto; padding: 24px 20px 60px; }
+
+/* 탭 */
+.cm-tabs { display: flex; gap: 6px; padding: 20px 0 4px; flex-wrap: wrap; }
+.cm-tab {
+    border: 1px solid #c8e0d0; background: #fff; color: #2e5c38;
+    border-radius: 999px; padding: 7px 18px; font-size: .88rem; font-weight: 700;
+    cursor: pointer; transition: all .15s;
+}
+.cm-tab.active { background: var(--fl-green-700,#2e7d32); color: #fff; border-color: var(--fl-green-700,#2e7d32); }
+.cm-tab:not(.active):hover { background: #edf5ef; }
+
+/* 결과 수 */
+.cm-result-info { font-size: .85rem; color: #8a938c; padding: 10px 0 16px; }
+
+/* 앨범 그리드 */
+.cm-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 24px;
+}
+.cm-card {
+    background: #fff;
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,.07);
+    cursor: pointer;
+    transition: transform .18s, box-shadow .18s;
+    text-decoration: none;
+    color: inherit;
+    display: block;
+}
+.cm-card:hover { transform: translateY(-4px); box-shadow: 0 8px 24px rgba(0,0,0,.12); }
+.cm-cover {
+    width: 100%; aspect-ratio: 3/4;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 10px; font-weight: 800; font-size: .9rem; color: #fff;
+    padding: 16px; text-align: center; box-sizing: border-box;
+    position: relative;
+}
+.cm-cover-icon { font-size: 2.2rem; opacity: .75; }
+.cm-cover-title { font-size: .88rem; font-weight: 800; line-height: 1.35; }
+.cm-cover-badge {
+    position: absolute; top: 10px; left: 10px;
+    background: rgba(255,255,255,.25); border-radius: 999px;
+    padding: 3px 10px; font-size: .72rem; font-weight: 700;
+}
+.cm-card-foot { padding: 12px 14px; }
+.cm-card-user { font-weight: 700; font-size: .9rem; color: #253027; margin-bottom: 2px; }
+.cm-card-date { font-size: .78rem; color: #9aa39c; }
+
+/* 빈 상태 */
+.cm-empty { text-align: center; padding: 60px 20px; color: #8a938c; grid-column: 1/-1; }
+.cm-empty i { font-size: 2.8rem; color: #c8d8cc; margin-bottom: 12px; }
+
+/* 공유 유도 배너 */
+.cm-share-banner {
+    background: #f0f7f2;
+    border: 1px solid #c8e0d0;
+    border-radius: 14px;
+    padding: 20px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin: 24px 0;
+    flex-wrap: wrap;
+}
+.cm-share-banner-text h3 { font-size: .95rem; font-weight: 800; color: #253027; margin: 0 0 4px; }
+.cm-share-banner-text p  { font-size: .82rem; color: #6a7a6e; margin: 0; }
+.cm-share-banner-btn {
+    background: var(--fl-green-700,#2e7d32); color: #fff;
+    border: none; border-radius: 10px; padding: 10px 20px;
+    font-size: .88rem; font-weight: 800; cursor: pointer;
+    white-space: nowrap; flex-shrink: 0;
+    display: inline-flex; align-items: center; gap: 6px;
+    text-decoration: none;
+}
+.cm-share-banner-btn:hover { background: #1b5e20; color: #fff; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="cm-wrap">
+
+    <!-- 공유 유도 배너 -->
+    <div class="cm-share-banner">
+        <div class="cm-share-banner-text">
+            <h3>나의 체험 앨범을 광장에 공유해보세요!</h3>
+            <p>추억 앨범 만들기에서 앨범을 공개하면 이곳에 표시돼요.</p>
+        </div>
+        <a href="{{ url_for('album_create') }}" class="cm-share-banner-btn">
+            <i data-lucide="book-open"></i> 앨범 만들러 가기
+        </a>
+    </div>
+
+    <!-- 카테고리 탭 -->
+    <div class="cm-tabs" role="tablist">
+        <button type="button" class="cm-tab active" data-cat="all">전체</button>
+        <button type="button" class="cm-tab" data-cat="harvest">수확체험</button>
+        <button type="button" class="cm-tab" data-cat="tour">농촌투어</button>
+        <button type="button" class="cm-tab" data-cat="family">가족나들이</button>
+        <button type="button" class="cm-tab" data-cat="eco">친환경농장</button>
+    </div>
+
+    <div class="cm-result-info" id="cm-result-info">공개된 앨범 <b>12</b>개</div>
+
+    <!-- 앨범 그리드 (더미 데이터 — 백엔드 연동 전 목업) -->
+    <div class="cm-grid" id="cm-grid">
+
+        <div class="cm-card" data-cat="harvest" onclick="alert('앨범 뷰어는 백엔드 연동 후 오픈됩니다.')">
+            <div class="cm-cover" style="background:linear-gradient(145deg,#2e7d32,#66bb6a);">
+                <span class="cm-cover-badge">수확체험</span>
+                <div class="cm-cover-icon"><i data-lucide="cherry"></i></div>
+                <div class="cm-cover-title">딸기 수확의 날</div>
+            </div>
+            <div class="cm-card-foot">
+                <div class="cm-card-user">김민지 님</div>
+                <div class="cm-card-date">2026-08-25</div>
+            </div>
+        </div>
+
+        <div class="cm-card" data-cat="family" onclick="alert('앨범 뷰어는 백엔드 연동 후 오픈됩니다.')">
+            <div class="cm-cover" style="background:linear-gradient(145deg,#e65100,#ff8f00);">
+                <span class="cm-cover-badge">가족나들이</span>
+                <div class="cm-cover-icon"><i data-lucide="users"></i></div>
+                <div class="cm-cover-title">우리 가족의<br>행복한 하루</div>
+            </div>
+            <div class="cm-card-foot">
+                <div class="cm-card-user">박서준 님</div>
+                <div class="cm-card-date">2026-08-24</div>
+            </div>
+        </div>
+
+        <div class="cm-card" data-cat="tour" onclick="alert('앨범 뷰어는 백엔드 연동 후 오픈됩니다.')">
+            <div class="cm-cover" style="background:linear-gradient(145deg,#1565c0,#42a5f5);">
+                <span class="cm-cover-badge">농촌투어</span>
+                <div class="cm-cover-icon"><i data-lucide="map-pin"></i></div>
+                <div class="cm-cover-title">충남 논산<br>가을 투어</div>
+            </div>
+            <div class="cm-card-foot">
+                <div class="cm-card-user">이수연 님</div>
+                <div class="cm-card-date">2026-08-22</div>
+            </div>
+        </div>
+
+        <div class="cm-card" data-cat="eco" onclick="alert('앨범 뷰어는 백엔드 연동 후 오픈됩니다.')">
+            <div class="cm-cover" style="background:linear-gradient(145deg,#4a148c,#ab47bc);">
+                <span class="cm-cover-badge">친환경농장</span>
+                <div class="cm-cover-icon"><i data-lucide="sprout"></i></div>
+                <div class="cm-cover-title">무농약 텃밭<br>한 달 기록</div>
+            </div>
+            <div class="cm-card-foot">
+                <div class="cm-card-user">최영호 님</div>
+                <div class="cm-card-date">2026-08-21</div>
+            </div>
+        </div>
+
+        <div class="cm-card" data-cat="harvest" onclick="alert('앨범 뷰어는 백엔드 연동 후 오픈됩니다.')">
+            <div class="cm-cover" style="background:linear-gradient(145deg,#bf360c,#ef9a9a);">
+                <span class="cm-cover-badge">수확체험</span>
+                <div class="cm-cover-icon"><i data-lucide="wheat"></i></div>
+                <div class="cm-cover-title">고구마 캐기<br>체험 일지</div>
+            </div>
+            <div class="cm-card-foot">
+                <div class="cm-card-user">정다은 님</div>
+                <div class="cm-card-date">2026-08-20</div>
+            </div>
+        </div>
+
+        <div class="cm-card" data-cat="family" onclick="alert('앨범 뷰어는 백엔드 연동 후 오픈됩니다.')">
+            <div class="cm-cover" style="background:linear-gradient(145deg,#00695c,#4db6ac);">
+                <span class="cm-cover-badge">가족나들이</span>
+                <div class="cm-cover-icon"><i data-lucide="sun"></i></div>
+                <div class="cm-cover-title">아이와 함께한<br>봄나들이</div>
+            </div>
+            <div class="cm-card-foot">
+                <div class="cm-card-user">강민준 님</div>
+                <div class="cm-card-date">2026-08-19</div>
+            </div>
+        </div>
+
+        <div class="cm-card" data-cat="tour" onclick="alert('앨범 뷰어는 백엔드 연동 후 오픈됩니다.')">
+            <div class="cm-cover" style="background:linear-gradient(145deg,#880e4f,#f48fb1);">
+                <span class="cm-cover-badge">농촌투어</span>
+                <div class="cm-cover-icon"><i data-lucide="camera"></i></div>
+                <div class="cm-cover-title">천안 사과밭<br>사진 투어</div>
+            </div>
+            <div class="cm-card-foot">
+                <div class="cm-card-user">오지현 님</div>
+                <div class="cm-card-date">2026-08-18</div>
+            </div>
+        </div>
+
+        <div class="cm-card" data-cat="eco" onclick="alert('앨범 뷰어는 백엔드 연동 후 오픈됩니다.')">
+            <div class="cm-cover" style="background:linear-gradient(145deg,#37474f,#90a4ae);">
+                <span class="cm-cover-badge">친환경농장</span>
+                <div class="cm-cover-icon"><i data-lucide="leaf"></i></div>
+                <div class="cm-cover-title">제로웨이스트<br>농장 이야기</div>
+            </div>
+            <div class="cm-card-foot">
+                <div class="cm-card-user">한소율 님</div>
+                <div class="cm-card-date">2026-08-16</div>
+            </div>
+        </div>
+
+    </div><!-- /.cm-grid -->
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+    var tabs  = document.querySelectorAll('.cm-tab');
+    var cards = document.querySelectorAll('.cm-card');
+    var info  = document.getElementById('cm-result-info');
+
+    tabs.forEach(function (tab) {
+        tab.addEventListener('click', function () {
+            var cat = tab.dataset.cat;
+            tabs.forEach(function (t) { t.classList.remove('active'); });
+            tab.classList.add('active');
+
+            var count = 0;
+            cards.forEach(function (card) {
+                var show = (cat === 'all' || card.dataset.cat === cat);
+                card.style.display = show ? '' : 'none';
+                if (show) count++;
+            });
+            info.innerHTML = '공개된 앨범 <b>' + count + '</b>개';
+        });
+    });
+
+    if (window.lucide) lucide.createIcons();
+})();
+</script>
+{% endblock %}

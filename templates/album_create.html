@@ -603,6 +603,9 @@
                     + '<button onclick="loadAlbum(\'' + album.id + '\')" '
                     + 'style="flex:1;background:var(--green-dark);color:#fff;border:none;border-radius:8px;padding:7px;font-size:.85rem;font-weight:700;cursor:pointer;">'
                     + '편집하기</button>'
+                    + '<button onclick="openShareModal(\'' + album.id + '\',\'' + esc(album.title || '제목 없음') + '\')" '
+                    + 'style="background:#fff;color:#2e7d32;border:1px solid #c8e0d0;border-radius:8px;padding:7px 10px;font-size:.85rem;cursor:pointer;" title="추억 공유에 공유">'
+                    + '<i class="fa-solid fa-share-nodes"></i></button>'
                     + '<button onclick="deleteAlbum(\'' + album.id + '\')" '
                     + 'style="background:#fff;color:#e5484d;border:1px solid #f3c6c6;border-radius:8px;padding:7px 10px;font-size:.85rem;cursor:pointer;">'
                     + '<i class="fa-solid fa-trash"></i></button>'
@@ -2422,6 +2425,96 @@
             btn.disabled = false;
         });
     }
+
+    // ── 공유 모달 ──────────────────────────────────────
+    function openShareModal(albumId, albumTitle) {
+        var modal = document.getElementById('share-modal');
+        document.getElementById('share-modal-title').textContent = albumTitle;
+        document.getElementById('share-album-id').value = albumId;
+        // 현재 공개 상태 (localStorage 임시 저장 — 백엔드 연동 전)
+        var albums = getAllAlbums();
+        var album  = albums.find(function(a) { return a.id === albumId; });
+        var isPublic = album && album.isPublic;
+        document.getElementById('share-toggle').checked = !!isPublic;
+        updateShareToggleLabel(!!isPublic);
+        modal.style.display = 'flex';
+    }
+
+    function closeShareModal() {
+        document.getElementById('share-modal').style.display = 'none';
+    }
+
+    function updateShareToggleLabel(isPublic) {
+        var label = document.getElementById('share-toggle-label');
+        label.textContent = isPublic ? '추억 공유에 공개 중' : '비공개 (나만 볼 수 있음)';
+        label.style.color  = isPublic ? 'var(--green-dark,#2e7d32)' : '#888';
+    }
+
+    function confirmShare() {
+        var albumId  = document.getElementById('share-album-id').value;
+        var isPublic = document.getElementById('share-toggle').checked;
+        // 로컬스토리지에 임시 저장 (백엔드 API 연동 전)
+        var albums = getAllAlbums();
+        albums = albums.map(function(a) {
+            if (a.id === albumId) a.isPublic = isPublic;
+            return a;
+        });
+        localStorage.setItem('fl_albums', JSON.stringify(albums));
+        closeShareModal();
+        var msg = isPublic ? '추억 공유에 공유되었습니다! (백엔드 연동 후 실제 반영)' : '비공개로 전환되었습니다.';
+        alert(msg);
+        renderAlbumList();
+    }
 </script>
+
+<!-- 공유 모달 -->
+<div id="share-modal" style="display:none; position:fixed; inset:0; z-index:3000; background:rgba(0,0,0,.45); align-items:center; justify-content:center;">
+    <div style="background:#fff; border-radius:18px; width:90%; max-width:380px; padding:28px 24px; box-shadow:0 20px 60px rgba(0,0,0,.18);">
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px;">
+            <h3 style="font-size:1rem; font-weight:800; margin:0; color:#1a2a1e;">
+                <i class="fa-solid fa-share-nodes" style="color:var(--green-dark,#2e7d32); margin-right:6px;"></i>추억 공유 공유
+            </h3>
+            <button type="button" onclick="closeShareModal()" style="border:none; background:none; font-size:1.4rem; color:#888; cursor:pointer; line-height:1;">&times;</button>
+        </div>
+        <input type="hidden" id="share-album-id">
+        <div style="background:#f5f8f5; border-radius:10px; padding:14px 16px; margin-bottom:18px;">
+            <div style="font-size:.82rem; color:#6a7a6e; margin-bottom:4px;">앨범</div>
+            <div id="share-modal-title" style="font-weight:800; color:#253027; font-size:.95rem;"></div>
+        </div>
+        <!-- 공개 토글 -->
+        <div style="display:flex; align-items:center; justify-content:space-between; padding:14px 0; border-top:1px solid #f0f4f1; border-bottom:1px solid #f0f4f1; margin-bottom:18px;">
+            <div>
+                <div style="font-weight:700; font-size:.9rem; color:#253027; margin-bottom:2px;">추억 공유 공개</div>
+                <div id="share-toggle-label" style="font-size:.8rem; color:#888;">비공개 (나만 볼 수 있음)</div>
+            </div>
+            <label style="position:relative; display:inline-block; width:46px; height:26px; cursor:pointer;">
+                <input type="checkbox" id="share-toggle" style="opacity:0; width:0; height:0;"
+                       onchange="updateShareToggleLabel(this.checked)">
+                <span style="position:absolute; inset:0; background:#ccc; border-radius:999px; transition:.2s;"
+                      id="share-toggle-track"></span>
+                <span style="position:absolute; left:3px; top:3px; width:20px; height:20px; background:#fff; border-radius:50%; transition:.2s; box-shadow:0 1px 4px rgba(0,0,0,.2);"
+                      id="share-toggle-thumb"></span>
+            </label>
+        </div>
+        <style>
+            #share-toggle:checked + #share-toggle-track { background: var(--green-dark,#2e7d32); }
+            #share-toggle:checked ~ #share-toggle-thumb { transform: translateX(20px); }
+        </style>
+        <div style="font-size:.78rem; color:#9aa39c; margin-bottom:18px; line-height:1.5;">
+            공개 시 추억 공유에서 다른 사용자들이 앨범 표지를 볼 수 있습니다.<br>
+            앨범 내용은 뷰어를 통해 확인할 수 있습니다.
+        </div>
+        <div style="display:flex; gap:10px;">
+            <button type="button" onclick="closeShareModal()"
+                style="flex:1; border:1px solid #ddd; background:#fff; color:#555; border-radius:10px; padding:11px; font-weight:700; cursor:pointer;">
+                취소
+            </button>
+            <button type="button" onclick="confirmShare()"
+                style="flex:2; border:none; background:var(--green-dark,#2e7d32); color:#fff; border-radius:10px; padding:11px; font-weight:800; cursor:pointer;">
+                확인
+            </button>
+        </div>
+    </div>
+</div>
 
 {% endblock %}

@@ -46,6 +46,7 @@
             <a href="{{ url_for('ai_recommend_page') }}" {% if request.endpoint == 'ai_recommend_page' %}class="active"{% endif %}>오늘의 추천 코스</a>
             <a href="{{ url_for('mypage') }}" {% if request.endpoint == 'mypage' %}class="active"{% endif %}>내 활동</a>
             <a href="{{ url_for('album_create') }}" {% if request.endpoint == 'album_create' %}class="active"{% endif %}>추억 앨범</a>
+            <a href="/community" {% if request.endpoint == 'community_page' %}class="active"{% endif %}>추억 공유</a>
         </nav>
         {% else %}
         <nav class="site-nav"></nav>

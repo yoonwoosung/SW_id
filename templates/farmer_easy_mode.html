@@ -513,6 +513,28 @@ document.addEventListener('DOMContentLoaded', function () {
         return d.getFullYear() + '.' + padZ(d.getMonth() + 1) + '.' + padZ(d.getDate()) + ' (' + DAYS[d.getDay()] + ')';
     }
 
+    /* 체험별 색상 (달력과 동일한 팔레트) */
+    const EM_COLORS = [
+        { bg: '#4CAF50', border: '#388E3C' },
+        { bg: '#ea6a1e', border: '#b85316' },
+        { bg: '#2196F3', border: '#1565C0' },
+        { bg: '#9C27B0', border: '#6A1B9A' },
+        { bg: '#E91E63', border: '#AD1457' },
+        { bg: '#00ACC1', border: '#00838F' },
+        { bg: '#FF7043', border: '#D84315' },
+        { bg: '#5C6BC0', border: '#3949AB' },
+    ];
+    const emCropColorMap = {};
+    let emColorIdx = 0;
+    function getCropColor(crop) {
+        if (!emCropColorMap[crop]) emCropColorMap[crop] = EM_COLORS[emColorIdx++ % EM_COLORS.length];
+        return emCropColorMap[crop];
+    }
+    /* 날짜 이동해도 색이 일관되도록 전체 데이터에서 미리 등록 */
+    Object.values(rawData).forEach(function (list) {
+        list.forEach(function (r) { getCropColor(r.crop); });
+    });
+
     function statusBadge(status) {
         if (status === '확정') return '<span class="fl-badge fl-badge--confirmed">확정</span>';
         if (status === '완료') return '<span class="fl-badge fl-badge--done">완료</span>';
@@ -532,6 +554,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
         container.innerHTML = list.map(function (res) {
             const total = (res.adult || 0) + (res.teen || 0) + (res.child || 0);
+            const color = getCropColor(res.crop);
             const isPending = res.status === '예정';
             const actions = isPending
                 ? '<form method="POST" action="/application/confirm/' + res.id + '?easy_mode=true" style="margin:0;">' +
@@ -539,10 +562,10 @@ document.addEventListener('DOMContentLoaded', function () {
                   '<form method="POST" action="/application/reject/' + res.id + '" style="margin:0;">' +
                   '<button type="submit" class="fl-btn em-btn-reject">거절</button></form>'
                 : statusBadge(res.status);
-            return '<div class="em-res-card">' +
+            return '<div class="em-res-card" style="border-left: 4px solid ' + color.bg + ';">' +
                 '<div class="em-res-time">' + (res.time || '--:--') + '</div>' +
                 '<div class="em-res-info">' +
-                '<p class="em-res-crop">' + res.crop + '</p>' +
+                '<p class="em-res-crop" style="color:' + color.border + ';">' + res.crop + '</p>' +
                 '<p class="em-res-meta">' + res.name + ' 님 &nbsp;·&nbsp; 총 ' + total + '명' +
                 '<span class="em-res-count"> (성인 ' + res.adult + ' · 청소년 ' + res.teen + ' · 아동 ' + res.child + ')</span></p>' +
                 '</div>' +

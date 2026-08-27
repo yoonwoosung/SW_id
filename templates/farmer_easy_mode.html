@@ -197,12 +197,12 @@
                         </div>
                         <div class="fl-info-row">
                             <span class="lbl">이메일</span>
-                            <span class="val" style="color:#888;font-size:17px;">{{ user.email }}</span>
+                            <span class="val" style="color:var(--fl-text-muted);font-size:17px;">{{ user.email }}</span>
                         </div>
                         <div class="fl-info-row">
                             <span class="lbl">전화번호</span>
                             <span class="val" style="display:flex;align-items:center;gap:12px;">
-                                <span style="color:#888;font-size:17px;">{{ user.phone or '미등록' }}</span>
+                                <span style="color:var(--fl-text-muted);font-size:17px;">{{ user.phone or '미등록' }}</span>
                                 <button type="button" class="fl-btn fl-btn-outline" id="phone-auth-btn"
                                         style="font-size:14px;min-height:36px;padding:6px 16px;">인증</button>
                             </span>
@@ -254,7 +254,7 @@
                     <div id="farm-form-area" style="display:none;margin-top:var(--fl-s4);">
                         <form method="POST" action="{{ url_for('add_farm') }}" enctype="multipart/form-data" class="easy-form">
                             <div class="form-group">
-                                <label class="easy-form-label-lg" for="farm-address-input">농장 주소 <span style="color:#e5484d;">*</span></label>
+                                <label class="easy-form-label-lg" for="farm-address-input">농장 주소 <span style="color:var(--fl-danger);">*</span></label>
                                 <input type="text" id="farm-address-input" name="farm_address" class="form-control"
                                        placeholder="예) 경기도 화성시 농부로 123" required>
                             </div>
@@ -272,7 +272,7 @@
                                            onchange="document.getElementById('farm-organic-area').style.display=this.checked?'block':'none'">
                                     <label for="farm-organic-chk" class="easy-form-label-lg" style="margin:0;cursor:pointer;">친환경 인증 농장</label>
                                 </div>
-                                <div id="farm-organic-area" style="display:none;margin-top:12px;padding:16px;background:#f0faf4;border-radius:10px;">
+                                <div id="farm-organic-area" style="display:none;margin-top:12px;padding:16px;background:var(--fl-green-100);border-radius:10px;">
                                     <div class="form-group">
                                         <label class="easy-form-label-lg" for="farm-organic-type">인증 종류</label>
                                         <input type="text" id="farm-organic-type" name="organic_cert_type" class="form-control"

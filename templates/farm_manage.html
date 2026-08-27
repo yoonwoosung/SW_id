@@ -2,7 +2,7 @@
 {% block content %}
 <div class="main-content-wrapper" style="max-width:720px;margin:0 auto;padding:24px 16px;">
 
-    <h1 style="font-size:1.4rem;font-weight:800;color:var(--green-dark);margin:0 0 4px;">🏡 내 농장 관리</h1>
+    <h1 style="font-size:1.4rem;font-weight:800;color:var(--green-dark);margin:0 0 4px;">내 농장 관리</h1>
     <p style="color:#77807a;font-size:0.9rem;margin:0 0 20px;">여러 농장을 등록하고 농장별로 주소·증빙을 관리하세요.</p>
 
     <!-- 새 농장 등록 -->
@@ -28,7 +28,7 @@
                     <input class="form-control mb-2" name="address" value="{{ farm.address }}">
                     <div style="font-size:0.8rem;color:#999;margin-bottom:6px;">
                         좌표: {{ '%.4f, %.4f'|format(farm.lat, farm.lng) if farm.lat else '미지오코딩' }}
-                        · 증빙: {% if farm.certificate_pdf %}✅ 등록됨{% else %}없음{% endif %}
+                        · 증빙: {% if farm.certificate_pdf %}등록됨{% else %}없음{% endif %}
                     </div>
                     <label style="font-size:0.82rem;color:#666;">주소 변경 시 증빙 재제출</label>
                     <input class="form-control mb-2" type="file" name="certificate_pdf" accept=".pdf,.png,.jpg,.jpeg">

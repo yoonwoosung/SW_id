@@ -76,12 +76,12 @@
                         <div class="form-check" style="margin-bottom:12px;">
                             <input type="checkbox" class="form-check-input" id="has_parking" name="has_parking" {% if
                                 form_data.get('has_parking') or (item and item.has_parking) %}checked{% endif %}>
-                            <label class="form-check-label" for="has_parking" style="font-size:18px;">🅿️ 주차장 제공</label>
+                            <label class="form-check-label" for="has_parking" style="font-size:18px;">주차장 제공</label>
                         </div>
                         <div class="form-check">
                             <input type="checkbox" class="form-check-input" id="is_organic" name="is_organic" {% if
                                 form_data.get('is_organic') or (item and item.pesticide_free) %}checked{% endif %}>
-                            <label class="form-check-label" for="is_organic" style="font-size:18px;">🌿 친환경 농법
+                            <label class="form-check-label" for="is_organic" style="font-size:18px;">친환경 농법
                                 사용</label>
                         </div>
                         <div id="organic-cert-fields-easy"
@@ -344,7 +344,7 @@
                 if (line) line.classList.toggle('done', i < n);
             }
             document.getElementById('step-label').textContent = n + '단계 / 전체 ' + total + '단계 — ' + LABELS[n];
-            document.getElementById('step-encourage').textContent = '🌱 ' + ENCOURAGE[n];
+            document.getElementById('step-encourage').textContent = ENCOURAGE[n];
             document.getElementById('btn-prev').style.display = n === 1 ? 'none' : '';
             document.getElementById('btn-next').style.display = n === total ? 'none' : '';
             if (n === total) fillConfirm();

@@ -53,7 +53,7 @@
             <!-- [1번 탭] 운영 & 문의 관리 -->
             <section id="tab-operations" class="dash-tab-content active">
                 <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h5 class="mb-0 font-weight-bold text-dark">최근 활동 (내 체험 목록) 🌾</h5>
+                    <h5 class="mb-0 font-weight-bold text-dark">최근 활동 (내 체험 목록)</h5>
                     <a href="{{ url_for('farmer_register') }}" class="btn btn-sm btn-outline-success font-weight-bold">+
                         등록</a>
                 </div>
@@ -80,7 +80,7 @@
 
                 <hr class="my-4">
 
-                <h5 class="mb-3 font-weight-bold text-dark">최신 문의 💬</h5>
+                <h5 class="mb-3 font-weight-bold text-dark">최신 문의</h5>
                 <div class="scrollable-list-box">
                     <ul class="inquiry-list pl-0 mb-0" style="list-style: none;">
                         {% for inquiry in inquiries %}
@@ -102,7 +102,7 @@
 
             <!-- [2번 탭] 성과 & 스마트 알림 -->
             <section id="tab-performance" class="dash-tab-content">
-                <h5 class="mb-3 font-weight-bold text-dark">내 농장 통계 📊</h5>
+                <h5 class="mb-3 font-weight-bold text-dark">내 농장 통계</h5>
                 <div class="stats-overview-grid mb-4">
                     <div class="stat-box">
                         <span class="label">총 등록 체험</span>
@@ -176,7 +176,7 @@
                 </div>
 
                 <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h5 class="mb-0 font-weight-bold text-dark">내 정보 ⚙️</h5>
+                    <h5 class="mb-0 font-weight-bold text-dark">내 정보</h5>
                     <button type="button" class="btn btn-sm btn-outline-secondary font-weight-bold px-3"
                         id="farmer-edit-btn">수정</button>
                 </div>
@@ -252,7 +252,7 @@
             <!-- [1번 탭 전용 우측] 예약 일정 달력 -->
             <div id="right-tab-operations" class="right-tab-content active">
                 <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h5 class="mb-0 font-weight-bold text-dark">예약 일정 📅</h5>
+                    <h5 class="mb-0 font-weight-bold text-dark">예약 일정</h5>
                     <a href="{{ url_for('farmer_calendar') }}" class="btn btn-sm btn-outline-secondary font-weight-bold"
                         style="font-size: 1.1rem; line-height: 1; padding: 2px 8px;" title="달력 크게보기">+</a>
                 </div>
@@ -270,7 +270,7 @@
 
             <!-- [2번 탭 전용 우측] AI 방문자 체험 후기 종합 요약 -->
             <div id="right-tab-performance" class="right-tab-content" style="display: none;">
-                <h5 class="mb-3 font-weight-bold text-dark">AI 후기 요약 리포트 🤖</h5>
+                <h5 class="mb-3 font-weight-bold text-dark">AI 후기 요약 리포트</h5>
 
                 <!-- 긍정적인 내용 요약 -->
                 <div class="p-3 mb-3 rounded bg-light border border-success">
@@ -301,7 +301,7 @@
 
             <!-- [3번 탭 전용 우측] 계정 통합 요약 -->
             <div id="right-tab-settings" class="right-tab-content" style="display: none;">
-                <h5 class="mb-3 font-weight-bold text-dark">계정 현황 🛡️</h5>
+                <h5 class="mb-3 font-weight-bold text-dark">계정 현황</h5>
                 <div class="p-3 rounded bg-light border">
                     <div class="small text-muted mb-2">보안 및 인증 상태</div>
                     <span class="badge badge-success px-2 py-1 mb-2">본인 인증 완료</span>

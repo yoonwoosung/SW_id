@@ -9,7 +9,7 @@
             <i class="fa-solid fa-arrow-left"></i> 뒤로가기
         </a>
         <div>
-            <h1>💬 문의 관리</h1>
+            <h1>문의 관리</h1>
             <p>손님들이 남긴 문의를 확인하고 답변해 보세요.</p>
         </div>
     </div>
@@ -32,7 +32,7 @@
                 {% for reply in inquiry.replies | sort(attribute='timestamp') %}
                 <div class="ec-reply-item" id="reply-view-{{ reply.id }}">
                     <div class="ec-reply-body">
-                        <p class="ec-reply-label">🌾 농장주 답변</p>
+                        <p class="ec-reply-label">농장주 답변</p>
                         <p class="ec-reply-text">{{ reply.content }}</p>
                         <small class="ec-reply-date">{{ reply.timestamp.strftime('%Y.%m.%d %H:%M') }}</small>
                     </div>
@@ -75,7 +75,7 @@
         </div>
         {% else %}
         <div class="easy-no-item-small">
-            <p>아직 문의가 없습니다. 🌱</p>
+            <p>아직 문의가 없습니다.</p>
         </div>
         {% endfor %}
     </div>

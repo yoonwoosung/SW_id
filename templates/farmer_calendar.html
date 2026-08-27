@@ -1,75 +1,256 @@
 {% extends "layout.html" %}
 {% block content %}
-<div class="container mt-4 mb-5">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h2><i class="fa-regular fa-calendar-days text-success mr-2"></i>농장 예약 달력</h2>
-        <a href="{{ url_for('farmer_easy_mode') }}" class="btn btn-outline-secondary btn-sm">
-            <i class="fa-solid fa-arrow-left mr-1"></i> 대시보드로 돌아가기
+
+<style>
+/* ===== 전체 레이아웃 ===== */
+.gcal-outer {
+    display: flex;
+    background: #fff;
+    border: 1px solid var(--fl-border);
+    border-radius: var(--fl-radius-lg);
+    overflow: hidden;
+    margin: 8px 0 0;
+}
+
+/* ── 사이드바 ── */
+.gcal-side {
+    width: 256px;
+    flex-shrink: 0;
+    border-right: 1px solid var(--fl-border);
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    overflow-y: auto;
+    background: #fff;
+}
+.gcal-back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    border: 1px solid var(--fl-border);
+    border-radius: 20px;
+    font-size: .85rem;
+    font-weight: 600;
+    color: var(--fl-text);
+    text-decoration: none;
+    transition: border-color .12s, color .12s;
+}
+.gcal-back-btn:hover { border-color: var(--fl-green-700); color: var(--fl-green-700); text-decoration: none; }
+
+/* ── 미니 달력 ── */
+.mini-cal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 2px 0 8px;
+}
+.mini-cal-title { font-size: .85rem; font-weight: 700; color: var(--fl-text); }
+.mini-cal-navs { display: flex; }
+.mini-nav-btn {
+    background: none; border: none; cursor: pointer;
+    color: var(--fl-text-muted);
+    width: 24px; height: 24px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: .72rem;
+}
+.mini-nav-btn:hover { background: var(--fl-surface-2); }
+.mini-cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); }
+.mini-dow {
+    font-size: .68rem; color: var(--fl-text-muted); font-weight: 700;
+    text-align: center; padding-bottom: 4px;
+}
+.mini-day {
+    aspect-ratio: 1;
+    display: flex; align-items: center; justify-content: center;
+    font-size: .75rem; cursor: pointer; border-radius: 50%;
+    color: var(--fl-text); transition: background .1s;
+    margin: 1px auto; width: 26px; height: 26px;
+}
+.mini-day:hover { background: var(--fl-surface-2); }
+.mini-day.other-month { color: #bbb; }
+.mini-day.today { background: var(--fl-green-700) !important; color: #fff !important; font-weight: 700; border-radius: 50% !important; }
+.mini-day.in-week { background: var(--fl-green-100); border-radius: 0; margin: 1px 0; width: 100%; }
+.mini-day.week-start { border-radius: 50% 0 0 50%; }
+.mini-day.week-end   { border-radius: 0 50% 50% 0; }
+.mini-day.selected:not(.today) { background: var(--fl-green-100); color: var(--fl-green-700); font-weight: 700; }
+
+/* 범례 */
+.legend-title { font-size: .7rem; font-weight: 700; color: var(--fl-text-muted); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 6px; }
+.legend-item { display: flex; align-items: center; gap: 8px; padding: 4px 0; font-size: .83rem; }
+.legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+
+/* ── 메인 ── */
+.gcal-main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+
+/* 툴바 */
+.gcal-toolbar {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 16px; border-bottom: 1px solid var(--fl-border);
+    height: 56px; flex-shrink: 0;
+}
+.tb-today {
+    padding: 6px 16px; border: 1px solid var(--fl-border); border-radius: 20px;
+    background: #fff; font-size: .85rem; font-weight: 600; cursor: pointer; color: var(--fl-text); white-space: nowrap;
+}
+.tb-today:hover { background: var(--fl-surface-2); }
+.tb-nav {
+    background: none; border: none; cursor: pointer; color: var(--fl-text-muted);
+    width: 30px; height: 30px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center; font-size: .82rem; flex-shrink: 0;
+}
+.tb-nav:hover { background: var(--fl-surface-2); }
+.tb-title { font-size: 1.18rem; font-weight: 400; color: var(--fl-text); flex: 1; }
+.tb-views { display: flex; border: 1px solid var(--fl-border); border-radius: 20px; overflow: hidden; flex-shrink: 0; }
+.tb-view-btn {
+    padding: 5px 14px; border: none; border-left: 1px solid var(--fl-border);
+    background: none; font-size: .82rem; font-weight: 600; cursor: pointer;
+    color: var(--fl-text-muted); white-space: nowrap; transition: background .1s, color .1s;
+}
+.tb-view-btn:first-child { border-left: none; }
+.tb-view-btn:hover { background: var(--fl-surface-2); color: var(--fl-text); }
+.tb-view-btn.active { background: var(--fl-green-100); color: var(--fl-green-700); }
+
+/* 달력 본문 */
+.gcal-body { flex: 1; overflow: hidden; }
+#fc-container { /* height는 JS로 설정 */ }
+
+/* FullCalendar 스타일 */
+.fc .fc-toolbar { display: none !important; }
+.fc .fc-daygrid-day-number { font-size: .82rem; color: var(--fl-text-muted); padding: 4px 6px; }
+.fc .fc-day-today .fc-daygrid-day-number {
+    background: var(--fl-green-700); color: #fff; border-radius: 50%;
+    width: 24px; height: 24px; display: flex; align-items: center; justify-content: center;
+    font-weight: 700; margin: 2px;
+}
+.fc .fc-col-header-cell { font-size: .8rem; font-weight: 600; color: var(--fl-text-muted); }
+.fc .fc-daygrid-event { border-radius: 4px; font-size: .78rem; padding: 1px 5px; margin: 1px 2px; }
+.fc .fc-event-title { font-weight: 600; }
+.fc .fc-more-link { font-size: .76rem; color: var(--fl-text-muted); font-weight: 600; }
+.fc .fc-timegrid-slot-label { font-size: .75rem; color: var(--fl-text-muted); }
+.fc .fc-list-event-title { font-size: .88rem; }
+
+/* ── 팝오버 ── */
+.gcal-pop {
+    position: fixed; z-index: 3000; background: #fff;
+    border-radius: 8px; box-shadow: 0 4px 24px rgba(0,0,0,.22);
+    width: 300px; overflow: hidden; display: none;
+}
+.pop-header { display: flex; justify-content: flex-end; padding: 8px 8px 0; }
+.pop-close {
+    background: none; border: none; cursor: pointer; color: var(--fl-text-muted);
+    font-size: 1.25rem; line-height: 1; width: 28px; height: 28px;
+    border-radius: 50%; display: flex; align-items: center; justify-content: center;
+}
+.pop-close:hover { background: var(--fl-surface-2); }
+.pop-body { padding: 2px 16px 16px; }
+.pop-crop-row { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 10px; }
+.pop-dot { width: 13px; height: 13px; border-radius: 50%; flex-shrink: 0; margin-top: 4px; }
+.pop-crop-name { font-size: 1rem; font-weight: 700; color: var(--fl-text); }
+.pop-crop-date { font-size: .8rem; color: var(--fl-text-muted); margin-top: 2px; }
+.pop-summary { font-size: .83rem; color: var(--fl-text-muted); padding: 8px 0; border-top: 1px solid var(--fl-border); border-bottom: 1px solid var(--fl-border); margin-bottom: 8px; }
+.pop-res { padding: 7px 0; border-bottom: 1px solid var(--fl-border); }
+.pop-res:last-child { border-bottom: none; padding-bottom: 0; }
+.pop-res-name { font-size: .88rem; font-weight: 700; margin-bottom: 2px; }
+.pop-res-info { font-size: .78rem; color: var(--fl-text-muted); line-height: 1.5; }
+
+@media (max-width: 768px) {
+    .gcal-side { display: none; }
+    .tb-view-btn { padding: 5px 10px; font-size: .78rem; }
+}
+</style>
+
+<div class="container-fluid px-2">
+<div class="gcal-outer" id="gcal-outer">
+
+    <!-- ===== 사이드바 ===== -->
+    <aside class="gcal-side">
+
+        <a href="{{ url_for('farmer_easy_mode') }}" class="gcal-back-btn">
+            <i class="fa-solid fa-arrow-left"></i> 농장 관리
         </a>
-    </div>
 
-    <div class="card shadow-sm p-3 bg-white rounded">
-        <!-- 툴바 영역 (월/주/일/오늘, 날짜 이동, 오늘의 일정 버튼) -->
-        <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 pb-2 border-bottom">
-            <!-- 좌측: 월 / 주 / 일 / 오늘 탭 -->
-            <div class="btn-group mb-2 mb-md-0" role="group">
-                <button type="button" class="btn btn-outline-primary active" id="view-month-btn">월</button>
-                <button type="button" class="btn btn-outline-primary" id="view-week-btn">주</button>
-                <button type="button" class="btn btn-outline-primary" id="view-day-btn">일</button>
-                <button type="button" class="btn btn-outline-secondary ml-1" id="view-today-btn">오늘</button>
+        <!-- 미니 달력 -->
+        <div>
+            <div class="mini-cal-header">
+                <span class="mini-cal-title" id="mini-title"></span>
+                <div class="mini-cal-navs">
+                    <button class="mini-nav-btn" id="mini-prev"><i class="fa-solid fa-chevron-left"></i></button>
+                    <button class="mini-nav-btn" id="mini-next"><i class="fa-solid fa-chevron-right"></i></button>
+                </div>
             </div>
-
-            <!-- 중앙: 날짜 이동 버튼 & 타이틀 -->
-            <div class="d-flex align-items-center mb-2 mb-md-0">
-                <button type="button" class="btn btn-sm btn-light border mr-2" id="cal-prev-btn">
-                    <i class="fa-solid fa-chevron-left"></i>
-                </button>
-                <h4 class="mb-0 font-weight-bold px-2 text-dark" id="cal-title-display">2026년 8월</h4>
-                <button type="button" class="btn btn-sm btn-light border ml-2" id="cal-next-btn">
-                    <i class="fa-solid fa-chevron-right"></i>
-                </button>
+            <div class="mini-cal-grid">
+                <div class="mini-dow">일</div><div class="mini-dow">월</div>
+                <div class="mini-dow">화</div><div class="mini-dow">수</div>
+                <div class="mini-dow">목</div><div class="mini-dow">금</div>
+                <div class="mini-dow">토</div>
             </div>
+            <div class="mini-cal-grid" id="mini-days"></div>
+        </div>
 
-            <!-- 우측: 오늘의 일정 탭 버튼 -->
-            <div>
-                <button type="button" class="btn btn-outline-info" id="view-agenda-btn">
-                    <i class="fa-solid fa-list-check mr-1"></i> 오늘의 일정
-                </button>
+        <!-- 체험 색상 범례 -->
+        <div>
+            <div class="legend-title">체험 목록</div>
+            <div id="legend-items"></div>
+        </div>
+
+    </aside>
+
+    <!-- ===== 메인 ===== -->
+    <div class="gcal-main">
+
+        <!-- 툴바 -->
+        <div class="gcal-toolbar" id="gcal-toolbar">
+            <button class="tb-today" id="tb-today">오늘</button>
+            <button class="tb-nav" id="tb-prev"><i class="fa-solid fa-chevron-left"></i></button>
+            <button class="tb-nav" id="tb-next"><i class="fa-solid fa-chevron-right"></i></button>
+            <span class="tb-title" id="tb-title"></span>
+            <div class="tb-views">
+                <button class="tb-view-btn" id="v-day">일</button>
+                <button class="tb-view-btn active" id="v-week">주</button>
+                <button class="tb-view-btn" id="v-month">월</button>
+                <button class="tb-view-btn" id="v-agenda">일정</button>
             </div>
         </div>
 
-        <!-- FullCalendar가 렌더링될 영역 -->
-        <div id="full-calendar-container" style="min-height: 650px;"></div>
+        <!-- 달력 본문 -->
+        <div class="gcal-body">
+            <div id="fc-container"></div>
+        </div>
+
+    </div>
+</div>
+</div>
+
+<!-- 팝오버 -->
+<div class="gcal-pop" id="gcal-pop">
+    <div class="pop-header">
+        <button class="pop-close" id="pop-close">&times;</button>
+    </div>
+    <div class="pop-body">
+        <div class="pop-crop-row">
+            <div class="pop-dot" id="pop-dot"></div>
+            <div>
+                <div class="pop-crop-name" id="pop-crop"></div>
+                <div class="pop-crop-date" id="pop-date"></div>
+            </div>
+        </div>
+        <div class="pop-summary" id="pop-summary"></div>
+        <div id="pop-res-list"></div>
     </div>
 </div>
 
-<!-- 예약 정보 숨김 데이터 -->
+<!-- 예약 데이터 -->
 <div id="reservations-data" style="display:none;">{{ reservations_data | tojson | safe }}</div>
 
-<!-- 예약 상세 팝업 모달 -->
-<div id="cal-modal-overlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:9999; align-items:center; justify-content:center;">
-    <div id="cal-modal-box" style="background:#fff; border-radius:var(--fl-radius-lg); padding:var(--fl-s5); max-width:480px; width:90%; max-height:80vh; overflow-y:auto; box-shadow:0 8px 32px rgba(0,0,0,.18);">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:var(--fl-s4);">
-            <div>
-                <div id="cal-modal-date" style="font-size:.85rem; color:var(--fl-text-muted); margin-bottom:2px;"></div>
-                <h3 id="cal-modal-title" style="margin:0; font-size:1.15rem; font-weight:800; color:var(--fl-text);"></h3>
-            </div>
-            <button id="cal-modal-close" style="background:none; border:none; font-size:1.6rem; line-height:1; cursor:pointer; color:var(--fl-text-muted); padding:0 4px;">&times;</button>
-        </div>
-        <div id="cal-modal-summary" style="background:var(--fl-surface-2); border-radius:var(--fl-radius); padding:12px 16px; margin-bottom:var(--fl-s4); font-size:.95rem;"></div>
-        <div id="cal-modal-body"></div>
-    </div>
-</div>
-
-<!-- FullCalendar 6 라이브러리 CDN -->
 <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
-
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const rawData = JSON.parse(document.getElementById('reservations-data').textContent || '{}');
-    const calendarEl = document.getElementById('full-calendar-container');
+document.addEventListener('DOMContentLoaded', function () {
 
-    // ===== 체험별 색상 팔레트 =====
+    const rawData = JSON.parse(document.getElementById('reservations-data').textContent || '{}');
+
+    /* ── 체험별 색상 ── */
     const COLORS = [
         { bg: '#4CAF50', border: '#388E3C' },
         { bg: '#ea6a1e', border: '#b85316' },
@@ -83,174 +264,216 @@ document.addEventListener('DOMContentLoaded', function() {
     const cropColorMap = {};
     let colorIdx = 0;
     function getColor(crop) {
-        if (!cropColorMap[crop]) {
-            cropColorMap[crop] = COLORS[colorIdx % COLORS.length];
-            colorIdx++;
-        }
+        if (!cropColorMap[crop]) cropColorMap[crop] = COLORS[colorIdx++ % COLORS.length];
         return cropColorMap[crop];
     }
 
-    // ===== 같은 날 같은 체험 인원 합치기 =====
+    /* ── 인원 합산 ── */
     const grouped = {};
-    for (const dateKey in rawData) {
-        rawData[dateKey].forEach(res => {
-            const key = dateKey + '__' + res.crop;
-            if (!grouped[key]) {
-                grouped[key] = { dateKey, crop: res.crop, adult: 0, teen: 0, child: 0, reservations: [] };
-            }
-            grouped[key].adult += (res.adult || 0);
-            grouped[key].teen  += (res.teen  || 0);
-            grouped[key].child += (res.child || 0);
-            grouped[key].reservations.push(res);
+    for (const dk in rawData) {
+        rawData[dk].forEach(function (r) {
+            const k = dk + '__' + r.crop;
+            if (!grouped[k]) grouped[k] = { dateKey: dk, crop: r.crop, adult: 0, teen: 0, child: 0, reservations: [] };
+            grouped[k].adult += (r.adult || 0);
+            grouped[k].teen  += (r.teen  || 0);
+            grouped[k].child += (r.child || 0);
+            grouped[k].reservations.push(r);
         });
     }
-
-    // ===== FullCalendar 이벤트 생성 =====
     const eventsList = [];
-    for (const key in grouped) {
-        const g = grouped[key];
+    for (const k in grouped) {
+        const g = grouped[k];
         const total = g.adult + g.teen + g.child;
-        const color = getColor(g.crop);
+        const c = getColor(g.crop);
         eventsList.push({
-            title: g.crop + ' (' + total + '명)',
+            title: g.crop + ' · ' + total + '명',
             start: g.dateKey,
-            backgroundColor: color.bg,
-            borderColor: color.border,
-            textColor: '#fff',
-            extendedProps: {
-                crop: g.crop,
-                dateKey: g.dateKey,
-                totalAdult: g.adult,
-                totalTeen: g.teen,
-                totalChild: g.child,
-                total: total,
-                reservations: g.reservations,
-                color: color.bg
-            }
+            backgroundColor: c.bg, borderColor: c.border, textColor: '#fff',
+            extendedProps: { crop: g.crop, dateKey: g.dateKey, totalAdult: g.adult, totalTeen: g.teen, totalChild: g.child, total: total, reservations: g.reservations, color: c.bg }
         });
     }
 
-    // ===== 모달 =====
-    const overlay  = document.getElementById('cal-modal-overlay');
-    const modalTitle   = document.getElementById('cal-modal-title');
-    const modalDate    = document.getElementById('cal-modal-date');
-    const modalSummary = document.getElementById('cal-modal-summary');
-    const modalBody    = document.getElementById('cal-modal-body');
-
-    function openModal(props) {
-        const dateStr = props.dateKey.replace(/-/g, '.');
-        modalDate.textContent = dateStr;
-        modalTitle.textContent = props.crop;
-        modalTitle.style.color = props.color;
-
-        modalSummary.innerHTML =
-            '총 <strong>' + props.total + '명</strong> 예약' +
-            ' &nbsp;·&nbsp; 성인 ' + props.totalAdult +
-            ' · 청소년 ' + props.totalTeen +
-            ' · 아동 ' + props.totalChild;
-
-        modalBody.innerHTML = props.reservations.map(function(res) {
-            const cnt = (res.adult || 0) + (res.teen || 0) + (res.child || 0);
-            return '<div style="padding:12px 0; border-bottom:1px solid var(--fl-border);">' +
-                '<div style="font-weight:700; font-size:.98rem;">' + res.name + ' 님</div>' +
-                '<div style="font-size:.88rem; color:var(--fl-text-muted); margin-top:2px;">' +
-                    (res.time || '시간 미지정') + ' &nbsp;·&nbsp; 총 ' + cnt + '명' +
-                    ' (성인 ' + (res.adult||0) + ' · 청소년 ' + (res.teen||0) + ' · 아동 ' + (res.child||0) + ')' +
-                '</div>' +
-                '<div style="font-size:.85rem; color:var(--fl-text-muted); margin-top:2px;">' + (res.phone || '') + '</div>' +
-            '</div>';
-        }).join('') + '<div style="height:4px;"></div>';
-
-        overlay.style.display = 'flex';
+    /* ── 높이 계산 ── */
+    function calcHeight() {
+        const header  = document.querySelector('.site-header');
+        const toolbar = document.getElementById('gcal-toolbar');
+        const footer  = document.querySelector('.site-footer-bar');
+        const hH = header  ? header.offsetHeight  : 66;
+        const tH = toolbar ? toolbar.offsetHeight : 56;
+        const fH = footer  ? footer.offsetHeight  : 36;
+        return window.innerHeight - hH - tH - fH - 20;
     }
 
-    document.getElementById('cal-modal-close').addEventListener('click', function() {
-        overlay.style.display = 'none';
-    });
-    overlay.addEventListener('click', function(e) {
-        if (e.target === overlay) overlay.style.display = 'none';
+    /* ── 팝오버 ── */
+    const pop     = document.getElementById('gcal-pop');
+    const popDot  = document.getElementById('pop-dot');
+    const popCrop = document.getElementById('pop-crop');
+    const popDate = document.getElementById('pop-date');
+    const popSum  = document.getElementById('pop-summary');
+    const popRes  = document.getElementById('pop-res-list');
+
+    function showPop(props, jsEvent) {
+        popDot.style.background = props.color;
+        popCrop.textContent = props.crop;
+        popDate.textContent = props.dateKey.replace(/-/g, '.');
+        popSum.innerHTML = '총 <strong>' + props.total + '명</strong> &nbsp;·&nbsp; 성인 ' + props.totalAdult + ' · 청소년 ' + props.totalTeen + ' · 아동 ' + props.totalChild;
+        popRes.innerHTML = props.reservations.map(function (r) {
+            const cnt = (r.adult||0) + (r.teen||0) + (r.child||0);
+            return '<div class="pop-res">' +
+                '<div class="pop-res-name">' + r.name + ' 님</div>' +
+                '<div class="pop-res-info">' + (r.time || '시간 미지정') + ' · 총 ' + cnt + '명<br>' +
+                '(성인 ' + (r.adult||0) + ' · 청소년 ' + (r.teen||0) + ' · 아동 ' + (r.child||0) + ')</div>' +
+                (r.phone ? '<div class="pop-res-info">' + r.phone + '</div>' : '') +
+            '</div>';
+        }).join('');
+        pop.style.display = 'block';
+        var pw = 300, ph = pop.offsetHeight || 260;
+        var x = jsEvent.clientX + 10, y = jsEvent.clientY - 40;
+        if (x + pw > window.innerWidth - 8)  x = jsEvent.clientX - pw - 10;
+        if (y + ph > window.innerHeight - 8) y = window.innerHeight - ph - 8;
+        if (y < 8) y = 8;
+        pop.style.left = x + 'px';
+        pop.style.top  = y + 'px';
+    }
+    document.getElementById('pop-close').addEventListener('click', function () { pop.style.display = 'none'; });
+    document.addEventListener('click', function (e) {
+        if (pop.style.display !== 'none' && !pop.contains(e.target) && !e.target.closest('.fc-event'))
+            pop.style.display = 'none';
     });
 
-    // ===== FullCalendar 초기화 =====
-    const calendar = new FullCalendar.Calendar(calendarEl, {
-        initialView: 'dayGridMonth',
+    /* ── FullCalendar 초기화 ── */
+    var fcEl = document.getElementById('fc-container');
+    var currentViewType = 'timeGridWeek';
+    var currentViewStart = new Date();
+
+    var calendar = new FullCalendar.Calendar(fcEl, {
+        initialView: 'timeGridWeek',
         locale: 'ko',
         headerToolbar: false,
-        noEventsText: '등록된 예정된 일정이 없습니다.',
+        height: calcHeight(),
+        nowIndicator: true,
+        scrollTime: '09:00:00',
+        noEventsText: '예약된 일정이 없습니다.',
         events: eventsList,
         editable: false,
-        dayMaxEvents: true,
-        datesSet: function(info) {
-            document.getElementById('cal-title-display').textContent = info.view.title;
+        dayMaxEvents: 3,
+        datesSet: function (info) {
+            document.getElementById('tb-title').textContent = info.view.title;
+            currentViewType  = info.view.type;
+            currentViewStart = new Date(info.view.currentStart);
+            renderMiniCal();
         },
-        eventClick: function(info) {
-            openModal(info.event.extendedProps);
+        eventClick: function (info) {
+            info.jsEvent.stopPropagation();
+            showPop(info.event.extendedProps, info.jsEvent);
         }
     });
-
     calendar.render();
 
-    // 뷰 전환 버튼 액션 및 활성화 스타일 변경 함수
-    function setActiveButton(activeBtn) {
-        [
-            document.getElementById('view-month-btn'),
-            document.getElementById('view-week-btn'),
-            document.getElementById('view-day-btn'),
-            document.getElementById('view-agenda-btn')
-        ].forEach(btn => {
-            if (btn) {
-                btn.classList.remove('active', 'btn-primary', 'btn-info');
-                if (btn.id === 'view-agenda-btn') {
-                    btn.classList.add('btn-outline-info');
-                } else {
-                    btn.classList.add('btn-outline-primary');
-                }
-            }
-        });
+    /* 창 크기 변경 시 높이 재조정 */
+    window.addEventListener('resize', function () {
+        calendar.setOption('height', calcHeight());
+    });
 
-        if (activeBtn) {
-            if (activeBtn.id === 'view-agenda-btn') {
-                activeBtn.classList.remove('btn-outline-info');
-                activeBtn.classList.add('btn-info', 'active');
-            } else {
-                activeBtn.classList.remove('btn-outline-primary');
-                activeBtn.classList.add('btn-primary', 'active');
+    /* ── 범례 ── */
+    var legendEl = document.getElementById('legend-items');
+    Object.keys(cropColorMap).forEach(function (crop) {
+        var c = cropColorMap[crop];
+        var el = document.createElement('div');
+        el.className = 'legend-item';
+        el.innerHTML = '<div class="legend-dot" style="background:' + c.bg + '"></div><span>' + crop + '</span>';
+        legendEl.appendChild(el);
+    });
+
+    /* ── 뷰 전환 버튼 ── */
+    var viewBtns = document.querySelectorAll('.tb-view-btn');
+    function setView(viewName, btn) {
+        calendar.changeView(viewName);
+        viewBtns.forEach(function (b) { b.classList.remove('active'); });
+        btn.classList.add('active');
+        pop.style.display = 'none';
+    }
+    document.getElementById('v-day').addEventListener('click',    function () { setView('timeGridDay',  this); });
+    document.getElementById('v-week').addEventListener('click',   function () { setView('timeGridWeek', this); });
+    document.getElementById('v-month').addEventListener('click',  function () { setView('dayGridMonth', this); });
+    document.getElementById('v-agenda').addEventListener('click', function () { setView('listMonth',    this); });
+    document.getElementById('tb-today').addEventListener('click', function () { calendar.today(); });
+    document.getElementById('tb-prev').addEventListener('click',  function () { calendar.prev(); });
+    document.getElementById('tb-next').addEventListener('click',  function () { calendar.next(); });
+
+    /* ── 미니 달력 ── */
+    var miniYear  = new Date().getFullYear();
+    var miniMonth = new Date().getMonth();
+
+    function renderMiniCal() {
+        document.getElementById('mini-title').textContent = miniYear + '년 ' + (miniMonth + 1) + '월';
+        var grid = document.getElementById('mini-days');
+        grid.innerHTML = '';
+
+        var today     = new Date();
+        var firstDay  = new Date(miniYear, miniMonth, 1).getDay();
+        var totalDays = new Date(miniYear, miniMonth + 1, 0).getDate();
+        var prevDays  = new Date(miniYear, miniMonth, 0).getDate();
+
+        /* 주 뷰 범위 */
+        var weekStart = null, weekEnd = null, selectedDate = null;
+        if (currentViewType === 'timeGridWeek') {
+            weekStart = new Date(currentViewStart); weekStart.setHours(0,0,0,0);
+            weekEnd   = new Date(weekStart); weekEnd.setDate(weekEnd.getDate() + 6);
+        } else if (currentViewType === 'timeGridDay') {
+            selectedDate = new Date(currentViewStart); selectedDate.setHours(0,0,0,0);
+        }
+
+        function makeDay(dateObj, label, isOther) {
+            var el = document.createElement('div');
+            el.className = 'mini-day' + (isOther ? ' other-month' : '');
+            el.textContent = label;
+            var d = new Date(dateObj); d.setHours(0,0,0,0);
+            var isToday = today.getFullYear()===d.getFullYear() && today.getMonth()===d.getMonth() && today.getDate()===d.getDate();
+            if (weekStart && d >= weekStart && d <= weekEnd) {
+                el.classList.add('in-week');
+                if (d.getTime() === weekStart.getTime()) el.classList.add('week-start');
+                if (d.getTime() === weekEnd.getTime())   el.classList.add('week-end');
             }
+            if (selectedDate && d.getTime() === selectedDate.getTime()) el.classList.add('selected');
+            if (isToday) el.classList.add('today');
+            el.addEventListener('click', function () {
+                calendar.gotoDate(dateObj);
+                if (isOther) { miniYear = dateObj.getFullYear(); miniMonth = dateObj.getMonth(); renderMiniCal(); }
+            });
+            return el;
+        }
+
+        /* 이전 달 빈칸 */
+        for (var i = firstDay - 1; i >= 0; i--) {
+            grid.appendChild(makeDay(new Date(miniYear, miniMonth - 1, prevDays - i), prevDays - i, true));
+        }
+        /* 이번 달 */
+        for (var d = 1; d <= totalDays; d++) {
+            grid.appendChild(makeDay(new Date(miniYear, miniMonth, d), d, false));
+        }
+        /* 다음 달 빈칸 (6행 채우기) */
+        var filled = firstDay + totalDays;
+        var remain = filled % 7 === 0 ? 0 : 7 - (filled % 7);
+        for (var d2 = 1; d2 <= remain; d2++) {
+            grid.appendChild(makeDay(new Date(miniYear, miniMonth + 1, d2), d2, true));
         }
     }
 
-    // 버튼 이벤트 리스너 연결
-    document.getElementById('view-month-btn').addEventListener('click', function() {
-        calendar.changeView('dayGridMonth');
-        setActiveButton(this);
+    document.getElementById('mini-prev').addEventListener('click', function () {
+        miniMonth--;
+        if (miniMonth < 0) { miniMonth = 11; miniYear--; }
+        renderMiniCal();
+    });
+    document.getElementById('mini-next').addEventListener('click', function () {
+        miniMonth++;
+        if (miniMonth > 11) { miniMonth = 0; miniYear++; }
+        renderMiniCal();
     });
 
-    document.getElementById('view-week-btn').addEventListener('click', function() {
-        calendar.changeView('timeGridWeek');
-        setActiveButton(this);
-    });
-
-    document.getElementById('view-day-btn').addEventListener('click', function() {
-        calendar.changeView('timeGridDay');
-        setActiveButton(this);
-    });
-
-    document.getElementById('view-agenda-btn').addEventListener('click', function() {
-        calendar.changeView('listMonth');
-        setActiveButton(this);
-    });
-
-    document.getElementById('view-today-btn').addEventListener('click', function() {
-        calendar.today();
-    });
-
-    document.getElementById('cal-prev-btn').addEventListener('click', function() {
-        calendar.prev();
-    });
-
-    document.getElementById('cal-next-btn').addEventListener('click', function() {
-        calendar.next();
-    });
+    /* 초기 미니 달력 렌더 */
+    renderMiniCal();
 });
 </script>
+
 {% endblock %}

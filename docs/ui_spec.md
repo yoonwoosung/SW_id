@@ -340,3 +340,211 @@ Bootstrap `.pagination` 사용.
 | 결제 | 레거시 (인라인 스타일) | `--orange` |
 | 농장주 Easy Mode | fl-* | `--fl-green-700`, `--fl-orange` |
 | 신규 페이지 | 작업 전 합의 후 결정 | 위 기준에 맞춰 선택 |
+
+---
+
+## 9. 농장주 UI CSS 클래스 목록
+
+> 적용 파일: `static/css/style.css` (맨 끝에 추가됨)
+> 기준: 서울시·서울디지털재단 「고령층 친화 디지털 접근성 표준」
+
+### 9-1. 레이아웃 · 래퍼
+
+| 클래스 | 설명 |
+|--------|------|
+| `.easy-mode-container` | 페이지 래퍼. max-width 860px, 중앙 정렬 |
+| `.easy-header` | 페이지 상단 제목+설명 영역 |
+| `.easy-header h1` | 페이지 제목. `--farmer-font-title(30px)`, 800 |
+| `.easy-header p` | 부제목. `--farmer-font-base(18px)`, muted |
+| `.easy-section-title` | 섹션 소제목. `--farmer-font-heading(24px)`, 800 |
+| `.farmer-tab-panel` | 탭 패널 (기본 `display:none`). `.is-active` 추가 시 표시 |
+| `.timetable-wrapper` | 시간표 가로 스크롤 래퍼 (모바일용) |
+
+---
+
+### 9-2. 통계 박스
+
+| 클래스 | 설명 |
+|--------|------|
+| `.easy-stats-grid` | 3열 그리드 (모바일 1열) |
+| `.easy-stat-box` | 개별 통계 박스. `--fl-green-100` 배경 |
+| `.easy-stat-label` | 라벨. `--farmer-font-label(16px)`, muted |
+| `.easy-stat-value` | 수치. 28px, 800, `--fl-green-700` |
+| `.easy-stat-icon` | 아이콘 영역. 28px |
+| `.easy-stat-unit` | 단위 텍스트. 15px, muted |
+
+---
+
+### 9-3. 폼
+
+| 클래스 | 설명 |
+|--------|------|
+| `.easy-form` | 폼 래퍼. 내부 `label`, `input`, `textarea`, `select` 크기 일괄 적용 |
+| `.easy-form-label-lg` | 큰 라벨. `--farmer-font-base(18px)`, 700 |
+| `.easy-form-hint` | 힌트 문구. `--farmer-font-label(16px)`, muted |
+| `.farm-organic-check` | 친환경 체크박스 행. 체크박스 22px |
+
+---
+
+### 9-4. 버튼
+
+| 클래스 | 설명 |
+|--------|------|
+| `.easy-submit-button` | 주요 실행 버튼 (저장·등록). 100% 너비, `--farmer-btn-height(56px)` |
+| `.easy-confirm-button` | 확정 버튼. submit과 동일 스타일 |
+| `.easy-back-button` | 뒤로 가기·보조 버튼. 48px 최소 높이 |
+| `.easy-btn-gap` | 버튼 상단 여백 보조 (`--farmer-btn-gap: 12px`) |
+| `.em-btn-accept` | 예약 수락 버튼. 녹색 채움, 44px |
+| `.em-btn-reject` | 예약 거절 버튼. 흰 배경 + 빨간 테두리, 44px |
+| `.em-btn-register` | 체험 등록 버튼. 녹색 채움, 44px |
+| `.em-btn-edit` | 수정 버튼. 파란 테두리, 40px |
+| `.em-btn-delete` | 삭제·숨김 버튼. 흰 배경 + 빨간 테두리, 40px |
+| `.em-btn-reply` | 답변 버튼. 녹색 테두리, 40px |
+
+---
+
+### 9-5. 카드 · 목록
+
+| 클래스 | 설명 |
+|--------|------|
+| `.easy-reservation-card` | 예약 카드 |
+| `.easy-modify-item` | 체험 수정 항목 카드 (링크형, hover 그림자) |
+| `.easy-inquiry-card` | 문의 카드 |
+| `.easy-feedback-card` | 피드백 카드 |
+| `.easy-card-header` | 카드 헤더(날짜). `--farmer-font-heading(24px)`, 800 |
+| `.easy-card-body` | 카드 본문. `--farmer-font-base(18px)`, 줄간격 1.7 |
+| `.easy-reservation-name` | 예약자명. 22px, 700 |
+
+---
+
+### 9-6. 예약 관리 패널 (날짜별 뷰)
+
+| 클래스 | 설명 |
+|--------|------|
+| `.em-date-nav` | 날짜 이동 네비게이션 바 |
+| `.em-day-label` | 날짜 표시 텍스트. 20px, 700 |
+| `.em-res-card` | 예약 1건 카드 (체험별 색상 border-left 인라인으로 추가) |
+| `.em-res-time` | 시간 표시. 18px, 700, `--fl-green-700` |
+| `.em-res-info` | 예약 정보 영역 (flex:1) |
+| `.em-res-crop` | 체험명. 18px, 700 (색상은 JS로 인라인 적용) |
+| `.em-res-meta` | 예약자·인원 정보. 15px |
+| `.em-res-actions` | 수락/거절 버튼 묶음 |
+
+---
+
+### 9-7. 수락 대기 예약
+
+| 클래스 | 설명 |
+|--------|------|
+| `.em-pending-badge` | 대기 건수 뱃지. 빨간 원형 |
+| `.em-pending-row` | 대기 예약 행 |
+| `.em-pending-info` | 체험명 + 날짜 영역 |
+| `.em-pending-person` | 예약자명 + 인원 영역 |
+| `.em-pending-actions` | 수락/거절 버튼 묶음 |
+
+---
+
+### 9-8. 운영 관리 패널
+
+| 클래스 | 설명 |
+|--------|------|
+| `.em-listing-row` | 체험 목록 행 |
+| `.em-listing-name` | 체험명. 18px, 700 |
+| `.em-listing-actions` | 수정/숨김 버튼 묶음 |
+| `.em-listing-divider` | 행 구분선 |
+| `.em-inquiry-row` | 문의 목록 행 |
+| `.em-inquiry-info` | 문의자명 + 내용 영역 |
+| `.em-inquiry-author` | 문의자명. 17px, 700 |
+| `.em-inquiry-content` | 내용 미리보기. ellipsis 처리 |
+
+---
+
+### 9-9. 문의 관리 (easy_communication)
+
+| 클래스 | 설명 |
+|--------|------|
+| `.ec-inquiry-meta` | 문의 메타 정보 행 |
+| `.ec-inquiry-crop` | 체험명 태그. 녹색 pill |
+| `.ec-replies` | 답변 목록 컨테이너 |
+| `.ec-reply-item` | 답변 1건. 녹색 left-border 카드 |
+| `.ec-reply-label` | "농장주 답변" 라벨. 녹색, 13px |
+| `.ec-reply-text` | 답변 본문. `--farmer-font-base(18px)` |
+| `.ec-reply-date` | 날짜. 13px, muted |
+| `.ec-reply-actions` | 수정/삭제 버튼 묶음 |
+| `.ec-btn-sm` | 소형 버튼. 13px, 32px 높이 |
+| `.ec-btn-del` | 삭제 버튼. 빨간 테두리 |
+| `.ec-edit-form` | 답변 수정 인라인 폼 |
+| `.ec-new-reply-form` | 새 답변 입력 폼 영역 |
+| `.easy-reply-textarea` | 답변 입력창. `--farmer-font-base(18px)` |
+
+---
+
+### 9-10. 5단계 마법사 (체험 등록)
+
+| 클래스 | 설명 |
+|--------|------|
+| `.step-label-text` | 현재 단계 안내 텍스트 |
+| `.step-dots` | 진행 단계 도트 묶음 |
+| `.step-item` | 단계 1개 (도트 + 라벨) |
+| `.step-dot` | 단계 도트. 44px 원형. `.active` / `.done` |
+| `.step-dot-label` | 도트 하단 라벨. 12px |
+| `.step-line` | 단계 연결선. `.done` 시 녹색 |
+| `.step-encourage` | 격려 메시지 박스. 녹색 배경 |
+| `.step-nav-btns` | 이전/다음 버튼 행 |
+
+---
+
+### 9-11. 계정 설정
+
+| 클래스 | 설명 |
+|--------|------|
+| `.ac-gender-group` | 성별 버튼 묶음 |
+| `.ac-gender-btn` | 성별 선택 버튼. `.active` 시 녹색 채움 |
+| `.ac-farm-card` | 농장 정보 카드 |
+| `.ac-farm-address` | 농장 주소. 18px, 700 |
+| `.ac-farm-size` | 농장 규모. 15px, muted |
+| `.ac-modal-overlay` | 모달 오버레이 (fixed, 반투명) |
+| `.ac-modal-box` | 모달 박스. 최대 400px, border-radius 20px |
+| `.ac-modal-title` | 모달 제목. 22px, 700 |
+| `.ac-modal-desc` | 모달 설명. 16px, muted |
+
+---
+
+### 9-12. 상태 뱃지
+
+| 클래스 | 색상 | 용도 |
+|--------|------|------|
+| `.fl-badge--confirmed` | 녹색 | 확정 |
+| `.fl-badge--pending` | 회색 | 대기 |
+| `.fl-badge--done` | 파랑 | 완료 |
+| `.fl-badge--cancelled` | 빨강 | 취소 |
+| `.fl-badge--active` | 녹색 | 모집 중 |
+| `.fl-badge--hidden` | 회색 | 숨김 |
+
+---
+
+### 9-13. 보조 텍스트 · 빈 상태
+
+| 클래스 | 설명 |
+|--------|------|
+| `.fl-meta` | 보조 정보 텍스트. `--farmer-font-label(16px)` |
+| `.fl-address` | 주소 텍스트. `--farmer-font-label(16px)`, 줄간격 1.5 |
+| `.easy-no-item` | 빈 상태 안내 (대형). 중앙 정렬, 48px 패딩 |
+| `.easy-no-item-icon` | 빈 상태 아이콘. 48px |
+| `.easy-no-item-small` | 빈 상태 안내 (소형). 24px 패딩 |
+| `.easy-feedback-list` | 피드백 리스트. `--farmer-font-base(18px)`, 줄간격 1.7 |
+
+---
+
+### 9-14. AI 리포트 카드
+
+| 클래스 | 설명 |
+|--------|------|
+| `.st-report-exp` | 체험 단위 리포트 블록 |
+| `.st-report-exp-name` | 체험명. 20px, 700 |
+| `.st-report-cards` | 2열 카드 그리드 (모바일 1열) |
+| `.st-report-card` | 리포트 카드. `.st-pos`(긍정, 연녹) / `.st-imp`(개선, 연노) |
+| `.st-report-card-icon` | 카드 아이콘. 28px |
+| `.st-report-card-head` | 카드 구분 라벨. 12px, uppercase |
+| `.st-report-card-text` | 카드 본문. `--farmer-font-base(18px)` |
+| `.st-satisfaction-card` | 만족도 점수 카드. 회색 배경 |

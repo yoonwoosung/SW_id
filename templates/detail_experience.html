@@ -3,6 +3,44 @@
 
 {% block head %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/pages/experience_detail.css') }}">
+<style>
+/* 운영 시간표 전용 스타일 */
+.timetable-display {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 8px;
+}
+.timetable-display th {
+    background-color: #f8f9fa;
+    font-weight: 700;
+    padding: 10px;
+    border: 1px solid #dee2e6;
+    text-align: center;
+}
+.timetable-display td {
+    padding: 8px 4px !important;
+    height: 44px !important;
+    border: 1px solid #dee2e6 !important;
+    vertical-align: middle !important;
+    text-align: center !important;
+    background-color: #ffffff;
+}
+.timetable-display .timetable-time-label {
+    background-color: #fafafa;
+    font-weight: 600;
+    color: #666;
+}
+/* 선택된 시간대 초록색 강제 적용 */
+.timetable-display td.selected {
+    background-color: #2d6a4f !important;
+    color: #ffffff !important;
+}
+.slot-check-mark {
+    font-size: 16px;
+    font-weight: bold;
+    color: #ffffff;
+}
+</style>
 {% endblock %}
 
 {% block content %}
@@ -15,7 +53,7 @@
     <!-- 왼쪽: 메인 콘텐츠 -->
     <div class="detail-main-col">
 
-        <!-- 1. 이미지 갤러리 (에어비앤비식 그리드: 대표1 + 썸네일4, 클릭 시 확대) -->
+        <!-- 1. 이미지 갤러리 -->
         <div class="detail-gallery-card">
             {% if item.images %}
             {% set imgs = item.images.split(',') %}
@@ -38,7 +76,7 @@
             {% endif %}
         </div>
 
-        <!-- 2~5. 핵심 정보 (첫 화면 간결: 이름·위치·평점·긴박감·찜/공유) -->
+        <!-- 2. 핵심 정보 -->
         <div class="detail-info-card">
             <div class="detail-info-badges">
                 {% if item.pesticide_free %}<span class="detail-badge badge-eco"><i data-lucide="leaf"></i> 친환경</span>{% endif %}
@@ -57,7 +95,7 @@
                 {% endif %}
             </div>
 
-            <!-- 긴박감: 마감임박(실제 D-day 기반) + '지금 N명 보는 중'(목업 슬롯) -->
+            <!-- 긴박감 -->
             <div class="ed-urgency">
                 {% if 0 <= item.d_day <= 7 %}
                 <span class="ed-urgency__item ed-urgency__deadline"><i data-lucide="flame"></i> 마감임박 D-{{ item.d_day }}</span>
@@ -71,7 +109,7 @@
                 <button type="button" id="ed-share" class="ed-icon-btn"><i data-lucide="share-2"></i> 공유</button>
             </div>
 
-            <!-- 7. 체험 소개(소요·포함·불포함) -->
+            <!-- 체험 소개 -->
             {% if item.notes or item.includes or item.excludes %}
             <div class="detail-info-sections">
                 {% if item.notes %}
@@ -87,31 +125,40 @@
             {% endif %}
         </div>
 
-        <!-- 10. 예약 안내: 운영 시간표 -->
+        <!-- 3. 예약 안내: 운영 시간표 -->
         {% if item.timetable_data %}
         <div class="detail-section-card">
             <h3 class="detail-section-title"><i data-lucide="calendar-check"></i> 운영 시간표</h3>
             <div class="detail-timetable-wrap">
-                <table class="timetable-display">
+                <table class="timetable-display text-center" id="detail-timetable">
                     <thead>
-                        <tr><th>시간</th><th>월</th><th>화</th><th>수</th><th>목</th><th>금</th><th>토</th><th>일</th></tr>
+                        <tr>
+                            <th>시간</th>
+                            <th>월</th>
+                            <th>화</th>
+                            <th>수</th>
+                            <th>목</th>
+                            <th>금</th>
+                            <th>토</th>
+                            <th>일</th>
+                        </tr>
                     </thead>
                     <tbody>
-                        <tr><td>09:00</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-                        <tr><td>10:00</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-                        <tr><td>11:00</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-                        <tr><td>12:00</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-                        <tr><td>13:00</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-                        <tr><td>14:00</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-                        <tr><td>15:00</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-                        <tr><td>16:00</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                        {% for time in ['09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00'] %}
+                        <tr>
+                            <td class="timetable-time-label">{{ time }}</td>
+                            {% for day in ['월', '화', '수', '목', '금', '토', '일'] %}
+                            <td class="detail-time-slot" data-day="{{ day }}" data-time="{{ time }}"></td>
+                            {% endfor %}
+                        </tr>
+                        {% endfor %}
                     </tbody>
                 </table>
             </div>
         </div>
         {% endif %}
 
-        <!-- 9. 농장 위치 (지도 + 주변 거리) -->
+        <!-- 4. 농장 위치 -->
         <div class="detail-section-card">
             <div class="detail-section-header">
                 <h3 class="detail-section-title"><i data-lucide="map"></i> 농장 위치</h3>
@@ -126,7 +173,7 @@
             </div>
         </div>
 
-        <!-- 11. 방문자 후기 (분포 · AI 요약 · 더보기) -->
+        <!-- 5. 방문자 후기 -->
         <div class="detail-section-card">
             <h3 class="detail-section-title"><i data-lucide="star"></i> 방문자 후기</h3>
 
@@ -174,7 +221,7 @@
             <button type="button" id="ed-review-more" class="ed-review-more" hidden></button>
         </div>
 
-        <!-- 문의하기 -->
+        <!-- 6. 문의하기 -->
         <div class="detail-section-card">
             <h3 class="detail-section-title"><i data-lucide="message-circle"></i> 농장주에게 문의하기</h3>
             {% if session.get('user_id') %}
@@ -201,7 +248,7 @@
         </div>
     </div>
 
-    <!-- 오른쪽: 예약 패널 (sticky) -->
+    <!-- 오른쪽: 예약 패널 -->
     <div class="detail-booking-col">
         <div class="detail-booking-panel">
             <div class="detail-booking-price">
@@ -263,7 +310,7 @@
     </section>
 </div>
 
-<!-- 주변 편의시설 (무장애/반려동물/의료) -->
+<!-- 주변 편의시설 -->
 <div class="main-content-wrapper">
     <section class="section-block section-card mb-0">
         <div class="section-header"><h2 class="section-title"><i data-lucide="compass"></i> 주변 무장애·반려·의료 시설</h2></div>
@@ -271,7 +318,7 @@
     </section>
 </div>
 
-<!-- 12. 비슷한 체험 (다음 행동 유도) -->
+<!-- 비슷한 체험 -->
 <div class="main-content-wrapper">
     <section class="section-block section-card mb-0">
         <div class="section-header"><h2 class="section-title"><i data-lucide="wheat"></i> 비슷한 체험</h2></div>
@@ -279,7 +326,7 @@
     </section>
 </div>
 
-<!-- 알아두어야 할 사항 (환불·이용규칙·안전) -->
+<!-- 알아두어야 할 사항 -->
 <div class="main-content-wrapper">
     <section class="section-block section-card mb-0">
         <div class="section-header"><h2 class="section-title"><i data-lucide="pin"></i> 알아두어야 할 사항</h2></div>
@@ -300,7 +347,7 @@
     </section>
 </div>
 
-<!-- 주변 맛집·카페·편의점 (개별 장소, 코스 아님) -->
+<!-- 주변 맛집·카페·편의점 -->
 <div class="main-content-wrapper" style="padding-bottom:32px;">
     <section class="section-block section-card mb-0">
         <div class="section-header"><h2 class="section-title"><i data-lucide="store"></i> 주변 맛집·카페·편의점</h2></div>
@@ -320,7 +367,55 @@
     'address': item.address_detail, 'timetable': item.timetable_data or '',
     'ratings': reviews|map(attribute='rating')|list}|tojson|safe }}
 </script>
-<!-- 카카오 지도 SDK (데모용 키 유지) -->
-<script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=7dd9cd8d1e3754dcf8532c81dea3e95f&libraries=services"></script>
+
+<script>
+// 💡 상세 페이지 운영 시간표 렌더링 엔진
+document.addEventListener('DOMContentLoaded', function() {
+    const rawData = {{ (item.timetable_data or '') | tojson | safe }};
+    if (!rawData) return;
+
+    function activateSlot(day, time) {
+        const slot = document.querySelector(`.detail-time-slot[data-day="${day}"][data-time="${time}"]`);
+        if (slot) {
+            slot.classList.add('selected');
+            slot.style.setProperty('background-color', '#2d6a4f', 'important');
+            slot.style.setProperty('color', '#ffffff', 'important');
+            slot.innerHTML = '<span class="slot-check-mark">✓</span>';
+        }
+    }
+
+    try {
+        const trimmed = rawData.trim();
+        if (trimmed.startsWith('[')) {
+            // 1. 시드 데이터 JSON 포맷: [{"time": "10:00", "available": true}, ...]
+            const parsed = JSON.parse(trimmed);
+            if (Array.isArray(parsed)) {
+                parsed.forEach(item => {
+                    if (item.time && (item.available === undefined || item.available)) {
+                        ['월', '화', '수', '목', '금', '토', '일'].forEach(day => {
+                            activateSlot(day, item.time);
+                        });
+                    }
+                });
+            }
+        } else {
+            // 2. 간편 등록 쉼표 포맷: "월-09:00,화-10:00"
+            trimmed.split(',').forEach(part => {
+                const sp = part.split('-');
+                if (sp.length >= 2) {
+                    const d = sp[0].trim();
+                    const t = sp.slice(1).join('-').trim();
+                    activateSlot(d, t);
+                }
+            });
+        }
+    } catch(e) {
+        console.warn("시간표 데이터 파싱 오류:", e);
+    }
+});
+</script>
+
+<!-- 카카오 지도 SDK -->
+<script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey={{ KAKAO_JS_KEY }}&libraries=services"></script>
 <script src="{{ url_for('static', filename='js/pages/experience_detail.js') }}"></script>
 {% endblock %}

@@ -1,18 +1,18 @@
-# services/activity_service.py — '내 활동' 예약 카드용 상태 분류·뷰 모델(순수 로직, 테스트 가능).
-# 실제 Application.status(예정/결제완료/확정/취소) + 예정일을 목업 뱃지 상태로 매핑한다(엄격: 농장주 수락 구분).
-from datetime import date
+# services/activity_service.py — '내 활동' 예약 카드 상태 분류 및 체험 완료 자동 동기화
+from datetime import date, datetime, time
 
 from common.constants import (
     APPLICATION_STATUS_PENDING, APPLICATION_STATUS_PAID,
     APPLICATION_STATUS_CONFIRMED, APPLICATION_STATUS_CANCELLED,
 )
+from models import db, Application, Notification
 
-# 카드 상태 코드(템플릿 뱃지·버튼 분기 키).
-STATE_PAY_PENDING = 'pay_pending'     # 결제 대기 → [결제하기][예약 취소]
-STATE_AWAIT_ACCEPT = 'await_accept'   # 수락 대기중(결제O, 농장주 확정 전) → [예약 취소][상세]
-STATE_CONFIRMED = 'confirmed'         # 예약 확정(농장주 확정, 예정일 이후) → [코스 보기][상세]
-STATE_COMPLETED = 'completed'         # 체험 완료(확정 + 예정일 지남) → [후기 남기기][상세]
-STATE_CANCELLED = 'cancelled'         # 취소됨 → [상세]
+# 카드 상태 코드
+STATE_PAY_PENDING = 'pay_pending'     # 결제 대기
+STATE_AWAIT_ACCEPT = 'await_accept'   # 수락 대기중
+STATE_CONFIRMED = 'confirmed'         # 예약 확정 (체험 전)
+STATE_COMPLETED = 'completed'         # 체험 완료 (체험 종료 후 -> 후기 가능)
+STATE_CANCELLED = 'cancelled'         # 취소됨
 
 _BADGE_LABEL = {
     STATE_PAY_PENDING: '결제 대기',
@@ -23,21 +23,77 @@ _BADGE_LABEL = {
 }
 
 
+def is_experience_ended(application):
+    # 체험 날짜와 시작 시간을 기준으로 체험 종료 여부를 판별한다 (시작 시간 + 1시간).
+    if not application.apply_date:
+        return False
+    
+    exp_time = time(18, 0) # 시간 정보가 없을 경우 당일 18시 기준
+    if application.apply_time:
+        try:
+            parts = application.apply_time.strip().split(':')
+            if len(parts) == 2:
+                # 시작 시간 기준 1시간 뒤를 체험 종료 시점으로 설정
+                exp_time = time(min(23, int(parts[0]) + 1), int(parts[1]))
+        except Exception:
+            pass
+
+    exp_datetime = datetime.combine(application.apply_date, exp_time)
+    return datetime.now() >= exp_datetime
+
+
+def sync_user_completed_reservations(user_id):
+    if not user_id:
+        return []
+
+    confirmed_apps = Application.query.filter(
+        Application.user_id == user_id,
+        Application.status.in_([APPLICATION_STATUS_CONFIRMED, '확정', '완료'])
+    ).all()
+
+    updated = False
+    newly_completed = []
+
+    for app in confirmed_apps:
+        if is_experience_ended(app):
+            if app.status != '완료':
+                app.status = '완료'
+                updated = True
+
+            if not app.can_review:
+                app.can_review = True
+                updated = True
+                crop_name = app.experience.crop if app.experience else '농장'
+                newly_completed.append(crop_name)
+
+                notif = Notification(
+                    user_id=user_id,
+                    message=f"'{crop_name}' 체험은 어떠셨나요? 소중한 후기를 남겨주세요."
+                )
+                db.session.add(notif)
+
+    if updated:
+        db.session.commit()
+
+    return newly_completed
+
+
 def reservation_state(application, today=None):
-    """예약 1건의 카드 상태 코드를 반환한다(엄격 매핑).
-    확정된 예약의 예정일이 지나면 '체험 완료'. 취소가 최우선."""
     today = today or date.today()
     status = application.status
-    if status == APPLICATION_STATUS_CANCELLED:
+    if status in (APPLICATION_STATUS_CANCELLED, '취소'):
         return STATE_CANCELLED
-    is_past = application.apply_date is not None and application.apply_date < today
-    if status == APPLICATION_STATUS_CONFIRMED:
-        return STATE_COMPLETED if is_past else STATE_CONFIRMED
-    if status == APPLICATION_STATUS_PAID:
+    
+    if status in (APPLICATION_STATUS_CONFIRMED, '확정', '완료'):
+        if status == '완료' or application.can_review or is_experience_ended(application):
+            return STATE_COMPLETED
+        return STATE_CONFIRMED
+        
+    if status in (APPLICATION_STATUS_PAID, '예정'):
         return STATE_AWAIT_ACCEPT
     if status == APPLICATION_STATUS_PENDING:
         return STATE_PAY_PENDING
-    return STATE_AWAIT_ACCEPT   # 알 수 없는 값은 안전하게 진행 중으로 취급
+    return STATE_AWAIT_ACCEPT
 
 
 def badge_label(state):
@@ -45,7 +101,6 @@ def badge_label(state):
 
 
 def reservation_cards(applications, today=None):
-    """예약 목록을 카드 렌더용 뷰 딕셔너리 리스트로 변환한다."""
     today = today or date.today()
     cards = []
     for app in applications:
@@ -65,11 +120,11 @@ def reservation_cards(applications, today=None):
             'location': (exp.address_detail or exp.location) if exp is not None else '',
             'state': state,
             'badge': badge_label(state),
+            'can_review': app.can_review,
         })
     return cards
 
 
 def experienced_count(applications, today=None):
-    """'FarmLink와 함께한 체험 횟수' = 결제 이상 진행된(취소·미결제 제외) 예약 수."""
     return sum(1 for app in applications
-               if app.status in (APPLICATION_STATUS_PAID, APPLICATION_STATUS_CONFIRMED))
+               if app.status in (APPLICATION_STATUS_CONFIRMED, '확정', '완료') and is_experience_ended(app))

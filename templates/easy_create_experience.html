@@ -2,7 +2,6 @@
 {% block page_class %}easy-mode-page{% endblock %}
 {% block content %}
 <div class="container easy-mode-container">
-
     {# 단계 표시기 #}
     <div class="step-box fl-card">
         <div class="fl-card-body" style="padding-bottom:8px;">
@@ -47,59 +46,91 @@
 
     <form method="POST" enctype="multipart/form-data" class="easy-form" id="create-form">
 
-        {# ===== 1단계: 작물명 ===== #}
+        {# ===== 1단계: 작물명 및 승인된 농장 선택 ===== #}
         <div class="step-panel" id="step-1">
             <section class="fl-card">
                 <div class="fl-card-body">
                     <div class="form-group">
-                        <label class="easy-form-label-lg" for="crop">작물명 (체험 이름) <span
-                                style="color:#e5484d;">*</span></label>
+                        <label class="easy-form-label-lg" for="crop">작물명 (체험 이름) <span class="text-danger">*</span></label>
                         <input type="text" id="crop" name="crop" class="form-control" placeholder="예) 달콤한 딸기 따기"
                             value="{{ form_data.get('crop') or (item.crop if item else '') }}" required>
                     </div>
+
+                    <!-- 승인된 농장 선택 드롭다운 -->
                     <div class="form-group">
-                        <label class="easy-form-label-lg" for="address">체험 장소 (상세 주소) <span
-                                style="color:#e5484d;">*</span></label>
-                        <input type="text" id="address" name="address" class="form-control"
-                            placeholder="예) 충남 천안시 동남구 농부로 123"
-                            value="{{ form_data.get('address') or (item.address_detail if item else '') }}" required>
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <label class="easy-form-label-lg mb-0" for="farm_id">체험 진행 농장 <span class="text-danger">*</span></label>
+                            <a href="{{ url_for('farmer_easy_mode', tab='account') }}" class="small font-weight-bold text-success" target="_blank">
+                                + 새 농장 등록/심사 관리 <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                            </a>
+                        </div>
+
+                        {% if approved_farms %}
+                        <select id="farm_id" name="farm_id" class="form-control" required style="font-size:17px; height:52px;" onchange="updateSelectedFarmAddress()">
+                            <option value="">-- 승인 완료된 농장을 선택해 주세요 --</option>
+                            {% for farm in approved_farms %}
+                            <option value="{{ farm.id }}" 
+                                    data-address="{{ farm.address }} {{ farm.address_detail or '' }}"
+                                    {% if (item and item.farm_id == farm.id) or (form_data.get('farm_id')|string == farm.id|string) %}selected{% endif %}>
+                                {{ farm.name or '기본 농장' }} ({{ farm.address }})
+                            </option>
+                            {% endfor %}
+                        </select>
+                        <div id="farm-address-display" class="alert alert-light border mt-2 py-2 px-3 small text-dark" style="display:none;">
+                            <strong>체험 장소:</strong> <span id="farm-address-text">—</span>
+                        </div>
+                        {% else %}
+                        <div class="alert alert-warning py-3 mb-0 rounded-lg">
+                            <i class="fa-solid fa-triangle-exclamation mr-1"></i> 현재 <strong>심사 승인 완료</strong>된 농장이 없습니다.<br>
+                            체험을 등록하려면 먼저 [농장 관리]에서 농장을 등록하고 관리자 승인을 받아야 합니다.
+                            <div class="mt-2">
+                                <a href="{{ url_for('farmer_easy_mode', tab='account') }}" class="btn btn-sm btn-success font-weight-bold">
+                                    농장 등록 및 심사 신청하러 가기 →
+                                </a>
+                            </div>
+                        </div>
+                        {% endif %}
                     </div>
+
                     <div class="form-group">
-                        <label class="easy-form-label-lg" for="phone">농장 연락처 <span
-                                style="color:#e5484d;">*</span></label>
+                        <label class="easy-form-label-lg" for="phone">농장 연락처 <span class="text-danger">*</span></label>
                         <input type="tel" id="phone" name="phone" class="form-control" placeholder="예) 010-1234-5678"
                             value="{{ form_data.get('phone') or (item.phone if item else '') }}" required>
                         <p class="easy-form-hint">예: 010-1234-5678</p>
                     </div>
+
                     <div class="form-group">
                         <label class="easy-form-label-lg">추가 옵션</label>
-                        <div class="form-check" style="margin-bottom:12px;">
-                            <input type="checkbox" class="form-check-input" id="has_parking" name="has_parking" {% if
-                                form_data.get('has_parking') or (item and item.has_parking) %}checked{% endif %}>
-                            <label class="form-check-label" for="has_parking" style="font-size:18px;">🅿️ 주차장 제공</label>
+                        
+                        <!-- 주차장 체크 행 -->
+                        <div class="custom-option-card" onclick="toggleCheckbox('has_parking')">
+                            <span class="option-title">🅿️ 주차장 제공</span>
+                            <input type="checkbox" class="custom-large-check" id="has_parking" name="has_parking" 
+                                {% if form_data.get('has_parking') or (item and item.has_parking) %}checked{% endif %} onclick="event.stopPropagation()">
                         </div>
-                        <div class="form-check">
-                            <input type="checkbox" class="form-check-input" id="is_organic" name="is_organic" {% if
-                                form_data.get('is_organic') or (item and item.pesticide_free) %}checked{% endif %}>
-                            <label class="form-check-label" for="is_organic" style="font-size:18px;">🌿 친환경 농법
-                                사용</label>
+
+                        <!-- 친환경 체크 행 -->
+                        <div class="custom-option-card" onclick="toggleCheckbox('is_organic')">
+                            <span class="option-title">🌿 친환경 농법 사용</span>
+                            <input type="checkbox" class="custom-large-check" id="is_organic" name="is_organic" 
+                                {% if form_data.get('is_organic') or (item and item.pesticide_free) %}checked{% endif %} onclick="event.stopPropagation()">
                         </div>
+
                         <div id="organic-cert-fields-easy"
-                            style="display: {% if form_data.get('is_organic') or (item and item.pesticide_free) %}block{% else %}none{% endif %}; margin-top:16px; padding-left:16px; border-left:3px solid #c8e6c9;">
+                            style="display: {% if form_data.get('is_organic') or (item and item.pesticide_free) %}block{% else %}none{% endif %}; margin-top:16px; padding:16px; background:#f9fbf9; border-radius:12px; border-left:4px solid #2d6a4f;">
                             <div class="form-group">
                                 <label class="easy-form-label-lg" for="organic_certification_type">친환경 인증 종류</label>
                                 <input type="text" class="form-control" id="organic_certification_type"
                                     name="organic_certification_type"
                                     value="{{ form_data.get('organic_certification_type') or (item.organic_certification_type if item else '') }}"
-                                    placeholder="예) 유기농 인증">
+                                    placeholder="예) 유기농 인증, 무농약 인증">
                             </div>
-                            <div class="form-group">
+                            <div class="form-group mb-0">
                                 <label class="easy-form-label-lg" for="organic_certification_image">인증서 이미지</label>
                                 <input type="file" class="form-control-file" id="organic_certification_image"
                                     name="organic_certification_image">
                                 {% if item and item.organic_certification_image %}
-                                <small class="form-text text-muted">현재 파일: {{ item.organic_certification_image
-                                    }}</small>
+                                <small class="form-text text-muted">현재 파일: {{ item.organic_certification_image }}</small>
                                 {% endif %}
                             </div>
                         </div>
@@ -113,24 +144,22 @@
             <section class="fl-card">
                 <div class="fl-card-body">
                     <div class="form-group">
-                        <label class="easy-form-label-lg" for="duration_start">운영 시작 날짜 <span
-                                style="color:#e5484d;">*</span></label>
-                        <input type="date" id="duration_start" name="duration_start" class="form-control"
-                            value="{{ form_data.get('duration_start') or (item.duration_start.strftime('%Y-%m-%d') if item else '') }}"
+                        <label class="easy-form-label-lg" for="duration_start">운영 시작 날짜 <span class="text-danger">*</span></label>
+                        <input type="date" id="duration_start" name="duration_start" class="form-control clickable-date-input"
+                            value="{{ form_data.get('duration_start') or (item.duration_start.strftime('%Y-%m-%d') if item and item.duration_start else '') }}"
                             required>
                     </div>
                     <div class="form-group">
-                        <label class="easy-form-label-lg" for="duration_end">운영 종료 날짜 <span
-                                style="color:#e5484d;">*</span></label>
-                        <input type="date" id="duration_end" name="duration_end" class="form-control"
-                            value="{{ form_data.get('duration_end') or (item.end_date.strftime('%Y-%m-%d') if item else '') }}"
+                        <label class="easy-form-label-lg" for="duration_end">운영 종료 날짜 <span class="text-danger">*</span></label>
+                        <input type="date" id="duration_end" name="duration_end" class="form-control clickable-date-input"
+                            value="{{ form_data.get('duration_end') or (item.end_date.strftime('%Y-%m-%d') if item and item.end_date else '') }}"
                             required>
                     </div>
                     <div class="form-group">
-                        <label class="easy-form-label-lg">운영 가능 시간 <span style="color:#e5484d;">*</span></label>
-                        <p class="easy-form-hint">손님이 예약할 수 있는 요일과 시간을 드래그해서 선택해 주세요.</p>
+                        <label class="easy-form-label-lg">운영 가능 시간 <span class="text-danger">*</span></label>
+                        <p class="easy-form-hint">손님이 예약할 수 있는 요일과 시간을 마우스 좌클릭 또는 드래그해서 선택해 주세요.</p>
                         <div class="timetable-wrapper">
-                            <table class="table table-bordered timetable text-center">
+                            <table class="table table-bordered timetable text-center user-select-none" id="easy-timetable" onselectstart="return false;" ondragstart="return false;">
                                 <thead>
                                     <tr>
                                         <th>시간</th>
@@ -144,10 +173,9 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {% for time in ['09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00',
-                                    '16:00'] %}
+                                    {% for time in ['09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00'] %}
                                     <tr>
-                                        <td>{{ time }}</td>
+                                        <td class="timetable-time-label">{{ time }}</td>
                                         {% for day in ['월', '화', '수', '목', '금', '토', '일'] %}
                                         <td class="time-slot" data-day="{{ day }}" data-time="{{ time }}"></td>
                                         {% endfor %}
@@ -160,11 +188,10 @@
                             value="{{ form_data.get('timetable_data') or (item.timetable_data if item else '') }}">
                     </div>
                     <div class="form-group">
-                        <label class="easy-form-label-lg" for="max_participants">모집 인원 (세션 당 최대) <span
-                                style="color:#e5484d;">*</span></label>
+                        <label class="easy-form-label-lg" for="max_participants">모집 인원 (세션 당 최대) <span class="text-danger">*</span></label>
                         <div style="display:flex;align-items:center;gap:12px;">
                             <input type="number" id="max_participants" name="max_participants" class="form-control"
-                                style="max-width:200px;" placeholder="숫자 입력"
+                                style="max-width:200px;" placeholder="숫자 입력" min="1"
                                 value="{{ form_data.get('max_participants') or (item.max_participants if item else '') }}"
                                 required>
                             <span style="font-size:18px;color:#555;">명</span>
@@ -172,11 +199,10 @@
                         <p class="easy-form-hint">예: 20 — 숫자만 입력해 주세요</p>
                     </div>
                     <div class="form-group">
-                        <label class="easy-form-label-lg" for="price">참가비 (1인 기준) <span
-                                style="color:#e5484d;">*</span></label>
+                        <label class="easy-form-label-lg" for="price">참가비 (1인 기준) <span class="text-danger">*</span></label>
                         <div style="display:flex;align-items:center;gap:12px;">
                             <input type="number" id="price" name="price" class="form-control" style="max-width:240px;"
-                                placeholder="숫자만 입력" value="{{ form_data.get('price') or (item.cost if item else '') }}"
+                                placeholder="숫자만 입력" min="0" value="{{ form_data.get('price') or (item.cost if item else '') }}"
                                 required>
                             <span style="font-size:18px;color:#555;">원</span>
                         </div>
@@ -225,18 +251,17 @@
         <div class="step-panel" id="step-4" style="display:none;">
             <section class="fl-card">
                 <div class="fl-card-body">
-                    <p style="font-size:17px;color:#555;margin-bottom:var(--fl-s4);">봉사자 모집이 필요하지 않으면 0을 입력하고 다음 단계로
-                        넘어가세요.</p>
+                    <p style="font-size:17px;color:#555;margin-bottom:var(--fl-s4);">봉사자 모집이 필요하지 않으면 0을 입력하고 다음 단계로 넘어가세요.</p>
                     <div class="form-group">
                         <label class="easy-form-label-lg" for="volunteer_needed">필요 봉사자 수</label>
                         <div style="display:flex;align-items:center;gap:12px;">
-                            <input type="number" class="form-control" id="volunteer_needed" name="volunteer_needed"
+                            <input type="number" class="form-control" id="volunteer_needed" name="volunteer_needed" min="0"
                                 style="max-width:200px;"
                                 value="{{ form_data.get('volunteer_needed') or (item.volunteer_needed if item else 0) }}">
                             <span style="font-size:18px;color:#555;">명 (0이면 모집 안 함)</span>
                         </div>
                     </div>
-                    <div class="form-group">
+                    <div class="form-group mb-0">
                         <label class="easy-form-label-lg" for="volunteer_duties">봉사자 주요 업무</label>
                         <textarea class="form-control" id="volunteer_duties" name="volunteer_duties" rows="4"
                             placeholder="예) 잡초 제거, 수확 보조">{{ form_data.get('volunteer_duties') or (item.volunteer_duties if item else '') }}</textarea>
@@ -250,42 +275,38 @@
             <section class="fl-card">
                 <div class="fl-card-body">
                     <h3 style="font-size:20px;font-weight:700;margin-bottom:var(--fl-s4);">입력하신 내용을 확인해 주세요.</h3>
-                    <div class="fl-info-row"><span class="lbl">체험 이름</span><span class="val" id="confirm-crop">—</span>
-                    </div>
-                    <div class="fl-info-row"><span class="lbl">체험 장소</span><span class="val"
-                            id="confirm-address">—</span></div>
-                    <div class="fl-info-row"><span class="lbl">운영 기간</span><span class="val"
-                            id="confirm-duration">—</span></div>
-                    <div class="fl-info-row"><span class="lbl">모집 인원</span><span class="val" id="confirm-max">—</span>
-                    </div>
-                    <div class="fl-info-row"><span class="lbl">참가비</span><span class="val" id="confirm-price">—</span>
-                    </div>
+                    <div class="fl-info-row"><span class="lbl">체험 이름</span><span class="val" id="confirm-crop">—</span></div>
+                    <div class="fl-info-row"><span class="lbl">체험 장소</span><span class="val" id="confirm-address">—</span></div>
+                    <div class="fl-info-row"><span class="lbl">운영 기간</span><span class="val" id="confirm-duration">—</span></div>
+                    <div class="fl-info-row"><span class="lbl">모집 인원</span><span class="val" id="confirm-max">—</span></div>
+                    <div class="fl-info-row"><span class="lbl">참가비</span><span class="val" id="confirm-price">—</span></div>
                 </div>
             </section>
 
             <section class="fl-card" style="margin-top:var(--fl-s3);">
                 <div class="fl-card-body">
-                    <div class="form-check" style="margin-bottom:var(--fl-s3);">
-                        <input type="checkbox" class="form-check-input" id="terms" name="terms" required
-                            style="width:24px;height:24px;margin-right:12px;vertical-align:middle;">
-                        <label class="form-check-label" for="terms" style="font-size:18px;cursor:pointer;">
-                            서비스 이용 약관에 동의합니다.
-                            <a href="#" id="viewTermsLink" style="color:#2d6a4f;">(내용 보기)</a>
-                        </label>
+                    <!-- 약관 동의 카드 (우측 대형 체크박스) -->
+                    <div class="custom-terms-card" onclick="toggleCheckbox('terms')">
+                        <span class="terms-title">
+                            서비스 이용 약관에 동의합니다. 
+                            <a href="#" id="viewTermsLink" class="terms-modal-trigger" onclick="event.stopPropagation();">(내용 보기)</a>
+                        </span>
+                        <input type="checkbox" class="custom-large-check" id="terms" name="terms" required onclick="event.stopPropagation()">
                     </div>
-                    <button type="submit" class="easy-submit-button" style="width:100%;">
+
+                    <button type="submit" class="easy-submit-button" id="btn-final-submit" style="width:100%;">
                         {% if item %}이 내용으로 수정하기{% else %}등록하기{% endif %}
                     </button>
                     <a href="{{ url_for('farmer_easy_mode', tab='operations') }}" class="easy-back-button"
-                        style="display:block;text-align:center;margin-top:12px;">돌아가기</a>
+                        style="display:block;text-align:center;margin-top:14px;width:100%;text-decoration:none;">돌아가기</a>
                 </div>
             </section>
         </div>
 
-        {# 이전/다음 버튼 #}
+        {# 하단 이전/다음 버튼 영역 #}
         <div class="step-nav-btns">
-            <button type="button" id="btn-prev" class="easy-back-button" style="display:none;">← 이전 단계</button>
-            <button type="button" id="btn-next" class="easy-submit-button">다음 단계 →</button>
+            <button type="button" id="btn-prev" class="easy-nav-btn easy-back-button is-hidden">← 이전 단계</button>
+            <button type="button" id="btn-next" class="easy-nav-btn easy-submit-button">다음 단계 →</button>
         </div>
 
     </form>
@@ -293,12 +314,11 @@
 
 {# 약관 모달 #}
 <div id="termsModalOverlay" class="modal-overlay" style="display:none;">
-    <div class="modal-content">
+    <div class="modal-content apple-modal-content">
         <h5 style="margin-bottom:1rem;font-weight:bold;">서비스 이용 약관</h5>
         <div class="terms-content"
-            style="max-height:60vh;overflow-y:auto;border:1px solid #eee;padding:1rem;background:#f9f9f9;">
-            <p><strong>제1조 (목적)</strong> 이 약관은 FarmLink(이하 "회사")가 제공하는 농장 체험 중개 및 관련 제반 서비스의 이용과 관련하여 회사와 회원 간의 권리, 의무 및
-                책임사항, 기타 필요한 사항을 규정함을 목적으로 합니다.</p>
+            style="max-height:60vh;overflow-y:auto;border:1px solid #eee;padding:1.2rem;background:#f9f9f9;border-radius:10px;">
+            <p><strong>제1조 (목적)</strong> 이 약관은 FarmLink(이하 "회사")가 제공하는 농장 체험 중개 및 관련 제반 서비스의 이용과 관련하여 회사와 회원 간의 권리, 의무 및 책임사항, 기타 필요한 사항을 규정함을 목적으로 합니다.</p>
             <p><strong>제2조 (용어의 정의)</strong> 본 약관에서 사용하는 용어의 정의는 다음과 같습니다.</p>
             <ul>
                 <li>"서비스"라 함은 구현되는 단말기와 상관없이 "회원"이 이용할 수 있는 FarmLink 및 관련 제반 서비스를 의미합니다.</li>
@@ -307,145 +327,445 @@
             <p><strong>제15조 (책임제한)</strong> 회사는 천재지변 또는 이에 준하는 불가항력으로 인하여 서비스를 제공할 수 없는 경우에는 서비스 제공에 관한 책임이 면제됩니다.</p>
         </div>
         <div class="modal-buttons" style="margin-top:1.5rem;text-align:right;">
-            <button id="easy-modal-close" class="btn btn-secondary" type="button">닫기</button>
+            <button id="easy-modal-close" class="btn btn-apple-secondary" type="button">닫기</button>
         </div>
     </div>
 </div>
+
+<style>
+.custom-option-card,
+.custom-terms-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 20px;
+    background: #ffffff;
+    border: 1.5px solid #e5e7eb;
+    border-radius: 12px;
+    margin-bottom: 12px;
+    cursor: pointer;
+    transition: border-color 0.2s, background-color 0.2s;
+}
+
+.custom-option-card:hover,
+.custom-terms-card:hover {
+    border-color: #2d6a4f;
+    background-color: #f8faf8;
+}
+
+.option-title,
+.terms-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: #1a1a1a;
+}
+
+.custom-large-check {
+    width: 24px !important;
+    height: 24px !important;
+    min-height: 24px !important;
+    cursor: pointer;
+    accent-color: #2d6a4f;
+    margin: 0 !important;
+}
+
+.terms-modal-trigger {
+    color: #2d6a4f;
+    font-weight: 600;
+    text-decoration: underline;
+    margin-left: 6px;
+}
+
+.clickable-date-input {
+    cursor: pointer !important;
+}
+
+.user-select-none {
+    user-select: none !important;
+    -webkit-user-select: none !important;
+    -moz-user-select: none !important;
+    -ms-user-select: none !important;
+}
+
+.timetable {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 8px;
+    touch-action: none;
+}
+
+.timetable th {
+    background-color: #f8f9fa;
+    font-weight: 700;
+    padding: 10px;
+}
+
+.timetable td {
+    padding: 0 !important;
+    height: 48px !important;
+    border: 1px solid #dee2e6 !important;
+    vertical-align: middle !important;
+}
+
+.timetable-time-label {
+    background-color: #fafafa;
+    font-weight: 600;
+    color: #666;
+    padding: 10px 6px !important;
+}
+
+.time-slot {
+    cursor: pointer !important;
+    background-color: #ffffff;
+    height: 48px !important;
+    text-align: center;
+    transition: background-color 0.1s ease;
+}
+
+.time-slot:hover {
+    background-color: #e8f5e9 !important;
+}
+
+.time-slot.selected {
+    background-color: #2d6a4f !important;
+    color: #ffffff !important;
+}
+
+.step-nav-btns {
+    display: flex;
+    gap: 16px;
+    margin-top: 24px;
+    width: 100%;
+}
+
+.easy-nav-btn {
+    flex: 1 1 0;
+    min-height: 56px;
+    height: 56px;
+    font-size: 18px;
+    font-weight: 700;
+    border-radius: 12px;
+    margin: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.easy-nav-btn.is-hidden {
+    display: none !important;
+}
+
+.easy-back-button {
+    background: #f1f3f5;
+    color: #495057;
+    border: 1px solid #ced4da;
+}
+
+.easy-back-button:hover {
+    background: #e9ecef;
+    color: #212529;
+}
+</style>
 {% endblock %}
 
 {% block scripts %}
 <script>
-    document.addEventListener('DOMContentLoaded', function () {
+function toggleCheckbox(id) {
+    const cb = document.getElementById(id);
+    if (cb) {
+        cb.checked = !cb.checked;
+        cb.dispatchEvent(new Event('change'));
+    }
+}
 
-        // ===== 단계 관리 =====
-        let cur = 1;
-        const total = 5;
-        const LABELS = ['', '작물명을 입력해 주세요.', '운영 기간과 시간을 입력해 주세요.', '상세 정보를 입력해 주세요.', '봉사자 정보를 입력해 주세요.', '내용을 확인하고 등록해 주세요.'];
-        const ENCOURAGE = [
-            '',
-            '첫 번째 단계예요! 천천히 입력해 주세요.',
-            '잘 하고 계세요! 3단계만 더 입력하면 등록이 완료돼요.',
-            '절반을 넘었어요! 거의 다 왔습니다 🌱',
-            '한 단계만 더예요! 봉사자 정보를 입력해 주세요.',
-            '다 됐어요! 내용을 확인하고 등록해 주세요.'
-        ];
+// 💡 선택된 농장 주소 텍스트 실시간 반영
+function updateSelectedFarmAddress() {
+    const select = document.getElementById('farm_id');
+    const displayBox = document.getElementById('farm-address-display');
+    const displayText = document.getElementById('farm-address-text');
+    if (!select || !displayBox) return;
 
-        function showStep(n) {
-            for (let i = 1; i <= total; i++) {
-                const panel = document.getElementById('step-' + i);
-                if (panel) panel.style.display = i === n ? 'block' : 'none';
-                const dot = document.getElementById('dot-' + i);
-                if (dot) {
-                    dot.classList.remove('active', 'done');
-                    if (i === n) dot.classList.add('active');
-                    else if (i < n) dot.classList.add('done');
+    const opt = select.options[select.selectedIndex];
+    const addr = opt ? opt.getAttribute('data-address') : '';
+    if (addr && select.value) {
+        displayText.innerText = addr;
+        displayBox.style.display = 'block';
+    } else {
+        displayBox.style.display = 'none';
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+
+    // 💡 승인된 농장이 아예 없을 경우 즉시 확인 팝업 안내
+    const hasApprovedFarms = {% if approved_farms %}true{% else %}false{% endif %};
+    if (!hasApprovedFarms) {
+        setTimeout(function() {
+            if (confirm("현재 심사 승인된 농장이 없습니다.\n체험을 등록하려면 먼저 농장을 등록하고 심사를 받아야 합니다.\n\n농장 관리 페이지로 이동하시겠습니까?")) {
+                window.location.href = "{{ url_for('farmer_easy_mode', tab='account') }}#farm-management-section";
+            }
+        }, 100);
+    } else {
+        updateSelectedFarmAddress();
+    }
+
+    // ===== 1. 단계 관리 =====
+    let cur = 1;
+    const total = 5;
+    const LABELS = ['', '작물명과 진행 농장을 선택해 주세요.', '운영 기간과 시간을 입력해 주세요.', '상세 정보를 입력해 주세요.', '봉사자 정보를 입력해 주세요.', '내용을 확인하고 등록해 주세요.'];
+    const ENCOURAGE = [
+        '',
+        '첫 번째 단계예요! 천천히 입력해 주세요.',
+        '잘 하고 계세요! 3단계만 더 입력하면 등록이 완료돼요.',
+        '절반을 넘었어요! 거의 다 왔습니다 🌱',
+        '한 단계만 더예요! 봉사자 정보를 입력해 주세요.',
+        '다 됐어요! 내용을 확인하고 등록해 주세요.'
+    ];
+
+    function showStep(n) {
+        for (let i = 1; i <= total; i++) {
+            const panel = document.getElementById('step-' + i);
+            if (panel) panel.style.display = i === n ? 'block' : 'none';
+            const dot = document.getElementById('dot-' + i);
+            if (dot) {
+                dot.classList.remove('active', 'done');
+                if (i === n) dot.classList.add('active');
+                else if (i < n) dot.classList.add('done');
+            }
+            const line = document.getElementById('line-' + i);
+            if (line) line.classList.toggle('done', i < n);
+        }
+        document.getElementById('step-label').textContent = n + '단계 / 전체 ' + total + '단계 — ' + LABELS[n];
+        document.getElementById('step-encourage').textContent = '🌱 ' + ENCOURAGE[n];
+        
+        const prevBtn = document.getElementById('btn-prev');
+        const nextBtn = document.getElementById('btn-next');
+        
+        if (prevBtn) {
+            if (n === 1) prevBtn.classList.add('is-hidden');
+            else prevBtn.classList.remove('is-hidden');
+        }
+        
+        if (nextBtn) {
+            if (n === total) nextBtn.classList.add('is-hidden');
+            else nextBtn.classList.remove('is-hidden');
+        }
+
+        if (n === total) fillConfirm();
+        window.scrollTo(0, 0);
+    }
+
+    function fillConfirm() {
+        const get = id => document.getElementById(id) ? document.getElementById(id).value : '';
+        document.getElementById('confirm-crop').textContent = get('crop') || '—';
+        
+        const farmSelect = document.getElementById('farm_id');
+        const selectedOpt = farmSelect ? farmSelect.options[farmSelect.selectedIndex] : null;
+        document.getElementById('confirm-address').textContent = selectedOpt ? selectedOpt.getAttribute('data-address') : '—';
+
+        const ds = get('duration_start'), de = get('duration_end');
+        document.getElementById('confirm-duration').textContent = ds && de ? ds + ' ~ ' + de : '—';
+        document.getElementById('confirm-max').textContent = get('max_participants') ? get('max_participants') + '명' : '—';
+        document.getElementById('confirm-price').textContent = get('price') ? Number(get('price')).toLocaleString() + '원' : '—';
+    }
+
+    // 단계별 필수 항목 검증
+    function validateStep(n) {
+        if (n === 1) {
+            const crop = document.getElementById('crop').value.trim();
+            const farmSelect = document.getElementById('farm_id');
+            const phone = document.getElementById('phone').value.trim();
+
+            if (!crop) { alert('체험 이름(작물명)을 입력해 주세요.'); document.getElementById('crop').focus(); return false; }
+            if (!farmSelect || !farmSelect.value) { 
+                alert('체험을 진행할 승인된 농장을 선택해 주세요.\n(등록된 농장이 없다면 먼저 농장 심사를 신청해 주세요)'); 
+                if (farmSelect) farmSelect.focus(); 
+                return false; 
+            }
+            if (!phone) { alert('농장 연락처를 입력해 주세요.'); document.getElementById('phone').focus(); return false; }
+        }
+        if (n === 2) {
+            const ds = document.getElementById('duration_start').value;
+            const de = document.getElementById('duration_end').value;
+            const tt = document.getElementById('timetable-data').value;
+            const mp = document.getElementById('max_participants').value;
+            const pr = document.getElementById('price').value;
+
+            if (!ds) { alert('운영 시작 날짜를 선택해 주세요.'); document.getElementById('duration_start').focus(); return false; }
+            if (!de) { alert('운영 종료 날짜를 선택해 주세요.'); document.getElementById('duration_end').focus(); return false; }
+            if (ds > de) { alert('운영 종료 날짜는 시작 날짜보다 빠를 수 없습니다.'); return false; }
+            if (!tt || tt.trim() === '') { alert('운영 가능 시간을 최소 1개 이상 선택해 주세요.'); return false; }
+            if (!mp || mp <= 0) { alert('세션 당 모집 인원을 올바르게 입력해 주세요.'); document.getElementById('max_participants').focus(); return false; }
+            if (pr === '' || pr < 0) { alert('참가비를 올바르게 입력해 주세요.'); document.getElementById('price').focus(); return false; }
+        }
+        return true;
+    }
+
+    document.getElementById('btn-next').addEventListener('click', function () {
+        if (!validateStep(cur)) return;
+        if (cur < total) { cur++; showStep(cur); }
+    });
+
+    document.getElementById('btn-prev').addEventListener('click', function () {
+        if (cur > 1) { cur--; showStep(cur); }
+    });
+
+    showStep(1);
+
+    // ===== 2. 날짜 인풋 클릭 시 달력 팝업 =====
+    const dateInputs = document.querySelectorAll('.clickable-date-input');
+    dateInputs.forEach(input => {
+        input.addEventListener('click', function () {
+            try {
+                if (typeof this.showPicker === 'function') {
+                    this.showPicker();
                 }
-                const line = document.getElementById('line-' + i);
-                if (line) line.classList.toggle('done', i < n);
-            }
-            document.getElementById('step-label').textContent = n + '단계 / 전체 ' + total + '단계 — ' + LABELS[n];
-            document.getElementById('step-encourage').textContent = '🌱 ' + ENCOURAGE[n];
-            document.getElementById('btn-prev').style.display = n === 1 ? 'none' : '';
-            document.getElementById('btn-next').style.display = n === total ? 'none' : '';
-            if (n === total) fillConfirm();
-            window.scrollTo(0, 0);
-        }
-
-        function fillConfirm() {
-            const get = id => document.getElementById(id) ? document.getElementById(id).value : '';
-            document.getElementById('confirm-crop').textContent = get('crop') || '—';
-            document.getElementById('confirm-address').textContent = get('address') || '—';
-            const ds = get('duration_start'), de = get('duration_end');
-            document.getElementById('confirm-duration').textContent = ds && de ? ds + ' ~ ' + de : '—';
-            document.getElementById('confirm-max').textContent = get('max_participants') ? get('max_participants') + '명' : '—';
-            document.getElementById('confirm-price').textContent = get('price') ? Number(get('price')).toLocaleString() + '원' : '—';
-        }
-
-        function validateStep(n) {
-            if (n === 1) {
-                const crop = document.getElementById('crop').value.trim();
-                const address = document.getElementById('address').value.trim();
-                const phone = document.getElementById('phone').value.trim();
-                if (!crop) { alert('체험 이름을 입력해 주세요.'); return false; }
-                if (!address) { alert('체험 장소를 입력해 주세요.'); return false; }
-                if (!phone) { alert('농장 연락처를 입력해 주세요.'); return false; }
-            }
-            if (n === 2) {
-                const ds = document.getElementById('duration_start').value;
-                const de = document.getElementById('duration_end').value;
-                const mp = document.getElementById('max_participants').value;
-                const pr = document.getElementById('price').value;
-                if (!ds) { alert('운영 시작 날짜를 입력해 주세요.'); return false; }
-                if (!de) { alert('운영 종료 날짜를 입력해 주세요.'); return false; }
-                if (!mp || mp <= 0) { alert('모집 인원을 입력해 주세요.'); return false; }
-                if (!pr || pr < 0) { alert('참가비를 입력해 주세요.'); return false; }
-            }
-            return true;
-        }
-
-        document.getElementById('btn-next').addEventListener('click', function () {
-            if (!validateStep(cur)) return;
-            if (cur < total) { cur++; showStep(cur); }
+            } catch (e) {}
         });
-        document.getElementById('btn-prev').addEventListener('click', function () {
-            if (cur > 1) { cur--; showStep(cur); }
+    });
+
+    // ===== 3. 친환경 인증 토글 =====
+    const organicCb = document.getElementById('is_organic');
+    const certFields = document.getElementById('organic-cert-fields-easy');
+    if (organicCb && certFields) {
+        organicCb.addEventListener('change', function () {
+            certFields.style.display = this.checked ? 'block' : 'none';
         });
+    }
 
-        showStep(1);
+    // ===== 4. 시간표 마우스 좌클릭 & 드래그 엔진 =====
+    const timetable = document.getElementById('easy-timetable');
+    const hiddenInput = document.getElementById('timetable-data');
+    let isMouseDown = false;
+    let targetMode = true;
 
-        // ===== 친환경 인증 토글 =====
-        const organicCb = document.getElementById('is_organic');
-        const certFields = document.getElementById('organic-cert-fields-easy');
-        if (organicCb && certFields) {
-            organicCb.addEventListener('change', function () {
-                certFields.style.display = this.checked ? 'block' : 'none';
-            });
+    function renderSlot(slot, select) {
+        if (!slot || !slot.classList.contains('time-slot')) return;
+        if (select) {
+            slot.classList.add('selected');
+            slot.style.setProperty('background-color', '#2d6a4f', 'important');
+            slot.style.setProperty('color', '#ffffff', 'important');
+            slot.innerText = '✓';
+        } else {
+            slot.classList.remove('selected');
+            slot.style.removeProperty('background-color');
+            slot.style.removeProperty('color');
+            slot.innerText = '';
         }
+    }
 
-        // ===== 약관 모달 =====
-        const termsLink = document.getElementById('viewTermsLink');
-        const termsModal = document.getElementById('termsModalOverlay');
-        const closeBtn = document.getElementById('easy-modal-close');
-        if (termsLink) termsLink.addEventListener('click', function (e) { e.preventDefault(); termsModal.style.display = 'flex'; });
-        if (closeBtn) closeBtn.addEventListener('click', function () { termsModal.style.display = 'none'; });
-        if (termsModal) termsModal.addEventListener('click', function (e) { if (e.target === termsModal) termsModal.style.display = 'none'; });
+    function saveTimetable() {
+        const selected = document.querySelectorAll('#easy-timetable .time-slot.selected');
+        const list = [];
+        selected.forEach(s => {
+            if (s.dataset.day && s.dataset.time) {
+                list.push(`${s.dataset.day}-${s.dataset.time}`);
+            }
+        });
+        if (hiddenInput) {
+            hiddenInput.value = list.join(',');
+        }
+    }
 
-        // ===== 시간표 선택 =====
-        const timetable = document.querySelector('.timetable');
-        if (timetable) {
-            let isDown = false, mode = 'select';
-            const slots = timetable.querySelectorAll('.time-slot');
-            const existing = document.getElementById('timetable-data').value;
-            if (existing) {
-                existing.split(',').forEach(function (sel) {
-                    const parts = sel.split('-');
+    if (hiddenInput && hiddenInput.value) {
+        const val = hiddenInput.value.trim();
+        try {
+            if (val.startsWith('[')) {
+                const parsed = JSON.parse(val);
+                if (Array.isArray(parsed)) {
+                    parsed.forEach(item => {
+                        if (item.time && item.available) {
+                            ['월', '화', '수', '목', '금', '토', '일'].forEach(d => {
+                                const target = document.querySelector(`#easy-timetable .time-slot[data-day="${d}"][data-time="${item.time}"]`);
+                                if (target) renderSlot(target, true);
+                            });
+                        }
+                    });
+                }
+            } else {
+                val.split(',').forEach(item => {
+                    const parts = item.split('-');
                     if (parts.length >= 2) {
-                        const day = parts[0], time = parts.slice(1).join('-');
-                        const slot = timetable.querySelector('[data-day="' + day + '"][data-time="' + time + '"]');
-                        if (slot) slot.classList.add('selected');
+                        const d = parts[0].trim();
+                        const t = parts.slice(1).join('-').trim();
+                        const target = document.querySelector(`#easy-timetable .time-slot[data-day="${d}"][data-time="${t}"]`);
+                        if (target) renderSlot(target, true);
                     }
                 });
             }
-            const updateHidden = function () {
-                const out = [];
-                timetable.querySelectorAll('.time-slot.selected').forEach(function (s) { out.push(s.dataset.day + '-' + s.dataset.time); });
-                document.getElementById('timetable-data').value = out.join(',');
-            };
-            slots.forEach(function (slot) {
-                slot.addEventListener('mousedown', function (e) {
-                    e.preventDefault(); isDown = true;
-                    mode = this.classList.contains('selected') ? 'deselect' : 'select';
-                    this.classList.toggle('selected');
-                });
-                slot.addEventListener('mouseover', function () {
-                    if (!isDown) return;
-                    if (mode === 'select') this.classList.add('selected');
-                    else this.classList.remove('selected');
-                });
-            });
-            document.addEventListener('mouseup', function () { if (isDown) { isDown = false; updateHidden(); } });
-            document.getElementById('create-form').addEventListener('submit', updateHidden);
-        }
-    });
+        } catch (e) {}
+        saveTimetable();
+    }
+
+    if (timetable) {
+        timetable.addEventListener('mousedown', function (e) {
+            if (e.button !== 0) return;
+            const slot = e.target.closest('.time-slot');
+            if (!slot) return;
+
+            e.preventDefault();
+            isMouseDown = true;
+            targetMode = !slot.classList.contains('selected');
+            renderSlot(slot, targetMode);
+            saveTimetable();
+        });
+
+        timetable.addEventListener('mouseover', function (e) {
+            if (!isMouseDown) return;
+            const slot = e.target.closest('.time-slot');
+            if (!slot) return;
+
+            renderSlot(slot, targetMode);
+            saveTimetable();
+        });
+
+        window.addEventListener('mouseup', function () {
+            if (isMouseDown) {
+                isMouseDown = false;
+                saveTimetable();
+            }
+        });
+    }
+
+    // ===== 5. 5단계 최종 제출 시 검증 =====
+    const createForm = document.getElementById('create-form');
+    if (createForm) {
+        createForm.addEventListener('submit', function (e) {
+            const termsCb = document.getElementById('terms');
+            if (termsCb && !termsCb.checked) {
+                e.preventDefault();
+                alert('서비스 이용 약관에 동의해 주세요.');
+                termsCb.focus();
+                return false;
+            }
+            saveTimetable();
+        });
+    }
+
+    // ===== 6. 약관 모달 =====
+    const termsLink = document.getElementById('viewTermsLink');
+    const termsModal = document.getElementById('termsModalOverlay');
+    const closeBtn = document.getElementById('easy-modal-close');
+
+    if (termsLink && termsModal) {
+        termsLink.addEventListener('click', function (e) {
+            e.preventDefault();
+            termsModal.style.display = 'flex';
+        });
+    }
+    if (closeBtn && termsModal) {
+        closeBtn.addEventListener('click', function () {
+            termsModal.style.display = 'none';
+        });
+    }
+    if (termsModal) {
+        termsModal.addEventListener('click', function (e) {
+            if (e.target === termsModal) termsModal.style.display = 'none';
+        });
+    }
+});
 </script>
 {% endblock %}

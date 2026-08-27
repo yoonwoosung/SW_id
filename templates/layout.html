@@ -6,11 +6,9 @@
     <title>FarmLink Travel</title>
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"/>
-    <!-- [병합 point 1] theme.css 추가 -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/theme.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <style>
-        /* Lucide 라인 아이콘 공통 테마 (FarmLink 딥그린) */
         :root { --fl-icon-size: 1.05em; --fl-icon-color: #1d6340; --fl-icon-stroke: 2; }
         .lucide { width: var(--fl-icon-size); height: var(--fl-icon-size);
                   stroke-width: var(--fl-icon-stroke); vertical-align: -0.16em; stroke: currentColor; }
@@ -36,11 +34,11 @@
 
 <header class="site-header">
     <div class="site-header-inner">
-        <!-- [병합 point 2] 로고 클릭 시 농장주는 farmer_easy_mode로 이동 -->
-        <a href="{% if session.get('role') == 'farmer' %}{{ url_for('farmer_easy_mode') }}{% else %}/{% endif %}" class="site-logo">FarmLink</a>
+        <!-- 💡 로고 링크 역할별 분기 -->
+        <a href="{% if session.get('role') == 'admin' %}{{ url_for('admin_farm_audit_list') }}{% elif session.get('role') == 'farmer' %}{{ url_for('farmer_easy_mode') }}{% else %}/{% endif %}" class="site-logo">FarmLink</a>
         
-        <!-- [병합 point 3] 일반 유저 전용 상단 네비게이션 (추억 앨범 추가) -->
-        {% if session.get('role') != 'farmer' %}
+        <!-- 일반 유저 전용 상단 네비게이션 -->
+        {% if session.get('role') not in ['farmer', 'admin'] %}
         <nav class="site-nav">
             <a href="{{ url_for('index') }}" {% if request.endpoint == 'index' %}class="active"{% endif %}>체험 찾기</a>
             <a href="{{ url_for('ai_recommend_page') }}">오늘의 추천 코스</a>
@@ -57,11 +55,26 @@
                 <i data-lucide="circle-user-round" class="user-chip-icon"></i>
                 <span>{{ session.get('nickname') }}님</span>
                 <i data-lucide="chevron-down" style="font-size:0.7rem;"></i>
+                
                 <div class="user-chip-dropdown">
-                    {% if session.get('role') != 'farmer' %}
+                    <!-- 1️ 관리자(Admin) 전용 메뉴 -->
+                    {% if session.get('role') == 'admin' %}
+                    <a href="{{ url_for('admin_farm_audit_list') }}" style="color:#2d6a4f; font-weight:700;">
+                        <i data-lucide="shield-check" class="mr-1"></i> 농장 심사
+                    </a>
+                    <a href="{{ url_for('farmer_easy_mode') }}">
+                        <i data-lucide="tractor" class="mr-1"></i> 농장주 페이지
+                    </a>
+                    <hr style="margin:4px 0; border-top:1px solid #f0f0f0;">
+                    
+                    <!-- 2️ 일반 회원(Experiencer) 전용 메뉴 -->
+                    {% elif session.get('role') != 'farmer' %}
                     <a href="{{ url_for('my_info') }}"><i data-lucide="user" class="mr-1"></i> 내 정보</a>
                     <a href="{{ url_for('album_create') }}"><i data-lucide="book-open" class="mr-1"></i> 추억 앨범 만들기</a>
+                    <hr style="margin:4px 0; border-top:1px solid #f0f0f0;">
                     {% endif %}
+
+                    <!-- 공통: 로그아웃 -->
                     <a href="{{ url_for('logout') }}"><i data-lucide="log-out" class="mr-1"></i> 로그아웃</a>
                 </div>
             </div>

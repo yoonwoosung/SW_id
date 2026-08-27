@@ -118,12 +118,16 @@ def login_page():
             session['user_id'] = user.id
             session['nickname'] = user.nickname
             session['role'] = user.role
+            session['just_logged_in'] = True
             flash(f"{user.nickname}님, 환영합니다!", "success")
             
-            # [프 기능] 농장주 로그인 성공 시 간편 모드로 리다이렉트
-            if user.role == 'farmer':
+            # 역할별 시작 페이지 분기
+            if user.role == 'admin':
+                return redirect(url_for('admin_farm_audit_list'))
+            elif user.role == 'farmer':
                 return redirect(url_for('farmer_easy_mode'))
-            return redirect(url_for('index'))
+            else:
+                return redirect(url_for('index'))
         else:
             flash("이메일 또는 비밀번호가 올바르지 않습니다.", "danger")
             return redirect(url_for('login_page'))

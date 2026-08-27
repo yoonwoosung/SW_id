@@ -199,7 +199,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // --- 농장 등록 시간표 드래그 & 클릭 스크립트 (farmer 방식) ---
-    const timetable = document.querySelector('.timetable');
+    const timetable = document.querySelector('#farm-register-form .timetable');
     if (timetable) {
         let isMouseDown = false;
         let selectionMode = 'select';

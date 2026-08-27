@@ -27,19 +27,24 @@ from services.review_service import analyze_review_with_clova
 from external.kakao_map import get_coords_from_address
 from common.validators import allowed_file
 
-
 def add_review(item_id):
-    if 'user_id' not in session: return redirect(url_for('login_page'))
+    if 'user_id' not in session: 
+        return redirect(url_for('login_page'))
 
     user_id = session['user_id']
-    has_confirmed_app = Application.query.filter(
+
+    from services import activity_service
+    activity_service.sync_user_completed_reservations(user_id)
+
+    has_valid_app = Application.query.filter(
         Application.user_id == user_id,
         Application.experience_id == item_id,
-        Application.status == '확정'
+        Application.status.in_(['완료', '확정']),
+        Application.can_review == True
     ).first()
 
-    if not has_confirmed_app:
-        flash("후기를 작성할 권한이 없습니다. 예약이 확정된 체험에만 후기를 남길 수 있습니다.", "warning")
+    if not has_valid_app:
+        flash("후기는 체험이 완전히 종료된 이후에만 작성하실 수 있습니다.", "warning")
         return redirect(url_for('experience_detail', item_id=item_id))
 
     existing_review = Review.query.filter_by(user_id=user_id, experience_id=item_id).first()
@@ -47,19 +52,22 @@ def add_review(item_id):
         flash("이미 이 체험에 대한 후기를 작성하셨습니다.", "warning")
         return redirect(url_for('experience_detail', item_id=item_id))
 
-    review_content = request.form.get('content')
+    review_content = (request.form.get('content') or '').strip()
+    if not review_content:
+        flash("후기 내용을 입력해 주세요.", "warning")
+        return redirect(url_for('experience_detail', item_id=item_id))
+
     analysis_json = None
     try:
-        # [백 기능 유지] Clova AI 분석
         analysis_json = analyze_review_with_clova(review_content)
         if analysis_json is None:
             flash("AI 후기 분석에 실패했습니다. (API 응답 없음)", "warning")
     except Exception as e:
         print(f"CLOVA API 호출 중 에러 발생: {e}")
-        flash(f"AI 후기 분석 중 오류가 발생했습니다. 관리자에게 문의하세요.", "danger")
+        flash("AI 후기 분석 중 오류가 발생했습니다. 관리자에게 문의하세요.", "danger")
 
     new_review = Review(
-        rating=int(request.form.get('rating')),
+        rating=int(request.form.get('rating', 5)),
         content=review_content,
         user_id=session['user_id'],
         experience_id=item_id,
@@ -73,9 +81,8 @@ def add_review(item_id):
     db.session.add(new_notification)
 
     db.session.commit()
-    flash("후기가 등록되었습니다.", "success")
+    flash("소중한 후기가 성공적으로 등록되었습니다!", "success")
     return redirect(url_for('experience_detail', item_id=item_id))
-
 
 def add_inquiry(item_id):
     if 'user_id' not in session:

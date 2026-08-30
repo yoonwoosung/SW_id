@@ -111,12 +111,14 @@ FarmLink는 CSS 클래스 시스템이 두 개 병존한다.
 ### 농장주 페이지 폰트 스케일 (고령층 접근성 기준)
 
 ```css
---farmer-font-base:    18px   /* 본문 최소 */
+--farmer-font-base:    18px   /* 본문 최소 — .fl-card-body 기본 적용 */
 --farmer-font-label:   16px   /* 폼 라벨·보조 */
---farmer-font-heading: 24px   /* 섹션 제목 */
+--farmer-font-heading: 24px   /* 섹션 제목 — .fl-section-head h2 적용 */
 --farmer-font-title:   30px   /* 페이지 제목 */
 --farmer-font-btn:     18px   /* 버튼 텍스트 */
 ```
+
+> **적용 현황**: `easy-*` / `em-*` 클래스(style.css)와 `fl-*` 테마 컴포넌트(theme.css) 모두 위 토큰 기준으로 통일 완료.
 
 ---
 
@@ -352,7 +354,8 @@ Bootstrap `.pagination` 사용.
 
 | 클래스 | 설명 |
 |--------|------|
-| `.easy-mode-container` | 페이지 래퍼. max-width 860px, 중앙 정렬 |
+| `.easy-mode-container` | 페이지 래퍼. max-width 860px, 중앙 정렬 (폼 페이지 전용 유지) |
+| `.fl-container` | 농장주 앱 페이지 래퍼. **max-width 없음 (풀 너비)**, 좌우 padding 24px |
 | `.easy-header` | 페이지 상단 제목+설명 영역 |
 | `.easy-header h1` | 페이지 제목. `--farmer-font-title(30px)`, 800 |
 | `.easy-header p` | 부제목. `--farmer-font-base(18px)`, muted |

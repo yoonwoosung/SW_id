@@ -46,7 +46,7 @@ body {
 }
 .fl-scope a { color: inherit; }
 .fl-scope a:hover { text-decoration: none; }
-.fl-container { max-width: 1140px; margin: 0 auto; padding: 0 var(--fl-s4); }
+.fl-container { max-width: 100%; margin: 0 auto; padding: 0 var(--fl-s5); }
 .fl-muted { color: var(--fl-text-muted); }
 
 /* ---- 헤더/브랜드 (기존 .logo 오버라이드) ---- */
@@ -58,12 +58,12 @@ body {
 /* ---- 섹션 ---- */
 .fl-section { margin: var(--fl-s8) 0; }
 .fl-section-head { display:flex; align-items:center; justify-content:space-between; margin-bottom: var(--fl-s4); }
-.fl-section-head h2 { font-size: 1.35rem; font-weight: 800; margin: 0; display:flex; align-items:center; gap: var(--fl-s2); }
+.fl-section-head h2 { font-size: var(--farmer-font-heading); font-weight: 800; margin: 0; display:flex; align-items:center; gap: var(--fl-s2); }
 .fl-more { color: var(--fl-text-muted); font-size: .9rem; font-weight: 600; }
 
 /* ---- 카드 ---- */
 .fl-card { background: var(--fl-surface); border:1px solid var(--fl-border); border-radius: var(--fl-radius-lg); overflow:hidden; }
-.fl-card-body { padding: var(--fl-s5); }
+.fl-card-body { padding: var(--fl-s5); font-size: var(--farmer-font-base); }
 .fl-card--hover { transition: transform .15s ease; }
 .fl-card--hover:hover { transform: translateY(-4px); }
 

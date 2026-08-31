@@ -555,6 +555,10 @@
     }).catch(function () {});
   }
 
+  /* ── URL 파라미터로 초기 패널 결정 ── */
+  var initPanel = new URLSearchParams(location.search).get('panel') || 'info';
+  showPanel(initPanel);
+
   /* ── 사이드바 숫자 초기 로드 ── */
   fetch('/api/users/me/points').then(function (r) { return r.json(); }).then(function (res) {
     if (res.success) setText('mi-side-points', Number(res.data.balance || 0).toLocaleString() + 'P');

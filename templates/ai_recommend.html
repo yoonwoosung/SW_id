@@ -3,6 +3,45 @@
 
 {% block head %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/pages/search_filter.css') }}">
+<style>
+/* ── 코스 상세 모달 ── */
+.ci-modal { position:fixed; inset:0; z-index:1100; display:flex; align-items:flex-end; justify-content:center; }
+.ci-modal[hidden] { display:none; }
+.ci-modal__backdrop { position:absolute; inset:0; background:rgba(0,0,0,.48); }
+.ci-modal__sheet {
+  position:relative; background:#fff; width:100%; max-width:520px;
+  border-radius:20px 20px 0 0; max-height:88vh; overflow:hidden;
+  display:flex; flex-direction:column;
+}
+@media (min-width:640px) {
+  .ci-modal { align-items:center; }
+  .ci-modal__sheet { border-radius:20px; margin-bottom:0; max-height:82vh; }
+}
+.ci-modal__bar { width:40px; height:4px; background:#dde2de; border-radius:2px; margin:12px auto 0; flex-shrink:0; }
+.ci-modal__header { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; padding:12px 20px 10px; flex-shrink:0; border-bottom:1px solid #eef1ee; }
+.ci-modal__title { font-size:1.08rem; font-weight:800; color:#253027; margin:0 0 6px; }
+.ci-modal__close { background:none; border:none; color:#8a938c; font-size:1.2rem; cursor:pointer; padding:4px; flex-shrink:0; }
+.ci-modal__body { overflow-y:auto; padding:16px 20px; flex:1; }
+.ci-modal__meta { display:flex; flex-wrap:wrap; gap:12px; font-size:.84rem; color:#55605a; margin-bottom:10px; }
+.ci-modal__reasons { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:14px; }
+.ci-modal__cost { background:var(--fl-green-100,#f0f7ee); border-radius:10px; padding:12px 14px; margin-bottom:18px; }
+.ci-modal__cost-num { font-size:1.35rem; font-weight:800; color:var(--fl-orange,#ea6a1e); }
+.ci-modal__cost-lbl { font-size:.74rem; color:#8a938c; margin-top:3px; }
+.ci-modal__tl-head { font-size:.76rem; font-weight:800; color:#8a938c; letter-spacing:.07em; text-transform:uppercase; margin:0 0 12px; }
+/* 타임라인 */
+.ci-tl { position:relative; padding-left:22px; }
+.ci-tl::before { content:""; position:absolute; left:7px; top:10px; bottom:10px; border-left:2px dashed var(--fl-green-700,#3a7d44); }
+.ci-tl-item { position:relative; display:flex; gap:10px; padding:10px 0; align-items:flex-start; }
+.ci-tl-item::before { content:""; position:absolute; left:-18px; top:15px; width:12px; height:12px; border-radius:50%; background:var(--fl-green-700,#3a7d44); border:3px solid #fff; box-shadow:0 0 0 1px var(--fl-green-700,#3a7d44); }
+.ci-tl-time { font-weight:800; color:var(--fl-green-700,#3a7d44); font-size:.8rem; min-width:44px; margin-top:3px; }
+.ci-tl-icon { width:34px; height:34px; border-radius:9px; background:var(--fl-green-100,#f0f7ee); display:flex; align-items:center; justify-content:center; color:var(--fl-green-700,#3a7d44); flex-shrink:0; }
+.ci-tl-name { font-weight:700; font-size:.9rem; }
+.ci-tl-sub { font-size:.75rem; color:#8a938c; margin-top:2px; }
+.ci-modal__footer { padding:12px 20px 16px; border-top:1px solid #eef1ee; flex-shrink:0; }
+/* 카드 클릭 커서 */
+.fl-course-card { cursor:pointer; }
+.fl-course-card:hover { box-shadow:0 4px 18px rgba(0,0,0,.1); }
+</style>
 {% endblock %}
 
 {% block content %}
@@ -70,6 +109,29 @@
 
     <p class="fl-empty" id="search-empty" hidden>검색어와 일치하는 코스가 없어요.</p>
 
+</div>
+
+{# ── 코스 상세 모달 ── #}
+<div class="ci-modal" id="ci-modal" hidden>
+  <div class="ci-modal__backdrop" id="ci-backdrop"></div>
+  <div class="ci-modal__sheet">
+    <div class="ci-modal__bar"></div>
+    <div class="ci-modal__header">
+      <div style="flex:1;min-width:0;">
+        <div id="ci-badges" style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:7px;"></div>
+        <h2 class="ci-modal__title" id="ci-title"></h2>
+        <div class="ci-modal__meta" id="ci-meta"></div>
+      </div>
+      <button class="ci-modal__close" id="ci-close" aria-label="닫기"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="ci-modal__body">
+      <div class="ci-modal__reasons" id="ci-reasons"></div>
+      <div class="ci-modal__cost" id="ci-cost" hidden></div>
+      <div class="ci-modal__tl-head">하루 코스</div>
+      <div id="ci-timeline"></div>
+    </div>
+    <div class="ci-modal__footer" id="ci-footer"></div>
+  </div>
 </div>
 {% endblock %}
 

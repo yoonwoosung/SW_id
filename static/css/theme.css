@@ -14,6 +14,11 @@
   --fl-orange:#ea6a1e; --fl-orange-100:#fdeee2; --fl-danger:#e5484d; --fl-danger-100:#fdecec;
   /* 텍스트/보더 */
   --fl-text:#1a1a1a; --fl-text-muted:#717171; --fl-border:#f0f0f0;
+  /* 예약 상태 뱃지 */
+  --fl-bdg-pending-bg:#fdeccf;   --fl-bdg-pending-text:#9a6a11;
+  --fl-bdg-paid-bg:#fff3cd;      --fl-bdg-paid-text:#8a6d00;
+  --fl-bdg-confirmed-bg:#dcebe1; --fl-bdg-confirmed-text:var(--fl-green-700);
+  --fl-bdg-cancelled-bg:#eceff0; --fl-bdg-cancelled-text:#7a827d;
   /* 라운드 */
   --fl-radius-sm:8px; --fl-radius:12px; --fl-radius-lg:16px; --fl-pill:999px;
   /* 그림자 — 미니멀: 필요한 곳에만 */

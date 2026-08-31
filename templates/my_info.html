@@ -1,384 +1,567 @@
 {% extends "layout.html" %}
+{% block page_class %}page-myinfo{% endblock %}
+
+{% block head %}
+<style>
+/* ── 내비 카테고리 레이블 ── */
+.mi-nav-cat {
+  font-size: .68rem; font-weight: 800; color: var(--fl-text-muted);
+  letter-spacing: .08em; text-transform: uppercase;
+  padding: 12px 18px 4px; pointer-events: none;
+}
+.mi-nav-divider { height: 1px; background: var(--fl-border); margin: 4px 0; }
+
+/* ── 뱃지 (mypage 동일) ── */
+.mi-bdg { display:inline-block; font-size:.72rem; font-weight:800; border-radius:999px; padding:3px 10px; }
+.mi-bdg-pending   { background:var(--fl-bdg-pending-bg);   color:var(--fl-bdg-pending-text); }
+.mi-bdg-paid      { background:var(--fl-bdg-paid-bg);      color:var(--fl-bdg-paid-text); }
+.mi-bdg-confirmed { background:var(--fl-bdg-confirmed-bg); color:var(--fl-bdg-confirmed-text); }
+.mi-bdg-cancelled { background:var(--fl-bdg-cancelled-bg); color:var(--fl-bdg-cancelled-text); }
+
+/* ── 예약 카드 (mypage mp-res-card 동일) ── */
+.mi-res-list { display:flex; flex-direction:column; gap:12px; }
+.mi-res-card {
+  display:flex; gap:14px; background:var(--fl-surface); border:1px solid var(--fl-border);
+  border-radius:14px; padding:14px; align-items:center;
+}
+.mi-res-thumb {
+  width:80px; height:80px; border-radius:11px; object-fit:cover; flex-shrink:0;
+  background:var(--fl-green-100); display:flex; align-items:center; justify-content:center;
+  color:var(--fl-green-700);
+}
+.mi-res-body { flex:1; min-width:0; }
+.mi-res-title { font-weight:800; margin:5px 0; color:var(--fl-text); }
+.mi-res-meta { font-size:.84rem; color:var(--fl-text-muted); margin-top:2px; display:flex; align-items:center; gap:5px; }
+.mi-res-actions { display:flex; flex-direction:column; gap:8px; flex-shrink:0; }
+.mi-cancel-form { margin:0; }
+.mi-btn-cancel { border:1px solid var(--fl-danger-100); background:var(--fl-surface); color:var(--fl-danger); border-radius:9px; padding:8px 14px; font-weight:700; font-size:.84rem; cursor:pointer; }
+
+/* ── 다음 여행 카드 ── */
+.mi-next-card {
+  display:flex; gap:16px; align-items:center;
+  background:var(--fl-green-100); border-radius:var(--fl-radius); padding:18px;
+}
+.mi-next-thumb {
+  width:88px; height:88px; border-radius:12px; object-fit:cover; flex-shrink:0;
+  background:var(--fl-green-100); display:flex; align-items:center; justify-content:center;
+  font-size:2rem; color:var(--fl-green-700);
+}
+.mi-next-title { font-size:1rem; font-weight:800; margin:5px 0 4px; }
+.mi-next-meta { font-size:.82rem; color:var(--fl-text-muted); margin-top:3px; display:flex; align-items:center; gap:5px; }
+.mi-next-actions { display:flex; flex-direction:column; gap:7px; flex-shrink:0; }
+
+/* ── 정보 폼 (farmer_easy_mode fl-info-row 동일) ── */
+.mi-slbl {
+  font-size:.68rem; font-weight:800; color:var(--fl-text-muted);
+  letter-spacing:.07em; text-transform:uppercase; padding:10px 0 4px;
+}
+.mi-frow { display:flex; align-items:center; padding:12px 0; border-bottom:1px solid var(--fl-border); }
+.mi-frow:last-of-type { border:none; }
+.mi-flbl { font-size:.84rem; color:var(--fl-text-muted); font-weight:600; width:80px; flex-shrink:0; }
+.mi-fval { flex:1; font-weight:600; }
+.mi-fval.dim { color:var(--fl-text-muted); font-weight:400; }
+.mi-finput {
+  flex:1; border:1px solid var(--fl-border); border-radius:8px;
+  padding:8px 12px; font-size:.92rem; font-weight:600; outline:none; transition:border-color .15s;
+}
+.mi-finput:focus { border-color:var(--fl-green-700); }
+
+/* ── 찜·최근 목록 (mypage mp-list-item 동일) ── */
+.mi-list-item {
+  display:flex; align-items:center; gap:12px; padding:12px 4px;
+  border-bottom:1px solid var(--fl-border); text-decoration:none; color:inherit;
+}
+.mi-list-item:last-child { border:none; }
+.mi-list-item:hover { text-decoration:none; color:inherit; }
+.mi-thumb {
+  width:56px; height:56px; border-radius:10px; object-fit:cover;
+  background:var(--fl-green-100); display:flex; align-items:center;
+  justify-content:center; flex-shrink:0; color:var(--fl-green-700);
+}
+.mi-thumb img { width:100%; height:100%; object-fit:cover; border-radius:10px; }
+
+/* ── 포인트 ── */
+.mi-point-balance { font-size:2.2rem; font-weight:800; color:var(--fl-orange); }
+.mi-point-row {
+  display:flex; align-items:center; padding:12px 4px;
+  border-bottom:1px solid var(--fl-border);
+}
+.mi-point-row:last-child { border:none; }
+.mi-point-pos { color:var(--fl-green-700); font-weight:800; }
+.mi-point-neg { color:var(--fl-danger); font-weight:800; }
+
+/* ── 추억 앨범 그리드 ── */
+.mi-album-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+.mi-album-item {
+  border-radius:var(--fl-radius); overflow:hidden;
+  aspect-ratio:1; position:relative; background:var(--fl-green-100);
+  display:flex; align-items:center; justify-content:center; color:var(--fl-green-700);
+}
+.mi-album-item img { width:100%; height:100%; object-fit:cover; display:block; }
+.mi-album-label {
+  position:absolute; bottom:0; left:0; right:0;
+  background:rgba(0,0,0,.45); color:var(--fl-surface); font-size:.68rem; font-weight:700;
+  padding:4px 6px; text-align:center;
+}
+
+/* ── 빈 상태 ── */
+.mi-empty { color:var(--fl-text-muted); padding:20px 4px; font-size:.88rem; }
+
+/* ── AI 타임라인 ── */
+.mi-tl { position:relative; padding-left:20px; }
+.mi-tl::before { content:""; position:absolute; left:6px; top:8px; bottom:8px; border-left:2px dashed var(--fl-green-700); }
+.mi-tl-item { position:relative; display:flex; gap:12px; padding:10px 0; align-items:flex-start; }
+.mi-tl-item::before { content:""; position:absolute; left:-17px; top:14px; width:12px; height:12px; border-radius:50%; background:var(--fl-green-700); border:3px solid var(--fl-surface); box-shadow:0 0 0 1px var(--fl-green-700); }
+.mi-tl-time { font-weight:800; color:var(--fl-green-700); font-size:.82rem; min-width:40px; margin-top:2px; }
+.mi-tl-name { font-weight:700; font-size:.9rem; }
+.mi-tl-sub { font-size:.76rem; color:var(--fl-text-muted); margin-top:2px; }
+
+/* ── 사이드바 프로필 스탯 ── */
+.mi-side-stats { display:flex; gap:0; border-top:1px solid var(--fl-border); margin-top:10px; width:100%; }
+.mi-side-stat { flex:1; text-align:center; padding:10px 4px; border-right:1px solid var(--fl-border); }
+.mi-side-stat:last-child { border-right:none; }
+.mi-side-stat-num { font-size:.95rem; font-weight:800; color:var(--fl-green-700); }
+.mi-side-stat-lbl { font-size:.65rem; color:var(--fl-text-muted); margin-top:2px; }
+
+/* ── 반응형 ── */
+@media (max-width: 860px) {
+  .mi-nav-cat { display:none; }
+  .mi-nav-divider { display:none; }
+}
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="dashboard-page">
+{% macro res_badge(status) %}
+  {% if status == '예정' %}<span class="mi-bdg mi-bdg-pending">결제 대기</span>
+  {% elif status == '결제완료' %}<span class="mi-bdg mi-bdg-paid">수락 대기중</span>
+  {% elif status == '확정' %}<span class="mi-bdg mi-bdg-confirmed">예약 확정</span>
+  {% elif status == '취소' %}<span class="mi-bdg mi-bdg-cancelled">취소됨</span>
+  {% else %}<span class="mi-bdg mi-bdg-cancelled">{{ status }}</span>{% endif %}
+{% endmacro %}
 
-    <!-- 사이드바 -->
-    <aside class="db-sidebar">
-        <div class="db-profile-card">
-            <div class="db-avatar">
-                {% if user.profile_image and user.profile_image != 'shd.png' %}
-                    <img src="{{ url_for('static', filename='uploads/' + user.profile_image) }}" alt="프로필">
-                {% else %}
-                    <i class="fa-solid fa-circle-user"></i>
-                {% endif %}
+{% set upcoming = applications | selectattr('status', 'in', ['예정', '결제완료', '확정']) | list %}
+{% set next_trip = upcoming[0] if upcoming else none %}
+{% set pending_count = applications | selectattr('status', 'equalto', '예정') | list | length %}
+{% set exp_count = applications | selectattr('status', 'in', ['결제완료', '확정']) | list | length %}
+
+<div class="fl-container fl-scope" style="margin-top:var(--fl-s5);">
+  <div class="fl-layout">
+
+    {# ══ 사이드바 ══ #}
+    <aside class="fl-sidebar">
+
+      {# 프로필 카드 #}
+      <div class="fl-card">
+        <div class="fl-card-body fl-side-profile">
+          {% if user.profile_image and user.profile_image not in ['shd.png', 'default.png'] %}
+            <img class="fl-avatar" src="{{ url_for('static', filename='uploads/' + user.profile_image) }}" alt="{{ user.nickname }}">
+          {% else %}
+            <img class="fl-avatar" src="{{ url_for('static', filename='uploads/default.png') }}" alt="{{ user.nickname }}">
+          {% endif %}
+          <strong>{{ user.nickname }}</strong>
+          <div class="fl-muted fl-meta">일반 회원</div>
+          <div class="mi-side-stats">
+            <div class="mi-side-stat">
+              <div class="mi-side-stat-num">{{ exp_count }}</div>
+              <div class="mi-side-stat-lbl">체험</div>
             </div>
-            <div class="db-profile-name">{{ user.nickname }}님</div>
-            <div class="db-profile-welcome">환영합니다!</div>
-            <span class="db-role-badge">{{ '농장주' if user.role == 'farmer' else '일반 회원' }}</span>
-        </div>
-
-        <nav class="db-nav">
-            <a href="{{ url_for('my_info') }}" class="db-nav-item active">
-                <i class="fa-regular fa-calendar-check"></i> 예약 내역
-            </a>
-            <a href="#" class="db-nav-item">
-                <i class="fa-solid fa-route"></i> AI 여행 코스
-            </a>
-            <a href="{{ url_for('album_create') }}" class="db-nav-item">
-                <i class="fa-regular fa-images"></i> 추억 앨범
-            </a>
-            <a href="#" class="db-nav-item">
-                <i class="fa-solid fa-rotate-left"></i> 재방문 추천
-            </a>
-            <a href="#" class="db-nav-item" id="edit-toggle-nav">
-                <i class="fa-regular fa-user"></i> 내 정보 수정
-            </a>
-        </nav>
-
-        <div class="db-info-card">
-            <div class="db-info-header">
-                내 정보
-                <button class="db-info-edit-btn" id="edit-btn">수정</button>
+            <div class="mi-side-stat">
+              <div class="mi-side-stat-num" id="mi-side-points">—</div>
+              <div class="mi-side-stat-lbl">포인트</div>
             </div>
-            <form id="info-form" method="POST" action="{{ url_for('my_info') }}">
-                <fieldset id="info-fieldset" disabled>
-                    <div class="db-info-row">
-                        <span class="db-info-label">닉네임</span>
-                        <input type="text" name="nickname" class="db-info-input" value="{{ user.nickname }}" required>
-                    </div>
-                    <div class="db-info-row">
-                        <span class="db-info-label">이름</span>
-                        <input type="text" name="name" class="db-info-input" value="{{ user.name }}">
-                    </div>
-                    <div class="db-info-row">
-                        <span class="db-info-label">생년월일</span>
-                        <input type="text" class="db-info-input text-muted" value="{{ user.birthdate or '미등록' }}" disabled tabindex="-1">
-                    </div>
-                    <div class="db-info-row">
-                        <span class="db-info-label">성별</span>
-                        <input type="text" class="db-info-input text-muted" value="{% if user.gender == 'male' %}남자{% elif user.gender == 'female' %}여자{% else %}미선택{% endif %}" disabled tabindex="-1">
-                    </div>
-                    <div class="db-info-row">
-                        <span class="db-info-label">이메일</span>
-                        <input type="text" class="db-info-input" value="{{ user.email }}" disabled>
-                    </div>
-                    <div class="db-info-row">
-                        <span class="db-info-label">전화번호</span>
-                        <input type="text" name="phone" class="db-info-input" value="{{ user.phone or '' }}">
-                    </div>
-                    {% if user.role == 'farmer' %}
-                    <div class="db-info-row">
-                        <span class="db-info-label">농장 주소</span>
-                        <input type="text" name="farm_address" class="db-info-input" value="{{ user.farm_address or '' }}">
-                    </div>
-                    <div class="db-info-row">
-                        <span class="db-info-label">농장 규모 (평)</span>
-                        <input type="text" name="farm_size" class="db-info-input" value="{{ user.farm_size or '' }}">
-                    </div>
-                    <div class="db-info-row">
-                        <span class="db-info-label">한 줄 소개</span>
-                        <input type="text" name="profile_bio" class="db-info-input" value="{{ user.profile_bio or '' }}">
-                    </div>
-                    {% endif %}
-                    <div id="form-buttons" style="display:none; margin-top:0.75rem;">
-                        <button type="button" id="cancel-btn" class="btn btn-sm btn-secondary btn-block">취소</button>
-                        <button type="submit" class="btn btn-sm btn-success btn-block mt-1">저장하기</button>
-                    </div>
-                </fieldset>
-            </form>
+            <div class="mi-side-stat">
+              <div class="mi-side-stat-num" id="mi-side-wish">—</div>
+              <div class="mi-side-stat-lbl">찜</div>
+            </div>
+          </div>
         </div>
+      </div>
 
-        <a href="{{ url_for('logout') }}" class="db-logout-btn">로그아웃</a>
+      {# 내비게이션 #}
+      <div class="fl-card">
+        <div class="fl-card-body fl-side-menu" style="padding:6px 0;">
+          <a href="#" class="is-active" data-panel="info">
+            <i class="fa-regular fa-user"></i> 내 정보 수정
+          </a>
+          <div class="mi-nav-divider"></div>
+          <div class="mi-nav-cat">내 활동</div>
+          <a href="#" data-panel="res">
+            <i class="fa-regular fa-calendar-check"></i> 예약 내역
+            {% if pending_count > 0 %}<span style="margin-left:auto;background:var(--fl-danger);color:var(--fl-surface);border-radius:var(--fl-pill);font-size:.62rem;font-weight:800;padding:1px 6px;">{{ pending_count }}</span>{% endif %}
+          </a>
+          <a href="#" data-panel="wish"><i class="fa-regular fa-heart"></i> 찜</a>
+          <a href="#" data-panel="recent"><i class="fa-solid fa-clock-rotate-left"></i> 최근 본 것</a>
+          <a href="#" data-panel="point"><i class="fa-solid fa-coins"></i> 포인트</a>
+          <a href="#" data-panel="ai"><i class="fa-solid fa-route"></i> AI 여행 코스</a>
+          <div class="mi-nav-divider"></div>
+          <div class="mi-nav-cat">추억</div>
+          <a href="#" data-panel="album"><i class="fa-regular fa-images"></i> 추억 앨범</a>
+        </div>
+      </div>
+
+      <a href="{{ url_for('logout') }}" class="fl-btn fl-btn-outline" style="width:100%;justify-content:center;">
+        <i class="fa-solid fa-arrow-right-from-bracket"></i> 로그아웃
+      </a>
+
     </aside>
 
-    <!-- 메인 콘텐츠 -->
-    <div class="db-main">
+    {# ══ 메인 ══ #}
+    <main style="display:flex;flex-direction:column;gap:var(--fl-s4);">
 
-        <!-- 인사 -->
-        <div class="db-greeting-bar">
-            <div>
-                <h2 class="db-greeting-title">
-                    <i class="fa-solid fa-seedling text-success"></i> 안녕하세요, {{ user.nickname }}님
-                </h2>
-                {% set upcoming_list = applications | selectattr('status', 'equalto', '예정') | list %}
-                <p class="db-greeting-sub">
-                    이번 주 예약된 체험이 <strong class="text-success">{{ upcoming_list|length }}개</strong> 있어요.
-                </p>
-            </div>
-            <a href="{{ url_for('my_info') }}" class="btn-outline-dark-sm">
-                전체 예약 내역 보기 <i class="fa-solid fa-chevron-right"></i>
-            </a>
-        </div>
+      {# ── 내 정보 수정 ── #}
+      <div id="panel-info" class="mi-panel is-active" style="display:flex;flex-direction:column;gap:var(--fl-s4);">
 
-        <!-- 나의 다음 여행 -->
-        {% if upcoming_list %}
-        {% set next_trip = upcoming_list[0] %}
-        <div class="db-card db-next-trip">
-            <h3 class="db-card-title">나의 다음 여행</h3>
-            <div class="next-trip-inner">
-                <div class="next-trip-img-wrap">
-                    <span class="next-trip-badge">예약 확정</span>
-                    {% if next_trip.experience.images %}
-                        <img src="{{ url_for('static', filename='uploads/' + next_trip.experience.images.split(',')[0]) }}"
-                             alt="{{ next_trip.experience.crop }}" class="next-trip-img">
-                    {% else %}
-                        <div class="next-trip-img-placeholder"><i class="fa-solid fa-seedling"></i></div>
-                    {% endif %}
-                </div>
-                <div class="next-trip-info">
-                    <h4 class="next-trip-crop">{{ next_trip.experience.crop }} 체험</h4>
-                    <p><i class="fa-regular fa-calendar mr-1"></i> {{ next_trip.apply_date.strftime('%Y.%m.%d') }} {{ next_trip.apply_time }}</p>
-                    <p><i class="fa-solid fa-user-group mr-1"></i> {{ next_trip.participants_count }}명</p>
-                    <p><i class="fa-solid fa-location-dot mr-1"></i> {{ next_trip.experience.address_detail }}</p>
-                    <p class="next-trip-id">
-                        <small>예약번호 FLT-{{ next_trip.apply_date.strftime('%y%m%d') }}-{{ next_trip.id }}</small>
-                    </p>
-                    <div class="next-trip-btns">
-                        <a href="{{ url_for('experience_detail', item_id=next_trip.experience.id) }}" class="btn btn-success btn-sm">예약 상세</a>
-                        <a href="#" class="btn btn-outline-success btn-sm">
-                            <i class="fa-solid fa-map-location-dot mr-1"></i> AI 여행 코스 보기
-                        </a>
-                    </div>
-                </div>
+        <section class="fl-card"><div class="fl-card-body">
+          <div class="fl-section-head">
+            <h2><i data-lucide="user-round"></i> 내 정보 수정</h2>
+            <button type="button" class="fl-btn fl-btn-outline fl-btn-sm" id="mi-edit-btn">
+              <i class="fa-solid fa-pen"></i> 수정
+            </button>
+          </div>
+
+          {# 보기 모드 #}
+          <div id="mi-info-view">
+            <div class="mi-slbl">수정 가능</div>
+            <div class="fl-info-row"><span class="lbl">닉네임</span><span class="val">{{ user.nickname }}</span></div>
+            <div class="fl-info-row"><span class="lbl">이름</span><span class="val">{{ user.name or '—' }}</span></div>
+            <div class="fl-info-row"><span class="lbl">전화번호</span><span class="val">{{ user.phone or '미등록' }}</span></div>
+            <div style="height:1px;background:var(--fl-border);margin:8px 0;"></div>
+            <div class="mi-slbl">변경 불가</div>
+            <div class="fl-info-row"><span class="lbl">이메일</span><span class="val" style="color:var(--fl-text-muted);font-weight:400;">{{ user.email }}</span></div>
+            <div class="fl-info-row"><span class="lbl">생년월일</span><span class="val" style="color:var(--fl-text-muted);font-weight:400;">{{ user.birthdate or '미등록' }}</span></div>
+            <div class="fl-info-row"><span class="lbl">성별</span>
+              <span class="val" style="color:var(--fl-text-muted);font-weight:400;">
+                {% if user.gender == 'male' %}남자{% elif user.gender == 'female' %}여자{% else %}미선택{% endif %}
+              </span>
             </div>
-        </div>
+          </div>
+
+          {# 수정 모드 #}
+          <form id="mi-info-edit" method="POST" action="{{ url_for('my_info') }}" style="display:none;">
+            <div class="mi-slbl">수정 가능</div>
+            <div class="mi-frow"><div class="mi-flbl">닉네임</div><input class="mi-finput" type="text" name="nickname" value="{{ user.nickname }}" required></div>
+            <div class="mi-frow"><div class="mi-flbl">이름</div><input class="mi-finput" type="text" name="name" value="{{ user.name or '' }}"></div>
+            <div class="mi-frow"><div class="mi-flbl">전화번호</div><input class="mi-finput" type="text" name="phone" value="{{ user.phone or '' }}"></div>
+            <div style="height:1px;background:var(--fl-border);margin:8px 0;"></div>
+            <div class="mi-slbl">변경 불가</div>
+            <div class="fl-info-row"><span class="lbl">이메일</span><span class="val" style="color:var(--fl-text-muted);font-weight:400;">{{ user.email }}</span></div>
+            <div class="fl-info-row"><span class="lbl">생년월일</span><span class="val" style="color:var(--fl-text-muted);font-weight:400;">{{ user.birthdate or '미등록' }}</span></div>
+            <div class="fl-info-row"><span class="lbl">성별</span>
+              <span class="val" style="color:var(--fl-text-muted);font-weight:400;">
+                {% if user.gender == 'male' %}남자{% elif user.gender == 'female' %}여자{% else %}미선택{% endif %}
+              </span>
+            </div>
+            <div style="display:flex;gap:8px;margin-top:16px;">
+              <button type="submit" class="fl-btn fl-btn-primary" style="flex:1;">저장하기</button>
+              <button type="button" class="fl-btn fl-btn-outline" style="flex:1;" id="mi-cancel-btn">취소</button>
+            </div>
+          </form>
+        </div></section>
+
+        <section class="fl-card"><div class="fl-card-body">
+          <div class="fl-section-head"><h2><i data-lucide="settings"></i> 계정</h2></div>
+          <div class="fl-info-row" style="cursor:pointer;">
+            <span class="lbl">비밀번호</span>
+            <span class="val" style="color:var(--fl-text-muted);font-weight:400;">변경하기</span>
+            <i data-lucide="chevron-right" style="color:var(--fl-text-muted);"></i>
+          </div>
+          <div style="margin-top:16px;">
+            <a href="{{ url_for('logout') }}" class="fl-btn fl-btn-outline fl-btn-block" style="justify-content:center;">로그아웃</a>
+          </div>
+          <div style="text-align:center;margin-top:10px;">
+            <button style="background:none;border:none;color:var(--fl-text-muted);font-size:.76rem;cursor:pointer;">회원 탈퇴</button>
+          </div>
+        </div></section>
+
+      </div>
+
+      {# ── 예약 내역 ── #}
+      <div id="panel-res" class="mi-panel" style="display:none;flex-direction:column;gap:var(--fl-s4);">
+
+        {% if next_trip %}
+        <section class="fl-card"><div class="fl-card-body">
+          <div class="fl-section-head"><h2><i data-lucide="map"></i> 다가오는 여행</h2></div>
+          <div class="mi-next-card">
+            {% if next_trip.experience.images %}
+              <img class="mi-next-thumb" src="{{ url_for('static', filename='uploads/' + next_trip.experience.images.split(',')[0]) }}" alt="{{ next_trip.experience.crop }}">
+            {% else %}
+              <div class="mi-next-thumb"><i data-lucide="sprout" style="width:2rem;height:2rem;"></i></div>
+            {% endif %}
+            <div style="flex:1;">
+              <span class="mi-bdg mi-bdg-confirmed" style="margin-bottom:6px;display:inline-block;">
+                {% if next_trip.status == '확정' %}예약 확정{% elif next_trip.status == '결제완료' %}수락 대기중{% else %}결제 대기{% endif %}
+              </span>
+              <div class="mi-next-title">{{ next_trip.experience.crop }} 체험</div>
+              <div class="mi-next-meta"><i data-lucide="calendar"></i> {{ next_trip.apply_date.strftime('%Y.%m.%d') }} {{ next_trip.apply_time or '' }}</div>
+              <div class="mi-next-meta"><i data-lucide="map-pin"></i> {{ next_trip.experience.address_detail or next_trip.experience.location or '' }}</div>
+              <div class="mi-next-meta"><i data-lucide="users"></i> {{ next_trip.participants_count }}명</div>
+            </div>
+            <div class="mi-next-actions">
+              {% if next_trip.status == '확정' %}
+              <a href="{{ url_for('ai_recommend_page') }}?experience={{ next_trip.experience.id }}" class="fl-btn fl-btn-primary fl-btn-sm">AI 코스 보기</a>
+              {% endif %}
+              <a href="{{ url_for('experience_detail', item_id=next_trip.experience.id) }}" class="fl-btn fl-btn-outline fl-btn-sm">예약 상세</a>
+            </div>
+          </div>
+        </div></section>
         {% endif %}
 
-        <!-- AI 추천 여행 코스 -->
-        <div class="db-card">
-            <div class="db-card-header">
-                <h3 class="db-card-title">
-                    <span class="ai-badge-label">AI</span> AI 추천 여행 코스
-                    <span class="text-muted ml-1" style="font-size:0.82rem; font-weight:400;">AI가 맞춤 추천한 천안 1일 농촌 여행 코스에요.</span>
-                </h3>
-                <a href="#" class="more-link">AI 코스 전체 보기 <i class="fa-solid fa-chevron-right"></i></a>
-            </div>
-            <div class="ai-course-inner">
-                <div class="ai-timeline">
-                    <div class="ai-timeline-item">
-                        <div class="ai-time">09:00</div>
-                        <div class="ai-dot"></div>
-                        <div class="ai-timeline-body">
-                            <div class="ai-act-name">딸기 수확 체험</div>
-                            <div class="ai-act-sub">천안 행복 딸기 농장</div>
-                        </div>
-                        <div class="ai-thumb">🍓</div>
-                    </div>
-                    <div class="ai-timeline-item">
-                        <div class="ai-time">12:30</div>
-                        <div class="ai-dot"></div>
-                        <div class="ai-timeline-body">
-                            <div class="ai-act-name">천안 향토 음식</div>
-                            <div class="ai-act-sub">병천 순대국 &amp; 로컬 맛집</div>
-                        </div>
-                        <div class="ai-thumb">🍲</div>
-                    </div>
-                    <div class="ai-timeline-item">
-                        <div class="ai-time">15:00</div>
-                        <div class="ai-dot"></div>
-                        <div class="ai-timeline-body">
-                            <div class="ai-act-name">독립기념관 관람</div>
-                            <div class="ai-act-sub">역사와 자연을 함께</div>
-                        </div>
-                        <div class="ai-thumb">🏛️</div>
-                    </div>
-                    <div class="ai-timeline-item">
-                        <div class="ai-time">17:00</div>
-                        <div class="ai-dot"></div>
-                        <div class="ai-timeline-body">
-                            <div class="ai-act-name">로컬 카페 휴식</div>
-                            <div class="ai-act-sub">아늑한 시골 카페에서 힐링</div>
-                        </div>
-                        <div class="ai-thumb">☕</div>
-                    </div>
-                </div>
-                <div class="ai-map-placeholder">
-                    <div class="ai-map-inner">
-                        <i class="fa-solid fa-map-location-dot"></i>
-                        <span>지도 영역</span>
-                    </div>
-                </div>
-            </div>
+        <section class="fl-card"><div class="fl-card-body" style="padding-bottom:0;">
+          <div class="fl-section-head"><h2><i data-lucide="calendar-check"></i> 전체 예약 내역</h2></div>
         </div>
+        {% if applications %}
+          <div class="mi-res-list" style="padding:0 20px 16px;">
+            {% for app in applications %}
+            <div class="mi-res-card">
+              {% if app.experience.images %}
+                <img class="mi-res-thumb" src="{{ url_for('static', filename='uploads/' + app.experience.images.split(',')[0]) }}" alt="{{ app.experience.crop }}">
+              {% else %}
+                <div class="mi-res-thumb"><i data-lucide="sprout"></i></div>
+              {% endif %}
+              <div class="mi-res-body">
+                {{ res_badge(app.status) }}
+                <div class="mi-res-title">{{ app.experience.crop }} 체험</div>
+                <div class="mi-res-meta"><i data-lucide="calendar"></i> {{ app.apply_date.strftime('%Y.%m.%d') }} {{ app.apply_time or '' }} &nbsp;·&nbsp; <i data-lucide="users"></i> {{ app.participants_count }}명</div>
+                <div class="mi-res-meta"><i data-lucide="map-pin"></i> {{ app.experience.address_detail or app.experience.location or '' }}</div>
+                <div style="font-size:.72rem;color:var(--fl-text-muted);margin-top:3px;">예약번호 FLT-{{ '%06d' | format(app.id) }}</div>
+              </div>
+              <div class="mi-res-actions">
+                {% if app.status == '예정' %}
+                  <a href="{{ url_for('payment_page', app_id=app.id) }}" class="fl-btn fl-btn-primary fl-btn-sm">결제하기</a>
+                  <form class="mi-cancel-form" action="{{ url_for('delete_application', app_id=app.id) }}" method="POST" onsubmit="return confirm('예약을 취소할까요?');">
+                    <button type="submit" class="mi-btn-cancel">예약 취소</button>
+                  </form>
+                {% elif app.status == '결제완료' %}
+                  <form class="mi-cancel-form" action="{{ url_for('delete_application', app_id=app.id) }}" method="POST" onsubmit="return confirm('예약을 취소할까요?');">
+                    <button type="submit" class="mi-btn-cancel">예약 취소</button>
+                  </form>
+                  <a href="{{ url_for('experience_detail', item_id=app.experience.id) }}" class="fl-btn fl-btn-outline fl-btn-sm">상세</a>
+                {% elif app.status == '확정' %}
+                  <a href="{{ url_for('ai_recommend_page') }}?experience={{ app.experience.id }}" class="fl-btn fl-btn-primary fl-btn-sm">코스 보기</a>
+                  <a href="{{ url_for('experience_detail', item_id=app.experience.id) }}" class="fl-btn fl-btn-outline fl-btn-sm">상세</a>
+                {% else %}
+                  <a href="{{ url_for('experience_detail', item_id=app.experience.id) }}" class="fl-btn fl-btn-outline fl-btn-sm">상세</a>
+                {% endif %}
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="fl-card-body" style="padding-top:0;">
+            <p class="mi-empty">아직 예약한 체험이 없어요. <a href="{{ url_for('index') }}" style="color:var(--fl-green-700);font-weight:700;">체험 찾아보기 →</a></p>
+          </div>
+        {% endif %}
+        </section>
 
-        <!-- 추억 아카이브 + 재방문 추천 -->
-        <div class="db-two-col">
-            <div class="db-card">
-                <div class="db-card-header">
-                    <h3 class="db-card-title">추억 아카이브</h3>
-                    <div class="archive-btns">
-                        <button class="btn btn-sm btn-outline-secondary">사진 업로드</button>
-                        <a href="{{ url_for('album_create') }}" class="btn btn-sm btn-outline-success">앨범 만들기</a>
-                        <button class="btn btn-sm btn-outline-secondary">SNS 공유</button>
-                    </div>
-                </div>
-                <p class="text-muted mb-2" style="font-size:0.82rem;">여행의 추억을 사진으로 간직해보세요.</p>
-                <div class="archive-grid">
-                    {% set has_archive = namespace(found=false) %}
-                    {% for app in applications %}
-                        {% if app.experience.images %}
-                            {% set has_archive.found = true %}
-                            <div class="archive-item">
-                                <img src="{{ url_for('static', filename='uploads/' + app.experience.images.split(',')[0]) }}"
-                                     alt="{{ app.experience.crop }}">
-                                <div class="archive-label">{{ app.experience.crop }} 체험</div>
-                                <div class="archive-date">{{ app.apply_date.strftime('%Y.%m.%d') }}</div>
-                            </div>
-                        {% endif %}
-                    {% endfor %}
-                    {% if not has_archive.found %}
-                    <p class="text-muted" style="font-size:0.82rem; grid-column:1/-1;">신청한 체험 기록이 없습니다.</p>
-                    {% endif %}
-                </div>
-            </div>
-            <div class="db-card">
-                <div class="db-card-header">
-                    <h3 class="db-card-title">재방문 추천</h3>
-                </div>
-                <p class="text-muted mb-2" style="font-size:0.82rem;">다시 찾고 싶은 농장과 신선한 농산물을 만나보세요.</p>
-                <div class="revisit-list">
-                    <div class="revisit-item">
-                        <div class="revisit-info">
-                            <div class="revisit-name">신선한 제철 농산물</div>
-                            <div class="revisit-sub">농장에서 직접 키운 신선한 농산물 구매</div>
-                        </div>
-                        <button class="btn btn-sm btn-outline-dark">농산물 구매</button>
-                    </div>
-                    <div class="revisit-item">
-                        <div class="revisit-info">
-                            <div class="revisit-name">제철 꾸러미 정기구독</div>
-                            <div class="revisit-sub">제철 농산물을 정기적으로 받아보세요</div>
-                        </div>
-                        <button class="btn btn-sm btn-outline-dark">정기구독</button>
-                    </div>
-                </div>
-            </div>
-        </div>
+      </div>
 
-        <!-- 전체 신청 내역 -->
-        <div class="db-card">
-            <h3 class="db-card-title">전체 신청 내역</h3>
-            {% if applications %}
-            <div class="apps-list">
-                {% for app in applications %}
-                <div class="app-item application-detail-trigger"
-                     data-crop="{{ app.experience.crop }}"
-                     data-apply-date="{{ app.apply_date.strftime('%Y-%m-%d') }}"
-                     data-apply-time="{{ app.apply_time }}"
-                     data-participants="{{ app.participants_count }}"
-                     data-status="{{ app.status }}"
-                     data-location="{{ app.experience.address_detail }}">
-                    <div class="app-item-main">
-                        <div class="app-item-title">{{ app.experience.crop }} 체험</div>
-                        <div class="app-item-meta">
-                            <i class="fa-regular fa-calendar mr-1"></i>
-                            {{ app.apply_date.strftime('%Y-%m-%d') }} {{ app.apply_time }} · {{ app.participants_count }}명
-                        </div>
-                    </div>
-                    <div class="app-item-right">
-                        <span class="badge badge-{{ 'primary' if app.status == '예정' else 'success' }} badge-pill">{{ app.status }}</span>
-                        <form action="{{ url_for('delete_application', app_id=app.id) }}" method="POST"
-                              class="d-inline" onsubmit="return confirm('신청을 취소하시겠습니까?');">
-                            <button type="submit" class="btn btn-outline-danger btn-sm ml-2">취소</button>
-                        </form>
-                    </div>
-                </div>
-                {% endfor %}
+      {# ── 찜 ── #}
+      <div id="panel-wish" class="mi-panel" style="display:none;flex-direction:column;gap:var(--fl-s4);">
+        <section class="fl-card"><div class="fl-card-body">
+          <div class="fl-section-head"><h2><i data-lucide="heart"></i> 찜한 체험</h2></div>
+          <div id="mi-wish-list"><p class="mi-empty">불러오는 중…</p></div>
+        </div></section>
+      </div>
+
+      {# ── 최근 본 것 ── #}
+      <div id="panel-recent" class="mi-panel" style="display:none;flex-direction:column;gap:var(--fl-s4);">
+        <section class="fl-card"><div class="fl-card-body">
+          <div class="fl-section-head"><h2><i data-lucide="history"></i> 최근 본 체험</h2></div>
+          <div id="mi-recent-list"><p class="mi-empty">불러오는 중…</p></div>
+        </div></section>
+      </div>
+
+      {# ── 포인트 ── #}
+      <div id="panel-point" class="mi-panel" style="display:none;flex-direction:column;gap:var(--fl-s4);">
+        <section class="fl-card"><div class="fl-card-body">
+          <div class="fl-section-head"><h2><i data-lucide="coins"></i> 포인트</h2></div>
+          <div class="mi-point-balance" id="mi-point-balance">—</div>
+          <div style="font-size:.8rem;color:var(--fl-text-muted);margin-top:4px;">1P = 1원 · 체험 예약 시 사용 가능</div>
+          <div style="margin-top:16px;" id="mi-point-logs"><p class="mi-empty">불러오는 중…</p></div>
+        </div></section>
+      </div>
+
+      {# ── AI 여행 코스 ── #}
+      <div id="panel-ai" class="mi-panel" style="display:none;flex-direction:column;gap:var(--fl-s4);">
+        <section class="fl-card"><div class="fl-card-body">
+          <div class="fl-section-head">
+            <h2><i data-lucide="route"></i> AI 추천 여행 코스</h2>
+            <a href="{{ url_for('ai_recommend_page') }}" class="fl-more">코스 만들기 →</a>
+          </div>
+          {% if next_trip %}
+            <p style="font-size:.84rem;color:var(--fl-text-muted);margin-bottom:16px;">
+              다가오는 <strong>{{ next_trip.experience.crop }} 체험</strong>에 맞춰 AI가 추천한 하루 코스예요.
+            </p>
+            <div class="mi-tl">
+              <div class="mi-tl-item">
+                <div class="mi-tl-time">09:00</div>
+                <div><div class="mi-tl-name">{{ next_trip.experience.crop }} 체험</div><div class="mi-tl-sub">{{ next_trip.experience.address_detail or next_trip.experience.location or '' }}</div></div>
+              </div>
+              <div class="mi-tl-item"><div class="mi-tl-time">12:30</div><div><div class="mi-tl-name">향토 음식</div><div class="mi-tl-sub">주변 로컬 맛집</div></div></div>
+              <div class="mi-tl-item"><div class="mi-tl-time">15:00</div><div><div class="mi-tl-name">주변 관광지</div><div class="mi-tl-sub">역사와 자연을 함께</div></div></div>
+              <div class="mi-tl-item"><div class="mi-tl-time">17:00</div><div><div class="mi-tl-name">로컬 카페 휴식</div><div class="mi-tl-sub">아늑한 시골 카페에서 힐링</div></div></div>
             </div>
-            {% else %}
-            <p class="text-muted">신청한 체험이 없습니다.</p>
+            <div style="margin-top:16px;">
+              <a href="{{ url_for('ai_recommend_page') }}?experience={{ next_trip.experience.id }}" class="fl-btn fl-btn-primary fl-btn-block" style="justify-content:center;">상세 코스 보기</a>
+            </div>
+          {% else %}
+            <p class="mi-empty">예약 확정 후 AI가 맞춤 여행 코스를 추천해드려요.<br>
+              <a href="{{ url_for('index') }}" style="color:var(--fl-green-700);font-weight:700;">체험 예약하러 가기 →</a>
+            </p>
+          {% endif %}
+        </div></section>
+      </div>
+
+      {# ── 추억 앨범 ── #}
+      <div id="panel-album" class="mi-panel" style="display:none;flex-direction:column;gap:var(--fl-s4);">
+        <section class="fl-card"><div class="fl-card-body">
+          <div class="fl-section-head">
+            <h2><i data-lucide="images"></i> 추억 앨범</h2>
+            <a href="{{ url_for('album_create') }}" class="fl-btn fl-btn-primary fl-btn-sm">앨범 만들기</a>
+          </div>
+          {% set archive = [] %}
+          {% for app in applications %}
+            {% if app.experience.images %}
+              {% set _ = archive.append({'crop': app.experience.crop, 'img': app.experience.images.split(',')[0]}) %}
             {% endif %}
-        </div>
+          {% endfor %}
+          {% if archive %}
+            <div class="mi-album-grid">
+              {% for item in archive[:9] %}
+              <div class="mi-album-item">
+                <img src="{{ url_for('static', filename='uploads/' + item.img) }}" alt="{{ item.crop }}">
+                <div class="mi-album-label">{{ item.crop }}</div>
+              </div>
+              {% endfor %}
+            </div>
+          {% else %}
+            <p class="mi-empty">농장 체험의 추억을 앨범으로 만들어보세요.<br>
+              <a href="{{ url_for('album_create') }}" style="color:var(--fl-green-700);font-weight:700;">앨범 만들기 →</a>
+            </p>
+          {% endif %}
+        </div></section>
+      </div>
 
-        <!-- 하단 스탯 바 -->
-        <div class="db-stats-bar">
-            <div class="db-stat">
-                <div class="db-stat-icon"><i class="fa-solid fa-coins text-warning"></i></div>
-                <div class="db-stat-val text-warning">0P</div>
-                <div class="db-stat-label">포인트 내역 보기 <i class="fa-solid fa-chevron-right"></i></div>
-            </div>
-            <div class="db-stat">
-                <div class="db-stat-icon"><i class="fa-solid fa-heart text-success"></i></div>
-                <div class="db-stat-val">0개</div>
-                <div class="db-stat-label">찜한 목록 보기 <i class="fa-solid fa-chevron-right"></i></div>
-            </div>
-            <div class="db-stat">
-                <div class="db-stat-icon"><i class="fa-regular fa-comment-dots"></i></div>
-                <div class="db-stat-val">{{ applications|length }}개</div>
-                <div class="db-stat-label">작성한 후기 보기 <i class="fa-solid fa-chevron-right"></i></div>
-            </div>
-            <div class="db-stat">
-                <div class="db-stat-icon"><i class="fa-regular fa-bell"></i></div>
-                <div class="db-stat-val">0개</div>
-                <div class="db-stat-label">안 읽은 알림 보기 <i class="fa-solid fa-chevron-right"></i></div>
-            </div>
-        </div>
-
-    </div>
+    </main>
+  </div>
 </div>
+{% endblock %}
 
-<!-- 신청 내역 모달 -->
-<div id="application-detail-modal" class="modal-overlay" style="display: none;">
-    <div class="modal-content">
-        <h4>신청 내역 상세</h4>
-        <div id="modal-summary" style="margin-top: 1rem;">
-            <p><strong>체험명:</strong> <span id="modal-crop"></span></p>
-            <p><strong>신청일:</strong> <span id="modal-apply-date"></span></p>
-            <p><strong>신청시간:</strong> <span id="modal-apply-time"></span></p>
-            <p><strong>참가인원:</strong> <span id="modal-participants"></span>명</p>
-            <p><strong>상태:</strong> <span id="modal-status"></span></p>
-            <p><strong>장소:</strong> <span id="modal-location"></span></p>
-        </div>
-        <div class="modal-buttons">
-            <button id="modal-close-btn" class="btn btn-success">확인</button>
-        </div>
-    </div>
-</div>
-
+{% block scripts %}
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const editBtn = document.getElementById('edit-btn');
-    const cancelBtn = document.getElementById('cancel-btn');
-    const fieldset = document.getElementById('info-fieldset');
-    const formButtons = document.getElementById('form-buttons');
+(function () {
+  /* ── 사이드 내비 ── */
+  var navLinks = document.querySelectorAll('.fl-side-menu a[data-panel]');
+  var panels   = document.querySelectorAll('.mi-panel');
+  var loaded   = {};
 
-    if (editBtn) {
-        editBtn.addEventListener('click', function() {
-            fieldset.disabled = false;
-            formButtons.style.display = 'block';
-            editBtn.style.display = 'none';
-        });
-    }
-    if (cancelBtn) {
-        cancelBtn.addEventListener('click', function() {
-            fieldset.disabled = true;
-            formButtons.style.display = 'none';
-            editBtn.style.display = 'block';
-            location.reload();
-        });
-    }
-
-    const modal = document.getElementById('application-detail-modal');
-    const closeModalBtn = document.getElementById('modal-close-btn');
-    const triggers = document.querySelectorAll('.application-detail-trigger');
-
-    triggers.forEach(trigger => {
-        trigger.addEventListener('click', function(e) {
-            if (e.target.closest('form')) return;
-            const d = this.dataset;
-            document.getElementById('modal-crop').textContent = d.crop;
-            document.getElementById('modal-apply-date').textContent = d.applyDate;
-            document.getElementById('modal-apply-time').textContent = d.applyTime;
-            document.getElementById('modal-participants').textContent = d.participants;
-            document.getElementById('modal-status').textContent = d.status;
-            document.getElementById('modal-location').textContent = d.location;
-            modal.style.display = 'flex';
-        });
+  function showPanel(name) {
+    navLinks.forEach(function (a) { a.classList.toggle('is-active', a.dataset.panel === name); });
+    panels.forEach(function (p) {
+      var on = p.id === 'panel-' + name;
+      p.style.display = on ? 'flex' : 'none';
     });
+    if (!loaded[name]) { loaded[name] = true; loadPanel(name); }
+  }
 
-    function closeModal() { modal.style.display = 'none'; }
-    if (closeModalBtn) closeModalBtn.addEventListener('click', closeModal);
-    if (modal) modal.addEventListener('click', function(e) { if (e.target === modal) closeModal(); });
-});
+  navLinks.forEach(function (a) {
+    a.addEventListener('click', function (e) {
+      e.preventDefault();
+      showPanel(a.dataset.panel);
+    });
+  });
+
+  /* ── 정보 수정 토글 ── */
+  var editBtn  = document.getElementById('mi-edit-btn');
+  var cancelBtn = document.getElementById('mi-cancel-btn');
+  var infoView = document.getElementById('mi-info-view');
+  var infoEdit = document.getElementById('mi-info-edit');
+  if (editBtn) editBtn.addEventListener('click', function () {
+    infoView.style.display = 'none';
+    infoEdit.style.display = 'block';
+    editBtn.style.display = 'none';
+  });
+  if (cancelBtn) cancelBtn.addEventListener('click', function () {
+    infoView.style.display = 'block';
+    infoEdit.style.display = 'none';
+    editBtn.style.display = '';
+  });
+
+  /* ── 유틸 ── */
+  function esc(s) { var d = document.createElement('div'); d.textContent = s == null ? '' : String(s); return d.innerHTML; }
+  function setText(id, v) { var e = document.getElementById(id); if (e) e.textContent = v; }
+  function won(n) { return Number(n || 0).toLocaleString() + '원'; }
+
+  /* ── 패널별 API 로드 ── */
+  function loadPanel(name) {
+    if (name === 'wish') loadWishlist();
+    else if (name === 'recent') loadRecent();
+    else if (name === 'point') loadPoints();
+  }
+
+  function loadWishlist() {
+    fetch('/api/wishlists').then(function (r) { return r.json(); }).then(function (res) {
+      var el = document.getElementById('mi-wish-list');
+      if (!res.success) { el.innerHTML = '<p class="mi-empty">로그인이 필요해요.</p>'; return; }
+      var list = res.data.wishlists || [];
+      if (!list.length) { el.innerHTML = '<p class="mi-empty">아직 찜한 체험이 없어요.</p>'; return; }
+      el.innerHTML = list.map(function (x) {
+        var thumb = x.image
+          ? '<img src="/static/uploads/' + esc(x.image) + '" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:10px;">'
+          : '<i data-lucide="sprout"></i>';
+        return '<a class="mi-list-item" href="/experience/' + x.experience_id + '">'
+          + '<div class="mi-thumb">' + thumb + '</div>'
+          + '<div style="flex:1;"><div style="font-weight:700;">' + esc(x.name) + '</div>'
+          + '<div style="color:var(--fl-orange);font-weight:800;font-size:.88rem;">' + won(x.cost) + '</div></div></a>';
+      }).join('');
+      if (window.lucide) lucide.createIcons();
+    }).catch(function () {});
+  }
+
+  function loadRecent() {
+    fetch('/api/users/me/recent-views').then(function (r) { return r.json(); }).then(function (res) {
+      var el = document.getElementById('mi-recent-list');
+      if (!res.success) { el.innerHTML = '<p class="mi-empty">로그인이 필요해요.</p>'; return; }
+      var list = res.data.recent_views || [];
+      if (!list.length) { el.innerHTML = '<p class="mi-empty">최근 본 체험이 없어요.</p>'; return; }
+      el.innerHTML = list.map(function (x) {
+        var thumb = x.image
+          ? '<img src="/static/uploads/' + esc(x.image) + '" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:10px;">'
+          : '<i data-lucide="sprout"></i>';
+        return '<a class="mi-list-item" href="/experience/' + x.id + '">'
+          + '<div class="mi-thumb">' + thumb + '</div>'
+          + '<div style="flex:1;"><div style="font-weight:700;">' + esc(x.name) + '</div>'
+          + '<div style="color:var(--fl-orange);font-weight:800;font-size:.88rem;">' + won(x.cost) + '</div></div></a>';
+      }).join('');
+      if (window.lucide) lucide.createIcons();
+    }).catch(function () {});
+  }
+
+  function loadPoints() {
+    fetch('/api/users/me/points').then(function (r) { return r.json(); }).then(function (res) {
+      if (!res.success) return;
+      setText('mi-point-balance', Number(res.data.balance || 0).toLocaleString() + 'P');
+      var logs = res.data.logs || [];
+      var el = document.getElementById('mi-point-logs');
+      el.innerHTML = logs.length ? logs.map(function (l) {
+        var pos = l.amount >= 0;
+        return '<div class="mi-point-row">'
+          + '<div style="flex:1;"><div style="font-size:.88rem;font-weight:600;">' + esc(l.reason) + '</div>'
+          + '<div style="font-size:.72rem;color:var(--fl-text-muted);">' + esc((l.created_at || '').slice(0, 10)) + '</div></div>'
+          + '<div class="' + (pos ? 'mi-point-pos' : 'mi-point-neg') + '">'
+          + (pos ? '+' : '') + Number(l.amount).toLocaleString() + 'P</div></div>';
+      }).join('') : '<p class="mi-empty">포인트 내역이 없어요.</p>';
+    }).catch(function () {});
+  }
+
+  /* ── 사이드바 숫자 초기 로드 ── */
+  fetch('/api/users/me/points').then(function (r) { return r.json(); }).then(function (res) {
+    if (res.success) setText('mi-side-points', Number(res.data.balance || 0).toLocaleString() + 'P');
+  }).catch(function () {});
+  fetch('/api/wishlists').then(function (r) { return r.json(); }).then(function (res) {
+    if (res.success) setText('mi-side-wish', (res.data.wishlists || []).length);
+  }).catch(function () {});
+})();
 </script>
 {% endblock %}

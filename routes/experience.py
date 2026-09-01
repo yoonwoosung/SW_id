@@ -130,8 +130,11 @@ def index():
         if items_on_page:
             for item in items_on_page:
                 item.is_specialty = False
+                # address_detail은 nullable이다. NULL이면 지역 특산물 판정만 건너뛴다.
+                # (예전에는 여기서 TypeError가 나 메인 페이지 전체가 500이 됐다.)
+                address = item.address_detail or ''
                 for r, specialties in REGIONAL_SPECIALTIES.items():
-                    if r in item.address_detail and any(sc in item.crop for sc in specialties):
+                    if r in address and any(sc in item.crop for sc in specialties):
                         item.is_specialty = True
                         break
 

@@ -65,3 +65,21 @@ def test_my_info_post_without_nickname_does_not_500(client):
         user = User.query.filter_by(email='u@test.local').first()
         assert user.nickname == '기존닉'   # nickname은 보존
         assert user.name == '새이름'        # name은 갱신
+
+
+def test_index_survives_null_address_detail(client):
+    """address_detail 이 NULL 인 농장이 있어도 메인 페이지가 500 나지 않아야 한다.
+
+    회귀 방지: 예전에는 REGIONAL_SPECIALTIES 판정에서 `r in item.address_detail` 이
+    None 을 만나 TypeError 를 내고 메인 전체가 500 이 됐다.
+    """
+    with flask_app.app_context():
+        db.session.add(Experience(
+            crop='포도', location='경기', address_detail=None,   # ← NULL
+            cost=10000, farmer_id=1, status='recruiting',
+            duration_start=date.today(), end_date=date.today() + timedelta(days=10),
+            approval_status=Experience.APPROVAL_APPROVED,
+        ))
+        db.session.commit()
+
+    assert client.get('/').status_code == 200

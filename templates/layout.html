@@ -21,6 +21,11 @@
         </nav>
         <div class="site-user-area">
             {% if session.get('user_id') %}
+            {% if session.get('role') == 'admin' %}
+            <a href="{{ url_for('admin_dashboard') }}" class="btn-view-mode-toggle">
+                <i class="fa-solid fa-shield-halved"></i> 관리자
+            </a>
+            {% endif %}
             {% if session.get('role') == 'farmer' %}
             <a href="{{ url_for('toggle_view_mode') }}" class="btn-view-mode-toggle">
                 <i class="fa-solid fa-arrows-rotate mr-1"></i>
@@ -35,6 +40,10 @@
                 <span>{{ session.get('nickname') }}님</span>
                 <i class="fa-solid fa-chevron-down" style="font-size:0.7rem;"></i>
                 <div class="user-chip-dropdown">
+                    {% if session.get('role') == 'admin' %}
+                    <a href="{{ url_for('admin_dashboard') }}"><i class="fa-solid fa-shield-halved mr-1"></i> 관리자 대시보드</a>
+                    <a href="{{ url_for('admin_farms') }}"><i class="fa-solid fa-tractor mr-1"></i> 농장 승인</a>
+                    {% endif %}
                     {% if session.get('role') == 'farmer' %}
                     <a href="{{ url_for('detailed_farmer_dashboard') }}"><i class="fa-solid fa-gauge-high mr-1"></i> 농장주 대시보드</a>
                     {% else %}

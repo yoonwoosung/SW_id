@@ -1,0 +1,71 @@
+{# templates/admin/users.html — 회원 관리. 역할·인증상태 인라인 수정과 삭제. #}
+{% extends "admin/_base.html" %}
+
+{% block admin_title %}회원 관리{% endblock %}
+
+{% block admin_content %}
+
+<div class="btn-group btn-group-sm mb-3">
+    <a href="{{ url_for('admin_users') }}" class="btn {% if not role %}btn-dark{% else %}btn-outline-dark{% endif %}">전체</a>
+    {% for r in roles %}
+    <a href="{{ url_for('admin_users', role=r) }}" class="btn {% if role == r %}btn-dark{% else %}btn-outline-dark{% endif %}">{{ r }}</a>
+    {% endfor %}
+</div>
+
+{% if not users %}
+<p class="text-muted">해당 조건의 회원이 없습니다.</p>
+{% else %}
+<div class="table-responsive">
+<table class="table table-sm table-bordered align-middle">
+    <thead class="thead-light">
+        <tr>
+            <th style="width:50px;">ID</th>
+            <th>닉네임 / 이메일</th>
+            <th style="width:90px;">이름</th>
+            <th style="width:70px;">농장수</th>
+            <th style="width:330px;">역할 · 인증상태 수정</th>
+            <th style="width:70px;">삭제</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for u in users %}
+        {% set back = url_for('admin_users', role=role) %}
+        <tr>
+            <td class="text-muted small">{{ u.id }}</td>
+            <td>
+                <strong>{{ u.nickname }}</strong>
+                {% if u.role == 'admin' %}<span class="badge badge-dark ml-1">admin</span>{% endif %}
+                <br><span class="small text-muted">{{ u.email }}</span>
+            </td>
+            <td class="small">{{ u.name }}</td>
+            <td class="text-center">{{ farm_counts.get(u.id, 0) }}</td>
+            <td>
+                <form method="post" action="{{ url_for('admin_user_update', user_id=u.id) }}" class="form-inline">
+                    <input type="hidden" name="next" value="{{ back }}">
+                    <select name="role" class="form-control form-control-sm mr-1" style="width:120px;">
+                        {% for r in roles %}
+                        <option value="{{ r }}" {% if u.role == r %}selected{% endif %}>{{ r }}</option>
+                        {% endfor %}
+                    </select>
+                    <select name="verification_status" class="form-control form-control-sm mr-1" style="width:110px;">
+                        {% for v in verifications %}
+                        <option value="{{ v }}" {% if u.verification_status == v %}selected{% endif %}>{{ v }}</option>
+                        {% endfor %}
+                    </select>
+                    <button class="btn btn-sm btn-outline-primary" type="submit">저장</button>
+                </form>
+            </td>
+            <td>
+                <form method="post" action="{{ url_for('admin_user_delete', user_id=u.id) }}"
+                      onsubmit="return confirm('회원 #{{ u.id }} ({{ u.nickname }})을(를) 삭제합니다.\n이 회원의 농장·예약도 함께 삭제됩니다. 계속할까요?');">
+                    <input type="hidden" name="next" value="{{ back }}">
+                    <button class="btn btn-sm btn-danger" type="submit"><i class="fa-solid fa-trash"></i></button>
+                </form>
+            </td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+</div>
+{% endif %}
+{% endblock %}

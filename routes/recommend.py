@@ -16,7 +16,7 @@ from services.esg_service import compute_esg
 
 def _recruiting_experiences():
     today = date.today()
-    return Experience.query.filter(
+    return Experience.approved_only().filter(
         Experience.status == 'recruiting', Experience.end_date >= today
     ).all()
 

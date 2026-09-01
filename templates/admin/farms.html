@@ -1,0 +1,97 @@
+{# templates/admin/farms.html — 농장(체험) 승인·관리. 이 코드베이스에서 농장 = Experience 1건. #}
+{% extends "admin/_base.html" %}
+
+{% block admin_title %}농장 승인·관리{% endblock %}
+
+{% macro approval_badge(status) -%}
+    {%- if status == 'approved' %}<span class="badge badge-success">승인</span>
+    {%- elif status == 'rejected' %}<span class="badge badge-danger">거절</span>
+    {%- else %}<span class="badge badge-warning">대기</span>{% endif -%}
+{%- endmacro %}
+
+{% block admin_content %}
+
+<div class="btn-group btn-group-sm mb-3">
+    <a href="{{ url_for('admin_farms') }}" class="btn {% if not approval %}btn-dark{% else %}btn-outline-dark{% endif %}">전체</a>
+    <a href="{{ url_for('admin_farms', approval='pending') }}" class="btn {% if approval == 'pending' %}btn-dark{% else %}btn-outline-dark{% endif %}">승인 대기</a>
+    <a href="{{ url_for('admin_farms', approval='approved') }}" class="btn {% if approval == 'approved' %}btn-dark{% else %}btn-outline-dark{% endif %}">승인됨</a>
+    <a href="{{ url_for('admin_farms', approval='rejected') }}" class="btn {% if approval == 'rejected' %}btn-dark{% else %}btn-outline-dark{% endif %}">거절됨</a>
+</div>
+
+{% if not farms %}
+<p class="text-muted">해당 조건의 농장이 없습니다.</p>
+{% else %}
+<div class="table-responsive">
+<table class="table table-sm table-bordered align-middle">
+    <thead class="thead-light">
+        <tr>
+            <th style="width:50px;">ID</th>
+            <th>작물 / 지역</th>
+            <th style="width:110px;">농장주</th>
+            <th style="width:80px;">승인</th>
+            <th style="width:330px;">핵심 필드 수정</th>
+            <th style="width:300px;">처리</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for farm in farms %}
+        {% set back = url_for('admin_farms', approval=approval) %}
+        <tr>
+            <td class="text-muted small">{{ farm.id }}</td>
+            <td>
+                <strong>{{ farm.crop }}</strong><br>
+                <span class="small text-muted">{{ farm.address_detail or farm.location or '-' }}</span>
+                {% if farm.approval_note %}
+                <br><span class="small text-danger">사유: {{ farm.approval_note }}</span>
+                {% endif %}
+            </td>
+            <td class="small">{{ farm.farmer.nickname if farm.farmer else '-' }}</td>
+            <td>{{ approval_badge(farm.approval_status) }}</td>
+
+            {# 인라인 수정: 모집상태·가격·정원만. 이미지·좌표는 농장주 폼 담당. #}
+            <td>
+                <form method="post" action="{{ url_for('admin_farm_update', item_id=farm.id) }}" class="form-inline">
+                    <input type="hidden" name="next" value="{{ back }}">
+                    <select name="status" class="form-control form-control-sm mr-1" style="width:100px;">
+                        {% for s in statuses %}
+                        <option value="{{ s }}" {% if farm.status == s %}selected{% endif %}>{{ s }}</option>
+                        {% endfor %}
+                    </select>
+                    <input type="number" name="cost" value="{{ farm.cost }}" class="form-control form-control-sm mr-1"
+                           style="width:85px;" title="가격" min="0">
+                    <input type="number" name="max_participants" value="{{ farm.max_participants }}"
+                           class="form-control form-control-sm mr-1" style="width:60px;" title="정원" min="0">
+                    <button class="btn btn-sm btn-outline-primary" type="submit">저장</button>
+                </form>
+            </td>
+
+            <td>
+                <div class="d-flex flex-wrap">
+                    {% if farm.approval_status != 'approved' %}
+                    <form method="post" action="{{ url_for('admin_farm_approve', item_id=farm.id) }}" class="mr-1 mb-1">
+                        <input type="hidden" name="next" value="{{ back }}">
+                        <button class="btn btn-sm btn-success" type="submit">승인</button>
+                    </form>
+                    {% endif %}
+                    {% if farm.approval_status != 'rejected' %}
+                    <form method="post" action="{{ url_for('admin_farm_reject', item_id=farm.id) }}" class="form-inline mr-1 mb-1">
+                        <input type="hidden" name="next" value="{{ back }}">
+                        <input type="text" name="approval_note" class="form-control form-control-sm mr-1"
+                               placeholder="사유(선택)" style="width:110px;">
+                        <button class="btn btn-sm btn-outline-danger" type="submit">거절</button>
+                    </form>
+                    {% endif %}
+                    <form method="post" action="{{ url_for('admin_farm_delete', item_id=farm.id) }}" class="mb-1"
+                          onsubmit="return confirm('농장 #{{ farm.id }} ({{ farm.crop }})을(를) 삭제합니다.\n연결된 예약·후기·문의도 함께 삭제됩니다. 계속할까요?');">
+                        <input type="hidden" name="next" value="{{ back }}">
+                        <button class="btn btn-sm btn-danger" type="submit"><i class="fa-solid fa-trash"></i></button>
+                    </form>
+                </div>
+            </td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+</div>
+{% endif %}
+{% endblock %}

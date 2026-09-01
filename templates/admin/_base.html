@@ -1,0 +1,31 @@
+{# templates/admin/_base.html — 관리자 화면 공통 뼈대. 사이트 layout.html 위에 관리자 서브내비를 얹는다. #}
+{% extends "layout.html" %}
+
+{% macro nav_item(endpoint, label, icon, badge=0) -%}
+<a href="{{ url_for(endpoint) }}"
+   class="btn btn-sm {% if request.endpoint == endpoint %}btn-dark{% else %}btn-outline-dark{% endif %} mr-2 mb-2">
+    <i class="fa-solid {{ icon }} mr-1"></i>{{ label }}
+    {%- if badge and badge > 0 %} <span class="badge badge-warning ml-1">{{ badge }}</span>{% endif %}
+</a>
+{%- endmacro %}
+
+{% block content %}
+<div class="container my-4">
+
+    <div class="d-flex align-items-center flex-wrap mb-3">
+        <h3 class="mb-0 mr-4">
+            <i class="fa-solid fa-shield-halved mr-2"></i>관리자
+        </h3>
+        <div>
+            {{ nav_item('admin_dashboard', '대시보드', 'fa-gauge-high') }}
+            {{ nav_item('admin_farms', '농장 승인·관리', 'fa-tractor', pending_count|default(0)) }}
+            {{ nav_item('admin_users', '회원 관리', 'fa-users') }}
+            {{ nav_item('admin_reservations', '예약 관리', 'fa-calendar-check') }}
+        </div>
+    </div>
+
+    <h5 class="text-muted mb-3">{% block admin_title %}{% endblock %}</h5>
+
+    {% block admin_content %}{% endblock %}
+</div>
+{% endblock %}

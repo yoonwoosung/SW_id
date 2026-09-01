@@ -113,7 +113,9 @@ def easy_create_experience():
             organic_certification_image=cert_filename,
             lat=lat,
             lng=lng,
-            status='recruiting'
+            status='recruiting',
+            # 신규 농장은 관리자 승인 전까지 공개 목록·예약에서 제외된다.
+            approval_status=Experience.APPROVAL_PENDING,
         )
         
         uploaded_files = request.files.getlist('images')

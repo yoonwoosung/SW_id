@@ -45,7 +45,9 @@ def index():
         selected_conditions = {code: request.args.getlist('cond_' + code) for code in CATEGORY_CODES}
 
         today = date.today()
-        base_query = Experience.query.filter(Experience.status == 'recruiting', Experience.end_date >= today)
+        # 승인된 농장만 공개 목록에 올린다(approved_only 게이트).
+        base_query = Experience.approved_only().filter(
+            Experience.status == 'recruiting', Experience.end_date >= today)
 
         if region:
             base_query = base_query.filter(Experience.address_detail.like(f"%{region}%"))
@@ -134,7 +136,7 @@ def index():
                         break
 
         # "이번 주 제철 체험" 레일용: 위치 정보 없이도 항상 채워지는 마감 임박 추천 목록
-        featured = Experience.query.filter(
+        featured = Experience.approved_only().filter(
             Experience.status == 'recruiting', Experience.end_date >= today
         ).order_by(Experience.end_date.asc()).limit(8).all()
 
@@ -147,6 +149,10 @@ def index():
 
 def experience_detail(item_id):
     item = Experience.query.get_or_404(item_id)
+    is_owner = session.get('user_id') == item.farmer_id
+    if not item.is_approved and not is_owner:
+        flash("아직 관리자 승인이 완료되지 않은 농장입니다.", "warning")
+        return redirect(url_for('index'))
     if item.status != 'recruiting' and session.get('user_id') != item.farmer_id:
         flash("현재 모집 중인 체험이 아닙니다.", "warning")
         return redirect(url_for('index'))
@@ -285,7 +291,9 @@ def farmer_register(item_id=None):
                 volunteer_needed=volunteer_needed,
                 has_parking=has_parking,
                 volunteer_duties=request.form.get('volunteer_duties'),
-                status='recruiting'
+                status='recruiting',
+                # 신규 농장은 관리자 승인 전까지 공개 목록·예약에서 제외된다.
+                approval_status=Experience.APPROVAL_PENDING,
             )
             db.session.add(new_experience)
             flash("새로운 체험이 성공적으로 등록되었습니다!", "success")
@@ -328,7 +336,7 @@ def toggle_visibility(item_id):
 
 
 def get_experiences_json():
-    experiences = Experience.query.filter_by(status='recruiting').all()
+    experiences = Experience.approved_only().filter_by(status='recruiting').all()
     experience_list = [exp.to_dict() for exp in experiences]
     return jsonify(experience_list)
 

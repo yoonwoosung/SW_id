@@ -14,5 +14,7 @@ __pycache__/
 # park_back 병합: 추가 무시 규칙
 *.db
 .env.*
+# .env.* 규칙의 예외: 값이 비어있는 예시 파일은 커밋한다.
+!.env.example
 .vscode/
 venv/

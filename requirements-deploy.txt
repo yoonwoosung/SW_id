@@ -1,0 +1,22 @@
+# FarmLink 배포용 슬림 의존성 (앱 런타임이 실제로 import 하는 것만).
+# 원본 requirements.txt 는 로컬/개발용으로 그대로 두고, 서버에는 이 파일만 설치한다.
+#   pip install -r requirements-deploy.txt
+#
+# Jinja2·MarkupSafe·itsdangerous·click·blinker·greenlet 등은
+# 아래 패키지의 전이 의존성으로 자동 설치되므로 따로 적지 않는다.
+#
+# 제외한 것:
+#   - fastapi·uvicorn·starlette : 이 앱은 Flask 전용, ASGI 미사용
+#   - supabase·postgrest·realtime·storage3·psycopg2-binary : DB는 MySQL 하나만 사용
+#   - pandas·numpy·yfinance·openai·peewee·alembic : 앱 코드에서 import 없음
+#   - beautifulsoup4·lxml·Flask-APScheduler : 저장소 전체 grep 결과 사용처 0건
+#   - pytesseract·PyMuPDF·opencv : verify_farmers.py 등 독립 스크립트 전용 (웹앱 미사용)
+
+Flask==3.1.2
+Flask-SQLAlchemy==3.1.1
+SQLAlchemy==2.0.43
+mysql-connector-python==9.4.0
+python-dotenv==1.1.1
+Pillow==10.4.0
+requests==2.32.5
+Werkzeug==3.1.3

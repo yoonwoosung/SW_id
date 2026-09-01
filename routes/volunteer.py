@@ -34,7 +34,8 @@ def volunteer_apply():
     region = request.args.get('region', type=str)
     crop_query = request.args.get('crop_query', type=str)
 
-    query = Experience.query.filter(Experience.volunteer_needed > 0, Experience.status == 'recruiting')
+    query = Experience.approved_only().filter(
+        Experience.volunteer_needed > 0, Experience.status == 'recruiting')
 
     if region:
         query = query.filter(Experience.address_detail.like(f"%{region}%"))

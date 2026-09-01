@@ -132,6 +132,8 @@ def login_page():
             session['nickname'] = user.nickname
             session['role'] = user.role
             flash(f"{user.nickname}님, 환영합니다!", "success")
+            if user.role == 'admin':    # 관리자는 관리자 대시보드로
+                return redirect(url_for('admin_dashboard'))
             if user.role == 'farmer':   # park_back: 농장주는 대시보드로
                 return redirect(url_for('detailed_farmer_dashboard'))
             return redirect(url_for('index'))

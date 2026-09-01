@@ -1,0 +1,62 @@
+{# templates/admin/reservations.html — 예약(Application) 관리. 상태 변경과 삭제. #}
+{% extends "admin/_base.html" %}
+
+{% block admin_title %}예약 관리{% endblock %}
+
+{% block admin_content %}
+
+{% if not reservations %}
+<p class="text-muted">예약이 없습니다.</p>
+{% else %}
+<div class="table-responsive">
+<table class="table table-sm table-bordered align-middle">
+    <thead class="thead-light">
+        <tr>
+            <th style="width:50px;">ID</th>
+            <th style="width:110px;">날짜 / 시간</th>
+            <th>농장(체험)</th>
+            <th style="width:150px;">신청자</th>
+            <th style="width:90px;">인원</th>
+            <th style="width:200px;">상태</th>
+            <th style="width:70px;">삭제</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for r in reservations %}
+        <tr>
+            <td class="text-muted small">{{ r.id }}</td>
+            <td class="small">{{ r.apply_date }}<br>{{ r.apply_time }}</td>
+            <td class="small">
+                {{ r.experience.crop if r.experience else '-' }}
+                {% if r.experience and r.experience.approval_status != 'approved' %}
+                <span class="badge badge-warning ml-1">미승인 농장</span>
+                {% endif %}
+            </td>
+            <td class="small">{{ r.applicant_name }}<br><span class="text-muted">{{ r.phone_number }}</span></td>
+            <td class="small text-center">
+                {{ r.participants_count }}명<br>
+                <span class="text-muted">성 {{ r.count_adult }} / 청 {{ r.count_teen }} / 아 {{ r.count_child }}</span>
+            </td>
+            <td>
+                <form method="post" action="{{ url_for('admin_reservation_update', reservation_id=r.id) }}" class="form-inline">
+                    <select name="status" class="form-control form-control-sm mr-1" style="width:90px;">
+                        {% for s in statuses %}
+                        <option value="{{ s }}" {% if r.status == s %}selected{% endif %}>{{ s }}</option>
+                        {% endfor %}
+                    </select>
+                    <button class="btn btn-sm btn-outline-primary" type="submit">저장</button>
+                </form>
+            </td>
+            <td>
+                <form method="post" action="{{ url_for('admin_reservation_delete', reservation_id=r.id) }}"
+                      onsubmit="return confirm('예약 #{{ r.id }}을(를) 삭제합니다. 계속할까요?');">
+                    <button class="btn btn-sm btn-danger" type="submit"><i class="fa-solid fa-trash"></i></button>
+                </form>
+            </td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+</div>
+{% endif %}
+{% endblock %}

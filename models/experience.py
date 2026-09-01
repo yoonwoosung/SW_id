@@ -5,6 +5,11 @@ from models.base import db
 
 
 class Experience(db.Model):
+    # 승인 상태 값. 문자열을 라우트마다 직접 쓰지 않고 이 상수를 참조한다.
+    APPROVAL_PENDING = 'pending'
+    APPROVAL_APPROVED = 'approved'
+    APPROVAL_REJECTED = 'rejected'
+
     id = db.Column(db.Integer, primary_key=True)
     crop = db.Column(db.String(100), nullable=False)
     location = db.Column(db.String(200), nullable=False)
@@ -26,6 +31,12 @@ class Experience(db.Model):
     phone = db.Column(db.String(50), nullable=True)
     farm_size = db.Column(db.String(100), nullable=True)
     status = db.Column(db.String(50), nullable=False, default='recruiting')
+    # --- 관리자 승인(농장 승인) ---
+    # status(모집 상태: recruiting/hidden/expired)와는 별개 축이다.
+    # 승인되지 않은 농장은 status가 recruiting이어도 공개 노출·예약이 막힌다.
+    approval_status = db.Column(db.String(20), nullable=False, default='pending')
+    approval_note = db.Column(db.String(255), nullable=True)   # 거절 사유
+    approved_at = db.Column(db.DateTime, nullable=True)        # 승인/거절 처리 시각
     reviews = db.relationship('Review', backref='experience', lazy=True, cascade="all, delete-orphan")
     inquiries = db.relationship('Inquiry', backref='experience', lazy=True, cascade="all, delete-orphan")
     applications = db.relationship('Application', back_populates='experience', cascade="all, delete-orphan")
@@ -48,8 +59,24 @@ class Experience(db.Model):
             'id': self.id, 'crop': self.crop, 'location': self.location, 'cost': self.cost,
             'duration_start': self.duration_start.strftime('%Y-%m-%d') if self.duration_start else None,
             'end_date': self.end_date.strftime('%Y-%m-%d') if self.end_date else None,
-            'lat': self.lat, 'lng': self.lng, 'status': self.status
+            'lat': self.lat, 'lng': self.lng, 'status': self.status,
+            'approval_status': self.approval_status,
         }
+
+    @classmethod
+    def approved_only(cls, query=None):
+        """공개 노출용 필터 — 승인된 농장만 남긴다.
+
+        노출 게이트를 이 한 곳에 모아둔다. 나중에 Farm 모델이 도입되어
+        승인 주체가 Farm으로 옮겨가면 이 메서드 하나만 고치면 된다.
+        query를 주지 않으면 Experience.query 전체에서 시작한다.
+        """
+        query = cls.query if query is None else query
+        return query.filter(cls.approval_status == cls.APPROVAL_APPROVED)
+
+    @property
+    def is_approved(self):
+        return self.approval_status == self.APPROVAL_APPROVED
 
     @property
     def d_day(self):

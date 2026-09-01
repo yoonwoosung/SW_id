@@ -35,6 +35,9 @@ def experience_apply(item_id):
         return redirect(url_for('login_page'))
 
     item = Experience.query.get_or_404(item_id)
+    if not item.is_approved:
+        flash("관리자 승인이 완료되지 않은 농장은 예약할 수 없습니다.", "warning")
+        return redirect(url_for('index'))
     if item.status != 'recruiting':
         flash("현재 모집 중인 체험이 아닙니다.", "warning")
         return redirect(url_for('experience_detail', item_id=item.id))

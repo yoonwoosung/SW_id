@@ -32,7 +32,7 @@
             </div>
         </div>
 
-        <p class="complete-notice" style="color:#2D5A1B;">
+        <p class="complete-notice" style="color:var(--green-dark);">
             <i data-lucide="circle-check"></i> 결제가 완료되어 예약이 접수되었습니다.
         </p>
 
@@ -64,14 +64,14 @@
 <style>
 .complete-course { margin: 18px 0; text-align: left; }
 .complete-course__head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 10px; }
-.complete-course__title { font-weight: 800; color: #1d3d2c; }
+.complete-course__title { font-weight: 800; color: var(--fl-text, #1a1a1a); }
 .complete-course__sub { font-size: .78rem; color: #8a9890; }
 .complete-course__list { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
 .complete-course__empty { grid-column: 1 / -1; color: #8a938c; font-size: .9rem; margin: 0; }
 .cc-card { border: 1px solid #eef1ee; border-radius: 12px; padding: 12px 14px; }
 .cc-card__name { font-weight: 700; color: #253027; font-size: .92rem; }
 .cc-card__meta { font-size: .8rem; color: #8a9890; margin-top: 3px; }
-.cc-card__price { font-weight: 800; color: #d85a30; margin-top: 6px; font-size: .95rem; }
+.cc-card__price { font-weight: 800; color: var(--orange, #ea6a1e); margin-top: 6px; font-size: .95rem; }
 @media (max-width: 520px) { .complete-course__list { grid-template-columns: 1fr; } }
 </style>
 {% endblock %}

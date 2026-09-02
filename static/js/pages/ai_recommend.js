@@ -26,6 +26,7 @@
     var coords = { lat: null, lon: null };
     var lastSelected = {};
     var currentQuery = '';
+    var cardStore = {};   // storeKey → { rec, course, section }
 
     FarmFilter.mount(filterEl, { endpoint: filterEl.dataset.endpoint, onApply: function (sel) { lastSelected = sel; loadAll(); } });
 
@@ -141,14 +142,15 @@
 
     function renderRow(row, cards, s) {
         row.innerHTML = cards.map(function (cd, i) {
-            var x = cd.rec, d = cd.course, sm = d.summary || {};
+            var x = cd.rec, d = cd.course, sm = (d && d.summary) || {};
             var region = shortRegion(x.address);
             var title = (region ? esc(region) + ' ' : '') + esc(x.crop) + ' 힐링 코스';
             var searchKey = (title + ' ' + (x.address || '') + ' ' + (x.crop || '')).toLowerCase();
             var viewers = COURSE_MOCK.viewers[x.id];
             var reasons = (x.reasons || []).map(function (r) { return '<span class="fl-reason">' + esc(r) + '</span>'; }).join('');
-            var bodyId = s.key + '-body-' + i;
-            return '<article class="fl-course-card" data-search="' + esc(searchKey) + '">'
+            var storeKey = s.key + '-' + i;
+            cardStore[storeKey] = { rec: x, course: d || {}, section: s };
+            return '<article class="fl-course-card" data-search="' + esc(searchKey) + '" data-store-key="' + storeKey + '">'
                 + '<div class="fl-course-card__band">' + badges(x, s.esg) + '</div>'
                 + '<div class="fl-course-card__head">'
                 + '<h3 class="fl-course-card__title">' + title + '</h3>'
@@ -157,22 +159,88 @@
                 + '<div class="fl-course-meta">' + metaHtml(sm) + '</div>'
                 + '<div class="fl-course-price"><span class="fl-cost">' + won(sm.estimated_cost) + '</span><span class="fl-per">＊1인당 가격</span></div>'
                 + '</div>'
-                + '<button type="button" class="fl-course-card__toggle" aria-expanded="false" aria-controls="' + bodyId + '">'
-                + '자세히 보기 <i class="fa-solid fa-chevron-down fl-acc__toggle" aria-hidden="true"></i></button>'
-                + '<div class="fl-course-card__body ai-timeline" id="' + bodyId + '" hidden>' + timelineHtml(d.items) + '</div>'
+                + '<button type="button" class="fl-course-card__toggle">'
+                + '코스 상세보기 <i class="fa-solid fa-chevron-right" aria-hidden="true"></i></button>'
                 + '</article>';
         }).join('');
         applySearch();   // 새로 그린 카드에도 현재 검색어 반영
     }
 
-    // 코스 카드 '자세히 보기' 토글(위임)
+    // ---- 코스 카드 클릭 → 모달 ----
     document.querySelector('.ai-rec-wrap').addEventListener('click', function (e) {
-        var t = e.target.closest('.fl-course-card__toggle');
-        if (!t) return;
-        var expanded = t.getAttribute('aria-expanded') === 'true';
-        t.setAttribute('aria-expanded', String(!expanded));
-        $(t.getAttribute('aria-controls')).hidden = expanded;
+        var card = e.target.closest('.fl-course-card[data-store-key]');
+        if (!card) return;
+        var data = cardStore[card.dataset.storeKey];
+        if (data) openCourseModal(data);
     });
+
+    var ciModal = document.getElementById('ci-modal');
+
+    function openCourseModal(data) {
+        var rec = data.rec, course = data.course, s = data.section;
+        var sm = (course && course.summary) || {};
+        var items = (course && course.items) || [];
+        var region = shortRegion(rec.address);
+        var title = (region ? region + ' ' : '') + rec.crop + ' 힐링 코스';
+
+        document.getElementById('ci-badges').innerHTML = badges(rec, s.esg);
+        document.getElementById('ci-title').textContent = title;
+
+        var mHtml = '';
+        if (sm.transport) mHtml += '<span><i class="fa-solid fa-' + (sm.transport === '자가용' ? 'car' : 'bus') + '"></i> 추천 ' + esc(sm.transport) + '</span>';
+        if (sm.barrier_free) mHtml += '<span style="color:#1565c0;font-weight:700;"><i class="fa-solid fa-wheelchair"></i> 무장애</span>';
+        document.getElementById('ci-meta').innerHTML = mHtml;
+
+        document.getElementById('ci-reasons').innerHTML = (rec.reasons || []).map(function (r) {
+            return '<span class="fl-reason">' + esc(r) + '</span>';
+        }).join('');
+
+        var costEl = document.getElementById('ci-cost');
+        if (sm.estimated_cost) {
+            costEl.innerHTML = '<div class="ci-modal__cost-num">' + Number(sm.estimated_cost).toLocaleString() + '원</div>'
+                + '<div class="ci-modal__cost-lbl">1인당 예상 비용 · 체험비 + 식사 + 교통 포함</div>';
+            costEl.hidden = false;
+        } else {
+            costEl.hidden = true;
+        }
+
+        document.getElementById('ci-timeline').innerHTML = buildModalTimeline(items);
+
+        document.getElementById('ci-footer').innerHTML =
+            '<a href="/experience/' + rec.id + '" class="fl-btn fl-btn-primary" style="width:100%;justify-content:center;">'
+            + '<i class="fa-solid fa-calendar-check" style="margin-right:6px;"></i>이 체험 예약하러 가기</a>';
+
+        ciModal.hidden = false;
+        document.body.style.overflow = 'hidden';
+        if (window.lucide) lucide.createIcons();
+    }
+
+    var TL_ICON = { experience: 'sprout', restaurant: 'utensils', attraction: 'landmark', cafe: 'coffee' };
+
+    function buildModalTimeline(items) {
+        if (!items || !items.length) return '<p class="fl-empty">코스 정보를 불러올 수 없어요.</p>';
+        var stops = items.filter(function (it) { return it.type !== 'experience'; });
+        var tlHtml = '<div class="ci-tl">' + items.map(function (it) {
+            var icon = TL_ICON[it.type] || 'map-pin';
+            var sub = it.type === 'experience'
+                ? '메인 체험'
+                : ((it.address || '') + (it.distance_km != null ? ' · ' + it.distance_km + 'km' : ''));
+            return '<div class="ci-tl-item">'
+                + '<div class="ci-tl-time">' + esc(it.time) + '</div>'
+                + '<div class="ci-tl-icon"><i data-lucide="' + icon + '"></i></div>'
+                + '<div><div class="ci-tl-name">' + esc(it.name || '') + '</div>'
+                + (sub ? '<div class="ci-tl-sub">' + esc(sub) + '</div>' : '')
+                + '</div></div>';
+        }).join('') + '</div>';
+        if (!stops.length) {
+            return '<p class="fl-empty" style="margin-bottom:10px;">주변 관광지 정보를 불러오지 못했어요.<br>체험 장소만 표시됩니다.</p>' + tlHtml;
+        }
+        return tlHtml;
+    }
+
+    document.getElementById('ci-close').addEventListener('click', closeCourseModal);
+    document.getElementById('ci-backdrop').addEventListener('click', closeCourseModal);
+    function closeCourseModal() { ciModal.hidden = true; document.body.style.overflow = ''; }
 
     // ---- 검색: 페이지 내 코스 필터 ----
     function applySearch() {

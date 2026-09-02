@@ -3,7 +3,7 @@
 {% block content %}
 <div class="container easy-mode-container">
     <div class="easy-header">
-        <h1>🗓️ 예약 살펴보기</h1>
+        <h1>예약 살펴보기</h1>
         <p>날짜별로 예약 현황을 보여드릴게요.</p>
     </div>
 
@@ -22,13 +22,13 @@
                     <div class="fl-info-row"><span class="lbl">시간</span><span class="val">{{ res.apply_time }}</span></div>
                     <div class="fl-info-row"><span class="lbl">상태</span><span class="val">
                         {% if res.status == '확정' %}
-                        <span class="fl-badge fl-badge--confirmed">✅ 확정</span>
+                        <span class="fl-badge fl-badge--confirmed">확정</span>
                         {% elif res.status == '완료' %}
-                        <span class="fl-badge fl-badge--done">🏁 완료</span>
+                        <span class="fl-badge fl-badge--done">완료</span>
                         {% elif res.status == '취소' %}
-                        <span class="fl-badge fl-badge--cancelled">❌ 취소</span>
+                        <span class="fl-badge fl-badge--cancelled">취소</span>
                         {% else %}
-                        <span class="fl-badge fl-badge--pending">⏳ 예정</span>
+                        <span class="fl-badge fl-badge--pending">예정</span>
                         {% endif %}
                     </span></div>
                     {% if res.status == '예정' %}
@@ -42,7 +42,7 @@
         </div>
     {% else %}
         <div class="easy-no-item">
-            <div class="easy-no-item-icon">📭</div>
+            <div class="easy-no-item-icon"></div>
             <h2>아직 예약이 없어요</h2>
             <p>새로운 체험을 만들고 손님을 기다려보세요!</p>
         </div>

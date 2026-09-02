@@ -2,7 +2,7 @@
    상세조건 아코디언 드롭박스 + 맞춤 코스 카드. FarmLink 기존 토큰(:root의 --green-*, --orange) 재사용.
    모바일 1순위(PWA). 데스크톱은 미디어쿼리로 확장. */
 
-.ai-rec-wrap { max-width: 820px; margin: 0 auto; padding: 18px 16px 48px; }
+.ai-rec-wrap { max-width: 1200px; margin: 0 auto; padding: 18px 24px 48px; }
 
 .ai-rec-head h1 { font-size: 1.4rem; font-weight: 800; color: var(--green-dark); margin: 0 0 4px; }
 .ai-rec-head p { color: #77807a; font-size: 0.9rem; margin: 0; }
@@ -22,7 +22,7 @@
 .fl-chips:empty { display: none; }
 .fl-chip {
     display: inline-flex; align-items: center; gap: 6px;
-    background: var(--green-light, #E8F5E9); color: var(--green-dark, #2D5A1B);
+    background: var(--green-light, var(--fl-green-100)); color: var(--green-dark, var(--fl-green-700));
     border-radius: 999px; padding: 5px 10px; font-size: 0.82rem; font-weight: 600;
 }
 .fl-chip__x { cursor: pointer; border: none; background: none; color: var(--green-dark); font-size: 1rem; line-height: 1; padding: 0; }
@@ -34,7 +34,7 @@
 /* 세로 탭바 */
 .fl-tabbar--vertical {
     flex: 0 0 104px; display: flex; flex-direction: column; gap: 2px;
-    border-right: 1px solid #eef1ee; padding-right: 8px;
+    border-right: 1px solid var(--fl-border); padding-right: 8px;
 }
 .fl-tabbar--vertical .fl-tab {
     display: flex; align-items: center; justify-content: space-between; gap: 5px;
@@ -44,11 +44,11 @@
 }
 .fl-tabbar--vertical .fl-tab:hover { background: #f4f7f3; }
 .fl-tabbar--vertical .fl-tab.is-active {
-    background: #eef5f0; color: var(--green-dark, #1d6340); border-left-color: var(--green-dark, #1d6340);
+    background: var(--fl-green-100); color: var(--green-dark, var(--fl-green-700)); border-left-color: var(--green-dark, var(--fl-green-700));
 }
 .fl-tab__count {
     font-size: 0.66rem; font-weight: 800; color: #fff;
-    background: var(--green-dark, #1d6340); border-radius: 999px; padding: 1px 6px; min-width: 16px; text-align: center;
+    background: var(--green-dark, var(--fl-green-700)); border-radius: 999px; padding: 1px 6px; min-width: 16px; text-align: center;
 }
 
 /* ---- 세부항목: 같은 크기 체크박스 그리드 ---- */
@@ -61,12 +61,12 @@
 }
 .fl-cell {
     display: flex; align-items: center; gap: 5px; cursor: pointer;
-    border: 1px solid #e2e7e2; border-radius: 8px; padding: 5px 8px;
+    border: 1px solid var(--fl-border); border-radius: 8px; padding: 5px 8px;
     font-size: 0.8rem; color: #37413a; font-weight: 500; line-height: 1.2;
     transition: background 0.15s, border-color 0.15s;
 }
-.fl-cell input { accent-color: var(--green-mid, #4CAF50); width: 14px; height: 14px; flex-shrink: 0; }
-.fl-cell:has(input:checked) { background: var(--green-light, #E8F5E9); border-color: var(--green-mid, #4CAF50); color: var(--green-dark, #2D5A1B); font-weight: 700; }
+.fl-cell input { accent-color: var(--green-mid, var(--fl-green-700)); width: 14px; height: 14px; flex-shrink: 0; }
+.fl-cell:has(input:checked) { background: var(--green-light, var(--fl-green-100)); border-color: var(--green-mid, var(--fl-green-700)); color: var(--green-dark, var(--fl-green-700)); font-weight: 700; }
 
 /* 탭 안의 중첩 묶음(지역>도, 반려견>몸무게, 인원>인원수 등) = 가로 아코디언 */
 .fl-subgroup { margin: 0; }
@@ -78,14 +78,14 @@
     padding: 10px 4px; font-size: 0.9rem; font-weight: 700; color: #37413a; text-align: left;
 }
 .fl-acc__caret { font-size: 0.72rem; color: #9aa39c; transition: transform 0.15s; }
-.fl-acc__toggle-btn[aria-expanded="true"] .fl-acc__caret { transform: rotate(90deg); color: var(--green-dark, #1d6340); }
+.fl-acc__toggle-btn[aria-expanded="true"] .fl-acc__caret { transform: rotate(90deg); color: var(--green-dark, var(--fl-green-700)); }
 /* 우측 '전체' 부모 체크박스 */
 .fl-acc__check {
     display: inline-flex; align-items: center; gap: 5px; cursor: pointer;
     font-size: 0.76rem; font-weight: 700; color: #6a746d; flex-shrink: 0; padding: 4px 2px;
 }
-.fl-acc__check input { accent-color: var(--green-mid, #4CAF50); width: 15px; height: 15px; }
-.fl-acc__check:has(input:checked) { color: var(--green-dark, #1d6340); }
+.fl-acc__check input { accent-color: var(--green-mid, var(--fl-green-700)); width: 15px; height: 15px; }
+.fl-acc__check:has(input:checked) { color: var(--green-dark, var(--fl-green-700)); }
 .fl-acc__body { padding: 2px 0 10px 20px; }
 .fl-acc__body[hidden] { display: none; }
 
@@ -95,8 +95,8 @@
 /* ---- 액션 버튼 ---- */
 .fl-actions { display: flex; gap: 10px; margin-top: 14px; }
 .fl-btn { flex: 1; border: none; border-radius: 12px; padding: 13px 12px; font-size: 0.98rem; font-weight: 700; cursor: pointer; }
-.fl-btn--primary { background: var(--green-dark, #2D5A1B); color: #fff; flex: 2; }
-.fl-btn--primary:hover { background: #1e3e12; }
+.fl-btn--primary { background: var(--green-dark, var(--fl-green-700)); color: #fff; flex: 2; }
+.fl-btn--primary:hover { filter: brightness(0.88); }
 .fl-btn--primary:disabled { opacity: 0.6; cursor: default; }
 .fl-btn--ghost { background: #f2f4f1; color: #55605a; }
 .fl-btn--ghost:hover { background: #e7ebe6; }
@@ -104,20 +104,20 @@
 /* ---- 트렌드 키워드 ---- */
 .fl-trend { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
 .fl-trend__tag { font-size: 0.82rem; color: #55605a; background: #f4f6f2; border-radius: 999px; padding: 5px 11px; }
-.fl-trend__tag b { color: var(--orange, #E8960C); }
+.fl-trend__tag b { color: var(--orange, #ea6a1e); }
 
 /* ---- 회원정보 기반 자동 추천 세그먼트 ---- */
-.ai-seg-panel { background: #eef5f0; border: 1px solid #cfe3d6; }
-.ai-seg-head { font-size: 0.9rem; font-weight: 700; color: var(--green-dark, #1d6340); margin-bottom: 10px; }
+.ai-seg-panel { background: var(--fl-green-100); border: 1px solid rgba(76,175,80,.25); }
+.ai-seg-head { font-size: 0.9rem; font-weight: 700; color: var(--green-dark, var(--fl-green-700)); margin-bottom: 10px; }
 .ai-seg-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
 .ai-seg-card {
-    background: #fff; border: 1px solid #dbe8df; border-radius: 10px; padding: 12px 8px;
+    background: #fff; border: 1px solid var(--fl-border); border-radius: 10px; padding: 12px 8px;
     text-align: center; cursor: pointer; transition: border-color 0.15s, box-shadow 0.15s;
 }
-.ai-seg-card:hover { border-color: var(--green-mid, #4CAF50); }
-.ai-seg-card.is-active { border-color: var(--green-dark, #1d6340); box-shadow: 0 0 0 1px var(--green-dark, #1d6340) inset; }
+.ai-seg-card:hover { border-color: var(--green-mid, var(--fl-green-700)); }
+.ai-seg-card.is-active { border-color: var(--green-dark, var(--fl-green-700)); box-shadow: 0 0 0 1px var(--green-dark, var(--fl-green-700)) inset; }
 .ai-seg-emoji { font-size: 1.4rem; margin-bottom: 3px; }
-.ai-seg-title { font-size: 0.82rem; font-weight: 700; color: #1d3d2c; line-height: 1.25; }
+.ai-seg-title { font-size: 0.82rem; font-weight: 700; color: var(--fl-text, #1a1a1a); line-height: 1.25; }
 .ai-seg-sub { font-size: 0.72rem; color: #8a9890; margin-top: 2px; }
 
 /* ---- 코스 카드 ---- */
@@ -128,33 +128,33 @@
     position: relative; display: flex; align-items: flex-start; gap: 6px; padding: 10px; flex-wrap: wrap;
 }
 .fl-badge { font-size: 0.7rem; font-weight: 700; border-radius: 6px; padding: 3px 8px; }
-.fl-badge--urgent { background: #e24b4a; color: #fff; }
-.fl-badge--eco { background: rgba(255,255,255,0.92); color: #04342c; }
-.fl-badge--day { background: rgba(255,255,255,0.85); color: #173404; }
+.fl-badge--urgent { background: var(--fl-danger, #e5484d); color: #fff; }
+.fl-badge--eco { background: rgba(255,255,255,0.92); color: var(--fl-text, #1a1a1a); }
+.fl-badge--day { background: rgba(255,255,255,0.85); color: var(--fl-text, #1a1a1a); }
 .fl-course-viewers { margin: 0 0 8px; font-size: 0.8rem; color: #8a5a1a; }
 .fl-course-price { margin-top: 12px; padding-top: 10px; border-top: 1px solid #f0f0f0; }
-.fl-course-price .fl-cost { font-size: 1.15rem; font-weight: 800; color: #d85a30; }
+.fl-course-price .fl-cost { font-size: 1.15rem; font-weight: 800; color: var(--orange, #ea6a1e); }
 .fl-course-price .fl-per { font-size: 0.72rem; color: #a0a89e; margin-left: 6px; }
 .fl-course-card {
-    background: #fff; border: 1px solid #eef1ee; border-radius: var(--radius-card, 14px);
+    background: #fff; border: 1px solid var(--fl-border); border-radius: var(--radius-card, 14px);
     box-shadow: var(--shadow-card, 0 2px 12px rgba(0,0,0,0.06)); overflow: hidden;
 }
 .fl-course-card__head { padding: 14px 16px; }
 .fl-course-card__title { font-size: 1.02rem; font-weight: 800; color: #253027; margin: 0 0 8px; }
 .fl-course-badge {
-    display: inline-block; font-size: 0.72rem; font-weight: 700; color: var(--green-dark, #2D5A1B);
-    background: var(--green-light, #E8F5E9); border-radius: 6px; padding: 2px 7px; margin-left: 6px; vertical-align: middle;
+    display: inline-block; font-size: 0.72rem; font-weight: 700; color: var(--green-dark, var(--fl-green-700));
+    background: var(--green-light, var(--fl-green-100)); border-radius: 6px; padding: 2px 7px; margin-left: 6px; vertical-align: middle;
 }
 .fl-reasons { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 4px; }
-.fl-reason { font-size: 0.76rem; color: var(--green-dark, #2D5A1B); background: #eef7ee; border-radius: 8px; padding: 2px 8px; }
+.fl-reason { font-size: 0.76rem; color: var(--green-dark, var(--fl-green-700)); background: var(--fl-green-100); border-radius: 8px; padding: 2px 8px; }
 .fl-course-meta { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 10px; font-size: 0.85rem; color: #55605a; }
-.fl-course-meta .fl-cost { color: var(--orange, #E8960C); font-weight: 800; }
+.fl-course-meta .fl-cost { color: var(--orange, #ea6a1e); font-weight: 800; }
 .fl-barrier { display: inline-flex; align-items: center; gap: 4px; color: #1565c0; font-weight: 700; }
 
 .fl-course-card__toggle {
     width: 100%; display: flex; align-items: center; justify-content: center; gap: 6px;
-    background: #f7f9f6; border: none; border-top: 1px solid #eef1ee; cursor: pointer;
-    padding: 11px; font-size: 0.9rem; font-weight: 700; color: var(--green-dark, #2D5A1B);
+    background: #f7f9f6; border: none; border-top: 1px solid var(--fl-border); cursor: pointer;
+    padding: 11px; font-size: 0.9rem; font-weight: 700; color: var(--green-dark, var(--fl-green-700));
 }
 .fl-course-card__toggle .fl-acc__toggle { color: inherit; }
 .fl-course-card__toggle[aria-expanded="true"] .fl-acc__toggle { transform: rotate(180deg); }
@@ -183,11 +183,11 @@
 .fl-quickbtns { display: flex; gap: 10px; margin-top: 10px; }
 .fl-quickbtn {
     flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 7px;
-    background: #eef5f0; border: 1px solid #cfe3d6; color: #1d3d2c;
+    background: var(--fl-green-100); border: 1px solid rgba(76,175,80,.25); color: var(--fl-green-700);
     border-radius: 10px; padding: 12px 10px; font-size: 0.9rem; font-weight: 700; cursor: pointer;
     transition: background 0.15s, border-color 0.15s;
 }
-.fl-quickbtn:hover { background: #e2efe7; border-color: var(--green-mid, #4CAF50); }
+.fl-quickbtn:hover { filter: brightness(0.95); border-color: var(--green-mid, var(--fl-green-700)); }
 
 /* ---- 접힘형 상세조건 ---- */
 .fl-collapse { padding: 0; overflow: hidden; }
@@ -205,7 +205,7 @@
 .fl-sec { margin-top: 18px; }
 .fl-sec[hidden] { display: none; }
 .fl-sec__head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 10px; }
-.fl-sec__title { font-size: 1.06rem; font-weight: 800; color: #1d3d2c; margin: 0; }
+.fl-sec__title { font-size: 1.06rem; font-weight: 800; color: var(--fl-text, #1a1a1a); margin: 0; }
 .fl-sec__sub { font-size: 0.78rem; color: #8a9890; }
 .fl-row {
     display: flex; gap: 14px; overflow-x: auto; padding-bottom: 6px;
@@ -217,9 +217,10 @@
 .fl-row .fl-empty { flex: 1; }
 
 /* ESG 등급 배지 */
-.fl-badge--esg { background: var(--green-dark, #1d6340); color: #fff; }
+.fl-badge--esg { background: var(--green-dark, var(--fl-green-700)); color: #fff; }
 
-/* ---- 데스크톱 확장 ---- */
-@media (min-width: 720px) {
-    .fl-course-list { grid-template-columns: repeat(2, 1fr); }
+/* ---- 모바일 단일 컬럼 ---- */
+.fl-course-list { grid-template-columns: repeat(2, 1fr); }
+@media (max-width: 719px) {
+    .fl-course-list { grid-template-columns: 1fr; }
 }

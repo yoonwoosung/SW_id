@@ -105,7 +105,7 @@
                 {# 내 체험 목록 #}
                 <section class="fl-card"><div class="fl-card-body">
                     <div class="fl-section-head">
-                        <h2>내 체험 목록 🌾</h2>
+                        <h2>내 체험 목록</h2>
                         <a href="{{ url_for('easy_create_experience') }}" class="fl-btn em-btn-register">+ 등록</a>
                     </div>
                     
@@ -305,12 +305,12 @@
                         <h4 class="font-weight-bold text-dark mb-3">새 농장 등록 및 서류 제출</h4>
                         <form method="POST" action="{{ url_for('farmer_add_farm') }}" enctype="multipart/form-data" class="easy-form">
                             <div class="form-group">
-                                <label class="easy-form-label-lg" for="farm-name-input">농장 이름 <span style="color:#e5484d;">*</span></label>
+                                <label class="easy-form-label-lg" for="farm-name-input">농장 이름 <span style="color:var(--fl-danger);">*</span></label>
                                 <input type="text" id="farm-name-input" name="farm_name" class="form-control" placeholder="예) 햇살가득 딸기농원" required>
                             </div>
 
                             <div class="form-group">
-                                <label class="easy-form-label-lg">농장 주소 (도로명/지번) <span style="color:#e5484d;">*</span></label>
+                                <label class="easy-form-label-lg">농장 주소 (도로명/지번) <span style="color:var(--fl-danger);">*</span></label>
                                 <div class="d-flex gap-2 mb-2">
                                     <input type="text" id="farm-address-main" name="farm_address" class="form-control" placeholder="주소 검색 버튼을 눌러주세요" readonly required>
                                     <button type="button" class="btn btn-success font-weight-bold px-4 ml-2" onclick="execDaumPostcode()" style="white-space:nowrap; border-radius:10px;">주소 검색</button>
@@ -324,7 +324,7 @@
                             </div>
 
                             <div class="form-group">
-                                <label class="easy-form-label-lg" for="farm-cert-input">농업인확인서 (PDF 필수) <span style="color:#e5484d;">*</span></label>
+                                <label class="easy-form-label-lg" for="farm-cert-input">농업인확인서 (PDF 필수) <span style="color:var(--fl-danger);">*</span></label>
                                 <input type="file" id="farm-cert-input" name="farmer_certificate_pdf" class="form-control-file" accept=".pdf" required>
                                 <small class="text-muted">국립농산물품질관리원에서 발급받은 농업인확인서 PDF를 제출해 주세요.</small>
                             </div>
@@ -364,7 +364,7 @@
                     <p class="ac-modal-desc">정보를 수정하려면 현재 비밀번호를 입력해 주세요.</p>
                     <input type="password" id="pw-verify-input" class="form-control" placeholder="현재 비밀번호"
                            style="font-size:18px;height:52px;margin-bottom:12px;">
-                    <p id="pw-verify-error" style="color:#e5484d;font-size:15px;display:none;margin-bottom:8px;">
+                    <p id="pw-verify-error" style="color:var(--fl-danger);font-size:15px;display:none;margin-bottom:8px;">
                         비밀번호가 일치하지 않습니다.
                     </p>
                     <div style="display:flex;gap:12px;margin-top:8px;">
@@ -412,7 +412,7 @@
                 </div></section>
 
                 <section class="fl-card"><div class="fl-card-body">
-                    <div class="fl-section-head"><h2>농장별 AI 후기 요약 리포트 🤖</h2></div>
+                    <div class="fl-section-head"><h2>농장별 AI 후기 요약 리포트</h2></div>
                     {% for farm_id, feedback in feedback_report.items() %}
                     <div class="st-report-exp mb-4 p-4 rounded-lg" style="background:#fcfdfc; border:1.5px solid #e2ece5; border-radius:16px;">
                         <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom">
@@ -426,7 +426,7 @@
                             </div>
                             <div>
                                 {% for crop in feedback.crops %}
-                                <span class="badge badge-success px-2 py-1 mr-1" style="font-size:12px; background:#e8f5e9; color:#1d6340; border:1px solid #c8e6c9;">{{ crop }}</span>
+                                <span class="badge badge-success px-2 py-1 mr-1" style="font-size:12px; background:#e8f5e9; color:#1d6340; border:1px solid var(--fl-border);">{{ crop }}</span>
                                 {% endfor %}
                             </div>
                         </div>

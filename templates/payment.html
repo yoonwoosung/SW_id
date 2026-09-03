@@ -56,52 +56,80 @@
             <div class="pay-amount-row"><span class="lbl">최종 결제 금액</span><span class="pay-amount">{{ "{:,}".format(amount) }}원</span></div>
         </div>
 
-        <div class="pay-sec">
-            <p class="pay-sec__title">결제 수단</p>
-            <div class="pay-methods">
-                <label class="pay-method is-active"><input type="radio" name="pay-method" value="easy" checked>🌿 간편결제</label>
-                <label class="pay-method"><input type="radio" name="pay-method" value="card">💳 신용·체크카드</label>
-            </div>
-        </div>
     </div>
 
     <div class="pay-foot">
         <button type="button" id="pay-btn" class="pay-btn">{{ "{:,}".format(amount) }}원 결제하기</button>
-        <p class="pay-guide">결제를 마치면 예약이 확정되고 완료 화면으로 이동해요.</p>
+        <p class="pay-guide">토스페이먼츠 테스트 결제창이 열립니다. 실제 금액이 청구되지 않아요.</p>
+        <p id="pay-err" class="pay-guide" style="color:#e5484d;display:none;"></p>
     </div>
 </div>
 
-<script id="pay-data" type="application/json">{{ {'application_id': application.id}|tojson|safe }}</script>
+<script id="pay-data" type="application/json">{{ {
+    'application_id': application.id,
+    'amount': amount,
+    'client_key': toss_client_key,
+    'success_url': success_url,
+    'fail_url': fail_url
+}|tojson|safe }}</script>
+<script src="https://js.tosspayments.com/v2/standard"></script>
 <script>
 (function () {
     var DATA = JSON.parse(document.getElementById('pay-data').textContent);
     var btn = document.getElementById('pay-btn');
+    var err = document.getElementById('pay-err');
 
-    document.querySelectorAll('.pay-method').forEach(function (m) {
-        m.addEventListener('click', function () {
-            document.querySelectorAll('.pay-method').forEach(function (x) { x.classList.remove('is-active'); });
-            m.classList.add('is-active');
-        });
-    });
+    function fail(msg) {
+        btn.disabled = false;
+        btn.textContent = '다시 결제하기';
+        err.textContent = msg;
+        err.style.display = 'block';
+    }
+
+    // 클라이언트 키가 없으면 결제창을 열 수 없다. 원인을 화면에 알려준다.
+    if (!DATA.client_key) {
+        btn.disabled = true;
+        err.textContent = '결제 설정이 완료되지 않았습니다(TOSS_CLIENT_KEY 미설정). 관리자에게 문의해 주세요.';
+        err.style.display = 'block';
+        return;
+    }
 
     btn.addEventListener('click', function () {
         btn.disabled = true;
-        btn.textContent = '결제 중…';
-        fetch('/api/payments', {
-            method: 'POST', headers: { 'Content-Type': 'application/json' },
+        btn.textContent = '결제창 여는 중…';
+        err.style.display = 'none';
+
+        // 1) 서버가 주문번호·금액을 확정한다(클라이언트 금액은 신뢰하지 않음).
+        fetch('/api/payments/prepare', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ application_id: DATA.application_id })
         }).then(function (r) { return r.json(); }).then(function (res) {
-            if (res.success && res.data && res.data.redirect) {
-                window.location.href = res.data.redirect;   // 결제 성공 → 완료 화면
-            } else {
-                btn.disabled = false;
-                btn.textContent = '다시 결제하기';
-                alert((res.error && res.error.message) || '결제에 실패했습니다.');
+            if (!res.success || !res.data) {
+                fail((res.error && res.error.message) || '결제를 준비하지 못했습니다.');
+                return;
             }
-        }).catch(function () {
-            btn.disabled = false;
-            btn.textContent = '다시 결제하기';
-            alert('결제 중 오류가 발생했습니다.');
+            // 2) 토스 결제창을 띄운다. 성공/실패 모두 서버 URL 로 복귀한다.
+            var order = res.data;
+            var tossPayments = TossPayments(DATA.client_key);
+            var payment = tossPayments.payment({ customerKey: TossPayments.ANONYMOUS });
+            return payment.requestPayment({
+                method: 'CARD',
+                amount: { currency: 'KRW', value: order.amount },
+                orderId: order.order_id,
+                orderName: order.order_name,
+                successUrl: DATA.success_url,
+                failUrl: DATA.fail_url,
+                card: { useEscrow: false, flowMode: 'DEFAULT', useCardPoint: false, useAppCardOnly: false }
+            });
+        }).catch(function (e) {
+            // 사용자가 결제창을 닫은 경우는 오류가 아니다.
+            if (e && e.code === 'USER_CANCEL') {
+                btn.disabled = false;
+                btn.textContent = '{{ "{:,}".format(amount) }}원 결제하기';
+                return;
+            }
+            fail((e && e.message) || '결제 중 오류가 발생했습니다.');
         });
     });
 })();

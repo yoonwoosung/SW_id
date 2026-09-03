@@ -23,8 +23,10 @@ _BADGE_LABEL = {
 }
 
 
-def is_experience_ended(application):
+def is_experience_ended(application, now=None):
     # 체험 날짜와 시작 시간을 기준으로 체험 종료 여부를 판별한다 (시작 시간 + 1시간).
+    # now 를 주면 그 시각 기준으로 판정한다. 호출부가 today 를 주입해도
+    # 여기서 datetime.now() 를 쓰면 주입이 무시돼 시간에 따라 결과가 흔들린다.
     if not application.apply_date:
         return False
     
@@ -39,7 +41,7 @@ def is_experience_ended(application):
             pass
 
     exp_datetime = datetime.combine(application.apply_date, exp_time)
-    return datetime.now() >= exp_datetime
+    return (now or datetime.now()) >= exp_datetime
 
 
 def sync_user_completed_reservations(user_id):
@@ -79,20 +81,24 @@ def sync_user_completed_reservations(user_id):
 
 
 def reservation_state(application, today=None):
+    # today 를 주면 그 날짜 00:00 기준으로 종료 여부를 따진다(테스트·재현용).
+    now = datetime.combine(today, time.min) if today else None
     today = today or date.today()
     status = application.status
     if status in (APPLICATION_STATUS_CANCELLED, '취소'):
         return STATE_CANCELLED
     
     if status in (APPLICATION_STATUS_CONFIRMED, '확정', '완료'):
-        if status == '완료' or application.can_review or is_experience_ended(application):
+        if status == '완료' or application.can_review or is_experience_ended(application, now):
             return STATE_COMPLETED
         return STATE_CONFIRMED
         
-    if status in (APPLICATION_STATUS_PAID, '예정'):
-        return STATE_AWAIT_ACCEPT
-    if status == APPLICATION_STATUS_PENDING:
+    # 결제 대기를 먼저 판정한다. '예정'은 APPLICATION_STATUS_PENDING 의 값이라
+    # 아래 PAID 분기에 함께 두면 결제 전 예약이 '수락 대기'로 잘못 판정된다.
+    if status in (APPLICATION_STATUS_PENDING, '대기'):
         return STATE_PAY_PENDING
+    if status == APPLICATION_STATUS_PAID:
+        return STATE_AWAIT_ACCEPT
     return STATE_AWAIT_ACCEPT
 
 
@@ -126,5 +132,7 @@ def reservation_cards(applications, today=None):
 
 
 def experienced_count(applications, today=None):
+    now = datetime.combine(today, time.min) if today else None
     return sum(1 for app in applications
-               if app.status in (APPLICATION_STATUS_CONFIRMED, '확정', '완료') and is_experience_ended(app))
+               if app.status in (APPLICATION_STATUS_CONFIRMED, '확정', '완료')
+               and is_experience_ended(app, now))

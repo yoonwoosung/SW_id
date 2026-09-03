@@ -3,9 +3,10 @@
 """배포 서버 초기화·진단 스크립트.
 
 배포 후 문제가 나면 대개 아래 셋 중 하나다. 순서대로 확인하고 고친다.
-    1) .env 값이 틀려 DB에 못 붙는다
-    2) 테이블이 없다            → db.create_all()
-    3) 관리자 계정이 없다        → seed_admin.py
+    1) SECRET_KEY 가 비어 로그인·flash 가 전부 500 난다
+    2) .env 값이 틀려 DB에 못 붙는다
+    3) 테이블이 없다            → db.create_all()
+    4) 관리자 계정이 없다        → seed_admin.py
 
 실행:
     cd ~/SW_id
@@ -36,6 +37,15 @@ def line(label, ok, detail=''):
 def diagnose():
     """DB 상태를 조사해 문제 목록을 돌려준다. 아무것도 바꾸지 않는다."""
     problems = []
+
+    # SECRET_KEY 는 DB보다 먼저 본다. 비어 있으면 세션이 아예 동작하지 않아
+    # 로그인·flash 가 전부 500 나는데, 증상만으로는 원인을 찾기 어렵다.
+    secret_ok = bool(app.secret_key)
+    line("SECRET_KEY", secret_ok,
+         "설정됨(%d자)" % len(app.secret_key) if secret_ok
+         else ".env 의 SECRET_KEY 가 비어 있다 → 로그인이 전부 500")
+    if not secret_ok:
+        problems.append('secret')
 
     try:
         inspector = db.inspect(db.engine)
@@ -83,7 +93,8 @@ def main():
         if check_only:
             print("\n  --check 모드라 아무것도 바꾸지 않았다.")
             print("  발견된 문제: %s" % (", ".join(problems) or "없음"))
-            return
+            # 진단 전용 모드도 문제가 있으면 0이 아닌 코드로 끝낸다(스크립트에서 쓰기 위함).
+            sys.exit(1 if problems else 0)
 
         if 'tables' in problems:
             print("\n── 테이블 생성 ──")
@@ -99,6 +110,10 @@ def main():
 
         print("\n── 최종 확인 ──")
         remaining = diagnose()
+
+    if 'secret' in remaining:
+        print("\n  ★ .env 의 SECRET_KEY 를 채울 것. 이게 비면 로그인이 동작하지 않는다.")
+        print("    python3 -c \"import secrets; print(secrets.token_hex(32))\"")
 
     blocking = [p for p in remaining if p != 'admin']
     if blocking:

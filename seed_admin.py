@@ -4,8 +4,9 @@
 
 실행:
     cd ~/SW_id
-    python3 seed_admin.py                      # 비밀번호를 입력 프롬프트로 받음
-    ADMIN_PASSWORD='...' python3 seed_admin.py # 비대화식(스크립트/CI)
+    python3 seed_admin.py                      # 계정마다 비밀번호를 따로 입력받음
+    python3 seed_admin.py --same-password      # 농장주 계정에 관리자 비밀번호 재사용
+    ADMIN_PASSWORD='...' FARMER_PASSWORD='...' python3 seed_admin.py   # 비대화식
 
 특징:
     - 비밀번호를 소스에 남기지 않는다. 이 저장소는 public 이므로 하드코딩 금지.
@@ -40,9 +41,8 @@ SEED_ACCOUNTS = [
         'email': 'admin@farmlink.com',
         'nickname': '관리자',
         'name': '관리자',
-        # 참고: 현재 코드베이스에는 role == 'admin' 분기나 관리자 전용 라우트가 없다.
-        # 로그인은 정상 동작하지만 화면상 권한은 일반 체험자와 동일하다.
-        # 관리자 기능을 붙일 때를 대비한 자리표시 역할이다.
+        # 로그인하면 routes/auth.py 가 /admin/farms/audit(농장 입점 심사)로 보낸다.
+        # 승인·반려는 routes/admin.py 의 admin_required 라우트에서 처리한다.
         'role': 'admin',
         'phone': '010-0000-0000',
         'password_env': 'ADMIN_PASSWORD',
@@ -122,6 +122,9 @@ def ensure_tables_exist():
 
 
 def main():
+    # 기본은 계정마다 다른 비밀번호. --same-password 를 주면 관리자 것을 재사용한다.
+    reuse_password = '--same-password' in sys.argv
+
     with app.app_context():
         # 접속 대상을 먼저 보여준다. 실수로 로컬 DB에 시드하는 것을 막기 위함.
         # hide_password=True 로 비밀번호가 로그/터미널에 남지 않게 한다.
@@ -141,8 +144,9 @@ def main():
                 skipped.append((email, existing.id, existing.role))
                 continue
 
-            # 농장주 비밀번호는 별도 환경변수가 없으면 관리자 것을 재사용한다(입력 1회로 끝내기 위함).
-            fallback = admin_password if spec['role'] != 'admin' else None
+            # 권한이 다른 두 계정이 같은 비밀번호를 쓰면, 하나가 새면 둘 다 뚫린다.
+            # 그래서 재사용은 --same-password 를 명시했을 때만 한다.
+            fallback = admin_password if (reuse_password and spec['role'] != 'admin') else None
             plain, source = read_password(spec['password_env'], spec['prompt'], fallback)
             if spec['role'] == 'admin':
                 admin_password = plain

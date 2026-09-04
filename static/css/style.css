@@ -1161,7 +1161,7 @@
 .situation-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 10px;
+    gap: 12px;
     margin-top: 4px;
 }
 .situation-card {
@@ -2394,6 +2394,8 @@
     display: flex;
     align-items: center;
     margin-bottom: 52px;
+    margin-left: 28px;
+    margin-right: 28px;
 }
 
 .card-slider-viewport {
@@ -2411,6 +2413,7 @@
 .slider-card {
     flex: 0 0 calc(50% - 12px);
     box-sizing: border-box;
+    padding: 24px;
 }
 
 .card-slider-btn {

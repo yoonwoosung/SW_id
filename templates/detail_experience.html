@@ -238,75 +238,70 @@
 </div>
 </div>
 
-<!-- 8/9 확장: AI 추천 코스 -->
-<div class="main-content-wrapper" id="ai-course-section">
-    <section class="section-block section-card mb-0">
-        <div class="section-header">
-            <h2 class="section-title"><span class="ai-badge-label">AI</span> 이 체험과 함께 즐기는 추천 코스</h2>
-        </div>
-        <p id="ai-course-reason" style="margin:0 0 14px;color:#666;"></p>
-        <div class="ai-course-inner">
-            <div class="ai-timeline" id="ai-course-timeline">
-                <div style="padding:20px;color:#888;">주변 장소로 코스를 짜는 중…</div>
+<!-- 하단 확장 섹션 (AI·ESG·시설·비슷한 체험·안내) -->
+<div class="detail-extra-bg">
+    <div class="detail-extra-inner">
+
+        <!-- 8/9 확장: AI 추천 코스 -->
+        <section id="ai-course-section" class="section-card">
+            <div class="section-header">
+                <h2 class="section-title"><span class="ai-badge-label">AI</span> 이 체험과 함께 즐기는 추천 코스</h2>
             </div>
-        </div>
-    </section>
-</div>
+            <p id="ai-course-reason" style="margin:0 0 14px;color:#666;"></p>
+            <div class="ai-course-inner">
+                <div class="ai-timeline" id="ai-course-timeline">
+                    <div style="padding:20px;color:#888;">주변 장소로 코스를 짜는 중…</div>
+                </div>
+            </div>
+        </section>
 
-<!-- ESG 점수 -->
-<div class="main-content-wrapper">
-    <section class="section-block section-card mb-0">
-        <div class="section-header">
-            <h2 class="section-title"><span class="ai-badge-label">ESG</span> 이 농장의 지속가능성 점수</h2>
-        </div>
-        <div id="esg-content" style="padding:8px 4px;color:#888;">불러오는 중…</div>
-    </section>
-</div>
+        <!-- ESG 점수 -->
+        <section class="section-card">
+            <div class="section-header">
+                <h2 class="section-title"><span class="ai-badge-label">ESG</span> 이 농장의 지속가능성 점수</h2>
+            </div>
+            <div id="esg-content" style="padding:8px 4px;color:#888;">불러오는 중…</div>
+        </section>
 
-<!-- 주변 편의시설 (무장애/반려동물/의료) -->
-<div class="main-content-wrapper">
-    <section class="section-block section-card mb-0">
-        <div class="section-header"><h2 class="section-title"><i data-lucide="compass"></i> 주변 무장애·반려·의료 시설</h2></div>
-        <div id="facilities-content" style="padding:8px 4px;color:#888;">불러오는 중…</div>
-    </section>
-</div>
+        <!-- 주변 편의시설 (무장애/반려동물/의료) -->
+        <section class="section-card">
+            <div class="section-header"><h2 class="section-title"><i data-lucide="compass"></i> 주변 무장애·반려·의료 시설</h2></div>
+            <div id="facilities-content" style="padding:8px 4px;color:#888;">불러오는 중…</div>
+        </section>
 
-<!-- 12. 비슷한 체험 (다음 행동 유도) -->
-<div class="main-content-wrapper">
-    <section class="section-block section-card mb-0">
-        <div class="section-header"><h2 class="section-title"><i data-lucide="wheat"></i> 비슷한 체험</h2></div>
-        <div class="ed-similar-scroll" id="ed-similar"><small class="text-muted">불러오는 중…</small></div>
-    </section>
-</div>
+        <!-- 12. 비슷한 체험 (다음 행동 유도) -->
+        <section class="section-card">
+            <div class="section-header"><h2 class="section-title"><i data-lucide="wheat"></i> 비슷한 체험</h2></div>
+            <div class="ed-similar-scroll" id="ed-similar"><small class="text-muted">불러오는 중…</small></div>
+        </section>
 
-<!-- 알아두어야 할 사항 (환불·이용규칙·안전) -->
-<div class="main-content-wrapper">
-    <section class="section-block section-card mb-0">
-        <div class="section-header"><h2 class="section-title"><i data-lucide="pin"></i> 알아두어야 할 사항</h2></div>
-        <div class="ed-policy-grid">
-            {% for p in booking_policies %}
-            <details class="ed-policy">
-                <summary class="ed-policy__head">
-                    <span class="ed-policy__title">{{ p.icon }} {{ p.title }}</span>
-                    <span class="ed-policy__more">자세히 알아보기 <i data-lucide="chevron-down"></i></span>
-                </summary>
-                <p class="ed-policy__summary">{{ p.summary }}</p>
-                <ul class="ed-policy__details">
-                    {% for d in p.details %}<li>{{ d }}</li>{% endfor %}
-                </ul>
-            </details>
-            {% endfor %}
-        </div>
-    </section>
-</div>
+        <!-- 알아두어야 할 사항 (환불·이용규칙·안전) -->
+        <section class="section-card">
+            <div class="section-header"><h2 class="section-title"><i data-lucide="pin"></i> 알아두어야 할 사항</h2></div>
+            <div class="ed-policy-grid">
+                {% for p in booking_policies %}
+                <details class="ed-policy">
+                    <summary class="ed-policy__head">
+                        <span class="ed-policy__title">{{ p.icon }} {{ p.title }}</span>
+                        <span class="ed-policy__more">자세히 알아보기 <i data-lucide="chevron-down"></i></span>
+                    </summary>
+                    <p class="ed-policy__summary">{{ p.summary }}</p>
+                    <ul class="ed-policy__details">
+                        {% for d in p.details %}<li>{{ d }}</li>{% endfor %}
+                    </ul>
+                </details>
+                {% endfor %}
+            </div>
+        </section>
 
-<!-- 주변 맛집·카페·편의점 (개별 장소, 코스 아님) -->
-<div class="main-content-wrapper" style="padding-bottom:32px;">
-    <section class="section-block section-card mb-0">
-        <div class="section-header"><h2 class="section-title"><i data-lucide="store"></i> 주변 맛집·카페·편의점</h2></div>
-        <p class="ed-amenities__lead">체험 농장 반경 안의 편의시설을 가까운 순으로 하나씩 모았어요.</p>
-        <div id="ed-amenities" class="ed-amenities"><small class="text-muted">주변 편의시설을 불러오는 중…</small></div>
-    </section>
+        <!-- 주변 맛집·카페·편의점 (개별 장소, 코스 아님) -->
+        <section class="section-card">
+            <div class="section-header"><h2 class="section-title"><i data-lucide="store"></i> 주변 맛집·카페·편의점</h2></div>
+            <p class="ed-amenities__lead">체험 농장 반경 안의 편의시설을 가까운 순으로 하나씩 모았어요.</p>
+            <div id="ed-amenities" class="ed-amenities"><small class="text-muted">주변 편의시설을 불러오는 중…</small></div>
+        </section>
+
+    </div>
 </div>
 
 <!-- 라이트박스 · 토스트 -->

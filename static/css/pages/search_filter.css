@@ -195,6 +195,12 @@
     width: 100%; display: flex; align-items: center; justify-content: space-between;
     background: none; border: none; cursor: pointer; padding: 16px;
     font-size: 1.0rem; font-weight: 700; color: #253027;
+    outline: none;
+}
+.fl-collapse__toggle:focus-visible {
+    outline: 2px solid var(--fl-green-700, #4CAF50);
+    outline-offset: -2px;
+    border-radius: var(--radius-card, 12px);
 }
 .fl-collapse__toggle .fa-chevron-down { color: #9aa39c; transition: transform 0.15s; font-size: 0.85rem; }
 .fl-collapse__toggle[aria-expanded="true"] .fa-chevron-down { transform: rotate(180deg); }

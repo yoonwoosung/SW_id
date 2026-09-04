@@ -1031,6 +1031,9 @@
 }
 
 .section-block { padding: 44px 0; margin-bottom: 0; }
+
+/* section-block과 section-card 병용 시 section-block의 padding: 44px 0 이 좌우를 덮어쓰는 문제 방지 */
+.section-block.section-card { padding: 24px; }
 .section-block + .section-block { border-top: 1px solid #f0f0f0; }
 .section-header {
     display: flex;
@@ -1979,6 +1982,18 @@
     grid-template-columns: 1fr 320px;
     gap: 28px;
     align-items: start;
+}
+
+/* 체험 상세 하단 확장 섹션 래퍼 — detail-page-bg와 동일한 외부 패딩으로 정렬 맞춤 */
+.detail-extra-bg {
+    padding: 0 24px 60px;
+}
+.detail-extra-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
 }
 .detail-gallery-card {
     border-radius: var(--radius-card);

@@ -14,6 +14,7 @@
     box-shadow: var(--shadow-card, 0 2px 12px rgba(0,0,0,0.08));
     padding: 16px;
     margin-top: 16px;
+    overflow: hidden;
 }
 .fl-panel__title { font-size: 1.02rem; font-weight: 700; color: #253027; margin: 0 0 10px; display: flex; align-items: center; gap: 6px; }
 
@@ -197,10 +198,14 @@
     font-size: 1.0rem; font-weight: 700; color: #253027;
     outline: none;
 }
+.fl-collapse__toggle:focus,
+.fl-collapse__toggle:active {
+    outline: none;
+    box-shadow: none;
+}
 .fl-collapse__toggle:focus-visible {
-    outline: 2px solid var(--fl-green-700, #4CAF50);
-    outline-offset: -2px;
-    border-radius: var(--radius-card, 12px);
+    outline: none;
+    box-shadow: inset 0 0 0 2px var(--fl-green-700, #4CAF50);
 }
 .fl-collapse__toggle .fa-chevron-down { color: #9aa39c; transition: transform 0.15s; font-size: 0.85rem; }
 .fl-collapse__toggle[aria-expanded="true"] .fa-chevron-down { transform: rotate(180deg); }

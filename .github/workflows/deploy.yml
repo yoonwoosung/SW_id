@@ -1,9 +1,9 @@
 # develop 에 push 되면 PythonAnywhere 서버에 자동 반영한다.
 #
-# 순서: SSH 로 코드 갱신 → 의존성 설치 → DB 스키마 동기화 → 웹앱 reload → 헬스체크
+# 순서: SSH 코드 갱신 → 의존성 → DB 스키마 동기화 → 웹앱 reload → 헬스체크
 #
 # PythonAnywhere API 에는 셸 명령 실행 엔드포인트가 없어서(reload 만 가능)
-# git pull 은 SSH 로 처리한다. SSH 는 유료 계정에서만 열린다.
+# git 갱신은 SSH 로 처리한다. SSH 는 유료 계정에서만 열린다.
 name: Deploy to PythonAnywhere
 
 on:
@@ -23,7 +23,6 @@ jobs:
 
     steps:
       # ── 1. 서버에서 코드 갱신 + 의존성 + DB 스키마 ──
-      # set -e 로 한 줄이라도 실패하면 즉시 중단되고 job 이 빨간불이 된다.
       - name: 서버 코드 갱신 및 준비
         uses: appleboy/ssh-action@v1.2.5
         with:
@@ -35,52 +34,58 @@ jobs:
             set -e
             cd /home/wws030816/SW_id
 
-            echo "── 현재 상태 ──"
+            echo "── 배포 전 상태 ──"
             git rev-parse --abbrev-ref HEAD
             git log --oneline -1
 
             echo "── develop 으로 갱신 ──"
-            git fetch origin develop
-            # 서버가 다른 브랜치를 보고 있을 수 있으므로 명시적으로 맞춘다.
-            git checkout develop 2>/dev/null || git checkout -b develop origin/develop
-            # --ff-only: 서버에서 커밋한 게 있어 갈라졌다면 조용히 덮지 않고 실패시킨다.
-            git pull --ff-only origin develop
+            git fetch origin
+            # -f -B: 서버가 다른 브랜치를 보고 있든, 파일이 수정돼 있든,
+            # 팀원이 force-push 해 히스토리가 갈라져 있든 한 번에 origin/develop 에 맞춘다.
+            # (git pull --ff-only 은 이 상황들에서 배포가 멈춘다)
+            # 서버는 저장소를 그대로 반영하는 곳이라 로컬 수정을 남기지 않는다.
+            # .env 와 사용자 업로드 파일은 untracked/ignored 라 영향받지 않는다.
+            git checkout -f -B develop origin/develop
+            git reset --hard origin/develop
 
             echo "── 의존성 ──"
-            # 가상환경을 activate 하지 않고 절대경로로 부른다(로그인 셸 차이에 안 흔들림).
-            /home/wws030816/.virtualenvs/farmlink/bin/pip install -q -r requirements-deploy.txt
+            # 앱이 실제로 import 하는 8개만 설치한다.
+            # requirements.txt(83개)는 supabase·psycopg2 등 앱 미사용분이 섞여 있어
+            # 빌드가 깨지면 배포 전체가 멈춘다.
+            source /home/wws030816/.virtualenvs/farmlink/bin/activate
+            pip install -q -r requirements-deploy.txt
 
             echo "── DB 스키마 동기화 ──"
-            # 모델에 새로 생긴 컬럼을 ALTER TABLE 로 채운다. 없으면 즉시 통과.
-            /home/wws030816/.virtualenvs/farmlink/bin/python deploy_setup.py
+            # 모델에 새로 생긴 컬럼을 ALTER TABLE 로 채운다. 변경 없으면 즉시 통과.
+            # SECRET_KEY 누락·DB 접속 실패도 여기서 잡혀 배포가 중단된다.
+            python deploy_setup.py
 
-            echo "── 반영된 커밋 ──"
+            echo "── 배포 후 상태 ──"
             git log --oneline -1
 
       # ── 2. 웹앱 reload ──
       # 코드를 받아도 reload 하지 않으면 이전 프로세스가 계속 돈다.
-      # PythonAnywhere 공식 reload API 만 호출하는 액션을 쓴다.
+      # PythonAnywhere 공식 reload API. -f 로 4xx/5xx 를 실패로 잡는다.
       - name: 웹앱 reload
-        uses: jensvog/pythonanywhere-webapp-reload-action@v1
-        with:
-          host: ${{ secrets.PAW_HOST }}
-          username: ${{ secrets.PAW_USERNAME }}
-          api-token: ${{ secrets.PAW_TOKEN }}
-          domain-name: ${{ secrets.PAW_DOMAIN }}
+        run: |
+          curl -f -s -S -X POST \
+            -H "Authorization: Token ${{ secrets.PAW_TOKEN }}" \
+            "https://www.pythonanywhere.com/api/v0/user/${{ secrets.PAW_USERNAME }}/webapps/${{ secrets.PAW_DOMAIN }}/reload/"
+          echo "reload 요청 완료"
 
       # ── 3. 헬스체크 ──
-      # reload 직후에는 첫 요청에서 앱이 뜨는 시간이 걸려 잠깐 기다린다.
+      # reload 직후 첫 요청은 앱이 뜨는 시간이 걸리므로 기다렸다 확인한다.
       - name: 배포 확인
         run: |
-          sleep 10
           for i in 1 2 3; do
+            sleep 10
             code=$(curl -s -o /dev/null -w '%{http_code}' "https://${{ secrets.PAW_DOMAIN }}/")
             echo "시도 $i — HTTP $code"
             if [ "$code" = "200" ]; then
               echo "배포 성공"
               exit 0
             fi
-            sleep 10
           done
-          echo "사이트가 200 을 반환하지 않는다. PythonAnywhere 에러 로그를 확인할 것."
+          echo "사이트가 200 을 반환하지 않는다. PythonAnywhere 에러 로그를 확인할 것:"
+          echo "  tail -n 40 /var/log/${{ secrets.PAW_DOMAIN }}.error.log"
           exit 1

@@ -248,8 +248,11 @@
         </div>
     </div>
 
-    <!-- 오른쪽: 예약 패널 -->
+    <!-- 오른쪽: 예약카드 + 주변 시설 + AI 코스 요약.
+         세 카드를 .ed-side-sticky 하나로 묶고 그 래퍼에만 sticky를 건다.
+         개별로 걸면 스크롤할 때 서로 따로 놀아 세로로 어긋난다. -->
     <div class="detail-booking-col">
+      <div class="ed-side-sticky">
         <div class="detail-booking-panel">
             <div class="detail-booking-price">
                 <span class="detail-booking-price-num">{{ "{:,}".format(item.cost) }}원</span>
@@ -280,24 +283,35 @@
                 <div class="detail-booking-info-row"><i data-lucide="calendar"></i> <span>마감: {{ item.end_date.strftime('%Y.%m.%d') }}</span></div>
             </div>
         </div>
+
+        {# 주변 시설 — 이름 위주 요약. 자세한 건 '더 상세히'로 넘긴다. #}
+        <section class="ed-side-card" id="ed-side-nearby">
+            <h4 class="ed-side-card__title"><i data-lucide="map-pin"></i> 주변 시설</h4>
+            <div class="ed-side-card__body" id="ed-nearby-body">
+                <p class="ed-side-empty">불러오는 중…</p>
+            </div>
+            <a class="ed-side-more" href="{{ url_for('ai_recommend_page') }}">
+                더 상세히 <i data-lucide="chevron-right"></i>
+            </a>
+        </section>
+
+        {# AI 코스 — 미니 타임라인 요약. 결제 관련 요소는 넣지 않는다. #}
+        <section class="ed-side-card" id="ed-side-course">
+            <h4 class="ed-side-card__title"><i data-lucide="route"></i> 추천 하루 코스</h4>
+            <div class="ed-side-card__body" id="ed-course-body">
+                <p class="ed-side-empty">불러오는 중…</p>
+            </div>
+            <div class="ed-side-cost" id="ed-course-cost" hidden>
+                <span>예상 1인 비용</span><strong id="ed-course-cost-num"></strong>
+            </div>
+            <a class="ed-side-more" href="{{ url_for('ai_recommend_page') }}">
+                코스 보기 <i data-lucide="chevron-right"></i>
+            </a>
+        </section>
+      </div>
     </div>
 
 </div>
-</div>
-
-<!-- 8/9 확장: AI 추천 코스 -->
-<div class="main-content-wrapper" id="ai-course-section">
-    <section class="section-block section-card mb-0">
-        <div class="section-header">
-            <h2 class="section-title"><span class="ai-badge-label">AI</span> 이 체험과 함께 즐기는 추천 코스</h2>
-        </div>
-        <p id="ai-course-reason" style="margin:0 0 14px;color:#666;"></p>
-        <div class="ai-course-inner">
-            <div class="ai-timeline" id="ai-course-timeline">
-                <div style="padding:20px;color:#888;">주변 장소로 코스를 짜는 중…</div>
-            </div>
-        </div>
-    </section>
 </div>
 
 <!-- ESG 점수 -->
@@ -307,14 +321,6 @@
             <h2 class="section-title"><span class="ai-badge-label">ESG</span> 이 농장의 지속가능성 점수</h2>
         </div>
         <div id="esg-content" style="padding:8px 4px;color:#888;">불러오는 중…</div>
-    </section>
-</div>
-
-<!-- 주변 편의시설 -->
-<div class="main-content-wrapper">
-    <section class="section-block section-card mb-0">
-        <div class="section-header"><h2 class="section-title"><i data-lucide="compass"></i> 주변 무장애·반려·의료 시설</h2></div>
-        <div id="facilities-content" style="padding:8px 4px;color:#888;">불러오는 중…</div>
     </section>
 </div>
 

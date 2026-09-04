@@ -176,24 +176,68 @@
         }).catch(function () { el.closest('.section-block').hidden = true; });
     })();
 
-    // ---------- AI 추천 코스 ----------
-    (function course() {
-        var timeline = $('ai-course-timeline'), reasonEl = $('ai-course-reason');
-        if (!timeline) return;
-        function showEmpty(msg) { reasonEl.textContent = ''; timeline.innerHTML = '<div style="padding:20px;color:#888;">' + esc(msg) + '</div>'; }
-        fetch('/api/experiences/' + DATA.id + '/course').then(function (r) { return r.json(); }).then(function (res) {
-            if (!res.success || !res.data) { showEmpty('코스를 불러올 수 없습니다.'); return; }
-            var data = res.data;
-            var placeCount = (data.items || []).filter(function (it) { return it.type !== 'experience'; }).length;
-            if (!placeCount) { showEmpty(data.message || '주변 장소 정보를 불러오지 못했어요.'); return; }
-            reasonEl.textContent = data.reason || '';
-            timeline.innerHTML = data.items.map(function (it) {
-                var sub = it.type === 'experience' ? '이 체험' : (esc(it.address || '') + (it.distance_km != null ? ' · ' + it.distance_km + 'km' : ''));
-                return '<div class="ai-timeline-item"><div class="ai-time">' + esc(it.time) + '</div><div class="ai-dot"></div>'
-                    + '<div class="ai-timeline-body"><div class="ai-act-name">' + esc(it.name || '') + '</div><div class="ai-act-sub">' + sub + '</div></div>'
-                    + '<div class="ai-thumb">' + ('<i data-lucide="' + (TYPE_ICON[it.type] || 'map-pin') + '"></i>') + '</div></div>';
+    // ---------- 우측 사이드: 주변 시설 요약 (맛집·관광 각 2곳) ----------
+    (function sideNearby() {
+        var body = $('ed-nearby-body');
+        if (!body) return;
+
+        function group(label, list) {
+            if (!list || !list.length) return '';
+            var items = list.map(function (p) {
+                var dist = p.distance_km != null
+                    ? '<span class="ed-side-dist">' + p.distance_km + 'km</span>' : '';
+                return '<li><span class="ed-side-name">' + esc(p.name) + '</span>' + dist + '</li>';
             }).join('');
-        }).catch(function () { showEmpty('코스를 불러오는 중 오류가 발생했어요.'); });
+            return '<div class="ed-side-group"><p class="ed-side-group__label">' + label + '</p>'
+                 + '<ul class="ed-side-list">' + items + '</ul></div>';
+        }
+
+        fetch('/api/experiences/' + DATA.id + '/nearby-summary')
+            .then(function (r) { return r.json(); })
+            .then(function (res) {
+                if (!res.success || !res.data) {
+                    body.innerHTML = '<p class="ed-side-empty">정보 없음</p>'; return;
+                }
+                var html = group('맛집', res.data.restaurants) + group('관광', res.data.attractions);
+                body.innerHTML = html || '<p class="ed-side-empty">정보 없음</p>';
+                if (window.lucide) lucide.createIcons();
+            })
+            .catch(function () {
+                body.innerHTML = '<p class="ed-side-empty">정보 없음</p>';
+            });
+    })();
+
+    // ---------- 우측 사이드: AI 코스 요약 (미니 타임라인) ----------
+    (function sideCourse() {
+        var body = $('ed-course-body');
+        if (!body) return;
+        var costWrap = $('ed-course-cost'), costNum = $('ed-course-cost-num');
+
+        function empty(msg) { body.innerHTML = '<p class="ed-side-empty">' + esc(msg) + '</p>'; }
+
+        fetch('/api/experiences/' + DATA.id + '/course')
+            .then(function (r) { return r.json(); })
+            .then(function (res) {
+                if (!res.success || !res.data) { empty('정보 없음'); return; }
+                var data = res.data;
+                var items = data.items || [];
+                var hasPlace = items.some(function (it) { return it.type !== 'experience'; });
+                if (!hasPlace) { empty(data.message || '정보 없음'); return; }
+
+                // 우측은 요약 수준이라 앞 3개만 보여주고 자세한 건 '코스 보기'로 넘긴다.
+                body.innerHTML = '<ul class="ed-course-line">' + items.slice(0, 3).map(function (it) {
+                    var name = it.type === 'experience' ? '이 체험' : (it.name || '');
+                    return '<li><span class="ed-course-time">' + esc(it.time) + '</span>'
+                         + '<span class="ed-course-name">' + esc(name) + '</span></li>';
+                }).join('') + '</ul>';
+
+                var cost = data.summary && data.summary.estimated_cost;
+                if (cost && costWrap && costNum) {
+                    costNum.textContent = cost.toLocaleString('ko-KR') + '원';
+                    costWrap.hidden = false;
+                }
+            })
+            .catch(function () { empty('정보 없음'); });
     })();
 
     // ---------- ESG ----------
@@ -217,34 +261,6 @@
                 + '<div><div style="font-size:1.4rem;font-weight:700;">' + d.score + '<span style="font-size:0.9rem;color:#999;">/100</span></div>'
                 + '<div style="font-size:0.85rem;color:#888;">무농약·유기농·봉사·접근성 기준</div></div></div>' + bars;
         }).catch(function () { esgEl.textContent = 'ESG 점수를 불러오는 중 오류.'; });
-    })();
-
-    // ---------- 주변 편의시설(무장애/반려/의료) ----------
-    (function facilities() {
-        var facEl = $('facilities-content');
-        if (!facEl) return;
-        var FACILITIES = [
-            { ep: 'barrier-free', label: '<i data-lucide="accessibility"></i> 무장애 여행지' },
-            { ep: 'pet-facilities', label: '<i data-lucide="paw-print"></i> 반려동물 동반 시설' },
-            { ep: 'medical', label: '<i data-lucide="heart-pulse"></i> 주변 의료 시설' }
-        ];
-        Promise.all(FACILITIES.map(function (f) {
-            return fetch('/api/experiences/' + DATA.id + '/' + f.ep)
-                .then(function (r) { return r.json(); })
-                .then(function (res) { return { label: f.label, list: (res.success && res.data) || [] }; })
-                .catch(function () { return { label: f.label, list: [] }; });
-        })).then(function (groups) {
-            var html = groups.filter(function (g) { return g.list.length; }).map(function (g) {
-                var items = g.list.slice(0, 5).map(function (p) {
-                    return '<div style="padding:6px 0;border-bottom:1px solid #f4f4f4;font-size:0.9rem;">'
-                        + '<span style="font-weight:600;">' + esc(p.name) + '</span>'
-                        + (p.distance_km != null ? ' <span style="color:#999;font-size:0.8rem;">' + p.distance_km + 'km</span>' : '')
-                        + '<div style="color:#999;font-size:0.8rem;">' + esc(p.address || '') + '</div></div>';
-                }).join('');
-                return '<div style="margin-bottom:16px;"><div style="font-weight:700;margin-bottom:4px;">' + g.label + '</div>' + items + '</div>';
-            }).join('');
-            facEl.innerHTML = html || '주변 편의시설 정보가 없습니다.';
-        });
     })();
 
     // ---------- 주변 맛집·카페·편의점(개별 장소, 코스 아님 · 카카오 카테고리 검색) ----------

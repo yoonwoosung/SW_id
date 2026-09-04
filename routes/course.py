@@ -57,5 +57,34 @@ def experience_course(item_id):
     })
 
 
+def experience_nearby_summary(item_id):
+    """상세 페이지 우측 '주변 시설' 요약 — 맛집·관광 각 2곳만.
+
+    코스 API와 같은 _collect_places 를 재사용한다(수집 로직 중복 방지).
+    외부 API가 실패해도 빈 리스트로 200 을 주어 화면이 '정보 없음'으로 뜨게 한다.
+    """
+    item = Experience.query.get(item_id)
+    if item is None:
+        return error_response("EXPERIENCE_NOT_FOUND", "체험을 찾을 수 없습니다.", 404)
+
+    places_by_type = _collect_places(item)
+
+    def top(kind, limit=2):
+        places = places_by_type.get(kind) or []
+        ranked = sorted(
+            (p for p in places if p.get("name")),
+            key=lambda p: p.get("distance_km") if p.get("distance_km") is not None else 9999,
+        )
+        return [{"name": p["name"], "distance_km": p.get("distance_km")} for p in ranked[:limit]]
+
+    return success_response({
+        "experience_id": item.id,
+        "restaurants": top("restaurant"),
+        "attractions": top("attraction"),
+    })
+
+
 def register(app):
     app.add_url_rule('/api/experiences/<int:item_id>/course', 'experience_course', experience_course)
+    app.add_url_rule('/api/experiences/<int:item_id>/nearby-summary',
+                     'experience_nearby_summary', experience_nearby_summary)

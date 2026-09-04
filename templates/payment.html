@@ -71,6 +71,17 @@
             <p id="pay-point-msg" style="margin:8px 0 0; font-size:.8rem; color:#e5484d; display:none;"></p>
         </div>
 
+        {# 토스 결제위젯이 이 두 곳에 결제수단 선택 UI와 약관 UI를 그린다.
+           위젯을 쓰면 method 를 지정하지 않고 사용자가 카드·계좌이체·간편결제 등에서 직접 고른다. #}
+        <div class="pay-sec">
+            <p class="pay-sec__title">결제 수단</p>
+            <div id="payment-method"></div>
+        </div>
+
+        <div class="pay-sec">
+            <div id="agreement"></div>
+        </div>
+
     </div>
 
     <div class="pay-foot">
@@ -100,8 +111,16 @@
     var pUsed = document.getElementById('pay-point-used');
     var pFinal = document.getElementById('pay-final');
     var MAX_POINT = Math.min(DATA.point_balance, DATA.amount);
+    var widgets = null;
 
     function won(n) { return n.toLocaleString('ko-KR') + '원'; }
+
+    function fail(msg) {
+        btn.disabled = false;
+        btn.textContent = won(DATA.amount - usePoint()) + ' 결제하기';
+        err.textContent = msg;
+        err.style.display = 'block';
+    }
 
     // 입력값은 화면 표시용일 뿐이고, 실제 검증·차감은 서버(prepare)가 한다.
     function usePoint() {
@@ -110,6 +129,9 @@
         return Math.min(v, MAX_POINT);
     }
 
+    function finalAmount() { return DATA.amount - usePoint(); }
+
+    // 포인트 사용액이 바뀌면 위젯이 청구할 금액도 함께 바꿔야 한다.
     function syncPoint() {
         var v = usePoint();
         if (parseInt(pInput.value, 10) > MAX_POINT) {
@@ -121,22 +143,17 @@
         }
         pRow.style.display = v > 0 ? 'flex' : 'none';
         pUsed.textContent = '-' + won(v);
-        pFinal.textContent = won(DATA.amount - v);
-        btn.textContent = won(DATA.amount - v) + ' 결제하기';
+        pFinal.textContent = won(finalAmount());
+        btn.textContent = won(finalAmount()) + ' 결제하기';
+        if (widgets) {
+            widgets.setAmount({ currency: 'KRW', value: finalAmount() });
+        }
     }
 
     pInput.addEventListener('input', syncPoint);
     document.getElementById('pay-point-all').addEventListener('click', function () {
         pInput.value = MAX_POINT; syncPoint();
     });
-    syncPoint();
-
-    function fail(msg) {
-        btn.disabled = false;
-        btn.textContent = '다시 결제하기';
-        err.textContent = msg;
-        err.style.display = 'block';
-    }
 
     // 클라이언트 키가 없으면 결제창을 열 수 없다. 원인을 화면에 알려준다.
     if (!DATA.client_key) {
@@ -146,12 +163,38 @@
         return;
     }
 
+    // ── 결제위젯 초기화 ──
+    // 결제창(payment)과 달리 위젯은 method 를 받지 않는다.
+    // renderPaymentMethods 가 그린 UI에서 사용자가 수단을 직접 고른다.
+    btn.disabled = true;
+    var tossPayments = TossPayments(DATA.client_key);
+    widgets = tossPayments.widgets({ customerKey: TossPayments.ANONYMOUS });
+
+    widgets.setAmount({ currency: 'KRW', value: finalAmount() })
+        .then(function () {
+            return Promise.all([
+                widgets.renderPaymentMethods({ selector: '#payment-method', variantKey: 'DEFAULT' }),
+                widgets.renderAgreement({ selector: '#agreement', variantKey: 'AGREEMENT' })
+            ]);
+        })
+        .then(function () {
+            btn.disabled = false;
+            syncPoint();
+        })
+        .catch(function (e) {
+            btn.disabled = true;
+            err.textContent = '결제 수단을 불러오지 못했습니다. ' + ((e && e.message) || '');
+            err.style.display = 'block';
+        });
+
+    // ── 결제 요청 ──
     btn.addEventListener('click', function () {
         btn.disabled = true;
-        btn.textContent = '결제창 여는 중…';
+        btn.textContent = '결제 준비 중…';
         err.style.display = 'none';
 
-        // 1) 서버가 주문번호·금액을 확정한다(클라이언트 금액은 신뢰하지 않음).
+        // 1) 서버가 주문번호·금액을 확정하고 포인트를 차감한다.
+        //    클라이언트가 계산한 금액은 신뢰하지 않는다.
         fetch('/api/payments/prepare', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -161,24 +204,22 @@
                 fail((res.error && res.error.message) || '결제를 준비하지 못했습니다.');
                 return;
             }
-            // 2) 토스 결제창을 띄운다. 성공/실패 모두 서버 URL 로 복귀한다.
             var order = res.data;
-            var tossPayments = TossPayments(DATA.client_key);
-            var payment = tossPayments.payment({ customerKey: TossPayments.ANONYMOUS });
-            // 결제 수단을 지정하지 않으면 토스 결제창이 카드·계좌이체·간편결제 등
-            // 상점에 열려 있는 수단을 전부 보여준다. 임의로 제한하지 않는다.
-            return payment.requestPayment({
-                amount: { currency: 'KRW', value: order.amount },
-                orderId: order.order_id,
-                orderName: order.order_name,
-                successUrl: DATA.success_url,
-                failUrl: DATA.fail_url
+            // 2) 위젯 금액을 서버가 확정한 금액으로 맞춘 뒤 결제를 요청한다.
+            //    (여기서 어긋나면 토스가 금액 불일치로 거부한다.)
+            return widgets.setAmount({ currency: 'KRW', value: order.amount }).then(function () {
+                return widgets.requestPayment({
+                    orderId: order.order_id,
+                    orderName: order.order_name,
+                    successUrl: DATA.success_url,
+                    failUrl: DATA.fail_url
+                });
             });
         }).catch(function (e) {
             // 사용자가 결제창을 닫은 경우는 오류가 아니다.
             if (e && e.code === 'USER_CANCEL') {
                 btn.disabled = false;
-                btn.textContent = '{{ "{:,}".format(amount) }}원 결제하기';
+                btn.textContent = won(finalAmount()) + ' 결제하기';
                 return;
             }
             fail((e && e.message) || '결제 중 오류가 발생했습니다.');

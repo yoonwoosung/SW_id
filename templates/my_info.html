@@ -406,7 +406,8 @@
               <div class="mi-tl-item"><div class="mi-tl-time">17:00</div><div><div class="mi-tl-name">로컬 카페 휴식</div><div class="mi-tl-sub">아늑한 시골 카페에서 힐링</div></div></div>
             </div>
             <div style="margin-top:16px;">
-              <a href="{{ url_for('ai_recommend_page') }}?experience={{ next_trip.experience.id }}" class="fl-btn fl-btn-primary fl-btn-block" style="justify-content:center;">상세 코스 보기</a>
+              <button type="button" class="fl-btn fl-btn-primary fl-btn-block" style="justify-content:center;"
+                onclick="openCourseModal({{ next_trip.experience.id }}, '{{ next_trip.experience.crop }}')">상세 코스 보기</button>
             </div>
           {% else %}
             <p class="mi-empty">예약 확정 후 AI가 맞춤 여행 코스를 추천해드려요.<br>
@@ -457,11 +458,78 @@
     </main>
   </div>
 </div>
+
+<!-- 코스 상세 모달 -->
+<div id="mi-course-modal" style="display:none;position:fixed;inset:0;z-index:1050;background:rgba(0,0,0,0.45);overflow-y:auto;">
+  <div style="max-width:520px;margin:60px auto;background:#fff;border-radius:16px;padding:28px 24px;position:relative;">
+    <button type="button" onclick="closeCourseModal()" style="position:absolute;top:16px;right:18px;background:none;border:none;font-size:1.4rem;color:#888;cursor:pointer;">&times;</button>
+    <h3 id="mi-course-modal-title" style="font-size:1.1rem;font-weight:800;color:#1b4332;margin:0 0 6px;"></h3>
+    <p style="font-size:.82rem;color:#888;margin:0 0 18px;">AI가 추천한 하루 코스예요.</p>
+    <div id="mi-course-modal-body">
+      <p style="text-align:center;color:#888;padding:24px 0;">코스를 불러오는 중…</p>
+    </div>
+    <div style="margin-top:20px;">
+      <a id="mi-course-modal-link" href="#" class="fl-btn fl-btn-outline fl-btn-block" style="justify-content:center;">오늘의 추천 코스 페이지에서 보기 →</a>
+    </div>
+  </div>
+</div>
 {% endblock %}
 
 {% block scripts %}
 <script>
 var AI_REC_URL = "{{ url_for('ai_recommend_page') }}";
+
+function openCourseModal(expId, cropName) {
+    var modal = document.getElementById('mi-course-modal');
+    var title = document.getElementById('mi-course-modal-title');
+    var body = document.getElementById('mi-course-modal-body');
+    var link = document.getElementById('mi-course-modal-link');
+    title.textContent = cropName + ' 체험 추천 코스';
+    body.innerHTML = '<p style="text-align:center;color:#888;padding:24px 0;">코스를 불러오는 중…</p>';
+    link.href = AI_REC_URL + '?experience=' + expId;
+    modal.style.display = 'block';
+    document.body.style.overflow = 'hidden';
+
+    var TYPE_LABEL = { experience: '🌱 체험', restaurant: '🍽 식사', attraction: '🏛 관광지', cafe: '☕ 카페' };
+    fetch('/api/experiences/' + expId + '/course')
+        .then(function(r) { return r.json(); })
+        .then(function(res) {
+            if (!res.success || !res.data) {
+                body.innerHTML = '<p style="text-align:center;color:#888;padding:16px 0;">코스 정보를 불러오지 못했어요.</p>';
+                return;
+            }
+            var items = res.data.items || [];
+            var reason = res.data.reason || '';
+            var html = reason ? '<p style="font-size:.83rem;color:#555;margin-bottom:16px;">' + reason + '</p>' : '';
+            html += '<div style="display:flex;flex-direction:column;gap:12px;">';
+            items.forEach(function(it) {
+                var label = TYPE_LABEL[it.type] || '📍';
+                var sub = it.type === 'experience'
+                    ? (it.address || '')
+                    : ((it.address || '') + (it.distance_km != null ? ' · ' + it.distance_km + 'km' : ''));
+                html += '<div style="display:flex;gap:14px;align-items:flex-start;">'
+                    + '<div style="min-width:44px;font-size:.78rem;font-weight:700;color:#2d6a4f;padding-top:2px;">' + (it.time || '') + '</div>'
+                    + '<div style="flex:1;border-left:2px dashed #b7e4c7;padding-left:14px;">'
+                    + '<div style="font-size:.88rem;font-weight:700;color:#1b4332;">' + label + ' ' + (it.name || '') + '</div>'
+                    + (sub ? '<div style="font-size:.78rem;color:#888;margin-top:2px;">' + sub + '</div>' : '')
+                    + '</div></div>';
+            });
+            html += '</div>';
+            body.innerHTML = html;
+        })
+        .catch(function() {
+            body.innerHTML = '<p style="text-align:center;color:#888;padding:16px 0;">코스 정보를 불러오지 못했어요.</p>';
+        });
+}
+
+function closeCourseModal() {
+    document.getElementById('mi-course-modal').style.display = 'none';
+    document.body.style.overflow = '';
+}
+
+document.getElementById('mi-course-modal').addEventListener('click', function(e) {
+    if (e.target === this) closeCourseModal();
+});
 (function () {
   /* ── 사이드 내비 ── */
   var navLinks = document.querySelectorAll('.fl-side-menu a[data-panel]');

@@ -1,4 +1,4 @@
-# routes/experience.py — 체험 도메인 라우트(목록·상세·등록/수정·삭제·공개전환·JSON API).
+# routes/experience.py — 체험 도메인 라우트(목록·상세·등록/수정·삭제·공개전환·통합검색 API).
 import os
 import json
 import math
@@ -37,7 +37,6 @@ def index():
 
     if is_farmer:
         session['view_mode'] = 'easy' 
-        # [수정] 농장주일 경우 간편 모드 대시보드로 이동
         return redirect(url_for('farmer_easy_mode'))
     else: 
         page = request.args.get('page', 1, type=int)
@@ -139,6 +138,172 @@ def index():
                                pagination=pagination,
                                featured=featured,
                                sort_by=sort_by)
+
+
+# ==========================================
+# 💡 메인 페이지 비동기 통합 검색 API (/api/search)
+# ==========================================
+def api_search():
+    try:
+        crop_query = request.args.get('crop_query', type=str)
+        region = request.args.get('region', type=str)
+        date_filter = request.args.get('date_filter', type=str)
+        people_count = request.args.get('people_count', type=str)
+        sort_by = request.args.get('sort', 'deadline', type=str)
+        page = request.args.get('page', 1, type=int)
+        user_lat = request.args.get('lat', type=float)
+        user_lon = request.args.get('lon', type=float)
+        per_page = 15
+
+        today = date.today()
+        base_query = Experience.query.filter(
+            Experience.status == 'recruiting',
+            Experience.end_date >= today
+        )
+
+        # 1. 텍스트 검색 (작물명 / 주소 / 지역명)
+        if crop_query:
+            base_query = base_query.filter(
+                or_(
+                    Experience.crop.like(f"%{crop_query}%"),
+                    Experience.address_detail.like(f"%{crop_query}%"),
+                    Experience.location.like(f"%{crop_query}%")
+                )
+            )
+
+        # 2. 지역 필터
+        if region:
+            base_query = base_query.filter(
+                or_(
+                    Experience.address_detail.like(f"%{region}%"),
+                    Experience.location.like(f"%{region}%")
+                )
+            )
+
+        # 3. 날짜 필터 (duration_start <= date_filter <= end_date)
+        if date_filter:
+            try:
+                target_date = datetime.strptime(date_filter, '%Y-%m-%d').date()
+                base_query = base_query.filter(
+                    or_(Experience.duration_start.is_(None), Experience.duration_start <= target_date),
+                    Experience.end_date >= target_date
+                )
+            except ValueError:
+                pass
+
+        # 4. 인원수 필터 (잔여석 >= people_count, '5+'나 빈 값은 제외)
+        if people_count and people_count != '5+':
+            try:
+                needed = int(people_count)
+                base_query = base_query.filter(
+                    (Experience.max_participants - Experience.current_participants) >= needed
+                )
+            except ValueError:
+                pass
+
+        is_closed = case(
+            (Experience.current_participants >= Experience.max_participants, 1),
+            else_=0
+        ).label("is_closed")
+
+        items_on_page = []
+        total_items = 0
+        total_pages = 1
+
+        # 5. 정렬 처리
+        if sort_by == 'recommended' and user_lat is not None and user_lon is not None:
+            lat_range = 1.5
+            lon_range = 1.5
+            base_query = base_query.filter(
+                Experience.lat.between(user_lat - lat_range, user_lat + lat_range),
+                Experience.lng.between(user_lon - lon_range, user_lon + lon_range)
+            )
+
+            all_experiences = base_query.all()
+            ranked_experiences = []
+
+            for exp in all_experiences:
+                distance = haversine(user_lat, user_lon, exp.lat, exp.lng)
+                if distance > 150:
+                    continue
+
+                is_spec = matches_specialty(exp.address_detail, exp.crop)
+                score = calculate_score(distance, exp.max_participants, exp.current_participants, is_spec)
+
+                exp.recommendation_score = score
+                exp.calc_distance = round(distance, 1)
+                exp.is_specialty_val = is_spec
+                ranked_experiences.append(exp)
+
+            sorted_items = sorted(ranked_experiences, key=lambda x: x.recommendation_score, reverse=True)
+            total_items = len(sorted_items)
+            total_pages = math.ceil(total_items / per_page) if total_items > 0 else 1
+
+            start = (page - 1) * per_page
+            end = start + per_page
+            items_on_page = sorted_items[start:end]
+
+        elif sort_by == 'reviews':
+            review_count = func.count(Review.id).label('review_count')
+            query = base_query.outerjoin(Review).group_by(Experience.id).order_by(is_closed.asc(), review_count.desc())
+            paginated = query.paginate(page=page, per_page=per_page, error_out=False)
+            items_on_page = paginated.items
+            total_items = paginated.total
+            total_pages = paginated.pages or 1
+
+        else:  # 기본값: deadline (마감임박순)
+            query = base_query.order_by(is_closed.asc(), Experience.end_date.asc())
+            paginated = query.paginate(page=page, per_page=per_page, error_out=False)
+            items_on_page = paginated.items
+            total_items = paginated.total
+            total_pages = paginated.pages or 1
+
+        # 6. JSON 응답 직렬화
+        response_items = []
+        for item in items_on_page:
+            first_image = None
+            if item.images:
+                imgs = [img.strip() for img in item.images.split(',') if img.strip()]
+                if imgs:
+                    first_image = imgs[0]
+
+            is_specialty = getattr(item, 'is_specialty_val', None)
+            if is_specialty is None:
+                is_specialty = False
+                for r, specialties in REGIONAL_SPECIALTIES.items():
+                    if r in (item.address_detail or '') and any(sc in item.crop for sc in specialties):
+                        is_specialty = True
+                        break
+
+            d_day_val = (item.end_date - today).days if item.end_date else 999
+            distance_val = getattr(item, 'calc_distance', None) if sort_by == 'recommended' else None
+
+            response_items.append({
+                'id': item.id,
+                'crop': item.crop,
+                'address_detail': item.address_detail or item.location or '',
+                'cost': item.cost,
+                'first_image': first_image,
+                'remaining_spots': max(0, item.max_participants - item.current_participants),
+                'pesticide_free': bool(item.pesticide_free),
+                'is_specialty': bool(is_specialty),
+                'd_day': d_day_val,
+                'distance': distance_val
+            })
+
+        return jsonify({
+            'success': True,
+            'items': response_items,
+            'total': total_items,
+            'pages': total_pages,
+            'page': page
+        }), 200
+
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'message': str(e)
+        }), 500
 
 
 def experience_detail(item_id):
@@ -339,6 +504,7 @@ def search_categories():
 
 def register(app):
     app.add_url_rule('/', 'index', index)
+    app.add_url_rule('/api/search', 'api_search', api_search, methods=['GET'])
     app.add_url_rule('/api/search-categories', 'search_categories', search_categories)
     app.add_url_rule('/experience/<int:item_id>', 'experience_detail', experience_detail)
     app.add_url_rule('/farmer/register', 'farmer_register', farmer_register, methods=['GET', 'POST'])

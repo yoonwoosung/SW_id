@@ -2,6 +2,54 @@
 {% block page_class %}page-experiences{% endblock %}
 {% block content %}
 
+<style>
+/* ========================================================
+   📸 메인 화면 추억일지 미니 앨범 커버 스타일
+======================================================== */
+.mini-album-thumb {
+    width: 100%;
+    height: 115px;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 8px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
+    transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.mini-album-thumb:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.18);
+}
+
+.mini-album-thumb.cover-green { background: linear-gradient(135deg, #1b4332, #2d6a4f); color: #d8f3dc; }
+.mini-album-thumb.cover-leather { background: linear-gradient(135deg, #4a2810, #78350f); color: #fef3c7; }
+.mini-album-thumb.cover-linen { background: linear-gradient(135deg, #d97706, #f59e0b); color: #fffbeb; }
+.mini-album-thumb.cover-navy { background: linear-gradient(135deg, #0f172a, #1e3a8a); color: #e0e7ff; }
+
+.mini-thumb-title {
+    font-size: 0.78rem;
+    font-weight: 700;
+    line-height: 1.25;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    word-break: keep-all;
+    margin-top: 4px;
+}
+
+.cursor-pointer {
+    cursor: pointer;
+}
+</style>
+
 <!-- HERO -->
 <section class="hero-section" style="background-image: url('{{ url_for('static', filename='가족배경.png') }}');">
     <div class="hero-overlay"></div>
@@ -159,7 +207,7 @@
         {% endif %}
     </section>
 
-    <!-- 하단 두 섹션 -->
+    <!-- 하단 카드 슬라이더 -->
     <div class="main-card-slider-wrapper">
         <button type="button" class="card-slider-btn prev" id="card-prev-btn" aria-label="이전">
             <i data-lucide="chevron-left"></i>
@@ -261,52 +309,29 @@
                     </div>
                 </section>
 
-                <!-- 카드 3: 추억일지 (my_info의 추억 아카이브 활용) -->
+                <!-- 💡 카드 3: 추억일지 (실제 DB 저장 앨범 연동) -->
                 <section class="section-block mb-0 section-card slider-card">
                     <div class="section-header">
-                        <h2 class="section-title"><i data-lucide="images" class="text-success"></i> 추억일지</h2>
+                        <h2 class="section-title"><i data-lucide="images" class="text-success"></i> 추억앨범</h2>
                         <div class="archive-btns">
-                            <!-- 앨범 만들기 (새 페이지 연결 예정) -->
-                            <a href="{{ url_for('album_create') }}" class="btn btn-sm btn-success">
+                            <a href="{{ url_for('album_create') }}" class="btn btn-sm btn-success font-weight-bold">
                                 <i data-lucide="plus"></i> 앨범 만들기
                             </a>
-                            <button type="button" class="btn btn-sm btn-outline-secondary">SNS 공유</button>
-                        </div>
-                    </div>
-                    <p class="text-muted mb-2" style="font-size:0.82rem;">여행의 추억을 사진으로 간직해보세요.</p>
-
-                    <div class="archive-grid">
-                        {% set has_archive = namespace(found=false) %}
-                        {% if applications is defined and applications %}
-                        {% for app in applications %}
-                        {% if app.experience and app.experience.images %}
-                        {% set has_archive.found = true %}
-                        <div class="archive-item">
-                            <img src="{{ url_for('static', filename='uploads/' + app.experience.images.split(',')[0]) }}"
-                                alt="{{ app.experience.crop }}">
-                            <div class="archive-label">{{ app.experience.crop }} 체험</div>
-                            <div class="archive-date">{{ app.apply_date.strftime('%Y.%m.%d') }}</div>
-                        </div>
-                        {% endif %}
-                        {% endfor %}
-                        {% endif %}
-
-                        <!-- 작성된 앨범/기록이 없을 때 -->
-                        {% if not has_archive.found %}
-                        <div class="no-archive-wrapper text-center py-4 w-100" style="grid-column: 1 / -1;">
-                            <p class="font-weight-bold mb-1" style="font-size: 0.95rem; color: #333;">
-                                아직 작성된 추억 앨범이 없어요! <i data-lucide="sprout"></i>
-                            </p>
-                            <p class="text-muted mb-3" style="font-size: 0.82rem;">
-                                다녀온 농촌 체험의 특별한 순간을 앨범으로 기록해 보세요.
-                            </p>
-                            <a href="{{ url_for('index') }}" class="btn btn-sm btn-outline-success rounded-pill px-3">
-                                <i data-lucide="calendar-check" class="mr-1"></i> 첫 체험 예약하러 가기
+                            <a href="{{ url_for('community_page') }}" class="btn btn-sm btn-outline-secondary font-weight-bold">
+                                앨범마당 둘러보기
                             </a>
                         </div>
-                        {% endif %}
+                    </div>
+                    <p class="text-muted mb-2" style="font-size:0.82rem;">여행의 추억을 나만의 사진 앨범으로 간직해보세요.</p>
+
+                    <div class="archive-grid" id="myAlbumArchiveGrid">
+                        <!-- JS로 실제 저장된 앨범 동적 렌더링 -->
+                        <div class="text-center py-4 w-100" style="grid-column: 1 / -1;">
+                            <span class="text-muted small"><i class="fa-solid fa-spinner fa-spin mr-1"></i> 앨범을 불러오는 중입니다...</span>
+                        </div>
                     </div>
                 </section>
+
             </div>
         </div>
 
@@ -333,6 +358,100 @@
 </div>
 
 <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        loadMyAlbumsOnIndex();
+    });
+
+    // 메인 화면 내 추억 앨범 동적 로드
+    function loadMyAlbumsOnIndex() {
+        const container = document.getElementById('myAlbumArchiveGrid');
+        if (!container) return;
+
+        fetch('/api/albums')
+            .then(res => {
+                if (res.status === 401) {
+                    // 비로그인 상태 안내
+                    container.innerHTML = `
+                        <div class="no-archive-wrapper text-center py-4 w-100" style="grid-column: 1 / -1;">
+                            <p class="font-weight-bold mb-1" style="font-size: 0.95rem; color: #333;">
+                                로그인하고 나만의 추억 앨범을 만들어보세요! 📖
+                            </p>
+                            <p class="text-muted mb-3" style="font-size: 0.82rem;">
+                                다녀온 농촌 체험의 소중한 순간을 포토북으로 기록할 수 있습니다.
+                            </p>
+                            <a href="/login" class="btn btn-sm btn-outline-success rounded-pill px-3 font-weight-bold">
+                                <i data-lucide="log-in" class="mr-1"></i> 로그인하러 가기
+                            </a>
+                        </div>
+                    `;
+                    if (window.lucide) lucide.createIcons();
+                    return null;
+                }
+                return res.json();
+            })
+            .then(data => {
+                if (!data) return;
+
+                if (data.success && data.albums && data.albums.length > 0) {
+                    container.innerHTML = '';
+                    
+                    // 최근 저장된 앨범 최대 4개 표시
+                    data.albums.slice(0, 4).forEach(album => {
+                        const dateStr = album.updated_at ? album.updated_at.split('T')[0].replace(/-/g, '.') : '';
+                        const item = document.createElement('div');
+                        item.className = 'archive-item cursor-pointer';
+                        item.title = '앨범마당에서 앨범 보기';
+                        item.onclick = () => {
+                            window.location.href = '/community';
+                        };
+
+                        item.innerHTML = `
+                            <div class="mini-album-thumb ${album.cover_theme || 'cover-green'}">
+                                <i class="fa-solid fa-camera-retro fa-2x mb-2 text-gold"></i>
+                                <div class="mini-thumb-title">${escapeHtmlIndex(album.title || '추억 앨범')}</div>
+                            </div>
+                            <div class="archive-label mt-1 text-truncate">${escapeHtmlIndex(album.title || '추억 앨범')}</div>
+                            <div class="archive-date">${dateStr}</div>
+                        `;
+                        container.appendChild(item);
+                    });
+                } else {
+                    container.innerHTML = `
+                        <div class="no-archive-wrapper text-center py-4 w-100" style="grid-column: 1 / -1;">
+                            <p class="font-weight-bold mb-1" style="font-size: 0.95rem; color: #333;">
+                                아직 작성된 추억 앨범이 없어요! <i data-lucide="sprout"></i>
+                            </p>
+                            <p class="text-muted mb-3" style="font-size: 0.82rem;">
+                                다녀온 농촌 체험의 특별한 순간을 앨범으로 기록해 보세요.
+                            </p>
+                            <a href="/album/create" class="btn btn-sm btn-outline-success rounded-pill px-3 font-weight-bold">
+                                <i data-lucide="plus-circle" class="mr-1"></i> 첫 앨범 만들기
+                            </a>
+                        </div>
+                    `;
+                    if (window.lucide) lucide.createIcons();
+                }
+            })
+            .catch(err => {
+                console.error("메인 앨범 로드 실패:", err);
+                container.innerHTML = `
+                    <div class="no-archive-wrapper text-center py-4 w-100" style="grid-column: 1 / -1;">
+                        <p class="text-muted small">앨범 목록을 불러오지 못했습니다.</p>
+                    </div>
+                `;
+            });
+    }
+
+    function escapeHtmlIndex(text) {
+        if (!text) return '';
+        return String(text)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
+
     function getGpsAndSort(event) {
         event.preventDefault();
         const urlParams = new URLSearchParams(window.location.search);

@@ -13,8 +13,10 @@ from models.click_log import ClickLog          # [백 기능] 최근 본 체험 
 from models.wishlist import Wishlist           # [백 기능] 위시리스트
 from models.point_log import PointLog          # [백 기능] 포인트 시스템
 from models.farm import Farm                    # [공통] 농장 정보
+from models.album import Album
 
 __all__ = [
     'db', 'User', 'Experience', 'Review', 'Inquiry', 'InquiryReply', 'Application',
     'Notification', 'UserRequest', 'Proposal', 'ClickLog', 'Wishlist', 'PointLog', 'Farm',
+    'Album',
 ]

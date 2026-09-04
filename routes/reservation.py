@@ -81,13 +81,11 @@ def experience_apply(item_id):
 
         db.session.commit()
 
-        # [백 기능 유지] 결제 시스템 연동
         return redirect(url_for('payment_page', app_id=new_application.id))
 
     return render_template('experience_apply.html', item=item)
 
 
-# [백 기능 유지] 결제 완료 화면
 def reservation_complete(app_id):
     if 'user_id' not in session:
         flash("로그인이 필요합니다.", "warning")
@@ -114,7 +112,6 @@ def confirm_application(app_id):
         flash("자신의 체험에 대한 예약만 확정할 수 있습니다.", "danger")
         return redirect(url_for('index'))
 
-    # [백 상수와 프 문자열 호환]
     if application.status in (APPLICATION_STATUS_PENDING, APPLICATION_STATUS_PAID, '예정'):
         application.status = APPLICATION_STATUS_CONFIRMED
         db.session.commit()
@@ -122,14 +119,9 @@ def confirm_application(app_id):
     else:
         flash("이미 처리된 예약입니다.", "warning")
 
-    # [프 기능] easy_mode 파라미터 시 간편 예약 탭으로 이동
-    if request.args.get('easy_mode') == 'true':
-        return redirect(url_for('farmer_easy_mode', tab='reservations'))
-    else:
-        return redirect(url_for('detailed_farmer_dashboard'))
+    return redirect(url_for('farmer_easy_mode', tab='reservations'))
 
 
-# [프 기능] 예약 거절
 def reject_application(app_id):
     if 'user_id' not in session or session.get('role') != 'farmer':
         abort(403)

@@ -24,6 +24,12 @@ class Farm(db.Model):
     status = db.Column(db.String(20), nullable=False, default='PENDING')  # PENDING, APPROVED, REJECTED
     reject_reason = db.Column(db.Text, nullable=True)
     
+    # 🤖 AI 후기 분석 리포트 캐싱 컬럼
+    ai_strengths_summary = db.Column(db.Text, nullable=True)        # 긍정 포인트 요약
+    ai_improvements_summary = db.Column(db.Text, nullable=True)     # 개선 피드백 요약
+    ai_satisfaction_rate = db.Column(db.Integer, nullable=True)      # 종합 만족도 (0~100)
+    ai_report_updated_at = db.Column(db.DateTime, nullable=True)     # 최근 AI 분석 일시
+
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
 

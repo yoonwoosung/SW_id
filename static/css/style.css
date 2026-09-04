@@ -407,9 +407,6 @@
 .page-experiences .tab-item.active {
     color: var(--fl-green-700);
 }
-.page-experiences header {
-    border-bottom-color: #2196F3;
-}
 
 .page-volunteer .tab-item.active {
     color: #FF9800;

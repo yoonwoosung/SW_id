@@ -17,12 +17,14 @@
     python3 deploy_setup.py            # 진단 + 자동 수리 (반복 실행 안전)
     python3 deploy_setup.py --seed     # + 관리자 계정까지 생성
     python3 deploy_setup.py --check    # 진단만, 아무것도 바꾸지 않음
+    python3 deploy_setup.py --check-toss  # 토스 키 형식·인증만 점검(네트워크 사용)
 
 끝나면 PythonAnywhere Web 탭에서 반드시 Reload 를 누를 것.
 
 참고: 농장 승인은 Farm.status(PENDING/APPROVED/REJECTED)로 동작하며
       관리자 화면은 /admin/farms/audit 이다(routes/admin.py).
 """
+import os
 import sys
 
 from sqlalchemy import text
@@ -92,6 +94,60 @@ def sync_missing_columns():
                 notes.append("  -- %s.%s: %s" % (table_name, column.name, note))
 
     return added, notes
+
+
+def check_toss_keys():
+    """토스 키의 형식과 인증을 점검한다. 네트워크를 쓰므로 --check-toss 일 때만 호출.
+
+    결제위젯 SDK 는 '결제위젯 연동 키'(test_gck_/test_gsk_)만 받는다.
+    'API 개별 연동 키'(test_ck_/test_sk_)를 넣으면 결제창이 아예 열리지 않는다.
+    두 키를 서로 다른 세트에서 가져오면 결제창은 열리지만 서버 승인이 401 로 실패한다.
+    """
+    import base64
+    import requests
+
+    client = os.environ.get('TOSS_CLIENT_KEY') or ''
+    secret = os.environ.get('TOSS_SECRET_KEY') or ''
+
+    line("TOSS_CLIENT_KEY", bool(client), client[:9] + "…" if client else "비어 있음")
+    line("TOSS_SECRET_KEY", bool(secret), secret[:9] + "…" if secret else "비어 있음")
+    if not client or not secret:
+        print("\n  → 개발자센터 > API 키 > '결제위젯 연동 키' 의 테스트 키를 넣을 것.")
+        return False
+
+    # 접두사로 키 세트를 판별한다.
+    client_widget = client.startswith(('test_gck_', 'gck_'))
+    secret_widget = secret.startswith(('test_gsk_', 'gsk_'))
+
+    line("클라이언트 키 종류", client_widget,
+         "결제위젯 연동 키" if client_widget else "API 개별 연동 키 → 위젯이 안 열린다")
+    line("시크릿 키 종류", secret_widget,
+         "결제위젯 연동 키" if secret_widget else "API 개별 연동 키 → 승인이 401 로 실패한다")
+    line("두 키가 같은 세트", client_widget == secret_widget,
+         "일치" if client_widget == secret_widget else "★ 서로 다른 세트 — 반드시 같은 세트로 맞출 것")
+
+    # 시크릿 키로 실제 인증만 확인한다(더미 주문이라 승인은 어차피 실패한다).
+    # 401 이면 키가 틀린 것이고, 400/404 면 인증은 통과한 것이다.
+    try:
+        token = base64.b64encode(("%s:" % secret).encode()).decode()
+        res = requests.post('https://api.tosspayments.com/v1/payments/confirm',
+                            json={'paymentKey': 'diagnostic', 'orderId': 'diagnostic', 'amount': 1},
+                            headers={'Authorization': 'Basic %s' % token,
+                                     'Content-Type': 'application/json'},
+                            timeout=10)
+    except Exception as exc:
+        line("시크릿 키 인증", False, "토스 연결 실패: %s" % exc)
+        return False
+
+    authed = res.status_code != 401
+    detail = "인증 통과 (HTTP %d — 더미 주문이라 승인 자체는 실패가 정상)" % res.status_code
+    if not authed:
+        try:
+            detail = "401 인증 실패: %s" % (res.json().get('message') or '')
+        except ValueError:
+            detail = "401 인증 실패"
+    line("시크릿 키 인증", authed, detail)
+    return authed and client_widget and secret_widget
 
 
 def line(label, ok, detail=''):
@@ -164,6 +220,12 @@ def diagnose():
 def main():
     check_only = '--check' in sys.argv
     do_seed = '--seed' in sys.argv
+
+    if '--check-toss' in sys.argv:
+        print("\n── 토스 키 점검 ──")
+        ok = check_toss_keys()
+        print("\n  결과: %s" % ("정상" if ok else "문제 있음 — 위 항목 확인"))
+        sys.exit(0 if ok else 1)
 
     with app.app_context():
         print("\n── 진단 ──")

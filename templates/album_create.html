@@ -55,6 +55,85 @@
     cursor:pointer; display:flex; align-items:center; justify-content:center; gap:5px;
 }
 .txt-clear-btn:hover { background:#fff5f5; }
+/* ─── 앨범 완성 모달 ─── */
+.album-modal-overlay {
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(6px);
+    z-index: 99999; display: flex; align-items: center; justify-content: center; padding: 20px;
+}
+.album-modal-box {
+    background: #ffffff; border-radius: 18px; width: 940px; max-width: 95vw;
+    height: 570px; max-height: 92vh; display: flex; flex-direction: column;
+    overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0,0,0,.35);
+    animation: modalPopIn 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes modalPopIn {
+    from { opacity: 0; transform: scale(0.96) translateY(10px); }
+    to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+.album-modal-head {
+    padding: 16px 24px; border-bottom: 1px solid #e5e7eb;
+    display: flex; align-items: center; justify-content: space-between;
+    background: #ffffff; flex-shrink: 0;
+}
+.album-modal-head h5 { font-size: 1.15rem; font-weight: 700; margin: 0; color: #1e293b; display: flex; align-items: center; gap: 8px; }
+.album-modal-head .modal-close-btn { background: transparent; border: none; font-size: 1.4rem; color: #94a3b8; cursor: pointer; padding: 4px; transition: color .15s; }
+.album-modal-head .modal-close-btn:hover { color: #0f172a; }
+.album-modal-body {
+    flex: 1; display: grid; grid-template-columns: 500px 1fr;
+    gap: 24px; padding: 20px 24px; overflow: hidden; background: #f8fafc;
+}
+.modal-preview-column { display: flex; flex-direction: column; height: 100%; }
+.modal-preview-viewport {
+    flex: 1; background: #e2e8f0; border-radius: 12px; position: relative;
+    overflow: hidden; display: flex; align-items: center; justify-content: center;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,.06);
+}
+.modal-mini-stage {
+    position: absolute; left: 50%; top: 50%; transform-origin: center center;
+    pointer-events: none; user-select: none;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 !important; padding: 0 !important;
+}
+.book-container.is-single-preview {
+    width: auto !important; height: auto !important; min-width: unset !important;
+    background: transparent !important; box-shadow: none !important; border: none !important;
+    margin: 0 !important; padding: 0 !important;
+    display: flex; align-items: center; justify-content: center;
+}
+.book-container.is-single-preview .book-page { box-shadow: 0 16px 36px rgba(0,0,0,.22) !important; border-radius: 8px !important; }
+.book-container.is-spread-preview {
+    box-shadow: 0 16px 36px rgba(0,0,0,.22) !important; margin: 0 !important;
+    border-radius: 8px !important; display: flex !important; align-items: center !important;
+}
+.modal-nav-bar { display: flex; align-items: center; justify-content: center; gap: 16px; padding-top: 12px; }
+.modal-nav-bar .page-nav-btn {
+    width: 34px; height: 34px; border-radius: 50%; border: 1px solid #cbd5e1;
+    background: #ffffff; display: flex; align-items: center; justify-content: center;
+    cursor: pointer; transition: all .15s; color: #475569;
+}
+.modal-nav-bar .page-nav-btn:hover { background: #2d6a4f; color: #ffffff; border-color: #2d6a4f; }
+.modal-settings-column {
+    display: flex; flex-direction: column; justify-content: space-between;
+    height: 100%; overflow-y: auto; padding-right: 4px;
+}
+.section-label { font-size: .88rem; font-weight: 700; color: #334155; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+.share-option-card {
+    display: flex; align-items: flex-start; gap: 12px; padding: 12px 14px;
+    border-radius: 10px; border: 1.5px solid #cbd5e1; background: #ffffff;
+    cursor: pointer; margin-bottom: 8px; transition: all .18s ease; word-break: keep-all;
+}
+.share-option-card:hover { border-color: #2d6a4f; background: #f4fbf7; }
+.share-option-card.active { border-color: #2d6a4f; background: #ebf7f0; }
+.share-option-card input[type="radio"] { margin-top: 3px; flex-shrink: 0; accent-color: #2d6a4f; width: 16px; height: 16px; }
+.share-option-card .card-text-title { font-size: .85rem; font-weight: 700; color: #0f172a; display: block; margin-bottom: 2px; }
+.share-option-card .card-text-desc { font-size: .74rem; color: #64748b; line-height: 1.35; display: block; }
+.modal-action-btns { display: flex; flex-direction: column; gap: 8px; padding-top: 10px; }
+.modal-action-btns .btn {
+    font-size: .88rem; font-weight: 700; padding: 10px 14px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    word-break: keep-all; white-space: nowrap;
+}
 /* ─── 앨범 뷰어 모달 ─── */
 .album-viewer-modal { position:fixed; inset:0; z-index:2000; display:flex; align-items:center; justify-content:center; }
 .av-overlay { position:absolute; inset:0; background:rgba(0,0,0,.72); }
@@ -720,8 +799,8 @@
                     <button class="ae-topbar-btn" type="button" onclick="saveAlbum()">
                         <i class="fa-solid fa-floppy-disk"></i> 저장
                     </button>
-                    <button class="ae-topbar-btn ae-topbar-btn--primary" type="button" onclick="downloadBookPDF(event)">
-                        <i class="fa-solid fa-file-pdf"></i> PDF 발급
+                    <button class="ae-topbar-btn ae-topbar-btn--primary" type="button" onclick="openFinishModal()">
+                        <i class="fa-solid fa-check"></i> 앨범 완성하기
                     </button>
                 </div>
             </div>
@@ -3058,6 +3137,206 @@
         initColorMapDrag('bg');
         updateExpertLocationTags('');
     });
+</script>
+
+<!-- 앨범 완성 모달 -->
+<div id="albumFinishModal" class="album-modal-overlay" style="display:none;">
+    <div class="album-modal-box">
+        <div class="album-modal-head">
+            <h5><i class="fa-solid fa-bookmark text-success"></i> 소중한 추억 앨범 완성</h5>
+            <button type="button" class="modal-close-btn" onclick="closeFinishModal()">&times;</button>
+        </div>
+        <div class="album-modal-body">
+            <div class="modal-preview-column">
+                <div class="modal-preview-viewport">
+                    <div class="modal-mini-stage" id="modalMiniStage"></div>
+                </div>
+                <div class="modal-nav-bar">
+                    <button type="button" class="page-nav-btn" onclick="prevPreviewPage()">
+                        <i class="fa-solid fa-chevron-left"></i>
+                    </button>
+                    <span id="previewPageIndicator" class="small font-weight-bold text-dark px-2">앞표지</span>
+                    <button type="button" class="page-nav-btn" onclick="nextPreviewPage()">
+                        <i class="fa-solid fa-chevron-right"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="modal-settings-column">
+                <div>
+                    <div class="section-label">
+                        <i class="fa-solid fa-sliders text-success"></i> 공개 범위 설정
+                    </div>
+                    <label class="share-option-card active" id="optCardPrivate">
+                        <input type="radio" name="albumVisibility" value="private" checked
+                            onchange="toggleVisibilityOptions('private')">
+                        <div>
+                            <span class="card-text-title">🔒 나만 보기 (비공개)</span>
+                            <span class="card-text-desc">내 프로필 보관함에만 안전하게 저장됩니다.</span>
+                        </div>
+                    </label>
+                    <label class="share-option-card" id="optCardPublic">
+                        <input type="radio" name="albumVisibility" value="public"
+                            onchange="toggleVisibilityOptions('public')">
+                        <div>
+                            <span class="card-text-title">🌍 추억 광장 공유 (전체 공개)</span>
+                            <span class="card-text-desc">다른 여행자들과 소중한 추억을 함께 공유합니다.</span>
+                        </div>
+                    </label>
+                    <div id="categorySelectArea" class="form-group mt-2 p-2 bg-white border rounded" style="display:none;">
+                        <label class="small font-weight-bold text-dark mb-1 d-block">📁 공유 카테고리</label>
+                        <select id="albumCategorySelect" class="form-control form-control-sm">
+                            <option value="harvest">🌾 수확 체험</option>
+                            <option value="tour">🏞️ 농촌 관광 &amp; 힐링</option>
+                            <option value="family">👨‍👩‍👧‍👦 가족 나들이</option>
+                            <option value="eco">🌿 친환경 &amp; 생태</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-action-btns">
+                    <button type="button" id="btnSaveAlbum" class="btn btn-success shadow-sm" onclick="saveAlbumToServer()">
+                        <i class="fa-solid fa-cloud-arrow-up"></i> 내 앨범 보관함에 저장하기
+                    </button>
+                    <button type="button" class="btn btn-outline-success" onclick="downloadBookPDF(event)">
+                        <i class="fa-solid fa-file-pdf"></i> 고화질 PDF 다운로드
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary" onclick="copyAlbumLink()">
+                        <i class="fa-solid fa-link"></i> 공유 링크 복사
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    let savedAlbumId = null;
+    let previewSlides = [];
+    let currentSlideIdx = 0;
+
+    function buildPreviewSlides() {
+        previewSlides = [];
+        previewSlides.push({ type: 'cover_front', label: '앞표지' });
+        const totalSpreads = Math.ceil(innerPageCount / 2);
+        for (let s = 1; s <= totalSpreads; s++) {
+            const lIdx = (s - 1) * 2 + 1;
+            const rIdx = lIdx + 1;
+            previewSlides.push({ type: 'spread', leftIdx: lIdx, rightIdx: rIdx, label: `${lIdx}p - ${rIdx}p (양면)` });
+        }
+        previewSlides.push({ type: 'cover_back', label: '뒷표지' });
+    }
+
+    function openFinishModal() {
+        buildPreviewSlides();
+        currentSlideIdx = 0;
+        document.getElementById('albumFinishModal').style.display = 'flex';
+        renderMiniPreview();
+    }
+
+    function closeFinishModal() {
+        document.getElementById('albumFinishModal').style.display = 'none';
+    }
+
+    function toggleVisibilityOptions(mode) {
+        document.getElementById('optCardPublic').classList.toggle('active', mode === 'public');
+        document.getElementById('optCardPrivate').classList.toggle('active', mode === 'private');
+        document.getElementById('categorySelectArea').style.display = mode === 'public' ? 'block' : 'none';
+    }
+
+    function renderElementsToCanvas(canvas, elements) {
+        if (!canvas || !elements) return;
+        elements.forEach(function(el) {
+            var elemDiv = document.createElement('div');
+            elemDiv.className = 'free-drag-element';
+            elemDiv.style.cssText = 'position:absolute;top:' + (el.top||0) + 'px;left:' + (el.left||0) + 'px;width:' + (el.width||100) + 'px;';
+            if (el.height) elemDiv.style.height = el.height + 'px';
+            if (el.rotation) elemDiv.style.transform = 'rotate(' + el.rotation + 'deg)';
+            var safeImgSrc = el.src ? getSafeImageUrl(el.src) : null;
+            if ((el.type === 'slot' || el.type === 'image') && safeImgSrc) {
+                elemDiv.innerHTML = '<img src="' + safeImgSrc + '" crossOrigin="anonymous" style="width:100%;height:100%;object-fit:cover;border-radius:4px;display:block;">';
+            } else if (el.type === 'text') {
+                var bgStyle = el.bgStyle || 'default';
+                var bgColor = (bgStyle === 'none') ? 'transparent' : (el.bgColor || '#ffffff');
+                elemDiv.innerHTML = '<div class="editable-text-box bg-style-' + bgStyle + '" style="font-family:\'' + (el.fontFamily||'NanumBarunHippi') + '\',sans-serif;font-size:' + (el.fontSize||'14px') + ';color:' + (el.color||'#dc2626') + ';background-color:' + bgColor + ';text-align:' + (el.textAlign||'center') + ';word-break:break-word;white-space:pre-wrap;">' + el.text + '</div>';
+            }
+            canvas.appendChild(elemDiv);
+        });
+    }
+
+    function renderMiniPreview() {
+        if (!previewSlides.length) buildPreviewSlides();
+        if (currentSlideIdx >= previewSlides.length) currentSlideIdx = 0;
+        var slide = previewSlides[currentSlideIdx];
+        var miniStage = document.getElementById('modalMiniStage');
+        var indicator = document.getElementById('previewPageIndicator');
+        indicator.textContent = slide.label;
+        miniStage.innerHTML = '';
+
+        if (slide.type === 'cover_front' || slide.type === 'cover_back') {
+            var scaleRatio = shapeTheme === 'shape-square' ? 0.74 : shapeTheme === 'shape-landscape' ? 0.78 : 0.58;
+            miniStage.style.transform = 'translate(-50%, -50%) scale(' + scaleRatio + ')';
+            var miniBook = document.createElement('div');
+            miniBook.className = 'book-container is-closed is-single-preview ' + coverTheme + ' ' + shapeTheme;
+            if (slide.type === 'cover_front') {
+                miniBook.innerHTML = '<div class="book-page single-page book-cover-page d-flex flex-column align-items-center justify-content-center p-4"><div class="cover-emboss-border text-center p-4 w-100 h-100 d-flex flex-column align-items-center justify-content-center"><i class="fa-solid fa-camera-retro fa-4x mb-3 text-gold"></i><h3 class="font-weight-bold text-gold mb-3" style="font-family:\'Pretendard\',sans-serif;">' + (albumPagesData[0].title || '우리가족 추억 앨범') + '</h3><p class="small text-gold mb-0" style="font-family:\'Pretendard\',sans-serif;">FarmLink Memory Photo Book</p></div></div>';
+            } else {
+                miniBook.innerHTML = '<div class="book-page single-page book-cover-page d-flex flex-column align-items-center justify-content-center p-4"><div class="text-center text-gold"><i class="fa-solid fa-heart fa-3x mb-3"></i><h4 class="font-weight-bold" style="font-family:\'Pretendard\',sans-serif;">소중한 순간을 기억하며</h4><p class="small opacity-75" style="font-family:\'Pretendard\',sans-serif;">FarmLink Travel Archive</p></div></div>';
+            }
+            miniStage.appendChild(miniBook);
+        } else if (slide.type === 'spread') {
+            var scaleRatio = shapeTheme === 'shape-square' ? 0.46 : shapeTheme === 'shape-landscape' ? 0.41 : 0.50;
+            miniStage.style.transform = 'translate(-50%, -50%) scale(' + scaleRatio + ')';
+            var lIdx = slide.leftIdx, rIdx = slide.rightIdx;
+            var miniBook = document.createElement('div');
+            miniBook.className = 'book-container is-spread-preview ' + coverTheme + ' ' + shapeTheme;
+            miniBook.innerHTML = '<div class="book-page left-page ' + paperTheme + '" id="prevCanvas_' + lIdx + '"><span class="page-num-tag">' + lIdx + 'p</span></div><div class="book-spine"></div><div class="book-page right-page ' + paperTheme + '" id="prevCanvas_' + rIdx + '"><span class="page-num-tag">' + rIdx + 'p</span></div>';
+            miniStage.appendChild(miniBook);
+            renderElementsToCanvas(miniBook.querySelector('#prevCanvas_' + lIdx), albumPagesData[lIdx] && albumPagesData[lIdx].elements);
+            renderElementsToCanvas(miniBook.querySelector('#prevCanvas_' + rIdx), albumPagesData[rIdx] && albumPagesData[rIdx].elements);
+        }
+    }
+
+    function prevPreviewPage() {
+        if (currentSlideIdx > 0) { currentSlideIdx--; renderMiniPreview(); }
+    }
+    function nextPreviewPage() {
+        if (currentSlideIdx < previewSlides.length - 1) { currentSlideIdx++; renderMiniPreview(); }
+    }
+
+    function saveAlbumToServer() {
+        var isPublic = document.querySelector('input[name="albumVisibility"]:checked').value === 'public';
+        var category = isPublic ? document.getElementById('albumCategorySelect').value : 'all';
+        var title = albumPagesData[0].title || '우리가족 농촌 여행 기록';
+        var saveBtn = document.getElementById('btnSaveAlbum');
+        var origText = saveBtn.innerHTML;
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> 저장 중...';
+        var payload = { title: title, shape_theme: shapeTheme, cover_theme: coverTheme, paper_theme: paperTheme, inner_page_count: innerPageCount, pages_data: albumPagesData, is_public: isPublic, category: category };
+        var url = savedAlbumId ? '/api/albums/' + savedAlbumId : '/api/albums';
+        var method = savedAlbumId ? 'PUT' : 'POST';
+        fetch(url, { method: method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
+            .then(function(res) { return res.json(); })
+            .then(function(data) {
+                saveBtn.disabled = false;
+                saveBtn.innerHTML = origText;
+                if (data.success) {
+                    if (data.album_id) savedAlbumId = data.album_id;
+                    alert(isPublic ? "추억 앨범이 저장되고 추억 광장에 공개되었습니다! 🌍" : "내 앨범 보관함에 안전하게 저장되었습니다! 💾");
+                } else {
+                    alert("저장 실패: " + (data.message || data.error));
+                }
+            })
+            .catch(function(err) {
+                saveBtn.disabled = false;
+                saveBtn.innerHTML = origText;
+                alert("서버 통신 중 오류가 발생했습니다.");
+            });
+    }
+
+    function copyAlbumLink() {
+        if (!savedAlbumId) { alert("먼저 [내 앨범 보관함에 저장하기] 버튼을 눌러 앨범을 저장해 주세요!"); return; }
+        navigator.clipboard.writeText(window.location.origin + '/community').then(function() {
+            alert("추억 광장 링크가 복사되었습니다! 🔗");
+        });
+    }
 </script>
 
 <!-- 공유 모달 -->

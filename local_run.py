@@ -64,7 +64,16 @@ def seed():
                 role='experiencer', name='강준형', phone='010-0000-1111',
                 verification_status='verified',
             )
-            db.session.add_all([farmer, farmer2, user])
+            admin_user = User.query.filter_by(email='admin@farmlink.com').first()
+            if not admin_user:
+                admin_user = User(
+                    email='admin@farmlink.com',
+                    nickname='시스템관리자',
+                    name='관리자',
+                    password=generate_password_hash('12341234'),
+                    role='admin'
+                )
+            db.session.add_all([farmer, farmer2, user, admin_user])
             db.session.commit()
 
             # ── 2. 체험 생성 ───────────────────────────────────────────
@@ -160,13 +169,7 @@ def seed():
             db.session.add_all(apps)
 
             # ── 4. 후기 생성 (AI 리포트 분석 테스트용) ──────────────────
-            reviews = [
-                Review(
-                    user_id=user.id, experience_id=strawberry.id, rating=5,
-                    content='딸기가 정말 달고 수확 체험도 재밌었습니다. 아이가 너무 좋아해서 다음에도 꼭 오고 싶네요!',
-                    timestamp=datetime.utcnow() - timedelta(days=4),
-                ),
-            ]
+            reviews = []
             db.session.add_all(reviews)
 
             # ── 5. 문의 생성 (답변 작성 테스트용) ──────────────────────
@@ -189,7 +192,8 @@ def seed():
 
         print("\n  공용 로그인 계정")
         print("  일반 사용자: user@farmlink.com   / 12341234")
-        print("  농장주:      farmer@farmlink.com / 12341234\n")
+        print("  농장주:      farmer@farmlink.com / 12341234")
+        print("  관리자:      admin@farmlink.com / 12341234\n")
 
 
 seed()

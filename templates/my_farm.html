@@ -1,14 +1,182 @@
 {% extends "layout.html" %}
 {% block content %}
+
+<!-- ====================================================
+     애플 캘린더 감성 UI & 모달 커스텀 스타일
+==================================================== -->
+<style>
+    /* 애플 캘린더 컬러 & 글래스모피즘 스타일 */
+    .apple-cal-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 12px 14px;
+        background: #f8f9fa;
+        border-radius: 14px;
+        border: 1px solid rgba(0, 0, 0, 0.05);
+    }
+    .apple-cal-nav-btn {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        border: none;
+        background: #ffffff;
+        color: #1c1c1e;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+        transition: all 0.2s ease;
+        font-size: 0.8rem;
+    }
+    .apple-cal-nav-btn:hover {
+        background: #007aff;
+        color: #ffffff;
+        transform: scale(1.05);
+    }
+    .apple-cal-date-text {
+        font-weight: 700;
+        font-size: 0.95rem;
+        color: #1c1c1e;
+        letter-spacing: -0.3px;
+    }
+    .apple-summary-chip {
+        font-size: 0.75rem;
+        padding: 4px 10px;
+        background: #f2f2f7;
+        border-radius: 20px;
+        color: #636366;
+        font-weight: 600;
+    }
+
+    /* 일정 카드 (애플 캘린더 이벤트 스타일) */
+    .apple-schedule-card {
+        position: relative;
+        border-radius: 12px;
+        padding: 10px 14px;
+        margin-bottom: 8px;
+        cursor: pointer;
+        transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+        border: 1px solid rgba(0, 0, 0, 0.03);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    .apple-schedule-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.06);
+    }
+    .apple-schedule-card::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 8px;
+        bottom: 8px;
+        width: 4px;
+        border-radius: 0 4px 4px 0;
+        background-color: var(--card-accent-color, #007aff);
+    }
+    .apple-card-main {
+        padding-left: 6px;
+    }
+    .apple-card-time {
+        font-size: 0.78rem;
+        font-weight: 700;
+        color: var(--card-text-color, #1c1c1e);
+    }
+    .apple-card-title {
+        font-size: 0.88rem;
+        font-weight: 600;
+        color: #1c1c1e;
+        margin: 1px 0 0;
+    }
+    .apple-card-sub {
+        font-size: 0.74rem;
+        color: #8e8e93;
+        margin: 0;
+    }
+    .apple-badge-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 4px 10px;
+        border-radius: 12px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        background: #ffffff;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+        color: var(--card-text-color, #007aff);
+    }
+
+    /* 애플 스타일 블러 모달 */
+    .apple-modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.35);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        z-index: 1050;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.25s ease, visibility 0.25s ease;
+    }
+    .apple-modal-overlay.active {
+        opacity: 1;
+        visibility: visible;
+    }
+    .apple-modal-window {
+        width: 90%;
+        max-width: 480px;
+        background: #ffffff;
+        border-radius: 20px;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+        overflow: hidden;
+        transform: scale(0.95);
+        transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    .apple-modal-overlay.active .apple-modal-window {
+        transform: scale(1);
+    }
+    .apple-modal-header {
+        padding: 16px 20px;
+        border-bottom: 1px solid #f2f2f7;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    .apple-modal-body {
+        padding: 20px;
+        max-height: 60vh;
+        overflow-y: auto;
+    }
+    .apple-modal-footer {
+        padding: 12px 20px;
+        background: #fafafa;
+        border-top: 1px solid #f2f2f7;
+        text-align: right;
+    }
+    .apple-detail-item {
+        background: #f8f9fa;
+        border-radius: 14px;
+        padding: 14px;
+        margin-bottom: 10px;
+        border: 1px solid #efeff4;
+    }
+</style>
+
 <div class="container mt-4 mb-5">
-    <!-- 💡 [핵심] 프로필 + 버튼 + 메인 + 달력을 모두 담는 하나의 거대한 대시보드 창 -->
     <div class="dashboard-master-card">
 
         <!-- ====================================================
              [1. 좌측 칼럼] 프로필 & 탭 내비게이션
         ==================================================== -->
         <aside class="dash-col-left">
-            <!-- 프로필 바 -->
             <div class="sidebar-mini-profile mb-4">
                 <div class="mini-avatar">
                     <img src="{{ url_for('static', filename='uploads/' + (user.profile_image if user.profile_image else 'default.png')) }}"
@@ -20,25 +188,21 @@
                 </div>
             </div>
 
-            <!-- 탭 버튼 메뉴 -->
             <nav class="dashboard-nav-tabs">
                 <button type="button" class="dash-tab-btn active" data-tab="tab-operations">
                     <i class="fa-solid fa-list-check"></i>
                     <span>운영 & 문의 관리</span>
                 </button>
-
                 <button type="button" class="dash-tab-btn" data-tab="tab-performance">
                     <i class="fa-solid fa-chart-line"></i>
                     <span>성과 & 스마트 알림</span>
                 </button>
-
                 <button type="button" class="dash-tab-btn" data-tab="tab-settings">
                     <i class="fa-solid fa-gear"></i>
                     <span>농장 & 계정 설정</span>
                 </button>
             </nav>
 
-            <!-- 하단 퀵 버튼 -->
             <a href="{{ url_for('farmer_register') }}"
                 class="btn btn-success btn-block mt-auto font-weight-bold py-2 shadow-sm">
                 <i class="fa-solid fa-plus mr-1"></i> 새 체험 등록하기
@@ -54,20 +218,16 @@
             <section id="tab-operations" class="dash-tab-content active">
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <h5 class="mb-0 font-weight-bold text-dark">최근 활동 (내 체험 목록)</h5>
-                    <a href="{{ url_for('farmer_register') }}" class="btn btn-sm btn-outline-success font-weight-bold">+
-                        등록</a>
+                    <a href="{{ url_for('farmer_register') }}" class="btn btn-sm btn-outline-success font-weight-bold">+ 등록</a>
                 </div>
                 <div class="scrollable-list-box mb-4">
                     <ul class="activity-list pl-0 mb-0" style="list-style: none;">
                         {% for item in experiences %}
                         <li class="d-flex justify-content-between align-items-center py-2 border-bottom">
-                            <a href="{{ url_for('experience_detail', item_id=item.id) }}"
-                                class="font-weight-bold text-dark">{{ item.crop }}</a>
+                            <a href="{{ url_for('experience_detail', item_id=item.id) }}" class="font-weight-bold text-dark">{{ item.crop }}</a>
                             <div>
-                                <a href="{{ url_for('farmer_register', item_id=item.id) }}"
-                                    class="btn btn-sm btn-outline-primary mr-1">수정</a>
-                                <form action="{{ url_for('delete_experience', item_id=item.id) }}" method="POST"
-                                    class="d-inline" onsubmit="return confirmDelete()">
+                                <a href="{{ url_for('farmer_register', item_id=item.id) }}" class="btn btn-sm btn-outline-primary mr-1">수정</a>
+                                <form action="{{ url_for('delete_experience', item_id=item.id) }}" method="POST" class="d-inline" onsubmit="return confirmDelete()">
                                     <button type="submit" class="btn btn-sm btn-outline-danger">삭제</button>
                                 </form>
                             </div>
@@ -86,12 +246,10 @@
                         {% for inquiry in inquiries %}
                         <li class="d-flex justify-content-between align-items-start py-2 border-bottom">
                             <div>
-                                <a href="{{ url_for('experience_detail', item_id=inquiry.experience_id) }}"
-                                    class="font-weight-bold text-primary">[{{ inquiry.experience.crop }}]</a>
+                                <a href="{{ url_for('experience_detail', item_id=inquiry.experience_id) }}" class="font-weight-bold text-primary">[{{ inquiry.experience.crop }}]</a>
                                 <p style="margin: 4px 0 0; font-size: 0.9rem; color: #555;">{{ inquiry.content }}</p>
                             </div>
-                            <small class="text-muted white-space-nowrap ml-2">{{ inquiry.timestamp.strftime('%m-%d')
-                                }}</small>
+                            <small class="text-muted white-space-nowrap ml-2">{{ inquiry.timestamp.strftime('%m-%d') }}</small>
                         </li>
                         {% else %}
                         <li class="py-3 text-muted text-center">최신 문의가 없습니다.</li>
@@ -155,12 +313,9 @@
             <!-- [3번 탭] 농장 & 계정 설정 -->
             <section id="tab-settings" class="dash-tab-content">
                 <div class="profile-top-banner mb-4">
-                    <form id="profile-pic-form" method="POST" action="{{ url_for('upload_profile') }}"
-                        enctype="multipart/form-data" class="d-flex align-items-center">
+                    <form id="profile-pic-form" method="POST" action="{{ url_for('upload_profile') }}" enctype="multipart/form-data" class="d-flex align-items-center">
                         <label for="profile-pic-input" class="profile-avatar-wrapper cursor-pointer mr-3 mb-0">
-                            <img id="profile-pic-preview"
-                                src="{{ url_for('static', filename='uploads/' + user.profile_image) }}" alt="Profile"
-                                class="rounded-circle profile-img">
+                            <img id="profile-pic-preview" src="{{ url_for('static', filename='uploads/' + (user.profile_image if user.profile_image else 'default.png')) }}" alt="Profile" class="rounded-circle profile-img">
                             <div class="profile-img-overlay">사진 변경</div>
                         </label>
                         <input type="file" id="profile-pic-input" name="profile_pic" accept="image/*" class="d-none">
@@ -168,8 +323,7 @@
                             <h5 class="mb-1 font-weight-bold text-dark">{{ user.nickname }}님</h5>
                             <span class="text-muted small">{{ user.email }}</span>
                         </div>
-                        <button type="button" id="account-security-btn"
-                            class="btn btn-sm btn-success ml-auto px-3 py-2 font-weight-bold">
+                        <button type="button" id="account-security-btn" class="btn btn-sm btn-success ml-auto px-3 py-2 font-weight-bold">
                             <i class="fa-solid fa-shield-halved mr-1"></i>계정 보안
                         </button>
                     </form>
@@ -177,8 +331,7 @@
 
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <h5 class="mb-0 font-weight-bold text-dark">내 정보</h5>
-                    <button type="button" class="btn btn-sm btn-outline-secondary font-weight-bold px-3"
-                        id="farmer-edit-btn">수정</button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary font-weight-bold px-3" id="farmer-edit-btn">수정</button>
                 </div>
 
                 <form id="farmer-info-form" method="POST" action="{{ url_for('my_info') }}">
@@ -186,57 +339,45 @@
                         <div class="settings-form-grid">
                             <div class="form-group mb-3">
                                 <label class="form-label-custom">닉네임</label>
-                                <input type="text" name="nickname" class="form-control form-control-sm"
-                                    value="{{ user.nickname }}" required>
+                                <input type="text" name="nickname" class="form-control form-control-sm" value="{{ user.nickname }}" required>
                             </div>
                             <div class="form-group mb-3">
                                 <label class="form-label-custom">이름</label>
-                                <input type="text" name="name" class="form-control form-control-sm"
-                                    value="{{ user.name }}" required>
+                                <input type="text" name="name" class="form-control form-control-sm" value="{{ user.name }}" required>
                             </div>
                             <div class="form-group mb-3">
                                 <label class="form-label-custom">생년월일</label>
-                                <input type="text" class="form-control form-control-sm bg-light"
-                                    value="{{ user.birthdate or '미등록' }}" readonly tabindex="-1">
+                                <input type="text" class="form-control form-control-sm bg-light" value="{{ user.birthdate or '미등록' }}" readonly tabindex="-1">
                             </div>
                             <div class="form-group mb-3">
                                 <label class="form-label-custom">성별</label>
-                                <input type="text" class="form-control form-control-sm bg-light"
-                                    value="{% if user.gender == 'male' %}남자{% elif user.gender == 'female' %}여자{% else %}미선택{% endif %}"
-                                    readonly tabindex="-1">
+                                <input type="text" class="form-control form-control-sm bg-light" value="{% if user.gender == 'male' %}남자{% elif user.gender == 'female' %}여자{% else %}미선택{% endif %}" readonly tabindex="-1">
                             </div>
                             <div class="form-group mb-3">
                                 <label class="form-label-custom">이메일</label>
-                                <input type="text" class="form-control form-control-sm bg-light"
-                                    value="{{ user.email }}" disabled>
+                                <input type="text" class="form-control form-control-sm bg-light" value="{{ user.email }}" disabled>
                             </div>
                             <div class="form-group mb-3">
                                 <label class="form-label-custom">전화번호</label>
-                                <input type="text" class="form-control form-control-sm bg-light"
-                                    value="{{ user.phone or '' }}" disabled>
+                                <input type="text" class="form-control form-control-sm bg-light" value="{{ user.phone or '' }}" disabled>
                                 <input type="hidden" name="phone" value="{{ user.phone or '' }}">
-                                <small class="text-muted d-block mt-1" style="font-size: 0.72rem;">* 전화번호 변경은 [계정 보안]
-                                    버튼을 이용해 주세요.</small>
+                                <small class="text-muted d-block mt-1" style="font-size: 0.72rem;">* 전화번호 변경은 [계정 보안] 버튼을 이용해 주세요.</small>
                             </div>
                             <div class="form-group mb-3 span-full">
                                 <label class="form-label-custom">농장 주소</label>
-                                <input type="text" name="farm_address" class="form-control form-control-sm"
-                                    value="{{ user.farm_address or '' }}">
+                                <input type="text" name="farm_address" class="form-control form-control-sm" value="{{ user.farm_address or '' }}">
                             </div>
                             <div class="form-group mb-3">
                                 <label class="form-label-custom">농장 규모 (평)</label>
-                                <input type="text" name="farm_size" class="form-control form-control-sm"
-                                    value="{{ user.farm_size or '' }}">
+                                <input type="text" name="farm_size" class="form-control form-control-sm" value="{{ user.farm_size or '' }}">
                             </div>
                             <div class="form-group mb-3 span-full">
                                 <label class="form-label-custom">한 줄 소개</label>
-                                <input type="text" name="profile_bio" class="form-control form-control-sm"
-                                    value="{{ user.profile_bio or '' }}">
+                                <input type="text" name="profile_bio" class="form-control form-control-sm" value="{{ user.profile_bio or '' }}">
                             </div>
                         </div>
                         <div id="farmer-form-buttons" style="display: none;" class="mt-4 text-right">
-                            <button type="button" id="farmer-cancel-btn"
-                                class="btn btn-sm btn-secondary px-4 mr-1">취소</button>
+                            <button type="button" id="farmer-cancel-btn" class="btn btn-sm btn-secondary px-4 mr-1">취소</button>
                             <button type="submit" class="btn btn-sm btn-success px-4 font-weight-bold">저장하기</button>
                         </div>
                     </fieldset>
@@ -245,34 +386,41 @@
         </main>
 
         <!-- ====================================================
-             [3. 우측 칼럼] 예약 일정 달력
+             [3. 우측 칼럼] 예약 일정 달력 (애플 감성 UI 리뉴얼)
         ==================================================== -->
         <aside class="dash-col-right">
 
             <!-- [1번 탭 전용 우측] 예약 일정 달력 -->
             <div id="right-tab-operations" class="right-tab-content active">
                 <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h5 class="mb-0 font-weight-bold text-dark">예약 일정</h5>
-                    <a href="{{ url_for('farmer_calendar') }}" class="btn btn-sm btn-outline-secondary font-weight-bold"
-                        style="font-size: 1.1rem; line-height: 1; padding: 2px 8px;" title="달력 크게보기">+</a>
+                    <h5 class="mb-0 font-weight-bold text-dark">예약 타임라인</h5>
+                    <a href="{{ url_for('farmer_calendar') }}" class="btn btn-sm btn-light border font-weight-bold rounded-circle"
+                        style="width: 28px; height: 28px; line-height: 1; padding: 0; display: inline-flex; align-items: center; justify-content: center;" title="달력 전체보기">
+                        <i class="fa-solid fa-up-right-and-down-left-from-center text-secondary" style="font-size: 0.75rem;"></i>
+                    </a>
                 </div>
-                <div class="d-flex justify-content-center align-items-center py-2 mb-3 bg-light rounded border">
-                    <button type="button" class="btn btn-sm btn-link text-secondary p-0 px-2" id="prev-day-btn">
+
+                <!-- 애플 감성 네비게이션 헤더 -->
+                <div class="apple-cal-header mb-3">
+                    <button type="button" class="apple-cal-nav-btn" id="prev-day-btn" title="이전 날짜">
                         <i class="fa-solid fa-chevron-left"></i>
                     </button>
-                    <span id="current-date-display" class="font-weight-bold h6 mb-0 mx-3 text-dark"></span>
-                    <button type="button" class="btn btn-sm btn-link text-secondary p-0 px-2" id="next-day-btn">
+                    <div class="text-center">
+                        <div id="current-date-display" class="apple-cal-date-text"></div>
+                        <span id="day-total-summary" class="apple-summary-chip mt-1 d-inline-block">총 0명 예약</span>
+                    </div>
+                    <button type="button" class="apple-cal-nav-btn" id="next-day-btn" title="다음 날짜">
                         <i class="fa-solid fa-chevron-right"></i>
                     </button>
                 </div>
-                <div id="daily-schedule-list" style="min-height: 200px; max-height: 380px; overflow-y: auto;"></div>
+
+                <!-- 일정 리스트 컨테이너 -->
+                <div id="daily-schedule-list" style="min-height: 220px; max-height: 400px; overflow-y: auto; padding-right: 2px;"></div>
             </div>
 
             <!-- [2번 탭 전용 우측] AI 방문자 체험 후기 종합 요약 -->
             <div id="right-tab-performance" class="right-tab-content" style="display: none;">
                 <h5 class="mb-3 font-weight-bold text-dark">AI 후기 요약 리포트</h5>
-
-                <!-- 긍정적인 내용 요약 -->
                 <div class="p-3 mb-3 rounded bg-light border border-success">
                     <div class="d-flex align-items-center mb-1 text-success font-weight-bold small">
                         <i class="fa-solid fa-thumbs-up mr-1"></i> 긍정 포인트 한 줄 요약
@@ -281,8 +429,6 @@
                         "체험 과정이 알차고 농장주님이 친절하여 아이 동반 가족 만족도가 매우 높습니다."
                     </p>
                 </div>
-
-                <!-- 개선점 요약 -->
                 <div class="p-3 mb-3 rounded bg-light border border-warning">
                     <div class="d-flex align-items-center mb-1 text-warning font-weight-bold small">
                         <i class="fa-solid fa-lightbulb mr-1"></i> 개선 피드백 한 줄 요약
@@ -291,8 +437,6 @@
                         "농장 진입로 주차 안내 표지판을 조금 더 명확하게 설치해달라는 의견이 있습니다."
                     </p>
                 </div>
-
-                <!-- 최근 만족도 현황 -->
                 <div class="p-3 rounded bg-light border text-center">
                     <span class="small text-muted d-block mb-1">최근 30일 체험 만족도</span>
                     <strong class="h5 font-weight-bold text-success mb-0">94% 긍정적</strong>
@@ -302,7 +446,7 @@
             <!-- [3번 탭 전용 우측] 계정 통합 요약 -->
             <div id="right-tab-settings" class="right-tab-content" style="display: none;">
                 <h5 class="mb-3 font-weight-bold text-dark">계정 현황</h5>
-                <div class="p-3 rounded bg-light border">
+                <div class="p-3 mb-3 rounded bg-light border">
                     <div class="small text-muted mb-2">보안 및 인증 상태</div>
                     <span class="badge badge-success px-2 py-1 mb-2">본인 인증 완료</span>
                     <p class="small text-secondary mb-0">농장 정보 변경 시 수락 대기 예약 건에 차질이 없도록 유의해 주세요.</p>
@@ -315,8 +459,7 @@
                         <span class="badge badge-light border">인증완료</span>
                     </div>
                     <p class="mb-0 text-dark small font-weight-bold">NH농협 352-1234-****-83</p>
-                    <small class="text-muted d-block mt-1" style="font-size: 0.75rem;">예금주: {{ user.name or '농장주'
-                        }}님</small>
+                    <small class="text-muted d-block mt-1" style="font-size: 0.75rem;">예금주: {{ user.name or '농장주' }}님</small>
                 </div>
             </div>
         </aside>
@@ -324,20 +467,249 @@
     </div>
 </div>
 
-<div id="reservation-modal" class="modal-overlay" style="display: none;">
-    <div class="modal-content" style="max-width: 500px;">
-        <h4 id="modal-title"></h4>
-        <div id="modal-body" class="mt-3"></div>
-        <div class="modal-buttons">
-            <button id="modal-close-btn" class="btn btn-success">확인</button>
+<!-- ====================================================
+     애플 감성 상세 예약 팝업 모달 (Apple Card Modal)
+==================================================== -->
+<div id="reservation-modal" class="apple-modal-overlay">
+    <div class="apple-modal-window">
+        <div class="apple-modal-header">
+            <div class="d-flex align-items-center">
+                <span id="modal-color-tag" style="width: 10px; height: 10px; border-radius: 50%; display: inline-block; margin-right: 8px;"></span>
+                <h6 id="modal-title" class="mb-0 font-weight-bold text-dark" style="font-size: 1.05rem;"></h6>
+            </div>
+            <button type="button" id="modal-close-x" class="close text-secondary" style="font-size: 1.3rem; outline: none;">&times;</button>
+        </div>
+        <div id="modal-body" class="apple-modal-body"></div>
+        <div class="apple-modal-footer">
+            <button id="modal-close-btn" class="btn btn-sm btn-dark px-4 font-weight-bold" style="border-radius: 10px;">닫기</button>
         </div>
     </div>
 </div>
+
 <div id="reservations-data" style="display:none;">{{ reservations_data | tojson | safe }}</div>
 
+<!-- ====================================================
+     JavaScript 로직
+==================================================== -->
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-        // 1. 탭 전환 제어
+        // ----------------------------------------------------
+        // 1. 애플 캘린더 전용 감성 색상 팔레트 & 생성기
+        // ----------------------------------------------------
+        const applePalettes = [
+            { bg: '#E8F2FF', text: '#0066CC', accent: '#007AFF' }, // iOS Blue
+            { bg: '#EBF9EE', text: '#248A3D', accent: '#34C759' }, // iOS Green
+            { bg: '#FFF4E5', text: '#B26200', accent: '#FF9500' }, // iOS Orange
+            { bg: '#F6EDFD', text: '#7E2CB8', accent: '#AF52DE' }, // iOS Purple
+            { bg: '#FFEBF0', text: '#C71B3E', accent: '#FF2D55' }, // iOS Pink/Coral
+            { bg: '#EAF7F9', text: '#157585', accent: '#30B0C7' }, // iOS Teal
+            { bg: '#EFEFFC', text: '#3F3CA3', accent: '#5856D6' }, // iOS Indigo
+            { bg: '#FFFBE6', text: '#947600', accent: '#FFCC00' }  // iOS Yellow
+        ];
+
+        // 작물/체험명 고유 해시 기반 일관된 색상 부여 함수
+        function getCropColorTheme(cropName) {
+            if (!cropName) return applePalettes[0];
+            let hash = 0;
+            for (let i = 0; i < cropName.length; i++) {
+                hash = cropName.charCodeAt(i) + ((hash << 5) - hash);
+            }
+            const index = Math.abs(hash) % applePalettes.length;
+            return applePalettes[index];
+        }
+
+        // ----------------------------------------------------
+        // 2. 예약 데이터 파싱 및 캘린더 상태 관리
+        // ----------------------------------------------------
+        const rawReservations = JSON.parse(document.getElementById('reservations-data').textContent || '{}');
+        let currentDate = new Date();
+        const dayOfWeekNames = ['일', '월', '화', '수', '목', '금', '토'];
+
+        function formatDateToKey(d) {
+            const year = d.getFullYear();
+            const month = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
+        function formatDateToDisplay(d) {
+            const year = d.getFullYear();
+            const month = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            const dayName = dayOfWeekNames[d.getDay()];
+            return `${year}.${month}.${day} (${dayName})`;
+        }
+
+        // ----------------------------------------------------
+        // 3. 일별 스케줄 렌더링 & 체험/인원 그룹화
+        // ----------------------------------------------------
+        function renderDailySchedule() {
+            const dateKey = formatDateToKey(currentDate);
+            document.getElementById('current-date-display').textContent = formatDateToDisplay(currentDate);
+
+            const listContainer = document.getElementById('daily-schedule-list');
+            listContainer.innerHTML = '';
+
+            const dayReservations = rawReservations[dateKey] || [];
+            
+            // 일일 총 인원 계산
+            let dayTotalHeadcount = 0;
+            dayReservations.forEach(r => {
+                dayTotalHeadcount += (r.adult || 0) + (r.teen || 0) + (r.child || 0);
+            });
+            document.getElementById('day-total-summary').textContent = `총 ${dayReservations.length}건 · ${dayTotalHeadcount}명`;
+
+            if (dayReservations.length === 0) {
+                listContainer.innerHTML = `
+                    <div class="text-center text-muted py-5">
+                        <i class="fa-regular fa-calendar-check fa-2x mb-2 d-block" style="color: #c7c7cc;"></i>
+                        <span class="small font-weight-bold" style="color: #8e8e93;">예약된 일정이 없습니다.</span>
+                    </div>
+                `;
+                return;
+            }
+
+            // [체험별 + 시간대별 그룹핑 & 인원 통합]
+            const grouped = {};
+            dayReservations.forEach(res => {
+                const groupKey = `${res.crop || '체험'}_${res.time || '시간미지정'}`;
+                if (!grouped[groupKey]) {
+                    grouped[groupKey] = {
+                        crop: res.crop || '체험',
+                        time: res.time || '시간미지정',
+                        totalAdult: 0,
+                        totalTeen: 0,
+                        totalChild: 0,
+                        totalCount: 0,
+                        items: []
+                    };
+                }
+                const pCount = (res.adult || 0) + (res.teen || 0) + (res.child || 0);
+                grouped[groupKey].totalAdult += (res.adult || 0);
+                grouped[groupKey].totalTeen += (res.teen || 0);
+                grouped[groupKey].totalChild += (res.child || 0);
+                grouped[groupKey].totalCount += pCount;
+                grouped[groupKey].items.push(res);
+            });
+
+            // 시간순 정렬
+            const sortedGroups = Object.values(grouped).sort((a, b) => (a.time > b.time ? 1 : -1));
+
+            sortedGroups.forEach(group => {
+                const theme = getCropColorTheme(group.crop);
+                const card = document.createElement('div');
+                card.className = 'apple-schedule-card';
+                card.style.backgroundColor = theme.bg;
+                card.style.setProperty('--card-accent-color', theme.accent);
+                card.style.setProperty('--card-text-color', theme.text);
+
+                card.innerHTML = `
+                    <div class="apple-card-main">
+                        <div class="apple-card-time">${group.time}</div>
+                        <div class="apple-card-title">${group.crop}</div>
+                        <div class="apple-card-sub">예약 ${group.items.length}건</div>
+                    </div>
+                    <div class="apple-badge-pill">
+                        <i class="fa-solid fa-user-group" style="font-size: 0.7rem;"></i>
+                        <span>${group.totalCount}명</span>
+                    </div>
+                `;
+
+                // 카드 클릭 시 팝업 모달 호출
+                card.addEventListener('click', function () {
+                    openReservationModal(group, theme, formatDateToDisplay(currentDate));
+                });
+
+                listContainer.appendChild(card);
+            });
+        }
+
+        // ----------------------------------------------------
+        // 4. 모달 열기/닫기 로직
+        // ----------------------------------------------------
+        const modal = document.getElementById('reservation-modal');
+        const modalTitle = document.getElementById('modal-title');
+        const modalBody = document.getElementById('modal-body');
+        const modalColorTag = document.getElementById('modal-color-tag');
+        const modalCloseBtn = document.getElementById('modal-close-btn');
+        const modalCloseX = document.getElementById('modal-close-x');
+
+        function openReservationModal(group, theme, dateStr) {
+            modalTitle.textContent = `${group.crop} (${group.time})`;
+            modalColorTag.style.backgroundColor = theme.accent;
+
+            let html = `
+                <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
+                    <span class="small text-muted"><i class="fa-regular fa-calendar mr-1"></i>${dateStr}</span>
+                    <span class="badge badge-pill px-3 py-1 font-weight-bold" style="background: ${theme.bg}; color: ${theme.text};">
+                        통합 인원: ${group.totalCount}명 (성인 ${group.totalAdult}, 청소년 ${group.totalTeen}, 아동 ${group.totalChild})
+                    </span>
+                </div>
+                <div class="small font-weight-bold text-secondary mb-2">신청자 명단 (${group.items.length}명)</div>
+            `;
+
+            group.items.forEach((item, idx) => {
+                const totalItemHeadcount = (item.adult || 0) + (item.teen || 0) + (item.child || 0);
+                const statusBadge = item.status === '확정' 
+                    ? '<span class="badge badge-success">확정됨</span>' 
+                    : (item.status === '취소' ? '<span class="badge badge-danger">취소됨</span>' : '<span class="badge badge-warning text-dark">수락 대기</span>');
+
+                html += `
+                    <div class="apple-detail-item">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <strong class="text-dark" style="font-size: 0.95rem;">${item.name}</strong>
+                            ${statusBadge}
+                        </div>
+                        <div class="text-muted small mb-1">
+                            <i class="fa-solid fa-phone mr-1"></i><a href="tel:${item.phone}" class="text-secondary">${item.phone || '연락처 미제공'}</a>
+                        </div>
+                        <div class="small text-dark font-weight-semibold">
+                            참여 인원: ${totalItemHeadcount}명 <span class="text-muted">(성인 ${item.adult || 0}, 청소년 ${item.teen || 0}, 아동 ${item.child || 0})</span>
+                        </div>
+                    </div>
+                `;
+            });
+
+            modalBody.innerHTML = html;
+            modal.classList.add('active');
+        }
+
+        function closeModal() {
+            modal.classList.remove('active');
+        }
+
+        modalCloseBtn?.addEventListener('click', closeModal);
+        modalCloseX?.addEventListener('click', closeModal);
+        modal?.addEventListener('click', function (e) {
+            if (e.target === modal) closeModal();
+        });
+
+        // ESC 키로 모달 닫기
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && modal.classList.contains('active')) {
+                closeModal();
+            }
+        });
+
+        // ----------------------------------------------------
+        // 5. 날짜 이전/다음 버튼 이벤트
+        // ----------------------------------------------------
+        document.getElementById('prev-day-btn')?.addEventListener('click', function () {
+            currentDate.setDate(currentDate.getDate() - 1);
+            renderDailySchedule();
+        });
+
+        document.getElementById('next-day-btn')?.addEventListener('click', function () {
+            currentDate.setDate(currentDate.getDate() + 1);
+            renderDailySchedule();
+        });
+
+        // 초기 렌더링
+        renderDailySchedule();
+
+        // ----------------------------------------------------
+        // 6. 메인 탭 전환 로직
+        // ----------------------------------------------------
         const tabButtons = document.querySelectorAll('.dash-tab-btn');
         const tabContents = document.querySelectorAll('.dash-tab-content');
         const rightTabContents = document.querySelectorAll('.right-tab-content');
@@ -347,30 +719,25 @@
                 button.addEventListener('click', function () {
                     const targetTabId = this.getAttribute('data-tab');
 
-                    // 좌측 탭 버튼 active 클래스 제어
                     tabButtons.forEach(btn => btn.classList.remove('active'));
                     this.classList.add('active');
 
-                    // 중앙 메인 컨텐츠 전환
                     tabContents.forEach(content => content.classList.remove('active'));
                     const targetContent = document.getElementById(targetTabId);
-                    if (targetContent) {
-                        targetContent.classList.add('active');
-                    }
+                    if (targetContent) targetContent.classList.add('active');
 
-                    // 우측 칼럼 컨텐츠 동적 전환
                     rightTabContents.forEach(rightContent => {
                         rightContent.style.display = 'none';
                     });
                     const targetRightContent = document.getElementById('right-' + targetTabId);
-                    if (targetRightContent) {
-                        targetRightContent.style.display = 'block';
-                    }
+                    if (targetRightContent) targetRightContent.style.display = 'block';
                 });
             });
         }
 
-        // 2. 스마트 알림창 좌/우 슬라이드 전환
+        // ----------------------------------------------------
+        // 7. 스마트 알림 슬라이드
+        // ----------------------------------------------------
         const noticeSlides = document.querySelectorAll('.notice-slide-card');
         let currentNoticeIndex = 0;
 
@@ -390,90 +757,14 @@
             updateNoticeSlide(currentNoticeIndex);
         });
 
-        // 3. 예약 일정 달력 연동
-        const reservationsData = JSON.parse(document.getElementById('reservations-data').textContent || '{}');
-        let currentDate = new Date();
-        const dayOfWeekNames = ['일', '월', '화', '수', '목', '금', '토'];
-
+        // ----------------------------------------------------
+        // 8. 프로필 수정 모드 토글
+        // ----------------------------------------------------
         const farmerEditBtn = document.getElementById('farmer-edit-btn');
         const farmerCancelBtn = document.getElementById('farmer-cancel-btn');
         const farmerFieldset = document.getElementById('farmer-info-fieldset');
         const farmerFormButtons = document.getElementById('farmer-form-buttons');
 
-        function formatDateToKey(d) {
-            const year = d.getFullYear();
-            const month = String(d.getMonth() + 1).padStart(2, '0');
-            const day = String(d.getDate()).padStart(2, '0');
-            return `${year}-${month}-${day}`;
-        }
-
-        function formatDateToDisplay(d) {
-            const year = d.getFullYear();
-            const month = String(d.getMonth() + 1).padStart(2, '0');
-            const day = String(d.getDate()).padStart(2, '0');
-            const dayName = dayOfWeekNames[d.getDay()];
-            return `${year}.${month}.${day}(${dayName})`;
-        }
-
-        function renderDailySchedule() {
-            const dateKey = formatDateToKey(currentDate);
-            const displayStr = formatDateToDisplay(currentDate);
-
-            document.getElementById('current-date-display').textContent = displayStr;
-
-            const listContainer = document.getElementById('daily-schedule-list');
-            listContainer.innerHTML = '';
-
-            const todaysReservations = reservationsData[dateKey] || [];
-
-            if (todaysReservations.length === 0) {
-                listContainer.innerHTML = `
-                <div class="text-center text-muted py-4">
-                    <i class="fa-regular fa-calendar-xmark fa-2x mb-2 d-block text-secondary"></i>
-                    <small>예약된 일정이 없습니다.</small>
-                </div>
-            `;
-                return;
-            }
-
-            todaysReservations.sort((a, b) => (a.time > b.time ? 1 : -1));
-
-            todaysReservations.forEach(res => {
-                const totalPeople = (res.adult || 0) + (res.teen || 0) + (res.child || 0);
-                const itemDiv = document.createElement('div');
-                itemDiv.className = 'p-2 mb-2 rounded border-left border-success bg-light';
-                itemDiv.style.borderLeftWidth = '4px !important';
-                itemDiv.innerHTML = `
-                <div class="d-flex justify-content-between align-items-center mb-1">
-                    <span class="font-weight-bold text-dark" style="font-size:0.92rem;">
-                        <i class="fa-regular fa-clock mr-1 text-success"></i>${res.time || '시간미지정'}
-                    </span>
-                    <span class="badge badge-success">${res.crop || '체험'}</span>
-                </div>
-                <div class="small text-dark">
-                    <strong>${res.name}</strong> (${res.phone})
-                </div>
-                <div class="small text-muted">
-                    인원: 총 ${totalPeople}명 (성인 ${res.adult || 0}, 청소년 ${res.teen || 0}, 아동 ${res.child || 0})
-                </div>
-            `;
-                listContainer.appendChild(itemDiv);
-            });
-        }
-
-        document.getElementById('prev-day-btn').addEventListener('click', function () {
-            currentDate.setDate(currentDate.getDate() - 1);
-            renderDailySchedule();
-        });
-
-        document.getElementById('next-day-btn').addEventListener('click', function () {
-            currentDate.setDate(currentDate.getDate() + 1);
-            renderDailySchedule();
-        });
-
-        renderDailySchedule();
-
-        // 4. 내 정보 수정/취소 버튼 토글
         if (farmerEditBtn) {
             farmerEditBtn.addEventListener('click', function () {
                 farmerFieldset.disabled = false;

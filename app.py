@@ -17,7 +17,6 @@ from types import SimpleNamespace
 import platform
 from PIL import Image
 
-
 project_folder = os.path.dirname(os.path.abspath(__file__))
 load_dotenv(os.path.join(project_folder, '.env'))
 
@@ -43,6 +42,11 @@ app.config['UPLOAD_FOLDER'] = os.path.join(app.static_folder, 'uploads')
 app.config['ALLOWED_EXTENSIONS'] = {'png', 'jpg', 'jpeg', 'gif', 'pdf'} # farmer 기준
 app.config['KAKAO_API_KEY'] = os.environ.get('KAKAO_API_KEY') # farmer 기준
 app.config['KAKAO_JS_KEY'] = os.environ.get('KAKAO_JS_KEY')   # 카카오맵 JS SDK 키(park_back)
+
+# --- 토스페이먼츠 ---
+# 클라이언트 키만 config 에 둔다(템플릿에서 결제창 SDK 초기화용).
+# 시크릿 키는 services/toss_service.py 가 서버에서만 os.environ 으로 읽는다.
+app.config['TOSS_CLIENT_KEY'] = os.environ.get('TOSS_CLIENT_KEY')
 
 # DB 모델과 db 객체는 models/ 패키지로 분리됨. 여기서는 앱에 바인딩만 한다.
 from models import db, User, Experience, Review, Inquiry, Application, Notification

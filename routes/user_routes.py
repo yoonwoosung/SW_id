@@ -165,11 +165,19 @@ def my_info():
 def mypage():
     if 'user_id' not in session:
         flash("로그인이 필요합니다.", "warning")
-        return redirect(url_for('login_page'))
-    user = User.query.get_or_404(session['user_id'])
+        return redirect(url_for('login_page'))  
+    user_id = session['user_id']
+    user = User.query.get_or_404(user_id)
+    newly_completed_crops = activity_service.sync_user_completed_reservations(user_id)
+
+    if newly_completed_crops:
+        for crop in newly_completed_crops:
+            flash(f"🎉 '{crop}' 체험은 어떠셨나요? 소중한 후기를 남겨주세요.", "info")
+
     applications = Application.query.filter_by(user_id=user.id).order_by(Application.apply_date.desc()).all()
     reservation_cards = activity_service.reservation_cards(applications)
     experienced_count = activity_service.experienced_count(applications)
+
     return render_template('mypage.html', user=user, applications=applications,
                            reservation_cards=reservation_cards, experienced_count=experienced_count)
 
@@ -190,10 +198,6 @@ def album_create():
     user = User.query.get_or_404(session['user_id'])
     applications = Application.query.filter_by(user_id=user.id).order_by(Application.apply_date.desc()).all()
     return render_template('album_create.html', user=user, applications=applications)
-
-
-def community_page():
-    return render_template('community.html')
 
 
 def verify_password():
@@ -300,7 +304,6 @@ def register(app):
     app.add_url_rule('/guide', 'guide_page', guide_page)
     app.add_url_rule('/farmer_guide', 'farmer_guide', farmer_guide)
     app.add_url_rule('/album/create', 'album_create', album_create, methods=['GET', 'POST'])
-    app.add_url_rule('/community', 'community_page', community_page)
     
     # FE 신규 기능 라우트 등록
     app.add_url_rule('/verify_password', 'verify_password', verify_password, methods=['POST'])

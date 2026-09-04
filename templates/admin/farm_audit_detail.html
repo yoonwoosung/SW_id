@@ -1,0 +1,140 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="container-fluid py-4 px-lg-5" style="background:#f4f6f8; min-height:calc(100vh - 64px);">
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3 class="font-weight-bold text-dark mb-0">
+            <i class="fa-solid fa-file-circle-check text-success mr-2"></i>농장 입점 서류 대조 심사
+        </h3>
+        <a href="{{ url_for('admin_farm_audit_list') }}" class="btn btn-secondary btn-sm">
+            <i class="fa-solid fa-list mr-1"></i> 심사 대기 목록
+        </a>
+    </div>
+
+    <!-- 좌우 5:5 대조 심사 그리드 -->
+    <div class="row">
+        
+        <!-- 좌측: 농장주 입력 정보 -->
+        <div class="col-lg-6 mb-4">
+            <div class="card border-0 shadow-sm rounded-xl h-100 p-4 bg-white">
+                <h5 class="font-weight-bold text-dark border-bottom pb-3 mb-3">
+                    <i class="fa-solid fa-location-dot text-primary mr-2"></i>신청 농장 기본 정보
+                </h5>
+                
+                <table class="table table-bordered mb-4">
+                    <tbody>
+                        <tr>
+                            <th class="bg-light" style="width:30%;">농장명</th>
+                            <td class="font-weight-bold text-dark">{{ farm.name or '미입력 (기본 농장)' }}</td>
+                        </tr>
+                        <tr>
+                            <th class="bg-light">농장주 성명</th>
+                            <td>{{ farm.user.name or farm.user.nickname }} ({{ farm.user.email }})</td>
+                        </tr>
+                        <tr>
+                            <th class="bg-light">농장주 연락처</th>
+                            <td>{{ farm.user.phone or '연락처 없음' }}</td>
+                        </tr>
+                        <tr class="table-warning">
+                            <th class="font-weight-bold text-danger">입력된 주소</th>
+                            <td class="font-weight-bold text-dark" style="font-size: 1.05rem;">
+                                {{ farm.address }}<br>
+                                <span class="text-primary">{{ farm.address_detail or '' }}</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th class="bg-light">농장 규모</th>
+                            <td>{{ farm.size or '미입력' }}평</td>
+                        </tr>
+                        <tr>
+                            <th class="bg-light">친환경 여부</th>
+                            <td>{% if farm.is_organic %}예{% if farm.organic_cert_type %} ({{ farm.organic_cert_type }}){% endif %}{% else %}아니오{% endif %}</td>
+                        </tr>
+                        <tr>
+                            <th class="bg-light">신청 일시</th>
+                            <td>{{ farm.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <!-- 심사 처리 버튼 -->
+                <div class="border-top pt-3 mt-auto">
+                    <h6 class="font-weight-bold text-dark mb-3">심사 결과 처리</h6>
+                    <div class="d-flex gap-3">
+                        <form method="POST" action="{{ url_for('admin_farm_approve', farm_id=farm.id) }}" class="flex-fill mr-2" onsubmit="return confirm('이 농장을 승인 처리할까요?');">
+                            <button type="submit" class="btn btn-success btn-block py-3 font-weight-bold" style="font-size:1.05rem;">
+                                <i class="fa-solid fa-check mr-1"></i> 주소 일치 (승인)
+                            </button>
+                        </form>
+                        <button type="button" class="btn btn-danger flex-fill py-3 font-weight-bold" style="font-size:1.05rem;" data-toggle="modal" data-target="#rejectModal">
+                            <i class="fa-solid fa-xmark mr-1"></i> 불일치 / 반려
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 우측: 업로드된 농업인확인서 PDF 뷰어 -->
+        <div class="col-lg-6 mb-4">
+            <div class="card border-0 shadow-sm rounded-xl h-100 p-3 bg-white d-flex flex-column">
+                <div class="d-flex justify-content-between align-items-center mb-2 px-2">
+                    <h5 class="font-weight-bold text-dark mb-0">
+                        <i class="fa-solid fa-file-pdf text-danger mr-2"></i>제출된 농업인확인서 PDF
+                    </h5>
+                    {% if farm.certificate_pdf %}
+                    <a href="{{ url_for('static', filename='uploads/' + farm.certificate_pdf) }}" target="_blank" class="btn btn-sm btn-outline-secondary">
+                        <i class="fa-solid fa-arrow-up-right-from-square mr-1"></i> 새 창에서 열기
+                    </a>
+                    {% endif %}
+                </div>
+
+                <div class="flex-grow-1 border rounded-lg bg-light d-flex align-items-center justify-content-center" style="min-height: 600px;">
+                    {% if farm.certificate_pdf %}
+                    <iframe src="{{ url_for('static', filename='uploads/' + farm.certificate_pdf) }}" width="100%" height="100%" style="border:none; min-height:650px;"></iframe>
+                    {% else %}
+                    <div class="text-center text-muted p-5">
+                        <i class="fa-solid fa-file-circle-xmark fa-3x mb-3 text-secondary"></i>
+                        <p class="mb-0">제출된 서류 파일이 없습니다.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 반려 사유 모달 -->
+<div class="modal fade" id="rejectModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-xl border-0 shadow">
+            <form method="POST" action="{{ url_for('admin_farm_reject', farm_id=farm.id) }}">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title font-weight-bold text-danger">농장 입점 심사 반려</h5>
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                </div>
+                <div class="modal-body px-4 py-3">
+                    <p class="text-muted small mb-2">농장주에게 전달될 구체적인 반려 사유를 입력하거나 선택해 주세요.</p>
+                    
+                    <div class="mb-2">
+                        <button type="button" class="btn btn-sm btn-light border mb-1 mr-1" onclick="setReason('제출 서류의 농지 주소와 입력된 주소가 일치하지 않습니다.')">주소 불일치</button>
+                        <button type="button" class="btn btn-sm btn-light border mb-1 mr-1" onclick="setReason('제출된 서류의 유효기간이 만료되었습니다.')">서류 만료</button>
+                        <button type="button" class="btn btn-sm btn-light border mb-1" onclick="setReason('서류 글씨가 훼손되어 주소 식별이 불가능합니다.')">식별 불가</button>
+                    </div>
+
+                    <textarea id="reject_reason_text" name="reject_reason" class="form-control" rows="4" placeholder="반려 사유를 입력하세요." required></textarea>
+                </div>
+                <div class="modal-footer border-0 pt-0">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">취소</button>
+                    <button type="submit" class="btn btn-danger font-weight-bold">반려 확정</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function setReason(text) {
+    document.getElementById('reject_reason_text').value = text;
+}
+</script>
+{% endblock %}

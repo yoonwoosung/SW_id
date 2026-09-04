@@ -1,0 +1,65 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="container py-4" style="min-height: calc(100vh - 64px);">
+    <h3 class="font-weight-bold mb-4">농장 입점 심사 큐 관리</h3>
+
+    <div class="btn-group mb-4">
+        <a href="{{ url_for('admin_farm_audit_list', status='PENDING') }}" class="btn btn-outline-primary {% if current_status == 'PENDING' %}active font-weight-bold{% endif %}">
+            심사 대기 <span class="badge badge-warning ml-1">{{ counts.PENDING }}</span>
+        </a>
+        <a href="{{ url_for('admin_farm_audit_list', status='APPROVED') }}" class="btn btn-outline-primary {% if current_status == 'APPROVED' %}active font-weight-bold{% endif %}">
+            승인 완료 <span class="badge badge-success ml-1">{{ counts.APPROVED }}</span>
+        </a>
+        <a href="{{ url_for('admin_farm_audit_list', status='REJECTED') }}" class="btn btn-outline-primary {% if current_status == 'REJECTED' %}active font-weight-bold{% endif %}">
+            반려됨 <span class="badge badge-danger ml-1">{{ counts.REJECTED }}</span>
+        </a>
+    </div>
+
+    <div class="card border-0 shadow-sm rounded-xl overflow-hidden bg-white">
+        <table class="table table-hover mb-0 text-center">
+            <thead class="bg-light">
+                <tr>
+                    <th>농장명</th>
+                    <th>농장주</th>
+                    <th>신청 주소</th>
+                    <th>서류 첨부</th>
+                    <th>신청일</th>
+                    <th>상태 / 심사</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for farm in farms %}
+                <tr>
+                    <td class="font-weight-bold">{{ farm.name or '기본 농장' }}</td>
+                    <td>{{ farm.user.name or farm.user.nickname }}</td>
+                    <td class="text-left">{{ farm.address }} {{ farm.address_detail or '' }}</td>
+                    <td>
+                        {% if farm.certificate_pdf %}
+                        <span class="badge badge-danger"><i class="fa-solid fa-file-pdf"></i> PDF</span>
+                        {% else %}
+                        <span class="text-muted small">없음</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ farm.created_at.strftime('%m/%d %H:%M') }}</td>
+                    <td>
+                        {% if farm.status == 'PENDING' %}
+                        <a href="{{ url_for('admin_farm_audit_detail', farm_id=farm.id) }}" class="btn btn-sm btn-primary font-weight-bold px-3">
+                            대조 심사하기 →
+                        </a>
+                        {% elif farm.status == 'APPROVED' %}
+                        <span class="badge badge-success px-2 py-1">승인완료</span>
+                        {% else %}
+                        <span class="badge badge-danger px-2 py-1">반려됨</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" class="py-5 text-muted">해당 상태의 농장 신청 내역이 없습니다.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

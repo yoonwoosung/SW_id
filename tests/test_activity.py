@@ -16,9 +16,16 @@ PAST = TODAY - timedelta(days=7)
 
 
 class FakeApp:
-    def __init__(self, status, apply_date=FUTURE):
+    """Application 테스트 더블.
+
+    reservation_state/is_experience_ended 가 실제로 읽는 속성을 전부 갖춰야 한다.
+    (can_review·apply_time 이 빠져 있어 AttributeError 로 실패하던 것을 보강)
+    """
+    def __init__(self, status, apply_date=FUTURE, apply_time='10:00', can_review=False):
         self.status = status
         self.apply_date = apply_date
+        self.apply_time = apply_time
+        self.can_review = can_review
 
 
 def test_pending_is_pay_pending():

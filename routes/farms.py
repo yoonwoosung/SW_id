@@ -1,14 +1,23 @@
 # routes/farms.py
 import os
+import json
 import uuid
-from flask import render_template, request, session, redirect, url_for, flash, current_app
+from datetime import datetime
+from flask import render_template, request, session, redirect, url_for, flash, current_app, jsonify
+
 from common.response import success_response, error_response
 from common.auth import api_login_required
 from common.validators import allowed_file
 from external.kakao_map import get_coords_from_address
-from models import db, Farm
+from models import db, Farm, Experience, Review
 from services import farm_service
+# 💡 review_service에 작성된 REST API 방식 Gemini 함수 사용 (SDK 충돌 없음)
+from services.review_service import analyze_farm_reviews_summary
 
+
+# ----------------------------------------------------
+# 보조 함수
+# ----------------------------------------------------
 def _save_certificate():
     file = request.files.get('certificate_pdf') or request.files.get('farmer_certificate_pdf')
     if not file or not file.filename or not allowed_file(file.filename):
@@ -116,11 +125,72 @@ def delete_farm_api(farm_id):
         return error_response("FORBIDDEN", "본인 농장만 삭제할 수 있습니다.", 403)
     return success_response({"deleted": True})
 
+
+# ----------------------------------------------------
+# 💡 농장별 AI 후기 요약 새로고침 & DB 캐싱 API
+# ----------------------------------------------------
+def refresh_farm_ai_report(farm_id):
+    """농장주가 새로고침 버튼을 눌렀을 때만 실행되는 API"""
+    if 'user_id' not in session or session.get('role') != 'farmer':
+        return jsonify({"success": False, "message": "농장주 로그인이 필요합니다."}), 401
+
+    farmer_id = session['user_id']
+    farm = Farm.query.get_or_404(farm_id)
+    if farm.user_id != farmer_id:
+        return jsonify({"success": False, "message": "본인 농장의 리포트만 갱신할 수 있습니다."}), 403
+
+    # 농장에 연결된 체험 목록 조회 (farm_id 외래키 또는 farmer_id 기준 호환)
+    if hasattr(Experience, 'farm_id'):
+        experiences = Experience.query.filter_by(farm_id=farm.id).all()
+    else:
+        experiences = Experience.query.filter_by(farmer_id=farmer_id).all()
+
+    exp_ids = [exp.id for exp in experiences]
+    if not exp_ids:
+        return jsonify({"success": False, "message": "등록된 체험이 없어 분석할 수 없습니다."}), 400
+
+    # 체험에 달린 리뷰들 조회
+    reviews = Review.query.filter(Review.experience_id.in_(exp_ids)).all()
+    valid_reviews = [r for r in reviews if (getattr(r, 'content', None) or getattr(r, 'comment', ''))]
+
+    if not valid_reviews:
+        return jsonify({"success": False, "message": "분석할 실제 방문객 후기가 아직 없습니다."}), 400
+
+    try:
+        # 1. Gemini REST API를 통한 리뷰 종합 분석
+        ai_data = analyze_farm_reviews_summary(valid_reviews)
+        if not ai_data:
+            return jsonify({"success": False, "message": "AI 분석 응답을 가져오지 못했습니다. 잠시 후 다시 시도해 주세요."}), 500
+
+        # 2. DB 캐시 저장
+        farm.ai_strengths_summary = ai_data.get('strengths_summary')
+        farm.ai_improvements_summary = ai_data.get('improvements_summary')
+        farm.ai_satisfaction_rate = ai_data.get('satisfaction_rate')
+        farm.ai_report_updated_at = datetime.utcnow()
+        db.session.commit()
+
+        return jsonify({
+            "success": True,
+            "report": {
+                "strengths_summary": farm.ai_strengths_summary,
+                "improvements_summary": farm.ai_improvements_summary,
+                "satisfaction_rate": farm.ai_satisfaction_rate,
+                "updated_at": farm.ai_report_updated_at.strftime('%Y.%m.%d %H:%M')
+            }
+        })
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Gemini API Error: {str(e)}")
+        return jsonify({"success": False, "message": f"AI 분석 중 오류가 발생했습니다: {str(e)}"}), 500
+
+
 def register(app):
     app.add_url_rule('/farms/manage', 'farm_manage_page', farm_manage_page)
-    # 엔드포인트 명칭을 고유하게 변경하여 충돌 방지
     app.add_url_rule('/farms/add', 'farmer_add_farm', add_farm, methods=['POST'])
     app.add_url_rule('/farms/delete/<int:farm_id>', 'farmer_delete_farm', delete_farm, methods=['POST'])
     app.add_url_rule('/api/farms', 'api_create_farm', create_farm_api, methods=['POST'])
     app.add_url_rule('/api/farms/<int:farm_id>', 'api_update_farm', update_farm_api, methods=['PUT'])
     app.add_url_rule('/api/farms/<int:farm_id>', 'api_delete_farm', delete_farm_api, methods=['DELETE'])
+    
+    # AI 리포트 갱신 엔드포인트 등록
+    app.add_url_rule('/api/farms/<int:farm_id>/refresh-report', 'refresh_farm_ai_report', refresh_farm_ai_report, methods=['POST'])

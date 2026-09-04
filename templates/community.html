@@ -1,245 +1,789 @@
 {% extends "layout.html" %}
-{% block page_class %}page-community{% endblock %}
+{% block content %}
 
-{% block head %}
 <style>
-/* ── 커뮤니티 페이지 ── */
-.cm-wrap { max-width: 1100px; margin: 0 auto; padding: 24px 20px 60px; }
-
-/* 탭 */
-.cm-tabs { display: flex; gap: 6px; padding: 20px 0 4px; flex-wrap: wrap; }
-.cm-tab {
-    border: 1px solid #c8e0d0; background: #fff; color: #2e5c38;
-    border-radius: 999px; padding: 7px 18px; font-size: .88rem; font-weight: 700;
-    cursor: pointer; transition: all .15s;
+/* ========================================================
+   🌿 앨범마당 메인 스타일
+======================================================== */
+.community-wrapper {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2.5rem 1rem 4rem;
 }
-.cm-tab.active { background: var(--fl-green-700,#2e7d32); color: #fff; border-color: var(--fl-green-700,#2e7d32); }
-.cm-tab:not(.active):hover { background: #edf5ef; }
 
-/* 결과 수 */
-.cm-result-info { font-size: .85rem; color: #8a938c; padding: 10px 0 16px; }
-
-/* 앨범 그리드 */
-.cm-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-    gap: 24px;
+.community-header {
+    text-align: center;
+    margin-bottom: 2.5rem;
 }
-.cm-card {
-    background: #fff;
-    border-radius: 14px;
-    overflow: hidden;
-    box-shadow: 0 2px 8px rgba(0,0,0,.07);
+
+.community-header .badge-highlight {
+    background: #e8f5e9;
+    color: #2d6a4f;
+    font-size: 0.85rem;
+    font-weight: 700;
+    padding: 6px 14px;
+    border-radius: 20px;
+    display: inline-block;
+    margin-bottom: 0.75rem;
+}
+
+.community-header h2 {
+    font-size: 2.1rem;
+    font-weight: 800;
+    color: #1e293b;
+    margin-bottom: 0.5rem;
+}
+
+.community-header p {
+    color: #64748b;
+    font-size: 1rem;
+}
+
+/* 카테고리 필터 탭 */
+.category-tab-bar {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 2.5rem;
+}
+
+.cat-tab-btn {
+    border: 1.5px solid #e2e8f0;
+    background: #ffffff;
+    color: #475569;
+    font-size: 0.92rem;
+    font-weight: 600;
+    padding: 9px 20px;
+    border-radius: 25px;
     cursor: pointer;
-    transition: transform .18s, box-shadow .18s;
-    text-decoration: none;
-    color: inherit;
-    display: block;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 6px;
 }
-.cm-card:hover { transform: translateY(-4px); box-shadow: 0 8px 24px rgba(0,0,0,.12); }
-.cm-cover {
-    width: 100%; aspect-ratio: 3/4;
-    display: flex; flex-direction: column;
-    align-items: center; justify-content: center;
-    gap: 10px; font-weight: 800; font-size: .9rem; color: #fff;
-    padding: 16px; text-align: center; box-sizing: border-box;
+
+.cat-tab-btn:hover {
+    border-color: #2d6a4f;
+    color: #2d6a4f;
+    background: #f4fbf7;
+}
+
+.cat-tab-btn.active {
+    background: #2d6a4f;
+    border-color: #2d6a4f;
+    color: #ffffff;
+    box-shadow: 0 4px 12px rgba(45, 106, 79, 0.25);
+}
+
+/* 앨범 그리드 레이아웃 */
+.album-grid-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 24px;
+    min-height: 350px;
+}
+
+.community-album-card {
+    background: #ffffff;
+    border-radius: 16px;
+    overflow: hidden;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+}
+
+.community-album-card:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 16px 28px rgba(0, 0, 0, 0.1);
+    border-color: #cbd5e1;
+}
+
+/* 앨범 미니 커버 썸네일 */
+.album-card-thumb {
+    height: 220px;
+    background: #f1f5f9;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
     position: relative;
+    overflow: hidden;
 }
-.cm-cover-icon { font-size: 2.2rem; opacity: .75; }
-.cm-cover-title { font-size: .88rem; font-weight: 800; line-height: 1.35; }
-.cm-cover-badge {
-    position: absolute; top: 10px; left: 10px;
-    background: rgba(255,255,255,.25); border-radius: 999px;
-    padding: 3px 10px; font-size: .72rem; font-weight: 700;
+
+.mini-cover-preview {
+    width: 140px;
+    height: 180px;
+    border-radius: 6px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 12px;
+    box-shadow: -4px 6px 14px rgba(0,0,0,0.22);
+    position: relative;
+    transition: transform 0.2s;
 }
-.cm-card-foot { padding: 12px 14px; }
-.cm-card-user { font-weight: 700; font-size: .9rem; color: #253027; margin-bottom: 2px; }
-.cm-card-date { font-size: .78rem; color: #9aa39c; }
 
-/* 빈 상태 */
-.cm-empty { text-align: center; padding: 60px 20px; color: #8a938c; grid-column: 1/-1; }
-.cm-empty i { font-size: 2.8rem; color: #c8d8cc; margin-bottom: 12px; }
+.community-album-card:hover .mini-cover-preview {
+    transform: scale(1.04) rotate(-1deg);
+}
 
-/* 공유 유도 배너 */
-.cm-share-banner {
-    background: #f0f7f2;
-    border: 1px solid #c8e0d0;
-    border-radius: 14px;
-    padding: 20px 24px;
+/* 겉표지 테마 색상 */
+.mini-cover-preview.cover-green { background: linear-gradient(135deg, #1b4332, #2d6a4f); color: #d8f3dc; }
+.mini-cover-preview.cover-leather { background: linear-gradient(135deg, #4a2810, #78350f); color: #fef3c7; }
+.mini-cover-preview.cover-linen { background: linear-gradient(135deg, #d97706, #f59e0b); color: #fffbeb; }
+.mini-cover-preview.cover-navy { background: linear-gradient(135deg, #0f172a, #1e3a8a); color: #e0e7ff; }
+
+.mini-cover-preview i { font-size: 2rem; margin-bottom: 8px; opacity: 0.9; }
+.mini-cover-preview .mini-title { font-size: 0.85rem; font-weight: 700; line-height: 1.3; word-break: keep-all; }
+
+/* 앨범 카드 하단 정보 */
+.album-card-info {
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    justify-content: space-between;
+}
+
+.album-card-info .title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 6px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.album-card-info .meta-row {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 16px;
-    margin: 24px 0;
-    flex-wrap: wrap;
+    font-size: 0.8rem;
+    color: #64748b;
 }
-.cm-share-banner-text h3 { font-size: .95rem; font-weight: 800; color: #253027; margin: 0 0 4px; }
-.cm-share-banner-text p  { font-size: .82rem; color: #6a7a6e; margin: 0; }
-.cm-share-banner-btn {
-    background: var(--fl-green-700,#2e7d32); color: #fff;
-    border: none; border-radius: 10px; padding: 10px 20px;
-    font-size: .88rem; font-weight: 800; cursor: pointer;
-    white-space: nowrap; flex-shrink: 0;
-    display: inline-flex; align-items: center; gap: 6px;
-    text-decoration: none;
+
+.album-card-info .author {
+    font-weight: 600;
+    color: #334155;
+    display: flex;
+    align-items: center;
+    gap: 4px;
 }
-.cm-share-banner-btn:hover { background: #1b5e20; color: #fff; }
+
+.category-tag {
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 6px;
+    background: #f1f5f9;
+    color: #475569;
+}
+
+/* 페이징 네비게이션 */
+.pagination-wrapper {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    margin-top: 3rem;
+}
+
+.page-btn {
+    min-width: 38px;
+    height: 38px;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    background: #ffffff;
+    color: #475569;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.page-btn:hover {
+    border-color: #2d6a4f;
+    color: #2d6a4f;
+}
+
+.page-btn.active {
+    background: #2d6a4f;
+    border-color: #2d6a4f;
+    color: #ffffff;
+}
+
+/* ========================================================
+   🔍 앨범 뷰어 모달 스타일
+======================================================== */
+.viewer-modal-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(15, 23, 42, 0.8);
+    backdrop-filter: blur(8px);
+    z-index: 99999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.viewer-modal-box {
+    background: #ffffff;
+    border-radius: 20px;
+    width: 1040px;
+    max-width: 96vw;
+    height: 640px;
+    max-height: 94vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4);
+    animation: modalPopIn 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes modalPopIn {
+    from { opacity: 0; transform: scale(0.96) translateY(10px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.viewer-modal-head {
+    padding: 16px 24px;
+    border-bottom: 1px solid #e5e7eb;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #ffffff;
+    flex-shrink: 0;
+}
+
+.viewer-modal-body {
+    flex: 1;
+    background: #e2e8f0;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.viewer-stage {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform-origin: center center;
+    pointer-events: none;
+    user-select: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.viewer-modal-foot {
+    padding: 14px 24px;
+    background: #ffffff;
+    border-top: 1px solid #e5e7eb;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+}
+
+.viewer-nav-btn {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    border: 1.5px solid #cbd5e1;
+    background: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s;
+    color: #475569;
+}
+.viewer-nav-btn:hover {
+    background: #2d6a4f;
+    color: #ffffff;
+    border-color: #2d6a4f;
+}
+
+/* 📜 속지 종이 재질 명시 */
+.paper-white, .book-page.paper-white { background-color: #ffffff !important; }
+.paper-cream, .book-page.paper-cream {
+    background-color: #fbf8ee !important;
+    background-image: linear-gradient(rgba(0,0,0,0.03) 1px, transparent 1px) !important;
+    background-size: 100% 26px !important;
+}
+.paper-kraft, .book-page.paper-kraft {
+    background-color: #e5d3b8 !important;
+    background-image: radial-gradient(rgba(0,0,0,0.06) 15%, transparent 16%) !important;
+    background-size: 6px 6px !important;
+}
+.paper-grid, .book-page.paper-grid {
+    background-color: #ffffff !important;
+    background-image: linear-gradient(#e2e8f0 1.2px, transparent 1.2px), linear-gradient(90deg, #e2e8f0 1.2px, transparent 1.2px) !important;
+    background-size: 22px 22px !important;
+}
+
+/* 단일/양면 전용 카드 박스 */
+#viewerStage .book-container.is-single-preview {
+    width: auto !important; height: auto !important; min-width: unset !important;
+    background: transparent !important; box-shadow: none !important; border: none !important;
+}
+#viewerStage .book-container.is-single-preview .book-page {
+    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.22) !important;
+    border-radius: 8px !important;
+}
+#viewerStage .book-container.is-spread-preview {
+    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.22) !important;
+    border-radius: 8px !important;
+}
 </style>
-{% endblock %}
 
-{% block content %}
+<div class="community-wrapper">
 
-<div class="cm-wrap">
-
-    <!-- 공유 유도 배너 -->
-    <div class="cm-share-banner">
-        <div class="cm-share-banner-text">
-            <h3>나의 체험 앨범을 광장에 공유해보세요!</h3>
-            <p>추억 앨범 만들기에서 앨범을 공개하면 이곳에 표시돼요.</p>
-        </div>
-        <a href="{{ url_for('album_create') }}" class="cm-share-banner-btn">
-            <i data-lucide="book-open"></i> 앨범 만들러 가기
-        </a>
+    <!-- 상단 헤더 -->
+    <div class="community-header">
+        <span class="badge-highlight"><i class="fa-solid fa-seedling mr-1"></i> 함께 나누는 농촌 이야기</span>
+        <h2>🌾 앨범마당</h2>
+        <p>다른 여행자들이 직접 다녀와 만든 소중한 추억 앨범을 감상해 보세요.</p>
     </div>
 
-    <!-- 카테고리 탭 -->
-    <div class="cm-tabs" role="tablist">
-        <button type="button" class="cm-tab active" data-cat="all">전체</button>
-        <button type="button" class="cm-tab" data-cat="harvest">수확체험</button>
-        <button type="button" class="cm-tab" data-cat="tour">농촌투어</button>
-        <button type="button" class="cm-tab" data-cat="family">가족나들이</button>
-        <button type="button" class="cm-tab" data-cat="eco">친환경농장</button>
+    <!-- 카테고리 필터 탭 -->
+    <div class="category-tab-bar">
+        <button type="button" class="cat-tab-btn active" onclick="changeCategory('all', this)">
+            <i class="fa-solid fa-border-all"></i> 전체 보기
+        </button>
+        <button type="button" class="cat-tab-btn" onclick="changeCategory('harvest', this)">
+            🌾 수확 체험
+        </button>
+        <button type="button" class="cat-tab-btn" onclick="changeCategory('tour', this)">
+            🏞️ 농촌 관광 & 힐링
+        </button>
+        <button type="button" class="cat-tab-btn" onclick="changeCategory('family', this)">
+            👨‍👩‍👧‍👦 가족 나들이
+        </button>
+        <button type="button" class="cat-tab-btn" onclick="changeCategory('eco', this)">
+            🌿 친환경 & 생태
+        </button>
     </div>
 
-    <div class="cm-result-info" id="cm-result-info">공개된 앨범 <b>12</b>개</div>
+    <!-- 앨범 카드 그리드 -->
+    <div id="albumGrid" class="album-grid-container">
+        <!-- JS로 동적 렌더링 -->
+    </div>
 
-    <!-- 앨범 그리드 (더미 데이터 — 백엔드 연동 전 목업) -->
-    <div class="cm-grid" id="cm-grid">
+    <!-- 페이징 바 -->
+    <div id="paginationContainer" class="pagination-wrapper">
+        <!-- JS로 동적 렌더링 -->
+    </div>
 
-        <div class="cm-card" data-cat="harvest" onclick="alert('앨범 뷰어는 백엔드 연동 후 오픈됩니다.')">
-            <div class="cm-cover" style="background:linear-gradient(145deg,#2e7d32,#66bb6a);">
-                <span class="cm-cover-badge">수확체험</span>
-                <div class="cm-cover-icon"><i data-lucide="cherry"></i></div>
-                <div class="cm-cover-title">딸기 수확의 날</div>
-            </div>
-            <div class="cm-card-foot">
-                <div class="cm-card-user">김민지 님</div>
-                <div class="cm-card-date">2026-08-25</div>
-            </div>
-        </div>
-
-        <div class="cm-card" data-cat="family" onclick="alert('앨범 뷰어는 백엔드 연동 후 오픈됩니다.')">
-            <div class="cm-cover" style="background:linear-gradient(145deg,#e65100,#ff8f00);">
-                <span class="cm-cover-badge">가족나들이</span>
-                <div class="cm-cover-icon"><i data-lucide="users"></i></div>
-                <div class="cm-cover-title">우리 가족의<br>행복한 하루</div>
-            </div>
-            <div class="cm-card-foot">
-                <div class="cm-card-user">박서준 님</div>
-                <div class="cm-card-date">2026-08-24</div>
-            </div>
-        </div>
-
-        <div class="cm-card" data-cat="tour" onclick="alert('앨범 뷰어는 백엔드 연동 후 오픈됩니다.')">
-            <div class="cm-cover" style="background:linear-gradient(145deg,#1565c0,#42a5f5);">
-                <span class="cm-cover-badge">농촌투어</span>
-                <div class="cm-cover-icon"><i data-lucide="map-pin"></i></div>
-                <div class="cm-cover-title">충남 논산<br>가을 투어</div>
-            </div>
-            <div class="cm-card-foot">
-                <div class="cm-card-user">이수연 님</div>
-                <div class="cm-card-date">2026-08-22</div>
-            </div>
-        </div>
-
-        <div class="cm-card" data-cat="eco" onclick="alert('앨범 뷰어는 백엔드 연동 후 오픈됩니다.')">
-            <div class="cm-cover" style="background:linear-gradient(145deg,#4a148c,#ab47bc);">
-                <span class="cm-cover-badge">친환경농장</span>
-                <div class="cm-cover-icon"><i data-lucide="sprout"></i></div>
-                <div class="cm-cover-title">무농약 텃밭<br>한 달 기록</div>
-            </div>
-            <div class="cm-card-foot">
-                <div class="cm-card-user">최영호 님</div>
-                <div class="cm-card-date">2026-08-21</div>
-            </div>
-        </div>
-
-        <div class="cm-card" data-cat="harvest" onclick="alert('앨범 뷰어는 백엔드 연동 후 오픈됩니다.')">
-            <div class="cm-cover" style="background:linear-gradient(145deg,#bf360c,#ef9a9a);">
-                <span class="cm-cover-badge">수확체험</span>
-                <div class="cm-cover-icon"><i data-lucide="wheat"></i></div>
-                <div class="cm-cover-title">고구마 캐기<br>체험 일지</div>
-            </div>
-            <div class="cm-card-foot">
-                <div class="cm-card-user">정다은 님</div>
-                <div class="cm-card-date">2026-08-20</div>
-            </div>
-        </div>
-
-        <div class="cm-card" data-cat="family" onclick="alert('앨범 뷰어는 백엔드 연동 후 오픈됩니다.')">
-            <div class="cm-cover" style="background:linear-gradient(145deg,#00695c,#4db6ac);">
-                <span class="cm-cover-badge">가족나들이</span>
-                <div class="cm-cover-icon"><i data-lucide="sun"></i></div>
-                <div class="cm-cover-title">아이와 함께한<br>봄나들이</div>
-            </div>
-            <div class="cm-card-foot">
-                <div class="cm-card-user">강민준 님</div>
-                <div class="cm-card-date">2026-08-19</div>
-            </div>
-        </div>
-
-        <div class="cm-card" data-cat="tour" onclick="alert('앨범 뷰어는 백엔드 연동 후 오픈됩니다.')">
-            <div class="cm-cover" style="background:linear-gradient(145deg,#880e4f,#f48fb1);">
-                <span class="cm-cover-badge">농촌투어</span>
-                <div class="cm-cover-icon"><i data-lucide="camera"></i></div>
-                <div class="cm-cover-title">천안 사과밭<br>사진 투어</div>
-            </div>
-            <div class="cm-card-foot">
-                <div class="cm-card-user">오지현 님</div>
-                <div class="cm-card-date">2026-08-18</div>
-            </div>
-        </div>
-
-        <div class="cm-card" data-cat="eco" onclick="alert('앨범 뷰어는 백엔드 연동 후 오픈됩니다.')">
-            <div class="cm-cover" style="background:linear-gradient(145deg,#37474f,#90a4ae);">
-                <span class="cm-cover-badge">친환경농장</span>
-                <div class="cm-cover-icon"><i data-lucide="leaf"></i></div>
-                <div class="cm-cover-title">제로웨이스트<br>농장 이야기</div>
-            </div>
-            <div class="cm-card-foot">
-                <div class="cm-card-user">한소율 님</div>
-                <div class="cm-card-date">2026-08-16</div>
-            </div>
-        </div>
-
-    </div><!-- /.cm-grid -->
 </div>
-{% endblock %}
 
-{% block scripts %}
+<!-- ========================================== -->
+<!-- 🔍 앨범 뷰어 모달 (스마트 슬라이드) -->
+<!-- ========================================== -->
+<div id="albumViewerModal" class="viewer-modal-overlay" style="display:none;">
+    <div class="viewer-modal-box">
+        <div class="viewer-modal-head">
+            <div>
+                <h5 id="viewerTitle" class="font-weight-bold mb-1 text-dark">추억 앨범</h5>
+                <small class="text-muted"><i class="fa-solid fa-user mr-1"></i> <span id="viewerAuthor">작성자</span> | <span id="viewerDate">날짜</span></small>
+            </div>
+            <button type="button" class="close text-muted" style="font-size:1.6rem; cursor:pointer;" onclick="closeViewerModal()">&times;</button>
+        </div>
+
+        <div class="viewer-modal-body">
+            <div class="viewer-stage" id="viewerStage">
+                <!-- JS 렌더링 -->
+            </div>
+        </div>
+
+        <div class="viewer-modal-foot">
+            <button type="button" class="viewer-nav-btn" onclick="prevViewerSlide()">
+                <i class="fa-solid fa-chevron-left"></i>
+            </button>
+            <span id="viewerPageIndicator" class="font-weight-bold text-dark small px-3">앞표지</span>
+            <button type="button" class="viewer-nav-btn" onclick="nextViewerSlide()">
+                <i class="fa-solid fa-chevron-right"></i>
+            </button>
+        </div>
+    </div>
+</div>
+
 <script>
-(function () {
-    var tabs  = document.querySelectorAll('.cm-tab');
-    var cards = document.querySelectorAll('.cm-card');
-    var info  = document.getElementById('cm-result-info');
+    let currentCategory = 'all';
+    let currentPage = 1;
 
-    tabs.forEach(function (tab) {
-        tab.addEventListener('click', function () {
-            var cat = tab.dataset.cat;
-            tabs.forEach(function (t) { t.classList.remove('active'); });
-            tab.classList.add('active');
+    const CATEGORY_NAMES = {
+        'all': '전체',
+        'harvest': '수확 체험',
+        'tour': '농촌 관광 & 힐링',
+        'family': '가족 나들이',
+        'eco': '친환경 & 생태'
+    };
 
-            var count = 0;
-            cards.forEach(function (card) {
-                var show = (cat === 'all' || card.dataset.cat === cat);
-                card.style.display = show ? '' : 'none';
-                if (show) count++;
-            });
-            info.innerHTML = '공개된 앨범 <b>' + count + '</b>개';
-        });
+    document.addEventListener('DOMContentLoaded', () => {
+        loadCommunityAlbums(1);
     });
 
-    if (window.lucide) lucide.createIcons();
-})();
+    function changeCategory(cat, btn) {
+        currentCategory = cat;
+        document.querySelectorAll('.cat-tab-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        loadCommunityAlbums(1);
+    }
+
+    function loadCommunityAlbums(page = 1) {
+        currentPage = page;
+        const grid = document.getElementById('albumGrid');
+        grid.innerHTML = `
+            <div class="col-12 text-center py-5" style="grid-column:1/-1;">
+                <i class="fa-solid fa-spinner fa-spin fa-2x text-success mb-2"></i>
+                <p class="text-muted small">추억 앨범을 불러오는 중입니다...</p>
+            </div>
+        `;
+
+        fetch(`/api/community/albums?category=${currentCategory}&page=${page}&per_page=12`)
+            .then(res => res.json())
+            .then(data => {
+                if (!data.success || !data.albums || !data.albums.length) {
+                    grid.innerHTML = `
+                        <div class="col-12 text-center py-5" style="grid-column: 1 / -1;">
+                            <i class="fa-solid fa-box-open fa-3x text-muted mb-3"></i>
+                            <h6 class="font-weight-bold text-dark">공개된 추억 앨범이 없습니다</h6>
+                            <p class="small text-muted mb-3">첫 번째로 나만의 농촌 여행 앨범을 만들어 앨범마당에 공유해 보세요!</p>
+                            <a href="/album/create" class="btn btn-sm btn-success font-weight-bold px-3 py-2">
+                                <i class="fa-solid fa-plus mr-1"></i> 앨범 만들러 가기
+                            </a>
+                        </div>
+                    `;
+                    renderPagination(1, 1);
+                    return;
+                }
+
+                renderAlbumGrid(data.albums);
+                renderPagination(data.page, data.pages);
+            })
+            .catch(err => {
+                console.error("앨범마당 로드 에러:", err);
+                grid.innerHTML = `<div class="col-12 text-center py-5 text-danger" style="grid-column:1/-1;">데이터를 불러오는 중 오류가 발생했습니다.</div>`;
+            });
+    }
+
+    function renderAlbumGrid(albums) {
+        const grid = document.getElementById('albumGrid');
+        grid.innerHTML = '';
+
+        albums.forEach(album => {
+            const card = document.createElement('div');
+            card.className = 'community-album-card';
+            card.onclick = () => openViewerModal(album.id);
+
+            const catLabel = CATEGORY_NAMES[album.category] || '체험';
+
+            card.innerHTML = `
+                <div class="album-card-thumb">
+                    <div class="mini-cover-preview ${album.cover_theme || 'cover-green'}">
+                        <i class="fa-solid fa-camera-retro"></i>
+                        <span class="mini-title">${escapeHtml(album.title || '추억 앨범')}</span>
+                    </div>
+                </div>
+                <div class="album-card-info">
+                    <div class="title" title="${escapeHtml(album.title || '추억 앨범')}">${escapeHtml(album.title || '추억 앨범')}</div>
+                    <div class="meta-row">
+                        <span class="author"><i class="fa-solid fa-user-circle"></i> ${escapeHtml(album.user_nickname || '익명')}</span>
+                        <span class="category-tag">${catLabel}</span>
+                    </div>
+                </div>
+            `;
+            grid.appendChild(card);
+        });
+    }
+
+    function renderPagination(current, totalPages) {
+        const container = document.getElementById('paginationContainer');
+        container.innerHTML = '';
+        if (totalPages <= 1) return;
+
+        if (current > 1) {
+            container.innerHTML += `<button class="page-btn" onclick="loadCommunityAlbums(${current - 1})"><i class="fa-solid fa-chevron-left"></i></button>`;
+        }
+
+        for (let i = 1; i <= totalPages; i++) {
+            container.innerHTML += `<button class="page-btn ${i === current ? 'active' : ''}" onclick="loadCommunityAlbums(${i})">${i}</button>`;
+        }
+
+        if (current < totalPages) {
+            container.innerHTML += `<button class="page-btn" onclick="loadCommunityAlbums(${current + 1})"><i class="fa-solid fa-chevron-right"></i></button>`;
+        }
+    }
+
+    // ========================================================
+    // 🔍 앨범 뷰어 상세 조회 및 스마트 슬라이더
+    // ========================================================
+    let viewerAlbumData = null;
+    let viewerSlides = [];
+    let currentViewerSlideIdx = 0;
+
+    function openViewerModal(albumId) {
+        const modal = document.getElementById('albumViewerModal');
+        const stage = document.getElementById('viewerStage');
+
+        stage.innerHTML = `<i class="fa-solid fa-spinner fa-spin fa-2x text-white"></i>`;
+        modal.style.display = 'flex';
+
+        fetch(`/api/community/albums/${albumId}`)
+            .then(res => res.json())
+            .then(data => {
+                if (!data.success || !data.album) {
+                    alert("앨범을 불러올 수 없습니다.");
+                    closeViewerModal();
+                    return;
+                }
+
+                viewerAlbumData = data.album;
+                
+                // pages_data가 문자열일 경우 안전 파싱
+                if (typeof viewerAlbumData.pages_data === 'string') {
+                    try {
+                        viewerAlbumData.pages_data = JSON.parse(viewerAlbumData.pages_data);
+                    } catch(e) {
+                        viewerAlbumData.pages_data = [];
+                    }
+                }
+
+                document.getElementById('viewerTitle').textContent = viewerAlbumData.title || '추억 앨범';
+                document.getElementById('viewerAuthor').textContent = viewerAlbumData.user_nickname || '익명';
+                document.getElementById('viewerDate').textContent = viewerAlbumData.created_at ? viewerAlbumData.created_at.split('T')[0] : '';
+
+                buildViewerSlides();
+                currentViewerSlideIdx = 0;
+                renderViewerSlide();
+            })
+            .catch(err => {
+                console.error("뷰어 로드 에러:", err);
+                alert("앨범을 불러오는 중 오류가 발생했습니다.");
+                closeViewerModal();
+            });
+    }
+
+    function closeViewerModal() {
+        document.getElementById('albumViewerModal').style.display = 'none';
+        viewerAlbumData = null;
+    }
+
+    function buildViewerSlides() {
+        viewerSlides = [];
+        const innerPageCount = viewerAlbumData.inner_page_count || 2;
+        const pagesData = viewerAlbumData.pages_data || [];
+
+        // 1. 앞표지
+        viewerSlides.push({ type: 'cover_front', label: '앞표지' });
+
+        // 2. 속지 스마트 슬라이드 감지
+        const totalSpreads = Math.ceil(innerPageCount / 2);
+        for (let s = 1; s <= totalSpreads; s++) {
+            const lIdx = (s - 1) * 2 + 1;
+            const rIdx = lIdx + 1;
+
+            const lTpl = pagesData[lIdx]?.template || 'free';
+            const rTpl = pagesData[rIdx]?.template || 'free';
+
+            const isSpreadLayout = (lTpl === 'fullSpread' || lTpl === 'centerCross' || rTpl === 'fullSpread' || rTpl === 'centerCross');
+
+            if (isSpreadLayout) {
+                const layoutName = (lTpl === 'fullSpread' || rTpl === 'fullSpread') ? '양면 파노라마' : '중앙 연결 파노라마';
+                viewerSlides.push({
+                    type: 'spread',
+                    leftIdx: lIdx,
+                    rightIdx: rIdx,
+                    label: `${lIdx}p - ${rIdx}p (${layoutName})`
+                });
+            } else {
+                viewerSlides.push({
+                    type: 'single',
+                    pageIdx: lIdx,
+                    label: `${lIdx}p / ${innerPageCount}p`
+                });
+                if (rIdx <= innerPageCount) {
+                    viewerSlides.push({
+                        type: 'single',
+                        pageIdx: rIdx,
+                        label: `${rIdx}p / ${innerPageCount}p`
+                    });
+                }
+            }
+        }
+
+        // 3. 뒷표지
+        viewerSlides.push({ type: 'cover_back', label: '뒷표지' });
+    }
+
+    function renderViewerSlide() {
+        if (!viewerSlides.length) return;
+        const slide = viewerSlides[currentViewerSlideIdx];
+        const stage = document.getElementById('viewerStage');
+        const indicator = document.getElementById('viewerPageIndicator');
+
+        if (indicator) indicator.textContent = slide.label;
+        stage.innerHTML = '';
+
+        const shape = viewerAlbumData.shape_theme || 'shape-portrait';
+        const cover = viewerAlbumData.cover_theme || 'cover-green';
+        const paper = viewerAlbumData.paper_theme || 'paper-white';
+        const pagesData = viewerAlbumData.pages_data || [];
+
+        if (slide.type === 'cover_front') {
+            let scaleRatio = 0.65;
+            if (shape === 'shape-square') scaleRatio = 0.82;
+            if (shape === 'shape-landscape') scaleRatio = 0.85;
+
+            stage.style.transform = `translate(-50%, -50%) scale(${scaleRatio})`;
+
+            const book = document.createElement('div');
+            book.className = `book-container is-closed is-single-preview ${cover} ${shape}`;
+            book.innerHTML = `
+                <div class="book-page single-page book-cover-page d-flex flex-column align-items-center justify-content-center p-4">
+                    <div class="cover-emboss-border text-center p-4 w-100 h-100 d-flex flex-column align-items-center justify-content-center">
+                        <i class="fa-solid fa-camera-retro fa-4x mb-3 text-gold"></i>
+                        <h3 class="font-weight-bold text-gold mb-3">${escapeHtml(viewerAlbumData.title || '추억 앨범')}</h3>
+                        <p class="small text-gold mb-0">FarmLink Memory Photo Book</p>
+                    </div>
+                </div>
+            `;
+            stage.appendChild(book);
+        }
+        else if (slide.type === 'cover_back') {
+            let scaleRatio = 0.65;
+            if (shape === 'shape-square') scaleRatio = 0.82;
+            if (shape === 'shape-landscape') scaleRatio = 0.85;
+
+            stage.style.transform = `translate(-50%, -50%) scale(${scaleRatio})`;
+
+            const book = document.createElement('div');
+            book.className = `book-container is-closed is-single-preview ${cover} ${shape}`;
+            book.innerHTML = `
+                <div class="book-page single-page book-cover-page d-flex flex-column align-items-center justify-content-center p-4">
+                    <div class="text-center text-gold">
+                        <i class="fa-solid fa-heart fa-3x mb-3"></i>
+                        <h4 class="font-weight-bold">소중한 순간을 기억하며</h4>
+                        <p class="small opacity-75">FarmLink Travel Archive</p>
+                    </div>
+                </div>
+            `;
+            stage.appendChild(book);
+        }
+        else if (slide.type === 'single') {
+            let scaleRatio = 0.65;
+            if (shape === 'shape-square') scaleRatio = 0.82;
+            if (shape === 'shape-landscape') scaleRatio = 0.85;
+
+            stage.style.transform = `translate(-50%, -50%) scale(${scaleRatio})`;
+
+            const pIdx = slide.pageIdx;
+            const book = document.createElement('div');
+            book.className = `book-container is-single-preview ${shape}`;
+            book.innerHTML = `
+                <div class="book-page single-page ${paper}" id="viewerCanvas_${pIdx}">
+                    <span class="page-num-tag">${pIdx}p</span>
+                </div>
+            `;
+            stage.appendChild(book);
+
+            const canvas = book.querySelector(`#viewerCanvas_${pIdx}`);
+            if (canvas && pagesData[pIdx]) {
+                renderElementsToCanvas(canvas, pagesData[pIdx].elements);
+            }
+        }
+        else if (slide.type === 'spread') {
+            let scaleRatio = 0.55;
+            if (shape === 'shape-square') scaleRatio = 0.50;
+            if (shape === 'shape-landscape') scaleRatio = 0.45;
+
+            stage.style.transform = `translate(-50%, -50%) scale(${scaleRatio})`;
+
+            const lIdx = slide.leftIdx;
+            const rIdx = slide.rightIdx;
+
+            const book = document.createElement('div');
+            book.className = `book-container is-spread-preview ${cover} ${shape}`;
+            book.innerHTML = `
+                <div class="book-page left-page ${paper}" id="viewerCanvas_${lIdx}">
+                    <span class="page-num-tag">${lIdx}p</span>
+                </div>
+                <div class="book-spine"></div>
+                <div class="book-page right-page ${paper}" id="viewerCanvas_${rIdx}">
+                    <span class="page-num-tag">${rIdx}p</span>
+                </div>
+            `;
+            stage.appendChild(book);
+
+            const leftCanvas = book.querySelector(`#viewerCanvas_${lIdx}`);
+            const rightCanvas = book.querySelector(`#viewerCanvas_${rIdx}`);
+
+            if (leftCanvas && pagesData[lIdx]) {
+                renderElementsToCanvas(leftCanvas, pagesData[lIdx].elements);
+            }
+            if (rightCanvas && pagesData[rIdx]) {
+                renderElementsToCanvas(rightCanvas, pagesData[rIdx].elements);
+            }
+        }
+    }
+
+    function prevViewerSlide() {
+        if (currentViewerSlideIdx > 0) {
+            currentViewerSlideIdx--;
+            renderViewerSlide();
+        }
+    }
+
+    function nextViewerSlide() {
+        if (currentViewerSlideIdx < viewerSlides.length - 1) {
+            currentViewerSlideIdx++;
+            renderViewerSlide();
+        }
+    }
+
+    function renderElementsToCanvas(canvas, elements) {
+        if (!canvas || !elements || !Array.isArray(elements)) return;
+        elements.forEach(el => {
+            const elemDiv = document.createElement('div');
+            elemDiv.className = 'free-drag-element';
+            elemDiv.style.top = (el.top || 0) + 'px';
+            elemDiv.style.left = (el.left || 0) + 'px';
+            elemDiv.style.width = (el.width || 100) + 'px';
+            if (el.height) elemDiv.style.height = el.height + 'px';
+            if (el.rotation) elemDiv.style.transform = `rotate(${el.rotation}deg)`;
+
+            if (el.type === 'slot' && el.src) {
+                elemDiv.innerHTML = `<img src="${el.src}" style="width:100%;height:100%;object-fit:cover;border-radius:4px;">`;
+            } else if (el.type === 'image') {
+                elemDiv.innerHTML = `<img src="${el.src}" style="width:100%;height:100%;object-fit:cover;border-radius:4px;">`;
+            } else if (el.type === 'text') {
+                elemDiv.innerHTML = `<div class="editable-text-box" style="font-size:14px; padding:4px;">${escapeHtml(el.text)}</div>`;
+            }
+            canvas.appendChild(elemDiv);
+        });
+    }
+
+    function escapeHtml(text) {
+        if (!text) return '';
+        return String(text)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
 </script>
+
 {% endblock %}

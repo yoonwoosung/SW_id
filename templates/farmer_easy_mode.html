@@ -411,23 +411,39 @@
                     </div>
                 </div></section>
 
+                {# 💡 AI 후기 요약 리포트 (중복 제거 완료) #}
                 <section class="fl-card"><div class="fl-card-body">
                     <div class="fl-section-head"><h2>농장별 AI 후기 요약 리포트</h2></div>
                     {% for farm_id, feedback in feedback_report.items() %}
-                    <div class="st-report-exp mb-4 p-4 rounded-lg" style="background:#fcfdfc; border:1.5px solid #e2ece5; border-radius:16px;">
-                        <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom">
+                    <div class="st-report-exp mb-4 p-4 rounded-lg" id="report-container-{{ farm_id }}" style="background:#fcfdfc; border:1.5px solid #e2ece5; border-radius:16px;">
+                        <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom flex-wrap gap-2">
                             <div>
                                 <h3 class="st-report-exp-name mb-1" style="font-size:1.25rem; font-weight:800; color:#1d6340;">
                                     🌾 {{ feedback.farm_name }}
                                 </h3>
                                 <div class="text-muted small">
                                     {{ feedback.farm_address }} · 총 리뷰 {{ feedback.total_reviews }}개 (평균 ⭐ {{ feedback.avg_rating }})
+                                    <span class="ml-2 text-secondary font-weight-bold" id="report-time-{{ farm_id }}">
+                                        {% if feedback.ai_report_updated_at %}
+                                            (최근 분석: {{ feedback.ai_report_updated_at.strftime('%Y.%m.%d %H:%M') if feedback.ai_report_updated_at is not string else feedback.ai_report_updated_at }})
+                                        {% else %}
+                                            (분석 대기 중)
+                                        {% endif %}
+                                    </span>
                                 </div>
                             </div>
-                            <div>
+                            <div class="d-flex align-items-center">
                                 {% for crop in feedback.crops %}
                                 <span class="badge badge-success px-2 py-1 mr-1" style="font-size:12px; background:#e8f5e9; color:#1d6340; border:1px solid var(--fl-border);">{{ crop }}</span>
                                 {% endfor %}
+                                
+                                <!-- 💡 AI 리포트 갱신 버튼 -->
+                                <button type="button" class="btn btn-sm btn-outline-success font-weight-bold ml-2 shadow-sm"
+                                        id="btn-refresh-{{ farm_id }}"
+                                        onclick="refreshAiReport('{{ farm_id }}')"
+                                        style="border-radius:8px; font-size:0.8rem; white-space:nowrap;">
+                                    <i class="fa-solid fa-arrows-rotate mr-1"></i> AI 분석 갱신
+                                </button>
                             </div>
                         </div>
 
@@ -436,24 +452,23 @@
                                 <div class="st-report-card-icon">👍</div>
                                 <div class="st-report-card-content">
                                     <p class="st-report-card-head">농장 긍정 포인트 요약</p>
-                                    <p class="st-report-card-text">{{ feedback.strengths_summary or '데이터가 충분하지 않아요.' }}</p>
+                                    <p class="st-report-card-text" id="report-strengths-{{ farm_id }}">{{ feedback.strengths_summary or '분석된 데이터가 없습니다. 우측 상단의 [AI 분석 갱신]을 눌러보세요!' }}</p>
                                 </div>
                             </div>
                             <div class="st-report-card st-imp">
                                 <div class="st-report-card-icon">💡</div>
                                 <div class="st-report-card-content">
                                     <p class="st-report-card-head">농장 개선 피드백 요약</p>
-                                    <p class="st-report-card-text">{{ feedback.improvements_summary or '개선 피드백이 없어요. 잘 하고 있어요!' }}</p>
+                                    <p class="st-report-card-text" id="report-improvements-{{ farm_id }}">{{ feedback.improvements_summary or '개선 피드백이 없어요. 잘 하고 있어요!' }}</p>
                                 </div>
                             </div>
                         </div>
-                        {% if feedback.satisfaction_rate is not none %}
-                        <div class="st-satisfaction-card mt-3">
+                        
+                        <div class="st-satisfaction-card mt-3" id="report-sat-box-{{ farm_id }}" {% if feedback.satisfaction_rate is none %}style="display:none;"{% endif %}>
                             <span>농장 종합 만족도</span>
-                            <strong>{{ feedback.satisfaction_rate }}%</strong>
+                            <strong id="report-rate-{{ farm_id }}">{{ feedback.satisfaction_rate or 0 }}%</strong>
                             <span class="st-satisfaction-label">긍정적</span>
                         </div>
-                        {% endif %}
                     </div>
                     {% else %}
                     <div class="easy-no-item-small">
@@ -468,7 +483,7 @@
     </div>
 </div>
 
-{# 💡 [신규] 로그인 시 대기 예약 알림 팝업 모달 #}
+{# 💡 로그인 시 대기 예약 알림 팝업 모달 #}
 <div id="pending-alert-modal" class="ac-modal-overlay" style="display:none;">
     <div class="ac-modal-box" style="text-align:center; max-width:440px;">
         <p style="font-size:42px; margin-bottom:12px;">🔔</p>
@@ -706,6 +721,50 @@ document.addEventListener('DOMContentLoaded', function () {
         cur = new Date(); renderDay(cur);
     });
 });
+
+// 💡 [신규] AI 리포트 비동기 새로고침 함수
+function refreshAiReport(farmId) {
+    const btn = document.getElementById(`btn-refresh-${farmId}`);
+    const originalHTML = btn.innerHTML;
+
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> 분석 중...';
+
+    fetch(`/api/farms/${farmId}/refresh-report`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(res => res.json())
+    .then(data => {
+        btn.disabled = false;
+        btn.innerHTML = originalHTML;
+
+        if (data.success) {
+            const report = data.report;
+            // 1. 화면 텍스트 실시간 반영
+            document.getElementById(`report-strengths-${farmId}`).textContent = report.strengths_summary;
+            document.getElementById(`report-improvements-${farmId}`).textContent = report.improvements_summary;
+            document.getElementById(`report-rate-${farmId}`).textContent = `${report.satisfaction_rate}%`;
+            document.getElementById(`report-time-${farmId}`).textContent = `(최근 분석: ${report.updated_at})`;
+
+            // 2. 만족도 뱃지 노출
+            const satBox = document.getElementById(`report-sat-box-${farmId}`);
+            if (satBox) satBox.style.display = 'flex';
+
+            alert('방문객 후기를 종합 분석하여 AI 리포트가 갱신되었습니다! 🤖');
+        } else {
+            alert(data.message || '리포트 갱신에 실패했습니다.');
+        }
+    })
+    .catch(err => {
+        btn.disabled = false;
+        btn.innerHTML = originalHTML;
+        console.error("AI 리포트 갱신 에러:", err);
+        alert('서버와 통신 중 오류가 발생했습니다.');
+    });
+}
 </script>
 {% endblock %}
 {% endblock %}

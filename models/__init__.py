@@ -14,9 +14,10 @@ from models.wishlist import Wishlist           # [백 기능] 위시리스트
 from models.point_log import PointLog          # [백 기능] 포인트 시스템
 from models.farm import Farm                    # [공통] 농장 정보
 from models.payment import Payment              # 토스페이먼츠 결제 건
+from models.album import Album                  # 추억 앨범
 
 __all__ = [
     'db', 'User', 'Experience', 'Review', 'Inquiry', 'InquiryReply', 'Application',
     'Notification', 'UserRequest', 'Proposal', 'ClickLog', 'Wishlist', 'PointLog', 'Farm',
-    'Payment',
+    'Payment', 'Album',
 ]

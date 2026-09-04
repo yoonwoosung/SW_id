@@ -170,15 +170,22 @@ def farmer_easy_mode():
         avg_farm_rating = round(total_rating / len(all_farm_reviews), 1) if all_farm_reviews else 0
         farm_display_name = farm.name if farm.name else f"농장 ({farm.address.split(' ')[0]} {farm.address.split(' ')[1] if len(farm.address.split(' ')) > 1 else ''})"
 
+        cached_strengths = getattr(farm, 'ai_strengths_summary', None)
+        cached_improvements = getattr(farm, 'ai_improvements_summary', None)
+        cached_sat_rate = getattr(farm, 'ai_satisfaction_rate', None)
+        cached_updated_at = getattr(farm, 'ai_report_updated_at', None)
+
         feedback_report[farm.id] = {
             'farm_name': farm_display_name,
             'farm_address': farm.address,
             'crops': list(crops),
             'total_reviews': len(all_farm_reviews),
             'avg_rating': avg_farm_rating,
-            'strengths_summary': _build_summary(s_list, True),
-            'improvements_summary': _build_summary(i_list, False),
-            'satisfaction_rate': satisfaction_rate
+            # DB 캐시 우선 매핑 (새로고침 버튼 클릭 시 Gemini 결과가 여기에 들어옴)
+            'strengths_summary': cached_strengths or _build_summary(s_list, True),
+            'improvements_summary': cached_improvements or _build_summary(i_list, False),
+            'satisfaction_rate': cached_sat_rate if cached_sat_rate is not None else satisfaction_rate,
+            'ai_report_updated_at': cached_updated_at
         }
 
     return render_template('farmer_easy_mode.html', user=user, listings=listings,

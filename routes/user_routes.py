@@ -200,10 +200,6 @@ def album_create():
     return render_template('album_create.html', user=user, applications=applications)
 
 
-def community_page():
-    return render_template('community.html')
-
-
 def verify_password():
     if 'user_id' not in session:
         return jsonify({'ok': False})
@@ -308,7 +304,6 @@ def register(app):
     app.add_url_rule('/guide', 'guide_page', guide_page)
     app.add_url_rule('/farmer_guide', 'farmer_guide', farmer_guide)
     app.add_url_rule('/album/create', 'album_create', album_create, methods=['GET', 'POST'])
-    app.add_url_rule('/community', 'community_page', community_page)
     
     # FE 신규 기능 라우트 등록
     app.add_url_rule('/verify_password', 'verify_password', verify_password, methods=['POST'])

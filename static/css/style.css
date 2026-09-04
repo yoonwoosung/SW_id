@@ -2161,7 +2161,7 @@
 .detail-empty { font-size: 0.85rem; color: #bbb; text-align: center; padding: 20px 0; }
 
 /* Booking panel (right sticky) */
-.detail-booking-col { position: relative; align-self: start; }  /* sticky 자식이 늘어나지 않게 */
+.detail-booking-col { position: relative; }
 .detail-booking-panel {
     background: #fff;
     border-radius: var(--radius-card);

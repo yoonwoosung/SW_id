@@ -48,7 +48,7 @@
                         </tr>
                         <tr>
                             <th class="bg-light">친환경 여부</th>
-                            <td>{{ "예 (" + farm.organic_cert_type + ")" if farm.is_organic else "아니오" }}</td>
+                            <td>{% if farm.is_organic %}예{% if farm.organic_cert_type %} ({{ farm.organic_cert_type }}){% endif %}{% else %}아니오{% endif %}</td>
                         </tr>
                         <tr>
                             <th class="bg-light">신청 일시</th>

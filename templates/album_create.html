@@ -2,6 +2,27 @@
 {% block head %}
 <link href="https://fonts.googleapis.com/css2?family=Nanum+Gothic:wght@400;700;800&family=Nanum+Myeongjo:wght@400;700&family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
 <style>
+/* ─── 커스텀 글꼴 드롭다운 ─── */
+.font-picker { position: relative; user-select: none; }
+.font-picker-trigger {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 5px 10px; border: 1px solid #ced4da; border-radius: 4px;
+    background: #fff; cursor: pointer; font-size: .875rem; min-height: 31px;
+}
+.font-picker-trigger:hover { border-color: #adb5bd; }
+.font-picker-trigger .fp-chevron { font-size: .7rem; color: #888; margin-left: 6px; flex-shrink: 0; }
+.font-picker-dropdown {
+    display: none; position: absolute; top: calc(100% + 2px); left: 0; right: 0;
+    background: #fff; border: 1px solid #ced4da; border-radius: 4px;
+    box-shadow: 0 4px 12px rgba(0,0,0,.12); z-index: 9999; overflow: hidden;
+}
+.font-picker.open .font-picker-dropdown { display: block; }
+.font-picker-option {
+    padding: 8px 12px; cursor: pointer; font-size: .95rem; line-height: 1.3;
+    transition: background .1s;
+}
+.font-picker-option:hover { background: #f4fbf6; }
+.font-picker-option.selected { background: #ebf7f0; color: #2d6a4f; font-weight: 700; }
 /* ─── 로컬 웹폰트 ─── */
 @font-face {
     font-family: 'NanumBarunHippi';
@@ -556,14 +577,29 @@
                     <!-- 글꼴 -->
                     <div class="ae-form-group">
                         <label class="ae-label">글꼴</label>
-                        <select id="txt-font-family" class="form-control form-control-sm"
-                            onchange="applyTextProp('fontFamily', this.value)">
-                            <option value="NanumBarunHippi">✍️ 나눔손글씨 바른히피</option>
-                            <option value="Pretendard">Pretendard (기본고딕)</option>
-                            <option value="MaruBuri">마루 부리 (명조체)</option>
-                            <option value="BMJUA">배달의민족 주아 (동글)</option>
-                            <option value="CookieRun">쿠키런 (강조 굵은폰트)</option>
-                        </select>
+                        <div class="font-picker" id="fontPicker">
+                            <div class="font-picker-trigger" onclick="toggleFontPicker(event)">
+                                <span id="fontPickerLabel" style="font-family:'NanumBarunHippi',sans-serif;">나눔손글씨 바른히피</span>
+                                <i class="fa-solid fa-chevron-down fp-chevron"></i>
+                            </div>
+                            <div class="font-picker-dropdown" id="fontPickerDropdown">
+                                <div class="font-picker-option selected" data-value="NanumBarunHippi"
+                                    style="font-family:'NanumBarunHippi',sans-serif;"
+                                    onclick="selectFont('NanumBarunHippi','나눔손글씨 바른히피',this)">나눔손글씨 바른히피</div>
+                                <div class="font-picker-option" data-value="Pretendard"
+                                    style="font-family:'Pretendard',sans-serif;"
+                                    onclick="selectFont('Pretendard','Pretendard (기본고딕)',this)">Pretendard (기본고딕)</div>
+                                <div class="font-picker-option" data-value="MaruBuri"
+                                    style="font-family:'MaruBuri',sans-serif;"
+                                    onclick="selectFont('MaruBuri','마루 부리 (명조체)',this)">마루 부리 (명조체)</div>
+                                <div class="font-picker-option" data-value="BMJUA"
+                                    style="font-family:'BMJUA',sans-serif;"
+                                    onclick="selectFont('BMJUA','배달의민족 주아 (동글)',this)">배달의민족 주아 (동글)</div>
+                                <div class="font-picker-option" data-value="CookieRun"
+                                    style="font-family:'CookieRun',sans-serif;"
+                                    onclick="selectFont('CookieRun','쿠키런 (강조 굵은폰트)',this)">쿠키런 (강조 굵은폰트)</div>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- 크기 -->
@@ -2358,7 +2394,7 @@
         if (!data) return;
 
         // 컨트롤 값 채우기
-        setTxtCtrl('txt-font-family', data.fontFamily || 'NanumBarunHippi');
+        syncFontPicker(data.fontFamily || 'NanumBarunHippi');
         setTxtCtrl('txt-font-size', data.fontSize || 16);
         setTxtCtrl('txt-color', colorToHex(data.color || '#333333'));
         setTxtCtrl('txt-bg-color', colorToHex(data.backgroundColor && data.backgroundColor !== 'transparent' ? data.backgroundColor : '#ffffff'));
@@ -2375,6 +2411,47 @@
         if (def) def.style.display = 'block';
         if (fmt) fmt.style.display = 'none';
     }
+
+    // ── 커스텀 글꼴 드롭다운 ──
+    var FONT_LABELS = {
+        'NanumBarunHippi': '나눔손글씨 바른히피',
+        'Pretendard': 'Pretendard (기본고딕)',
+        'MaruBuri': '마루 부리 (명조체)',
+        'BMJUA': '배달의민족 주아 (동글)',
+        'CookieRun': '쿠키런 (강조 굵은폰트)'
+    };
+
+    function toggleFontPicker(e) {
+        e.stopPropagation();
+        document.getElementById('fontPicker').classList.toggle('open');
+    }
+
+    function selectFont(value, label, optionEl) {
+        document.querySelectorAll('.font-picker-option').forEach(function(o) { o.classList.remove('selected'); });
+        optionEl.classList.add('selected');
+        var lbl = document.getElementById('fontPickerLabel');
+        lbl.textContent = label;
+        lbl.style.fontFamily = "'" + value + "',sans-serif";
+        document.getElementById('fontPicker').classList.remove('open');
+        applyTextProp('fontFamily', value);
+    }
+
+    function syncFontPicker(value) {
+        var label = FONT_LABELS[value] || value;
+        var lbl = document.getElementById('fontPickerLabel');
+        if (lbl) {
+            lbl.textContent = label;
+            lbl.style.fontFamily = "'" + value + "',sans-serif";
+        }
+        document.querySelectorAll('.font-picker-option').forEach(function(o) {
+            o.classList.toggle('selected', o.dataset.value === value);
+        });
+    }
+
+    document.addEventListener('click', function(e) {
+        var picker = document.getElementById('fontPicker');
+        if (picker && !picker.contains(e.target)) picker.classList.remove('open');
+    });
 
     function setTxtCtrl(id, val) {
         var el = document.getElementById(id);

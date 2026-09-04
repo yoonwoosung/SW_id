@@ -135,11 +135,17 @@ FarmLink는 CSS 클래스 시스템이 두 개 병존한다.
 
 | 용도 | 값 |
 |------|-----|
-| 섹션 블록 패딩 | `44px 0` |
+| 섹션 블록 패딩 (`.section-block`) | `44px 0` (좌우 0) |
+| 흰 카드 섹션 패딩 (`.section-card`) | `24px` (전 방향) |
+| 슬라이더 카드 패딩 (`.slider-card`) | `24px` — `.section-block`이 좌우를 덮어쓰므로 명시 필요 |
 | 메인 콘텐츠 래퍼 패딩 | `0 24px 60px` |
-| 카드 내부 패딩 | `14px` |
+| 메인 슬라이더 래퍼 좌우 여백 (`.main-card-slider-wrapper`) | `margin: 0 28px` — 화살표 버튼 공간 확보 |
+| 카드 내부 패딩 (`.exp-card-body`) | `14px` |
 | 카드 그리드 gap | `16px` |
 | 섹션 헤더 하단 여백 | `20px` |
+| 상황 카드 그리드 gap (`.situation-grid`) | `12px` |
+
+> **주의**: `.section-block`과 `.section-card`를 같이 쓰면 `.section-block`의 `padding: 44px 0`이 나중에 선언돼 좌우 패딩을 0으로 덮어쓴다. 슬라이더 카드처럼 두 클래스를 병용할 경우 해당 컴포넌트 클래스에 `padding: 24px`을 명시한다.
 
 ---
 

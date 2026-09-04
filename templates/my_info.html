@@ -414,6 +414,14 @@
             </p>
           {% endif %}
         </div></section>
+
+        <section class="fl-card"><div class="fl-card-body">
+          <div class="fl-section-head">
+            <h2><i data-lucide="bookmark"></i> 저장된 코스</h2>
+            <a href="{{ url_for('ai_recommend_page') }}" class="fl-more">코스 추천 →</a>
+          </div>
+          <div id="mi-saved-courses"><p class="mi-empty">저장된 코스가 없어요.</p></div>
+        </div></section>
       </div>
 
       {# ── 추억 앨범 ── #}
@@ -501,6 +509,33 @@
     if (name === 'wish') loadWishlist();
     else if (name === 'recent') loadRecent();
     else if (name === 'point') loadPoints();
+    else if (name === 'ai') loadSavedCourses();
+  }
+
+  function loadSavedCourses() {
+    var el = document.getElementById('mi-saved-courses');
+    if (!el) return;
+    var list = JSON.parse(localStorage.getItem('fl-saved-courses') || '[]');
+    if (!list.length) { el.innerHTML = '<p class="mi-empty">저장된 코스가 없어요.<br><a href="{{ url_for(\'ai_recommend_page\') }}" style="color:var(--fl-green-700);font-weight:700;">코스 추천 받으러 가기 →</a></p>'; return; }
+    el.innerHTML = list.map(function (c, i) {
+      return '<div class="mi-list-item" style="justify-content:space-between;align-items:center;">'
+        + '<div style="display:flex;align-items:center;gap:10px;">'
+        + '<div class="mi-thumb" style="background:var(--fl-green-100);display:flex;align-items:center;justify-content:center;color:var(--fl-green-700);"><i data-lucide="route"></i></div>'
+        + '<div><div style="font-weight:700;">' + esc(c.title) + '</div>'
+        + (c.cost ? '<div style="color:var(--fl-orange);font-weight:800;font-size:.88rem;">' + won(c.cost) + '</div>' : '') + '</div></div>'
+        + '<button class="mi-saved-del" data-idx="' + i + '" style="background:none;border:none;color:var(--fl-text-muted);cursor:pointer;font-size:.8rem;padding:4px 8px;">삭제</button>'
+        + '</div>';
+    }).join('');
+    if (window.lucide) lucide.createIcons();
+    el.querySelectorAll('.mi-saved-del').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var idx = parseInt(this.dataset.idx);
+        var cur = JSON.parse(localStorage.getItem('fl-saved-courses') || '[]');
+        cur.splice(idx, 1);
+        localStorage.setItem('fl-saved-courses', JSON.stringify(cur));
+        loadSavedCourses();
+      });
+    });
   }
 
   function loadWishlist() {

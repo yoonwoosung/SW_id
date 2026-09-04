@@ -28,6 +28,40 @@
     var currentQuery = '';
     var cardStore = {};   // storeKey → { rec, course, section }
 
+    // ---- 저장된 코스 렌더 ----
+    function renderSavedCourses() {
+        var sec = $('saved-sec'), row = $('sec-saved'), clearBtn = $('saved-clear');
+        if (!sec || !row) return;
+        var list = JSON.parse(localStorage.getItem('fl-saved-courses') || '[]');
+        if (!list.length) { sec.hidden = true; return; }
+        sec.hidden = false;
+        row.innerHTML = list.map(function (c, i) {
+            return '<article class="fl-course-card" style="min-width:200px;max-width:220px;flex-shrink:0;">'
+                + '<div class="fl-course-card__band"><span class="fl-badge fl-badge--day">저장됨</span></div>'
+                + '<div class="fl-course-card__head">'
+                + '<h3 class="fl-course-card__title">' + esc(c.title) + '</h3>'
+                + (c.cost ? '<div class="fl-course-price"><span class="fl-cost">' + won(c.cost) + '</span><span class="fl-per">＊1인당 가격</span></div>' : '')
+                + '</div>'
+                + '<button type="button" class="fl-course-card__toggle saved-remove-btn" data-idx="' + i + '" style="color:var(--fl-text-muted);">'
+                + '저장 취소 <i class="fa-solid fa-xmark" aria-hidden="true"></i></button>'
+                + '</article>';
+        }).join('');
+        row.querySelectorAll('.saved-remove-btn').forEach(function (btn) {
+            btn.addEventListener('click', function (e) {
+                e.stopPropagation();
+                var cur = JSON.parse(localStorage.getItem('fl-saved-courses') || '[]');
+                cur.splice(parseInt(this.dataset.idx), 1);
+                localStorage.setItem('fl-saved-courses', JSON.stringify(cur));
+                renderSavedCourses();
+            });
+        });
+        if (clearBtn) clearBtn.onclick = function () {
+            localStorage.removeItem('fl-saved-courses');
+            renderSavedCourses();
+        };
+    }
+    renderSavedCourses();
+
     FarmFilter.mount(filterEl, { endpoint: filterEl.dataset.endpoint, onApply: function (sel) { lastSelected = sel; loadAll(); } });
 
     // ---- 상세조건 접힘 토글 ----
@@ -176,6 +210,18 @@
 
     var ciModal = document.getElementById('ci-modal');
 
+    function computeDuration(items) {
+        if (!items || items.length < 2) return null;
+        var parse = function (t) {
+            var p = (t || '').split(':');
+            return p.length === 2 ? parseInt(p[0]) * 60 + parseInt(p[1]) : null;
+        };
+        var first = parse(items[0].time), last = parse(items[items.length - 1].time);
+        if (first == null || last == null || last <= first) return null;
+        var mins = last - first, h = Math.floor(mins / 60), m = mins % 60;
+        return h + '시간' + (m > 0 ? ' ' + m + '분' : '');
+    }
+
     function openCourseModal(data) {
         var rec = data.rec, course = data.course, s = data.section;
         var sm = (course && course.summary) || {};
@@ -183,32 +229,85 @@
         var region = shortRegion(rec.address);
         var title = (region ? region + ' ' : '') + rec.crop + ' 힐링 코스';
 
+        // 배지 + 제목 + 이동수단 메타
         document.getElementById('ci-badges').innerHTML = badges(rec, s.esg);
         document.getElementById('ci-title').textContent = title;
-
         var mHtml = '';
         if (sm.transport) mHtml += '<span><i class="fa-solid fa-' + (sm.transport === '자가용' ? 'car' : 'bus') + '"></i> 추천 ' + esc(sm.transport) + '</span>';
         if (sm.barrier_free) mHtml += '<span style="color:#1565c0;font-weight:700;"><i class="fa-solid fa-wheelchair"></i> 무장애</span>';
         document.getElementById('ci-meta').innerHTML = mHtml;
 
-        document.getElementById('ci-reasons').innerHTML = (rec.reasons || []).map(function (r) {
-            return '<span class="fl-reason">' + esc(r) + '</span>';
-        }).join('');
+        // 추천 이유 한 줄
+        var reasonTextEl = document.getElementById('ci-reason-text');
+        var reasons = rec.reasons || [];
+        if (reasons.length) {
+            reasonTextEl.textContent = reasons.join(' · ');
+            reasonTextEl.hidden = false;
+        } else { reasonTextEl.hidden = true; }
 
+        // 예상 비용
         var costEl = document.getElementById('ci-cost');
         if (sm.estimated_cost) {
             costEl.innerHTML = '<div class="ci-modal__cost-num">' + Number(sm.estimated_cost).toLocaleString() + '원</div>'
                 + '<div class="ci-modal__cost-lbl">1인당 예상 비용 · 체험비 + 식사 + 교통 포함</div>';
             costEl.hidden = false;
-        } else {
-            costEl.hidden = true;
-        }
+        } else { costEl.hidden = true; }
 
+        // 코스 요약 칩
+        var summaryEl = document.getElementById('ci-summary');
+        var chips = [];
+        var dur = computeDuration(items);
+        if (dur) chips.push('<span class="ci-modal__summary-chip"><i class="fa-solid fa-clock"></i> 총 ' + dur + '</span>');
+        if (sm.transport) chips.push('<span class="ci-modal__summary-chip"><i class="fa-solid fa-' + (sm.transport === '자가용' ? 'car' : 'bus') + '"></i> ' + esc(sm.transport) + ' 추천</span>');
+        if (items.length) chips.push('<span class="ci-modal__summary-chip"><i class="fa-solid fa-map-pin"></i> ' + items.length + '개 장소</span>');
+        if (chips.length) { summaryEl.innerHTML = chips.join(''); summaryEl.hidden = false; }
+        else { summaryEl.hidden = true; }
+
+        // 추천 일정 타임라인
         document.getElementById('ci-timeline').innerHTML = buildModalTimeline(items);
 
+        // ESG + 편의 태그
+        var amenityEl = document.getElementById('ci-amenity');
+        var amenHtml = '';
+        if (rec.esg_grade) {
+            amenHtml += '<div class="ci-modal__esg-row"><i class="fa-solid fa-leaf"></i> ESG ' + esc(rec.esg_grade)
+                + (s.esg ? ' · 지역상생형' : '') + '</div>';
+        }
+        var tags = [];
+        if (sm.transport === '자가용') tags.push('주차 가능');
+        if (sm.barrier_free) tags.push('무장애');
+        if (rec.eco) tags.push('친환경 농장');
+        if (items.some(function (it) { return it.type === 'restaurant'; })) tags.push('식사 포함');
+        tags.push('당일치기');
+        amenHtml += '<div class="ci-modal__tags">' + tags.map(function (t) {
+            return '<span class="ci-modal__tag">' + esc(t) + '</span>';
+        }).join('') + '</div>';
+        amenityEl.innerHTML = amenHtml;
+        amenityEl.hidden = false;
+
+        // 푸터: 코스 저장 + 예약하러 가기
+        var savedList = JSON.parse(localStorage.getItem('fl-saved-courses') || '[]');
+        var alreadySaved = savedList.some(function (c) { return String(c.id) === String(rec.id); });
         document.getElementById('ci-footer').innerHTML =
-            '<a href="/experience/' + rec.id + '" class="fl-btn fl-btn-primary" style="width:100%;justify-content:center;">'
-            + '<i class="fa-solid fa-calendar-check" style="margin-right:6px;"></i>이 체험 예약하러 가기</a>';
+            '<div class="ci-modal__footer-btns">'
+            + '<button type="button" class="fl-btn fl-btn-outline ci-save-btn" style="flex:1;justify-content:center;" data-id="' + rec.id + '">'
+            + '<i class="fa-' + (alreadySaved ? 'solid' : 'regular') + ' fa-bookmark" style="margin-right:5px;"></i>'
+            + (alreadySaved ? '저장됨' : '코스 저장') + '</button>'
+            + '<a href="/experience/' + rec.id + '" class="fl-btn fl-btn-primary" style="flex:2;justify-content:center;">'
+            + '<i class="fa-solid fa-calendar-check" style="margin-right:6px;"></i>예약하러 가기</a>'
+            + '</div>';
+
+        document.getElementById('ci-footer').querySelector('.ci-save-btn').addEventListener('click', function () {
+            if (this.disabled) return;
+            var list = JSON.parse(localStorage.getItem('fl-saved-courses') || '[]');
+            if (!list.some(function (c) { return String(c.id) === String(rec.id); })) {
+                list.push({ id: rec.id, title: title, cost: sm.estimated_cost || null });
+                localStorage.setItem('fl-saved-courses', JSON.stringify(list));
+            }
+            this.innerHTML = '<i class="fa-solid fa-bookmark" style="margin-right:5px;"></i>저장됨';
+            this.disabled = true;
+            renderSavedCourses();
+        });
 
         ciModal.hidden = false;
         document.body.style.overflow = 'hidden';

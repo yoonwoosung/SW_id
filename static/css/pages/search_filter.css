@@ -34,13 +34,13 @@
 
 /* 세로 탭바 */
 .fl-tabbar--vertical {
-    flex: 0 0 104px; display: flex; flex-direction: column; gap: 2px;
+    flex: 0 0 122px; display: flex; flex-direction: column; gap: 2px;
     border-right: 1px solid var(--fl-border); padding-right: 8px;
 }
 .fl-tabbar--vertical .fl-tab {
     display: flex; align-items: center; justify-content: space-between; gap: 5px;
     width: 100%; text-align: left; border: none; background: none; color: #55605a;
-    border-radius: 8px; padding: 9px 10px; font-size: 0.9rem; font-weight: 700; cursor: pointer;
+    border-radius: 8px; padding: 10px 11px; font-size: 0.95rem; font-weight: 700; cursor: pointer;
     border-left: 3px solid transparent; transition: background 0.15s, color 0.15s;
 }
 .fl-tabbar--vertical .fl-tab:hover { background: #f4f7f3; }
@@ -54,19 +54,19 @@
 
 /* ---- 세부항목: 같은 크기 체크박스 그리드 ---- */
 /* 세부 영역은 높이를 제한해 내부에서만 스크롤(페이지가 길어지지 않게) */
-.fl-panel-body { flex: 1 1 auto; min-width: 0; max-height: 300px; overflow-y: auto; padding-right: 4px; }
+.fl-panel-body { flex: 1 1 auto; min-width: 0; max-height: 380px; overflow-y: auto; padding-right: 4px; }
 .fl-catpanel[hidden] { display: none; }
 .fl-grid {
-    display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr));
-    gap: 6px; margin: 4px 0;
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(116px, 1fr));
+    gap: 8px; margin: 4px 0;
 }
 .fl-cell {
-    display: flex; align-items: center; gap: 5px; cursor: pointer;
-    border: 1px solid var(--fl-border); border-radius: 8px; padding: 5px 8px;
-    font-size: 0.8rem; color: #37413a; font-weight: 500; line-height: 1.2;
+    display: flex; align-items: center; gap: 7px; cursor: pointer;
+    border: 1px solid var(--fl-border); border-radius: 8px; padding: 8px 11px;
+    font-size: 0.88rem; color: #37413a; font-weight: 500; line-height: 1.3;
     transition: background 0.15s, border-color 0.15s;
 }
-.fl-cell input { accent-color: var(--green-mid, var(--fl-green-700)); width: 14px; height: 14px; flex-shrink: 0; }
+.fl-cell input { accent-color: var(--green-mid, var(--fl-green-700)); width: 15px; height: 15px; flex-shrink: 0; }
 .fl-cell:has(input:checked) { background: var(--green-light, var(--fl-green-100)); border-color: var(--green-mid, var(--fl-green-700)); color: var(--green-dark, var(--fl-green-700)); font-weight: 700; }
 
 /* 탭 안의 중첩 묶음(지역>도, 반려견>몸무게, 인원>인원수 등) = 가로 아코디언 */

@@ -133,14 +133,15 @@
 .fl-badge--eco { background: rgba(255,255,255,0.92); color: var(--fl-text, #1a1a1a); }
 .fl-badge--day { background: rgba(255,255,255,0.85); color: var(--fl-text, #1a1a1a); }
 .fl-course-viewers { margin: 0 0 8px; font-size: 0.8rem; color: #8a5a1a; }
-.fl-course-price { margin-top: 12px; padding-top: 10px; border-top: 1px solid #f0f0f0; }
+.fl-course-price { margin-top: auto; padding-top: 10px; border-top: 1px solid #f0f0f0; }
 .fl-course-price .fl-cost { font-size: 1.15rem; font-weight: 800; color: var(--orange, #ea6a1e); }
 .fl-course-price .fl-per { font-size: 0.72rem; color: #a0a89e; margin-left: 6px; }
 .fl-course-card {
     background: #fff; border: 1px solid var(--fl-border); border-radius: var(--radius-card, 14px);
     box-shadow: var(--shadow-card, 0 2px 12px rgba(0,0,0,0.06)); overflow: hidden;
+    display: flex; flex-direction: column;
 }
-.fl-course-card__head { padding: 14px 16px; }
+.fl-course-card__head { padding: 14px 16px; flex: 1; display: flex; flex-direction: column; }
 .fl-course-card__title { font-size: 1.02rem; font-weight: 800; color: #253027; margin: 0 0 8px; }
 .fl-course-badge {
     display: inline-block; font-size: 0.72rem; font-weight: 700; color: var(--green-dark, var(--fl-green-700));

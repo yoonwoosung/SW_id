@@ -5,8 +5,12 @@
 배포 후 문제가 나면 대개 아래 셋 중 하나다. 순서대로 확인하고 고친다.
     1) SECRET_KEY 가 비어 로그인·flash 가 전부 500 난다
     2) .env 값이 틀려 DB에 못 붙는다
-    3) 테이블이 없다            → db.create_all()
-    4) 관리자 계정이 없다        → seed_admin.py
+    3) 테이블이 없다                → db.create_all()
+    4) 테이블은 있는데 컬럼이 없다     → ALTER TABLE ADD COLUMN (아래 sync_missing_columns)
+       db.create_all() 은 "없는 테이블"만 만들고 기존 테이블에 컬럼을 더하지 않는다.
+       팀원이 모델에 컬럼을 추가하면 배포 DB에는 반영되지 않아
+       Unknown column '...' in 'field list' 로 터진다.
+    5) 관리자 계정이 없다           → seed_admin.py
 
 실행:
     cd ~/SW_id
@@ -21,12 +25,73 @@
 """
 import sys
 
+from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 
 from app import app, db
 
 # 앱이 동작하는 데 반드시 있어야 하는 테이블.
 CORE_TABLES = ('user', 'experience', 'farm', 'application')
+
+
+def _column_ddl(column):
+    """모델 컬럼 하나를 ADD COLUMN DDL 조각으로 만든다.
+
+    기존 행이 이미 있으므로 NOT NULL 은 위험하다. 상수 기본값이 있을 때만
+    NOT NULL DEFAULT 로 붙이고, 그 외에는 NULL 허용으로 추가한다.
+    (모델 쪽 nullable=False 는 애플리케이션이 값을 채워주므로 실사용에 문제없다.)
+    """
+    type_sql = column.type.compile(db.engine.dialect)
+
+    default = None
+    if column.default is not None and not getattr(column.default, 'is_callable', False):
+        arg = getattr(column.default, 'arg', None)
+        if isinstance(arg, bool):
+            default = '1' if arg else '0'
+        elif isinstance(arg, (int, float)):
+            default = str(arg)
+        elif isinstance(arg, str):
+            default = "'%s'" % arg.replace("'", "''")
+
+    if not column.nullable and default is not None:
+        return "%s NOT NULL DEFAULT %s" % (type_sql, default), None
+    if not column.nullable:
+        # 기본값을 만들 수 없는 NOT NULL — 기존 행 때문에 그대로는 못 넣는다.
+        return "%s NULL" % type_sql, 'NOT NULL 이지만 기본값이 없어 NULL 허용으로 추가함'
+    if default is not None:
+        return "%s NULL DEFAULT %s" % (type_sql, default), None
+    return "%s NULL" % type_sql, None
+
+
+def sync_missing_columns():
+    """모델에는 있고 DB 테이블에는 없는 컬럼을 ADD COLUMN 한다. 삭제·변경은 절대 하지 않는다."""
+    inspector = db.inspect(db.engine)
+    existing_tables = set(inspector.get_table_names())
+    added, notes = [], []
+
+    for table_name, table in db.metadata.tables.items():
+        if table_name not in existing_tables:
+            continue                                  # 테이블 자체가 없으면 create_all 담당
+        db_columns = {c['name'] for c in inspector.get_columns(table_name)}
+
+        for column in table.columns:
+            if column.name in db_columns:
+                continue
+            ddl, note = _column_ddl(column)
+            quoted = db.engine.dialect.identifier_preparer.quote(column.name)
+            try:
+                with db.engine.begin() as conn:
+                    conn.execute(text("ALTER TABLE %s ADD COLUMN %s %s"
+                                      % (table_name, quoted, ddl)))
+            except SQLAlchemyError as exc:
+                notes.append("  !! %s.%s 추가 실패: %s"
+                             % (table_name, column.name, str(exc).splitlines()[0]))
+                continue
+            added.append("%s.%s" % (table_name, column.name))
+            if note:
+                notes.append("  -- %s.%s: %s" % (table_name, column.name, note))
+
+    return added, notes
 
 
 def line(label, ok, detail=''):
@@ -65,6 +130,20 @@ def diagnose():
         problems.append('tables')
         return problems
 
+    # 모델 대비 빠진 컬럼 점검 — 이게 있으면 조회할 때 Unknown column 으로 터진다.
+    missing = []
+    for table_name, table in db.metadata.tables.items():
+        if table_name not in tables:
+            continue
+        db_cols = {c['name'] for c in inspector.get_columns(table_name)}
+        missing += ["%s.%s" % (table_name, c.name) for c in table.columns if c.name not in db_cols]
+    line("모델 대비 컬럼", not missing,
+         "누락 %d개: %s" % (len(missing), ", ".join(missing[:4]) + ("…" if len(missing) > 4 else ""))
+         if missing else "누락 없음")
+    if missing:
+        problems.append('columns')
+        return problems          # 컬럼이 없으면 아래 모델 조회가 반드시 실패한다
+
     from models import User, Farm
     try:
         admin_count = User.query.filter_by(role='admin').count()
@@ -100,6 +179,16 @@ def main():
             print("\n── 테이블 생성 ──")
             db.create_all()
             print("  db.create_all() 완료")
+
+        print("\n── 컬럼 동기화 ──")
+        added, notes = sync_missing_columns()
+        if added:
+            for name in added:
+                print("  추가  %s" % name)
+        else:
+            print("  추가할 컬럼 없음")
+        for note in notes:
+            print(note)
 
         if do_seed:
             print("\n── 관리자 계정 ──")

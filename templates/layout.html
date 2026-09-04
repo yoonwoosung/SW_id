@@ -42,7 +42,7 @@
         <nav class="site-nav">
             <a href="{{ url_for('index') }}" {% if request.endpoint == 'index' %}class="active"{% endif %}>체험 찾기</a>
             <a href="{{ url_for('ai_recommend_page') }}">오늘의 추천 코스</a>
-            <a href="{{ url_for('mypage') }}" {% if request.endpoint == 'mypage' %}class="active"{% endif %}>내 활동</a>
+            <a href="{{ url_for('my_info') }}?panel=res" {% if request.endpoint == 'my_info' %}class="active"{% endif %}>내 활동</a>
             <a href="{{ url_for('album_create') }}" {% if request.endpoint == 'album_create' %}class="active"{% endif %}>추억 앨범</a>
             <a href="{{ url_for('community_page') }}" {% if request.endpoint == 'community_page' %}class="active"{% endif %}>추억 공유</a>
         </nav>

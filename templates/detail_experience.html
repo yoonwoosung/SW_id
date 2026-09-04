@@ -126,79 +126,6 @@
             </div>
         </div>
 
-        <!-- 11. 방문자 후기 (분포 · AI 요약 · 더보기) -->
-        <div class="detail-section-card">
-            <h3 class="detail-section-title"><i data-lucide="star"></i> 방문자 후기</h3>
-
-            {% if review_count %}
-            <div class="ed-review-summary">
-                <div class="ed-review-avg">
-                    <div class="ed-review-avg__num">{{ '%.1f'|format(rating_avg) }}</div>
-                    <div class="ed-review-avg__stars">★★★★★</div>
-                    <div class="ed-review-avg__count">후기 {{ review_count }}개</div>
-                </div>
-                <div class="ed-review-dist" id="ed-review-dist"></div>
-            </div>
-            {% endif %}
-            <div id="ed-ai-summary" class="ed-ai-summary" hidden></div>
-
-            {% if session.get('user_id') %}
-            <form action="{{ url_for('add_review', item_id=item.id) }}" method="POST" class="detail-review-form">
-                <div class="detail-review-rating">
-                    <label>별점</label>
-                    <select name="rating" class="apply-input" style="max-width:120px;">
-                        <option>5</option><option>4</option><option>3</option><option>2</option><option>1</option>
-                    </select>
-                </div>
-                <textarea name="content" class="detail-review-textarea" rows="3" placeholder="체험 후기를 남겨주세요." required></textarea>
-                <button type="submit" class="detail-review-submit">후기 등록</button>
-            </form>
-            {% else %}
-            <p class="detail-login-notice">후기를 남기시려면 <a href="{{ url_for('login_page') }}">로그인</a>이 필요합니다.</p>
-            {% endif %}
-
-            <div class="review-list" id="ed-review-list">
-                {% for review in reviews %}
-                <div class="review-item">
-                    <div class="review-item-header">
-                        <strong>{{ review.user.nickname }}</strong>
-                        <span class="review-rating">{% for i in range(review.rating) %}★{% endfor %}</span>
-                        <small class="text-muted">{{ review.timestamp.strftime('%Y.%m.%d') }}</small>
-                    </div>
-                    <p class="review-item-content">{{ review.content }}</p>
-                </div>
-                {% else %}
-                <p class="detail-empty">아직 작성된 후기가 없어요. 첫 후기를 남겨보세요!</p>
-                {% endfor %}
-            </div>
-            <button type="button" id="ed-review-more" class="ed-review-more" hidden></button>
-        </div>
-
-        <!-- 문의하기 -->
-        <div class="detail-section-card">
-            <h3 class="detail-section-title"><i data-lucide="message-circle"></i> 농장주에게 문의하기</h3>
-            {% if session.get('user_id') %}
-            <form action="{{ url_for('add_inquiry', item_id=item.id) }}" method="POST" class="detail-review-form">
-                <textarea name="content" class="detail-review-textarea" rows="3" placeholder="농장주에게 궁금한 점을 질문해보세요." required></textarea>
-                <button type="submit" class="detail-review-submit">문의 등록</button>
-            </form>
-            {% else %}
-            <p class="detail-login-notice">문의하시려면 <a href="{{ url_for('login_page') }}">로그인</a>이 필요합니다.</p>
-            {% endif %}
-            <div class="review-list">
-                {% for inquiry in inquiries %}
-                <div class="review-item">
-                    <div class="review-item-header">
-                        <strong>{{ inquiry.user.nickname }}</strong>
-                        <small class="text-muted">{{ inquiry.timestamp.strftime('%Y.%m.%d') }}</small>
-                    </div>
-                    <p class="review-item-content">{{ inquiry.content }}</p>
-                </div>
-                {% else %}
-                <p class="detail-empty">아직 문의가 없습니다.</p>
-                {% endfor %}
-            </div>
-        </div>
     </div>
 
     <!-- 오른쪽: 예약 패널 (sticky) -->
@@ -238,11 +165,11 @@
 </div>
 </div>
 
-<!-- 하단 확장 섹션 (AI·ESG·시설·비슷한 체험·안내) -->
+<!-- 하단 확장 섹션 -->
 <div class="detail-extra-bg">
     <div class="detail-extra-inner">
 
-        <!-- 8/9 확장: AI 추천 코스 -->
+        <!-- AI 추천 코스 -->
         <section id="ai-course-section" class="section-card">
             <div class="section-header">
                 <h2 class="section-title"><span class="ai-badge-label">AI</span> 이 체험과 함께 즐기는 추천 코스</h2>
@@ -270,12 +197,6 @@
             <div id="facilities-content" style="padding:8px 4px;color:#888;">불러오는 중…</div>
         </section>
 
-        <!-- 12. 비슷한 체험 (다음 행동 유도) -->
-        <section class="section-card">
-            <div class="section-header"><h2 class="section-title"><i data-lucide="wheat"></i> 비슷한 체험</h2></div>
-            <div class="ed-similar-scroll" id="ed-similar"><small class="text-muted">불러오는 중…</small></div>
-        </section>
-
         <!-- 알아두어야 할 사항 (환불·이용규칙·안전) -->
         <section class="section-card">
             <div class="section-header"><h2 class="section-title"><i data-lucide="pin"></i> 알아두어야 할 사항</h2></div>
@@ -295,11 +216,88 @@
             </div>
         </section>
 
-        <!-- 주변 맛집·카페·편의점 (개별 장소, 코스 아님) -->
+        <!-- 주변 맛집·카페·편의점 -->
         <section class="section-card">
             <div class="section-header"><h2 class="section-title"><i data-lucide="store"></i> 주변 맛집·카페·편의점</h2></div>
             <p class="ed-amenities__lead">체험 농장 반경 안의 편의시설을 가까운 순으로 하나씩 모았어요.</p>
             <div id="ed-amenities" class="ed-amenities"><small class="text-muted">주변 편의시설을 불러오는 중…</small></div>
+        </section>
+
+        <!-- 비슷한 체험 -->
+        <section class="section-card">
+            <div class="section-header"><h2 class="section-title"><i data-lucide="wheat"></i> 비슷한 체험</h2></div>
+            <div class="ed-similar-scroll" id="ed-similar"><small class="text-muted">불러오는 중…</small></div>
+        </section>
+
+        <!-- 방문자 후기 -->
+        <section class="section-card">
+            <h2 class="section-title" style="margin-bottom:16px;"><i data-lucide="star"></i> 방문자 후기</h2>
+            {% if review_count %}
+            <div class="ed-review-summary">
+                <div class="ed-review-avg">
+                    <div class="ed-review-avg__num">{{ '%.1f'|format(rating_avg) }}</div>
+                    <div class="ed-review-avg__stars">★★★★★</div>
+                    <div class="ed-review-avg__count">후기 {{ review_count }}개</div>
+                </div>
+                <div class="ed-review-dist" id="ed-review-dist"></div>
+            </div>
+            {% endif %}
+            <div id="ed-ai-summary" class="ed-ai-summary" hidden></div>
+            {% if session.get('user_id') %}
+            <form action="{{ url_for('add_review', item_id=item.id) }}" method="POST" class="detail-review-form">
+                <div class="detail-review-rating">
+                    <label>별점</label>
+                    <select name="rating" class="apply-input" style="max-width:120px;">
+                        <option>5</option><option>4</option><option>3</option><option>2</option><option>1</option>
+                    </select>
+                </div>
+                <textarea name="content" class="detail-review-textarea" rows="3" placeholder="체험 후기를 남겨주세요." required></textarea>
+                <button type="submit" class="detail-review-submit">후기 등록</button>
+            </form>
+            {% else %}
+            <p class="detail-login-notice">후기를 남기시려면 <a href="{{ url_for('login_page') }}">로그인</a>이 필요합니다.</p>
+            {% endif %}
+            <div class="review-list" id="ed-review-list">
+                {% for review in reviews %}
+                <div class="review-item">
+                    <div class="review-item-header">
+                        <strong>{{ review.user.nickname }}</strong>
+                        <span class="review-rating">{% for i in range(review.rating) %}★{% endfor %}</span>
+                        <small class="text-muted">{{ review.timestamp.strftime('%Y.%m.%d') }}</small>
+                    </div>
+                    <p class="review-item-content">{{ review.content }}</p>
+                </div>
+                {% else %}
+                <p class="detail-empty">아직 작성된 후기가 없어요. 첫 후기를 남겨보세요!</p>
+                {% endfor %}
+            </div>
+            <button type="button" id="ed-review-more" class="ed-review-more" hidden></button>
+        </section>
+
+        <!-- 농장주에게 문의하기 -->
+        <section class="section-card">
+            <h2 class="section-title" style="margin-bottom:16px;"><i data-lucide="message-circle"></i> 농장주에게 문의하기</h2>
+            {% if session.get('user_id') %}
+            <form action="{{ url_for('add_inquiry', item_id=item.id) }}" method="POST" class="detail-review-form">
+                <textarea name="content" class="detail-review-textarea" rows="3" placeholder="농장주에게 궁금한 점을 질문해보세요." required></textarea>
+                <button type="submit" class="detail-review-submit">문의 등록</button>
+            </form>
+            {% else %}
+            <p class="detail-login-notice">문의하시려면 <a href="{{ url_for('login_page') }}">로그인</a>이 필요합니다.</p>
+            {% endif %}
+            <div class="review-list">
+                {% for inquiry in inquiries %}
+                <div class="review-item">
+                    <div class="review-item-header">
+                        <strong>{{ inquiry.user.nickname }}</strong>
+                        <small class="text-muted">{{ inquiry.timestamp.strftime('%Y.%m.%d') }}</small>
+                    </div>
+                    <p class="review-item-content">{{ inquiry.content }}</p>
+                </div>
+                {% else %}
+                <p class="detail-empty">아직 문의가 없습니다.</p>
+                {% endfor %}
+            </div>
         </section>
 
     </div>

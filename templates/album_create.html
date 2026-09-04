@@ -2,6 +2,35 @@
 {% block head %}
 <link href="https://fonts.googleapis.com/css2?family=Nanum+Gothic:wght@400;700;800&family=Nanum+Myeongjo:wght@400;700&family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
 <style>
+/* ─── 로컬 웹폰트 ─── */
+@font-face {
+    font-family: 'NanumBarunHippi';
+    src: url("{{ url_for('static', filename='fonts/나눔손글씨 바른히피.ttf') }}") format('truetype');
+}
+@font-face {
+    font-family: 'MaruBuri';
+    src: url("{{ url_for('static', filename='fonts/MaruBuri-Regular.ttf') }}") format('truetype');
+    font-weight: normal;
+}
+@font-face {
+    font-family: 'MaruBuri';
+    src: url("{{ url_for('static', filename='fonts/MaruBuri-Bold.ttf') }}") format('truetype');
+    font-weight: bold;
+}
+@font-face {
+    font-family: 'BMJUA';
+    src: url("{{ url_for('static', filename='fonts/BMJUA_ttf.ttf') }}") format('truetype');
+}
+@font-face {
+    font-family: 'CookieRun';
+    src: url("{{ url_for('static', filename='fonts/CookieRun Regular.ttf') }}") format('truetype');
+    font-weight: normal;
+}
+@font-face {
+    font-family: 'CookieRun';
+    src: url("{{ url_for('static', filename='fonts/CookieRun Bold.ttf') }}") format('truetype');
+    font-weight: bold;
+}
 /* ─── 텍스트 패널 ─── */
 .ae-text-add-btn {
     width:100%; padding:10px; border:1.5px dashed #b0d4b8; background:#f7fbf8;
@@ -529,13 +558,11 @@
                         <label class="ae-label">글꼴</label>
                         <select id="txt-font-family" class="form-control form-control-sm"
                             onchange="applyTextProp('fontFamily', this.value)">
-                            <option value="Nanum Gothic">나눔고딕</option>
-                            <option value="Nanum Myeongjo">나눔명조</option>
-                            <option value="Noto Sans KR">Noto Sans KR</option>
-                            <option value="'Malgun Gothic','Apple SD Gothic Neo',sans-serif">맑은고딕</option>
-                            <option value="Georgia,serif">Georgia</option>
-                            <option value="Arial,sans-serif">Arial</option>
-                            <option value="'Times New Roman',serif">Times New Roman</option>
+                            <option value="NanumBarunHippi">✍️ 나눔손글씨 바른히피</option>
+                            <option value="Pretendard">Pretendard (기본고딕)</option>
+                            <option value="MaruBuri">마루 부리 (명조체)</option>
+                            <option value="BMJUA">배달의민족 주아 (동글)</option>
+                            <option value="CookieRun">쿠키런 (강조 굵은폰트)</option>
                         </select>
                     </div>
 
@@ -1912,7 +1939,7 @@
             left: 50,
             width: 220,
             rotation: 0,
-            fontFamily: 'Nanum Gothic',
+            fontFamily: 'NanumBarunHippi',
             fontSize: 16,
             fontWeight: 'normal',
             fontStyle: 'normal',
@@ -2306,7 +2333,7 @@
     var selectedTextPageIdx = null;
 
     function buildTextInlineStyle(data) {
-        return 'font-family:' + (data.fontFamily || 'Nanum Gothic') + ';'
+        return 'font-family:' + (data.fontFamily || 'NanumBarunHippi') + ';'
             + 'font-size:' + (data.fontSize || 16) + 'px;'
             + 'font-weight:' + (data.fontWeight || 'normal') + ';'
             + 'font-style:' + (data.fontStyle || 'normal') + ';'
@@ -2331,7 +2358,7 @@
         if (!data) return;
 
         // 컨트롤 값 채우기
-        setTxtCtrl('txt-font-family', data.fontFamily || 'Nanum Gothic');
+        setTxtCtrl('txt-font-family', data.fontFamily || 'NanumBarunHippi');
         setTxtCtrl('txt-font-size', data.fontSize || 16);
         setTxtCtrl('txt-color', colorToHex(data.color || '#333333'));
         setTxtCtrl('txt-bg-color', colorToHex(data.backgroundColor && data.backgroundColor !== 'transparent' ? data.backgroundColor : '#ffffff'));

@@ -168,7 +168,32 @@
 
 /* ============ 재구성: 검색바 · 단축버튼 · 접힘 상세조건 · 코스 섹션 ============ */
 
-/* ---- 검색바(최상단) ---- */
+/* ---- 인적사항 단축 버튼 2개 (최상단) ---- */
+.fl-quickbtns { display: flex; gap: 10px; margin-top: 20px; margin-bottom: 4px; }
+
+/* ---- 검색+필터 통합 블록 ---- */
+.fl-search-block {
+    background: #fff;
+    border: 1.5px solid #c8e0c8;
+    border-radius: 14px;
+    box-shadow: 0 2px 10px rgba(0,0,0,.06);
+    margin-top: 16px;
+    overflow: hidden;
+}
+.fl-search-block .fl-searchbar {
+    margin-top: 0;
+    border: none;
+    border-bottom: 1px solid #eef1ee;
+    border-radius: 0;
+    box-shadow: none;
+}
+.fl-search-block .fl-panel {
+    box-shadow: none;
+    border-radius: 0;
+    padding: 0;
+}
+
+/* ---- 검색바 ---- */
 .fl-searchbar {
     display: flex; align-items: center; gap: 10px; margin-top: 14px;
     background: #fff; border: 1px solid #e2ddd2; border-radius: 12px; padding: 12px 16px;
@@ -180,16 +205,18 @@
     font-size: 0.95rem; color: #2c3a32;
 }
 .fl-searchbar input::placeholder { color: #aab1ab; }
-
-/* ---- 인적사항 단축 버튼 2개 ---- */
-.fl-quickbtns { display: flex; gap: 10px; margin-top: 10px; }
 .fl-quickbtn {
     flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 7px;
-    background: var(--fl-green-100); border: 1px solid rgba(76,175,80,.25); color: var(--fl-green-700);
-    border-radius: 10px; padding: 12px 10px; font-size: 0.9rem; font-weight: 700; cursor: pointer;
-    transition: background 0.15s, border-color 0.15s;
+    background: #fff; border: 1.5px solid #c8e0c8; color: var(--fl-green-700);
+    border-radius: 12px; padding: 14px 10px; font-size: 0.9rem; font-weight: 700; cursor: pointer;
+    box-shadow: 0 1px 6px rgba(0,0,0,.05);
+    transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
 }
-.fl-quickbtn:hover { filter: brightness(0.95); border-color: var(--green-mid, var(--fl-green-700)); }
+.fl-quickbtn:hover {
+    background: var(--fl-green-100);
+    border-color: var(--fl-green-700);
+    box-shadow: 0 2px 10px rgba(0,0,0,.09);
+}
 
 /* ---- 접힘형 상세조건 ---- */
 .fl-collapse { padding: 0; overflow: hidden; }

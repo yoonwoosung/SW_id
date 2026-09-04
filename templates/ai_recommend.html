@@ -52,26 +52,26 @@
         <p id="rec-note">회원님 정보를 바탕으로 추천 코스를 준비했어요.</p>
     </div>
 
-    <!-- 1. 검색바 -->
-    <form class="fl-searchbar" id="course-search" role="search" onsubmit="return false;">
-        <i data-lucide="search" aria-hidden="true"></i>
-        <input type="search" id="course-q" placeholder="지역·체험·농장 이름으로 검색" autocomplete="off">
-    </form>
-
-    <!-- 2. 인적사항 단축 버튼 2개 -->
+    <!-- 1. 인적사항 단축 버튼 2개 (최상단) -->
     <div class="fl-quickbtns" id="quick-segments"></div>
 
-    <!-- 3. 여행 조건 설정하기 (기본 접힘) -->
-    <section class="fl-panel fl-collapse">
-        <button type="button" class="fl-collapse__toggle" aria-expanded="false" aria-controls="cond-body">
-            여행 조건 설정하기
-            <i data-lucide="chevron-down" aria-hidden="true"></i>
-        </button>
-        <div class="fl-collapse__body" id="cond-body" hidden>
-            <div id="cond-filter" data-endpoint="{{ url_for('search_categories') }}"></div>
-            <div class="fl-trend" id="trend"></div>
-        </div>
-    </section>
+    <!-- 2. 검색바 + 여행 조건 설정하기 (한 블록으로 묶음) -->
+    <div class="fl-search-block">
+        <form class="fl-searchbar" id="course-search" role="search" onsubmit="return false;">
+            <i data-lucide="search" aria-hidden="true"></i>
+            <input type="search" id="course-q" placeholder="지역·체험·농장 이름으로 검색" autocomplete="off">
+        </form>
+        <section class="fl-panel fl-collapse">
+            <button type="button" class="fl-collapse__toggle" aria-expanded="false" aria-controls="cond-body">
+                여행 조건 설정하기
+                <i data-lucide="chevron-down" aria-hidden="true"></i>
+            </button>
+            <div class="fl-collapse__body" id="cond-body" hidden>
+                <div id="cond-filter" data-endpoint="{{ url_for('search_categories') }}"></div>
+                <div class="fl-trend" id="trend"></div>
+            </div>
+        </section>
+    </div>
 
     <!-- 방금 예약한 체험 코스 (결제 후 연동 진입 시에만 표시) -->
     <section class="fl-sec" id="booked-sec" hidden>

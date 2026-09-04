@@ -61,8 +61,8 @@
     if (quickEl) quickEl.addEventListener('click', function (e) {
         var btn = e.target.closest('.fl-quickbtn');
         if (!btn) return;
-        var seg = btn.dataset.segment || 'peers';
-        var target = SECTIONS.filter(function (s) { return (s.segment || '') === seg; })[0];
+        var seg = btn.dataset.segment;
+        var target = SECTIONS.filter(function (s) { return (s.segment || '') === (seg || ''); })[0];
         if (!target) return;
         if (target.rowId === 'sec-peers') {
             var pt = $('peers-title');

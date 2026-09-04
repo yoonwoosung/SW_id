@@ -16,16 +16,6 @@
     margin-bottom: 2.5rem;
 }
 
-.community-header .badge-highlight {
-    background: #e8f5e9;
-    color: #2d6a4f;
-    font-size: 0.85rem;
-    font-weight: 700;
-    padding: 6px 14px;
-    border-radius: 20px;
-    display: inline-block;
-    margin-bottom: 0.75rem;
-}
 
 .community-header h2 {
     font-size: 2.1rem;
@@ -352,27 +342,26 @@
 
     <!-- 상단 헤더 -->
     <div class="community-header">
-        <span class="badge-highlight"><i class="fa-solid fa-seedling mr-1"></i> 함께 나누는 농촌 이야기</span>
-        <h2>🌾 앨범마당</h2>
+        <h2>추억 공유</h2>
         <p>다른 여행자들이 직접 다녀와 만든 소중한 추억 앨범을 감상해 보세요.</p>
     </div>
 
     <!-- 카테고리 필터 탭 -->
     <div class="category-tab-bar">
         <button type="button" class="cat-tab-btn active" onclick="changeCategory('all', this)">
-            <i class="fa-solid fa-border-all"></i> 전체 보기
+            전체 보기
         </button>
         <button type="button" class="cat-tab-btn" onclick="changeCategory('harvest', this)">
-            🌾 수확 체험
+            수확 체험
         </button>
         <button type="button" class="cat-tab-btn" onclick="changeCategory('tour', this)">
-            🏞️ 농촌 관광 & 힐링
+            농촌 관광 &amp; 힐링
         </button>
         <button type="button" class="cat-tab-btn" onclick="changeCategory('family', this)">
-            👨‍👩‍👧‍👦 가족 나들이
+            가족 나들이
         </button>
         <button type="button" class="cat-tab-btn" onclick="changeCategory('eco', this)">
-            🌿 친환경 & 생태
+            친환경 &amp; 생태
         </button>
     </div>
 
@@ -431,6 +420,7 @@
         'eco': '친환경 & 생태'
     };
 
+
     document.addEventListener('DOMContentLoaded', () => {
         loadCommunityAlbums(1);
     });
@@ -460,7 +450,7 @@
                         <div class="col-12 text-center py-5" style="grid-column: 1 / -1;">
                             <i class="fa-solid fa-box-open fa-3x text-muted mb-3"></i>
                             <h6 class="font-weight-bold text-dark">공개된 추억 앨범이 없습니다</h6>
-                            <p class="small text-muted mb-3">첫 번째로 나만의 농촌 여행 앨범을 만들어 앨범마당에 공유해 보세요!</p>
+                            <p class="small text-muted mb-3">첫 번째로 나만의 농촌 여행 앨범을 만들어 추억 공유에 올려보세요!</p>
                             <a href="/album/create" class="btn btn-sm btn-success font-weight-bold px-3 py-2">
                                 <i class="fa-solid fa-plus mr-1"></i> 앨범 만들러 가기
                             </a>
@@ -474,7 +464,7 @@
                 renderPagination(data.page, data.pages);
             })
             .catch(err => {
-                console.error("앨범마당 로드 에러:", err);
+                console.error("추억 공유 로드 에러:", err);
                 grid.innerHTML = `<div class="col-12 text-center py-5 text-danger" style="grid-column:1/-1;">데이터를 불러오는 중 오류가 발생했습니다.</div>`;
             });
     }

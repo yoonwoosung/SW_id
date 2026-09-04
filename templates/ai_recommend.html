@@ -41,6 +41,28 @@
 /* 카드 클릭 커서 */
 .fl-course-card { cursor:pointer; }
 .fl-course-card:hover { box-shadow:0 4px 18px rgba(0,0,0,.1); }
+/* 추천 이유 한 줄 */
+.ci-modal__reason-text {
+  font-size:.88rem; color:#55605a; line-height:1.6;
+  background:#f7faf7; border-left:3px solid #a8d5a2;
+  border-radius:0 6px 6px 0; padding:10px 12px; margin-bottom:14px;
+}
+/* 코스 요약 칩 */
+.ci-modal__summary { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:14px; }
+.ci-modal__summary-chip {
+  display:inline-flex; align-items:center; gap:5px; font-size:.8rem;
+  background:#f0f7ee; border-radius:8px; padding:5px 10px; color:#3a7d44; font-weight:600;
+}
+/* ESG + 편의 태그 */
+.ci-modal__amenity { margin-top:16px; padding-top:14px; border-top:1px solid #eef1ee; display:flex; flex-direction:column; gap:8px; }
+.ci-modal__esg-row { display:flex; align-items:center; gap:6px; font-size:.83rem; font-weight:700; color:#2e7d32; }
+.ci-modal__tags { display:flex; flex-wrap:wrap; gap:6px; }
+.ci-modal__tag {
+  font-size:.78rem; font-weight:600; color:#55605a;
+  background:#f4f6f4; border:1px solid #dde8dd; border-radius:999px; padding:4px 10px;
+}
+/* 푸터 버튼 2개 */
+.ci-modal__footer-btns { display:flex; gap:10px; }
 </style>
 {% endblock %}
 
@@ -52,25 +74,34 @@
         <p id="rec-note">회원님 정보를 바탕으로 추천 코스를 준비했어요.</p>
     </div>
 
-    <!-- 1. 검색바 -->
-    <form class="fl-searchbar" id="course-search" role="search" onsubmit="return false;">
-        <i data-lucide="search" aria-hidden="true"></i>
-        <input type="search" id="course-q" placeholder="지역·체험·농장 이름으로 검색" autocomplete="off">
-    </form>
-
-    <!-- 2. 인적사항 단축 버튼 2개 -->
+    <!-- 1. 인적사항 단축 버튼 2개 (최상단) -->
     <div class="fl-quickbtns" id="quick-segments"></div>
 
-    <!-- 3. 내가 직접 조건 고르기 (기본 접힘) -->
-    <section class="fl-panel fl-collapse">
-        <button type="button" class="fl-collapse__toggle" aria-expanded="false" aria-controls="cond-body">
-            내가 직접 조건 고르기
-            <i data-lucide="chevron-down" aria-hidden="true"></i>
-        </button>
-        <div class="fl-collapse__body" id="cond-body" hidden>
-            <div id="cond-filter" data-endpoint="{{ url_for('search_categories') }}"></div>
-            <div class="fl-trend" id="trend"></div>
+    <!-- 2. 검색바 + 여행 조건 설정하기 (한 블록으로 묶음) -->
+    <div class="fl-search-block">
+        <form class="fl-searchbar" id="course-search" role="search" onsubmit="return false;">
+            <i data-lucide="search" aria-hidden="true"></i>
+            <input type="search" id="course-q" placeholder="지역·체험·농장 이름으로 검색" autocomplete="off">
+        </form>
+        <section class="fl-panel fl-collapse">
+            <button type="button" class="fl-collapse__toggle" aria-expanded="false" aria-controls="cond-body">
+                여행 조건 설정하기
+                <i data-lucide="chevron-down" aria-hidden="true"></i>
+            </button>
+            <div class="fl-collapse__body" id="cond-body" hidden>
+                <div id="cond-filter" data-endpoint="{{ url_for('search_categories') }}"></div>
+                <div class="fl-trend" id="trend"></div>
+            </div>
+        </section>
+    </div>
+
+    <!-- 저장된 코스 (localStorage) -->
+    <section class="fl-sec" id="saved-sec" hidden>
+        <div class="fl-sec__head">
+            <h2 class="fl-sec__title"><i data-lucide="bookmark"></i> 저장된 코스</h2>
+            <button type="button" id="saved-clear" style="background:none;border:none;font-size:.78rem;color:#8a938c;cursor:pointer;">전체 삭제</button>
         </div>
+        <div class="fl-row" id="sec-saved"></div>
     </section>
 
     <!-- 방금 예약한 체험 코스 (결제 후 연동 진입 시에만 표시) -->
@@ -102,7 +133,7 @@
     <section class="fl-sec" data-section="esg">
         <div class="fl-sec__head">
             <h2 class="fl-sec__title"><i data-lucide="sprout"></i> 친환경 ESG 코스</h2>
-            <span class="fl-sec__sub">무농약 · 유기농 · 봉사</span>
+            <span class="fl-sec__sub">환경(E)·사회(S)·지배구조(G) 기준을 지키는 농장만 모았어요</span>
         </div>
         <div class="fl-row" id="sec-esg"></div>
     </section>
@@ -125,10 +156,12 @@
       <button class="ci-modal__close" id="ci-close" aria-label="닫기"><i class="fa-solid fa-xmark"></i></button>
     </div>
     <div class="ci-modal__body">
-      <div class="ci-modal__reasons" id="ci-reasons"></div>
+      <p class="ci-modal__reason-text" id="ci-reason-text" hidden></p>
       <div class="ci-modal__cost" id="ci-cost" hidden></div>
-      <div class="ci-modal__tl-head">하루 코스</div>
+      <div class="ci-modal__summary" id="ci-summary" hidden></div>
+      <div class="ci-modal__tl-head">추천 일정</div>
       <div id="ci-timeline"></div>
+      <div class="ci-modal__amenity" id="ci-amenity" hidden></div>
     </div>
     <div class="ci-modal__footer" id="ci-footer"></div>
   </div>

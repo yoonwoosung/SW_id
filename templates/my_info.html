@@ -5,20 +5,19 @@
 <style>
 /* ── 내비 카테고리 레이블 ── */
 .mi-nav-cat {
-  font-size: .68rem; font-weight: 800; color: var(--fl-text-muted);
-  letter-spacing: .08em; text-transform: uppercase;
+  font-size: .75rem; font-weight: 700; color: var(--fl-text-muted);
   padding: 12px 18px 4px; pointer-events: none;
 }
 .mi-nav-divider { height: 1px; background: var(--fl-border); margin: 4px 0; }
 
-/* ── 뱃지 (mypage 동일) ── */
-.mi-bdg { display:inline-block; font-size:.72rem; font-weight:800; border-radius:999px; padding:3px 10px; }
+/* ── 뱃지 ── */
+.mi-bdg { display:inline-block; font-size:.75rem; font-weight:700; border-radius:999px; padding:3px 10px; }
 .mi-bdg-pending   { background:var(--fl-bdg-pending-bg);   color:var(--fl-bdg-pending-text); }
 .mi-bdg-paid      { background:var(--fl-bdg-paid-bg);      color:var(--fl-bdg-paid-text); }
 .mi-bdg-confirmed { background:var(--fl-bdg-confirmed-bg); color:var(--fl-bdg-confirmed-text); }
 .mi-bdg-cancelled { background:var(--fl-bdg-cancelled-bg); color:var(--fl-bdg-cancelled-text); }
 
-/* ── 예약 카드 (mypage mp-res-card 동일) ── */
+/* ── 예약 카드 ── */
 .mi-res-list { display:flex; flex-direction:column; gap:12px; }
 .mi-res-card {
   display:flex; gap:14px; background:var(--fl-surface); border:1px solid var(--fl-border);
@@ -30,11 +29,11 @@
   color:var(--fl-green-700);
 }
 .mi-res-body { flex:1; min-width:0; }
-.mi-res-title { font-weight:800; margin:5px 0; color:var(--fl-text); }
-.mi-res-meta { font-size:.84rem; color:var(--fl-text-muted); margin-top:2px; display:flex; align-items:center; gap:5px; }
+.mi-res-title { font-size:.97rem; font-weight:700; margin:5px 0; color:var(--fl-text); }
+.mi-res-meta { font-size:.83rem; color:var(--fl-text-muted); margin-top:2px; display:flex; align-items:center; gap:5px; }
 .mi-res-actions { display:flex; flex-direction:column; gap:8px; flex-shrink:0; }
 .mi-cancel-form { margin:0; }
-.mi-btn-cancel { border:1px solid var(--fl-danger-100); background:var(--fl-surface); color:var(--fl-danger); border-radius:9px; padding:8px 14px; font-weight:700; font-size:.84rem; cursor:pointer; }
+.mi-btn-cancel { border:1px solid var(--fl-danger-100); background:var(--fl-surface); color:var(--fl-danger); border-radius:9px; padding:8px 14px; font-weight:700; font-size:.83rem; cursor:pointer; }
 
 /* ── 다음 여행 카드 ── */
 .mi-next-card {
@@ -46,27 +45,27 @@
   background:var(--fl-green-100); display:flex; align-items:center; justify-content:center;
   font-size:2rem; color:var(--fl-green-700);
 }
-.mi-next-title { font-size:1rem; font-weight:800; margin:5px 0 4px; }
-.mi-next-meta { font-size:.82rem; color:var(--fl-text-muted); margin-top:3px; display:flex; align-items:center; gap:5px; }
+.mi-next-title { font-size:.97rem; font-weight:700; margin:5px 0 4px; }
+.mi-next-meta { font-size:.83rem; color:var(--fl-text-muted); margin-top:3px; display:flex; align-items:center; gap:5px; }
 .mi-next-actions { display:flex; flex-direction:column; gap:7px; flex-shrink:0; }
 
-/* ── 정보 폼 (farmer_easy_mode fl-info-row 동일) ── */
+/* ── 정보 폼 ── */
 .mi-slbl {
-  font-size:.68rem; font-weight:800; color:var(--fl-text-muted);
-  letter-spacing:.07em; text-transform:uppercase; padding:10px 0 4px;
+  font-size:.75rem; font-weight:700; color:var(--fl-text-muted);
+  padding:10px 0 4px;
 }
 .mi-frow { display:flex; align-items:center; padding:12px 0; border-bottom:1px solid var(--fl-border); }
 .mi-frow:last-of-type { border:none; }
-.mi-flbl { font-size:.84rem; color:var(--fl-text-muted); font-weight:600; width:80px; flex-shrink:0; }
-.mi-fval { flex:1; font-weight:600; }
+.mi-flbl { font-size:.83rem; color:var(--fl-text-muted); font-weight:600; width:80px; flex-shrink:0; }
+.mi-fval { flex:1; font-size:.97rem; font-weight:600; }
 .mi-fval.dim { color:var(--fl-text-muted); font-weight:400; }
 .mi-finput {
   flex:1; border:1px solid var(--fl-border); border-radius:8px;
-  padding:8px 12px; font-size:.92rem; font-weight:600; outline:none; transition:border-color .15s;
+  padding:8px 12px; font-size:.97rem; font-weight:600; outline:none; transition:border-color .15s;
 }
 .mi-finput:focus { border-color:var(--fl-green-700); }
 
-/* ── 찜·최근 목록 (mypage mp-list-item 동일) ── */
+/* ── 찜·최근 목록 ── */
 .mi-list-item {
   display:flex; align-items:center; gap:12px; padding:12px 4px;
   border-bottom:1px solid var(--fl-border); text-decoration:none; color:inherit;
@@ -81,14 +80,14 @@
 .mi-thumb img { width:100%; height:100%; object-fit:cover; border-radius:10px; }
 
 /* ── 포인트 ── */
-.mi-point-balance { font-size:2.2rem; font-weight:800; color:var(--fl-orange); }
+.mi-point-balance { font-size:2rem; font-weight:800; color:var(--fl-orange); }
 .mi-point-row {
   display:flex; align-items:center; padding:12px 4px;
   border-bottom:1px solid var(--fl-border);
 }
 .mi-point-row:last-child { border:none; }
-.mi-point-pos { color:var(--fl-green-700); font-weight:800; }
-.mi-point-neg { color:var(--fl-danger); font-weight:800; }
+.mi-point-pos { color:var(--fl-green-700); font-weight:700; }
+.mi-point-neg { color:var(--fl-danger); font-weight:700; }
 
 /* ── 추억 앨범 그리드 ── */
 .mi-album-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
@@ -100,28 +99,32 @@
 .mi-album-item img { width:100%; height:100%; object-fit:cover; display:block; }
 .mi-album-label {
   position:absolute; bottom:0; left:0; right:0;
-  background:rgba(0,0,0,.45); color:var(--fl-surface); font-size:.68rem; font-weight:700;
+  background:rgba(0,0,0,.45); color:var(--fl-surface); font-size:.75rem; font-weight:700;
   padding:4px 6px; text-align:center;
 }
 
 /* ── 빈 상태 ── */
-.mi-empty { color:var(--fl-text-muted); padding:20px 4px; font-size:.88rem; }
+.mi-empty { color:var(--fl-text-muted); padding:20px 4px; font-size:.83rem; }
 
 /* ── AI 타임라인 ── */
 .mi-tl { position:relative; padding-left:20px; }
 .mi-tl::before { content:""; position:absolute; left:6px; top:8px; bottom:8px; border-left:2px dashed var(--fl-green-700); }
 .mi-tl-item { position:relative; display:flex; gap:12px; padding:10px 0; align-items:flex-start; }
 .mi-tl-item::before { content:""; position:absolute; left:-17px; top:14px; width:12px; height:12px; border-radius:50%; background:var(--fl-green-700); border:3px solid var(--fl-surface); box-shadow:0 0 0 1px var(--fl-green-700); }
-.mi-tl-time { font-weight:800; color:var(--fl-green-700); font-size:.82rem; min-width:40px; margin-top:2px; }
-.mi-tl-name { font-weight:700; font-size:.9rem; }
-.mi-tl-sub { font-size:.76rem; color:var(--fl-text-muted); margin-top:2px; }
+.mi-tl-time { font-weight:700; color:var(--fl-green-700); font-size:.83rem; min-width:40px; margin-top:2px; }
+.mi-tl-name { font-weight:700; font-size:.97rem; }
+.mi-tl-sub { font-size:.83rem; color:var(--fl-text-muted); margin-top:2px; }
 
 /* ── 사이드바 프로필 스탯 ── */
 .mi-side-stats { display:flex; gap:0; border-top:1px solid var(--fl-border); margin-top:10px; width:100%; }
 .mi-side-stat { flex:1; text-align:center; padding:10px 4px; border-right:1px solid var(--fl-border); }
 .mi-side-stat:last-child { border-right:none; }
-.mi-side-stat-num { font-size:.95rem; font-weight:800; color:var(--fl-green-700); }
-.mi-side-stat-lbl { font-size:.65rem; color:var(--fl-text-muted); margin-top:2px; }
+.mi-side-stat-num { font-size:.97rem; font-weight:700; color:var(--fl-green-700); }
+.mi-side-stat-lbl { font-size:.75rem; color:var(--fl-text-muted); margin-top:2px; }
+
+/* ── 회원탈퇴 ── */
+.mi-btn-withdraw { background:none; border:none; color:var(--fl-danger); font-size:.83rem; cursor:pointer; }
+.mi-btn-withdraw:hover { text-decoration:underline; }
 
 /* ── 반응형 ── */
 @media (max-width: 860px) {
@@ -270,7 +273,7 @@
             <a href="{{ url_for('logout') }}" class="fl-btn fl-btn-outline fl-btn-block" style="justify-content:center;">로그아웃</a>
           </div>
           <div style="text-align:center;margin-top:10px;">
-            <button style="background:none;border:none;color:var(--fl-text-muted);font-size:.76rem;cursor:pointer;">회원 탈퇴</button>
+            <button class="mi-btn-withdraw">회원 탈퇴</button>
           </div>
         </div></section>
 
@@ -403,13 +406,22 @@
               <div class="mi-tl-item"><div class="mi-tl-time">17:00</div><div><div class="mi-tl-name">로컬 카페 휴식</div><div class="mi-tl-sub">아늑한 시골 카페에서 힐링</div></div></div>
             </div>
             <div style="margin-top:16px;">
-              <a href="{{ url_for('ai_recommend_page') }}?experience={{ next_trip.experience.id }}" class="fl-btn fl-btn-primary fl-btn-block" style="justify-content:center;">상세 코스 보기</a>
+              <button type="button" class="fl-btn fl-btn-primary fl-btn-block" style="justify-content:center;"
+                onclick="openCourseModal({{ next_trip.experience.id }}, '{{ next_trip.experience.crop }}')">상세 코스 보기</button>
             </div>
           {% else %}
             <p class="mi-empty">예약 확정 후 AI가 맞춤 여행 코스를 추천해드려요.<br>
               <a href="{{ url_for('index') }}" style="color:var(--fl-green-700);font-weight:700;">체험 예약하러 가기 →</a>
             </p>
           {% endif %}
+        </div></section>
+
+        <section class="fl-card"><div class="fl-card-body">
+          <div class="fl-section-head">
+            <h2><i data-lucide="bookmark"></i> 저장된 코스</h2>
+            <a href="{{ url_for('ai_recommend_page') }}" class="fl-more">코스 추천 →</a>
+          </div>
+          <div id="mi-saved-courses"><p class="mi-empty">저장된 코스가 없어요.</p></div>
         </div></section>
       </div>
 
@@ -446,10 +458,78 @@
     </main>
   </div>
 </div>
+
+<!-- 코스 상세 모달 -->
+<div id="mi-course-modal" style="display:none;position:fixed;inset:0;z-index:1050;background:rgba(0,0,0,0.45);overflow-y:auto;">
+  <div style="max-width:520px;margin:60px auto;background:#fff;border-radius:16px;padding:28px 24px;position:relative;">
+    <button type="button" onclick="closeCourseModal()" style="position:absolute;top:16px;right:18px;background:none;border:none;font-size:1.4rem;color:#888;cursor:pointer;">&times;</button>
+    <h3 id="mi-course-modal-title" style="font-size:1.1rem;font-weight:800;color:#1b4332;margin:0 0 6px;"></h3>
+    <p style="font-size:.82rem;color:#888;margin:0 0 18px;">AI가 추천한 하루 코스예요.</p>
+    <div id="mi-course-modal-body">
+      <p style="text-align:center;color:#888;padding:24px 0;">코스를 불러오는 중…</p>
+    </div>
+    <div style="margin-top:20px;">
+      <a id="mi-course-modal-link" href="#" class="fl-btn fl-btn-outline fl-btn-block" style="justify-content:center;">오늘의 추천 코스 페이지에서 보기 →</a>
+    </div>
+  </div>
+</div>
 {% endblock %}
 
 {% block scripts %}
 <script>
+var AI_REC_URL = "{{ url_for('ai_recommend_page') }}";
+
+function openCourseModal(expId, cropName) {
+    var modal = document.getElementById('mi-course-modal');
+    var title = document.getElementById('mi-course-modal-title');
+    var body = document.getElementById('mi-course-modal-body');
+    var link = document.getElementById('mi-course-modal-link');
+    title.textContent = cropName + ' 체험 추천 코스';
+    body.innerHTML = '<p style="text-align:center;color:#888;padding:24px 0;">코스를 불러오는 중…</p>';
+    link.href = AI_REC_URL + '?experience=' + expId;
+    modal.style.display = 'block';
+    document.body.style.overflow = 'hidden';
+
+    var TYPE_LABEL = { experience: '🌱 체험', restaurant: '🍽 식사', attraction: '🏛 관광지', cafe: '☕ 카페' };
+    fetch('/api/experiences/' + expId + '/course')
+        .then(function(r) { return r.json(); })
+        .then(function(res) {
+            if (!res.success || !res.data) {
+                body.innerHTML = '<p style="text-align:center;color:#888;padding:16px 0;">코스 정보를 불러오지 못했어요.</p>';
+                return;
+            }
+            var items = res.data.items || [];
+            var reason = res.data.reason || '';
+            var html = reason ? '<p style="font-size:.83rem;color:#555;margin-bottom:16px;">' + reason + '</p>' : '';
+            html += '<div style="display:flex;flex-direction:column;gap:12px;">';
+            items.forEach(function(it) {
+                var label = TYPE_LABEL[it.type] || '📍';
+                var sub = it.type === 'experience'
+                    ? (it.address || '')
+                    : ((it.address || '') + (it.distance_km != null ? ' · ' + it.distance_km + 'km' : ''));
+                html += '<div style="display:flex;gap:14px;align-items:flex-start;">'
+                    + '<div style="min-width:44px;font-size:.78rem;font-weight:700;color:#2d6a4f;padding-top:2px;">' + (it.time || '') + '</div>'
+                    + '<div style="flex:1;border-left:2px dashed #b7e4c7;padding-left:14px;">'
+                    + '<div style="font-size:.88rem;font-weight:700;color:#1b4332;">' + label + ' ' + (it.name || '') + '</div>'
+                    + (sub ? '<div style="font-size:.78rem;color:#888;margin-top:2px;">' + sub + '</div>' : '')
+                    + '</div></div>';
+            });
+            html += '</div>';
+            body.innerHTML = html;
+        })
+        .catch(function() {
+            body.innerHTML = '<p style="text-align:center;color:#888;padding:16px 0;">코스 정보를 불러오지 못했어요.</p>';
+        });
+}
+
+function closeCourseModal() {
+    document.getElementById('mi-course-modal').style.display = 'none';
+    document.body.style.overflow = '';
+}
+
+document.getElementById('mi-course-modal').addEventListener('click', function(e) {
+    if (e.target === this) closeCourseModal();
+});
 (function () {
   /* ── 사이드 내비 ── */
   var navLinks = document.querySelectorAll('.fl-side-menu a[data-panel]');
@@ -498,6 +578,33 @@
     if (name === 'wish') loadWishlist();
     else if (name === 'recent') loadRecent();
     else if (name === 'point') loadPoints();
+    else if (name === 'ai') loadSavedCourses();
+  }
+
+  function loadSavedCourses() {
+    var el = document.getElementById('mi-saved-courses');
+    if (!el) return;
+    var list = JSON.parse(localStorage.getItem('fl-saved-courses') || '[]');
+    if (!list.length) { el.innerHTML = '<p class="mi-empty">저장된 코스가 없어요.<br><a href="' + AI_REC_URL + '" style="color:var(--fl-green-700);font-weight:700;">코스 추천 받으러 가기 →</a></p>'; return; }
+    el.innerHTML = list.map(function (c, i) {
+      return '<div class="mi-list-item" style="justify-content:space-between;align-items:center;">'
+        + '<div style="display:flex;align-items:center;gap:10px;">'
+        + '<div class="mi-thumb" style="background:var(--fl-green-100);display:flex;align-items:center;justify-content:center;color:var(--fl-green-700);"><i data-lucide="route"></i></div>'
+        + '<div><div style="font-weight:700;">' + esc(c.title) + '</div>'
+        + (c.cost ? '<div style="color:var(--fl-orange);font-weight:800;font-size:.88rem;">' + won(c.cost) + '</div>' : '') + '</div></div>'
+        + '<button class="mi-saved-del" data-idx="' + i + '" style="background:none;border:none;color:var(--fl-text-muted);cursor:pointer;font-size:.8rem;padding:4px 8px;">삭제</button>'
+        + '</div>';
+    }).join('');
+    if (window.lucide) lucide.createIcons();
+    el.querySelectorAll('.mi-saved-del').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var idx = parseInt(this.dataset.idx);
+        var cur = JSON.parse(localStorage.getItem('fl-saved-courses') || '[]');
+        cur.splice(idx, 1);
+        localStorage.setItem('fl-saved-courses', JSON.stringify(cur));
+        loadSavedCourses();
+      });
+    });
   }
 
   function loadWishlist() {

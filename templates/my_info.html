@@ -461,6 +461,7 @@
 
 {% block scripts %}
 <script>
+var AI_REC_URL = "{{ url_for('ai_recommend_page') }}";
 (function () {
   /* ── 사이드 내비 ── */
   var navLinks = document.querySelectorAll('.fl-side-menu a[data-panel]');
@@ -516,7 +517,7 @@
     var el = document.getElementById('mi-saved-courses');
     if (!el) return;
     var list = JSON.parse(localStorage.getItem('fl-saved-courses') || '[]');
-    if (!list.length) { el.innerHTML = '<p class="mi-empty">저장된 코스가 없어요.<br><a href="{{ url_for(\'ai_recommend_page\') }}" style="color:var(--fl-green-700);font-weight:700;">코스 추천 받으러 가기 →</a></p>'; return; }
+    if (!list.length) { el.innerHTML = '<p class="mi-empty">저장된 코스가 없어요.<br><a href="' + AI_REC_URL + '" style="color:var(--fl-green-700);font-weight:700;">코스 추천 받으러 가기 →</a></p>'; return; }
     el.innerHTML = list.map(function (c, i) {
       return '<div class="mi-list-item" style="justify-content:space-between;align-items:center;">'
         + '<div style="display:flex;align-items:center;gap:10px;">'

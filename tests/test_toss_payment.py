@@ -10,7 +10,8 @@ from werkzeug.security import generate_password_hash
 
 import app as farmlink
 from models import db, User, Experience, Application, Payment
-from common.constants import APPLICATION_STATUS_PENDING, APPLICATION_STATUS_PAID
+from common.constants import (APPLICATION_STATUS_PENDING, APPLICATION_STATUS_PAID,
+                             APPLICATION_STATUS_CONFIRMED)
 from services import payment_service, toss_service
 
 PASSWORD = "pw12345678"
@@ -110,7 +111,7 @@ def test_prepare_rejects_already_paid(client):
 
 # ───────────────────────────── 승인(confirm) ─────────────────────────────
 
-def test_confirm_success_marks_application_paid(client, monkeypatch):
+def test_confirm_success_confirms_application(client, monkeypatch):
     u = _user("u@x.com"); row = _application(u)
     _login(client, "u@x.com")
     order = client.post('/api/payments/prepare', json={'application_id': row.id}).get_json()['data']
@@ -121,9 +122,9 @@ def test_confirm_success_marks_application_paid(client, monkeypatch):
     body = res.get_json()
 
     assert res.status_code == 200 and body['success'] is True
-    assert body['data']['status'] == APPLICATION_STATUS_PAID
+    assert body['data']['status'] == APPLICATION_STATUS_CONFIRMED
     assert body['data']['redirect'].endswith(f"/reservation/complete/{row.id}") or 'complete' in body['data']['redirect']
-    assert db.session.get(Application, row.id).status == APPLICATION_STATUS_PAID
+    assert db.session.get(Application, row.id).status == APPLICATION_STATUS_CONFIRMED
     payment = Payment.query.filter_by(order_id=order['order_id']).one()
     assert payment.status == Payment.STATUS_DONE and payment.approved_at is not None
     # 토스에는 서버가 저장한 금액이 전달돼야 한다

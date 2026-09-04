@@ -3,7 +3,7 @@ from datetime import date
 
 from models import db, User, Experience, Application
 from services.payment_service import pay, calculate_amount
-from common.constants import (APPLICATION_STATUS_PENDING, APPLICATION_STATUS_PAID,
+from common.constants import (POINT_EARN_RATE, APPLICATION_STATUS_PENDING, APPLICATION_STATUS_PAID,
                               APPLICATION_STATUS_CONFIRMED)
 
 
@@ -46,7 +46,7 @@ def test_pay_success_transitions_to_paid(db_session):
     status, data = pay(buyer.id, app.id)
     assert status == 'ok'
     assert data == {"application_id": app.id, "status": APPLICATION_STATUS_PAID,
-                    "amount": 50000, "earned_points": 2500}  # 결제 5% 적립
+                    "amount": 50000, "earned_points": int(50000 * POINT_EARN_RATE)}
     assert Application.query.get(app.id).status == APPLICATION_STATUS_PAID
 
 

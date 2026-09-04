@@ -12,7 +12,7 @@ from flask import render_template, request, session, abort, url_for, current_app
 
 from common.response import success_response, error_response
 from common.auth import api_login_required
-from services import payment_service
+from services import payment_service, point_service
 
 
 def payment_page(app_id):
@@ -30,6 +30,7 @@ def payment_page(app_id):
         application=application,
         experience=experience,
         amount=amount,
+        point_balance=point_service.get_balance(session['user_id']),
         # 클라이언트 키만 내려보낸다. 시크릿 키는 서버 밖으로 나가지 않는다.
         toss_client_key=current_app.config.get('TOSS_CLIENT_KEY'),
         success_url=url_for('payment_success', app_id=app_id, _external=True),
@@ -46,13 +47,21 @@ def prepare_payment():
     except (TypeError, ValueError):
         return error_response("INVALID_APPLICATION_ID", "application_id가 올바르지 않습니다.", 400)
 
-    status, payload = payment_service.prepare(session['user_id'], application_id)
+    status, payload = payment_service.prepare(
+        session['user_id'], application_id, data.get('use_point', 0))
+
     if status == 'not_found':
         return error_response("APPLICATION_NOT_FOUND", "예약을 찾을 수 없습니다.", 404)
     if status == 'forbidden':
         return error_response("FORBIDDEN", "본인의 예약만 결제할 수 있습니다.", 403)
     if status == 'invalid_state':
         return error_response("ALREADY_PROCESSED", "이미 결제되었거나 결제할 수 없는 예약입니다.", 400)
+    if status == 'INVALID_POINT_AMOUNT':
+        return error_response(status, "사용할 포인트 값이 올바르지 않습니다.", 400)
+    if status == 'INSUFFICIENT_POINTS':
+        return error_response(status, "보유 포인트보다 많이 사용할 수 없습니다.", 400)
+    if status == 'POINT_EXCEEDS_TOTAL':
+        return error_response(status, "결제 금액보다 많은 포인트를 사용할 수 없습니다.", 400)
     return success_response(payload, status=201)
 
 

@@ -64,5 +64,7 @@ APPLICATION_STATUS_CONFIRMED = '확정'    # 농장주 확정
 APPLICATION_STATUS_CANCELLED = '취소'    # 사용자 예약 취소(reservation.py에서 이미 쓰던 값)
 
 # --- 포인트 ---
-POINT_EARN_RATE = 0.05           # 결제금액 대비 적립률(5%). 적립액은 정수 내림.
-POINT_REASON_PAYMENT = 'payment'  # 결제 적립 사유 코드
+POINT_EARN_RATE = 0.03           # 결제금액 대비 적립률(3%). 적립액은 정수 내림.
+POINT_REASON_PAYMENT = 'payment'      # 결제 적립
+POINT_REASON_USE = 'use'              # 결제 시 사용(차감)
+POINT_REASON_REFUND = 'refund'        # 결제 실패·취소로 차감분 원복

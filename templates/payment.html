@@ -53,7 +53,22 @@
         <div class="pay-sec">
             <p class="pay-sec__title">결제 금액</p>
             <div class="pay-row"><span class="lbl">체험비 ({{ "{:,}".format(experience.cost or 0) }}원 × {{ application.participants_count }}명)</span><span class="val">{{ "{:,}".format(amount) }}원</span></div>
-            <div class="pay-amount-row"><span class="lbl">최종 결제 금액</span><span class="pay-amount">{{ "{:,}".format(amount) }}원</span></div>
+            <div class="pay-row" id="pay-point-row" style="display:none;"><span class="lbl">포인트 사용</span><span class="val" id="pay-point-used">0원</span></div>
+            <div class="pay-amount-row"><span class="lbl">최종 결제 금액</span><span class="pay-amount" id="pay-final">{{ "{:,}".format(amount) }}원</span></div>
+        </div>
+
+        <div class="pay-sec">
+            <p class="pay-sec__title">포인트 사용</p>
+            <div class="pay-row"><span class="lbl">보유 포인트</span><span class="val">{{ "{:,}".format(point_balance) }}P</span></div>
+            <div style="display:flex; gap:8px; margin-top:10px;">
+                <input type="number" id="pay-point-input" min="0" step="1" value="0"
+                       max="{{ [point_balance, amount]|min }}"
+                       style="flex:1; padding:11px; border:1.5px solid #dbe5dd; border-radius:10px; font-size:1rem;">
+                <button type="button" id="pay-point-all"
+                        style="border:1.5px solid var(--green); background:#fff; color:var(--green);
+                               border-radius:10px; padding:0 14px; font-weight:700; cursor:pointer;">전액</button>
+            </div>
+            <p id="pay-point-msg" style="margin:8px 0 0; font-size:.8rem; color:#e5484d; display:none;"></p>
         </div>
 
     </div>
@@ -69,6 +84,7 @@
     'application_id': application.id,
     'amount': amount,
     'client_key': toss_client_key,
+    'point_balance': point_balance,
     'success_url': success_url,
     'fail_url': fail_url
 }|tojson|safe }}</script>
@@ -78,6 +94,42 @@
     var DATA = JSON.parse(document.getElementById('pay-data').textContent);
     var btn = document.getElementById('pay-btn');
     var err = document.getElementById('pay-err');
+    var pInput = document.getElementById('pay-point-input');
+    var pMsg = document.getElementById('pay-point-msg');
+    var pRow = document.getElementById('pay-point-row');
+    var pUsed = document.getElementById('pay-point-used');
+    var pFinal = document.getElementById('pay-final');
+    var MAX_POINT = Math.min(DATA.point_balance, DATA.amount);
+
+    function won(n) { return n.toLocaleString('ko-KR') + '원'; }
+
+    // 입력값은 화면 표시용일 뿐이고, 실제 검증·차감은 서버(prepare)가 한다.
+    function usePoint() {
+        var v = parseInt(pInput.value, 10);
+        if (isNaN(v) || v < 0) v = 0;
+        return Math.min(v, MAX_POINT);
+    }
+
+    function syncPoint() {
+        var v = usePoint();
+        if (parseInt(pInput.value, 10) > MAX_POINT) {
+            pMsg.textContent = '최대 ' + won(MAX_POINT) + '까지 사용할 수 있어요.';
+            pMsg.style.display = 'block';
+            pInput.value = MAX_POINT;
+        } else {
+            pMsg.style.display = 'none';
+        }
+        pRow.style.display = v > 0 ? 'flex' : 'none';
+        pUsed.textContent = '-' + won(v);
+        pFinal.textContent = won(DATA.amount - v);
+        btn.textContent = won(DATA.amount - v) + ' 결제하기';
+    }
+
+    pInput.addEventListener('input', syncPoint);
+    document.getElementById('pay-point-all').addEventListener('click', function () {
+        pInput.value = MAX_POINT; syncPoint();
+    });
+    syncPoint();
 
     function fail(msg) {
         btn.disabled = false;
@@ -103,7 +155,7 @@
         fetch('/api/payments/prepare', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ application_id: DATA.application_id })
+            body: JSON.stringify({ application_id: DATA.application_id, use_point: usePoint() })
         }).then(function (r) { return r.json(); }).then(function (res) {
             if (!res.success || !res.data) {
                 fail((res.error && res.error.message) || '결제를 준비하지 못했습니다.');
@@ -113,14 +165,14 @@
             var order = res.data;
             var tossPayments = TossPayments(DATA.client_key);
             var payment = tossPayments.payment({ customerKey: TossPayments.ANONYMOUS });
+            // 결제 수단을 지정하지 않으면 토스 결제창이 카드·계좌이체·간편결제 등
+            // 상점에 열려 있는 수단을 전부 보여준다. 임의로 제한하지 않는다.
             return payment.requestPayment({
-                method: 'CARD',
                 amount: { currency: 'KRW', value: order.amount },
                 orderId: order.order_id,
                 orderName: order.order_name,
                 successUrl: DATA.success_url,
-                failUrl: DATA.fail_url,
-                card: { useEscrow: false, flowMode: 'DEFAULT', useCardPoint: false, useAppCardOnly: false }
+                failUrl: DATA.fail_url
             });
         }).catch(function (e) {
             // 사용자가 결제창을 닫은 경우는 오류가 아니다.

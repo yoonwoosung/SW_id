@@ -19,8 +19,12 @@ class Payment(db.Model):
     # 토스가 승인 시 돌려주는 결제 키. 승인 전에는 없다.
     payment_key = db.Column(db.String(200), nullable=True)
 
-    # 결제 요청 시점에 서버가 계산한 금액(원). 승인 요청의 검증 기준값.
+    # 결제 요청 시점에 서버가 계산한 금액(원) = 실제 토스로 청구할 금액.
+    # 승인 요청의 검증 기준값이다.
     amount = db.Column(db.Integer, nullable=False)
+    # 주문 총액과, 그중 포인트로 차감한 금액. amount = order_total - used_points.
+    order_total = db.Column(db.Integer, nullable=False, default=0)
+    used_points = db.Column(db.Integer, nullable=False, default=0)
 
     # ready(결제창 띄움) → done(승인 완료) / failed(실패·취소)
     status = db.Column(db.String(20), nullable=False, default='ready')

@@ -4,7 +4,8 @@ import uuid
 from datetime import datetime
 
 from models import db, Application, Experience, Payment
-from common.constants import APPLICATION_STATUS_PENDING, APPLICATION_STATUS_PAID
+from common.constants import (APPLICATION_STATUS_PENDING, APPLICATION_STATUS_PAID,
+                             APPLICATION_STATUS_CONFIRMED)
 from services import point_service, toss_service
 from services.toss_service import TossError
 
@@ -57,11 +58,15 @@ def _new_order_id(application_id):
     return f"farmlink-{application_id}-{uuid.uuid4().hex[:16]}"
 
 
-def prepare(user_id, application_id):
+def prepare(user_id, application_id, use_point=0):
     """결제창을 띄우기 직전 호출. 결제할 금액을 서버가 확정해 Payment(ready)로 남긴다.
 
     금액을 여기서 기록해 두는 것이 위변조 방지의 핵심이다.
+    포인트를 쓰면 이 시점에 차감한다 — 결제창이 떠 있는 동안 다른 창에서
+    같은 포인트를 또 쓰는 것을 막기 위해서다. 실패하면 confirm/fail 에서 원복한다.
+
     반환: (status, data) — status: 'ok' | 'not_found' | 'forbidden' | 'invalid_state'
+          | 'INVALID_POINT_AMOUNT' | 'INSUFFICIENT_POINTS' | 'POINT_EXCEEDS_TOTAL'
     """
     status, application, experience = get_owned_application(user_id, application_id)
     if status != 'ok':
@@ -69,23 +74,34 @@ def prepare(user_id, application_id):
     if application.status != APPLICATION_STATUS_PENDING:
         return 'invalid_state', None
 
-    amount = calculate_amount(application, experience)
-    if amount <= 0:
+    order_total = calculate_amount(application, experience)
+    if order_total <= 0:
         return 'invalid_state', None
+
+    ok, reason, _ = point_service.validate_use(user_id, use_point, order_total)
+    if not ok:
+        return reason, None
+    used = int(use_point or 0)
 
     payment = Payment(
         order_id=_new_order_id(application.id),
-        amount=amount,
+        order_total=order_total,
+        used_points=used,
+        amount=order_total - used,      # 토스로 실제 청구할 금액
         status=Payment.STATUS_READY,
         application_id=application.id,
         user_id=user_id,
     )
     db.session.add(payment)
+    if used > 0:
+        point_service.use_points(user_id, application.id, used)   # 음수 로그
     db.session.commit()
 
     return 'ok', {
         "order_id": payment.order_id,
-        "amount": amount,
+        "order_total": order_total,
+        "used_points": used,
+        "amount": payment.amount,
         "order_name": f"{experience.crop} 체험" if experience else "체험 예약",
     }
 
@@ -117,6 +133,7 @@ def confirm(user_id, payment_key, order_id, client_amount):
             payment.fail_code = 'AMOUNT_MISMATCH'
             payment.fail_reason = f'요청 금액({client_amount})이 주문 금액({payment.amount})과 다릅니다.'
             db.session.commit()
+            point_service.refund_points(payment.user_id, payment.application_id, payment.used_points)
             return 'amount_mismatch', None
     except (TypeError, ValueError):
         return 'amount_mismatch', None
@@ -129,6 +146,8 @@ def confirm(user_id, payment_key, order_id, client_amount):
         payment.fail_code = exc.code
         payment.fail_reason = exc.message[:255]
         db.session.commit()
+        # 승인 실패 → prepare 에서 차감했던 포인트를 되돌린다.
+        point_service.refund_points(payment.user_id, payment.application_id, payment.used_points)
         return 'toss_error', exc
 
     payment.payment_key = body.get('paymentKey') or payment_key
@@ -140,8 +159,9 @@ def confirm(user_id, payment_key, order_id, client_amount):
     earned = 0
     # 승인은 됐는데 예약이 이미 다른 상태로 갔다면 상태는 건드리지 않는다(중복 적립 방지).
     if application is not None and application.status == APPLICATION_STATUS_PENDING:
-        application.status = APPLICATION_STATUS_PAID
+        application.status = APPLICATION_STATUS_CONFIRMED   # 결제 성공 = 예약 확정
         db.session.commit()
+        # 적립은 실제 결제한 금액 기준(포인트로 깎은 부분은 제외).
         earned = point_service.earn_points_for_payment(user_id, application.id, payment.amount)
     else:
         db.session.commit()
@@ -149,9 +169,11 @@ def confirm(user_id, payment_key, order_id, client_amount):
     return 'ok', {
         "application_id": payment.application_id,
         "order_id": payment.order_id,
+        "order_total": payment.order_total,
+        "used_points": payment.used_points,
         "amount": payment.amount,
         "method": payment.method,
-        "status": APPLICATION_STATUS_PAID,
+        "status": APPLICATION_STATUS_CONFIRMED,
         "earned_points": earned,
     }
 
@@ -167,4 +189,6 @@ def mark_failed(user_id, order_id, code, message):
     payment.fail_code = (code or 'UNKNOWN')[:100]
     payment.fail_reason = (message or '')[:255]
     db.session.commit()
+    # 결제창에서 취소·실패 → 차감했던 포인트 원복. 예약 상태는 결제 대기 그대로 둔다.
+    point_service.refund_points(payment.user_id, payment.application_id, payment.used_points)
     return payment

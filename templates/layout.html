@@ -29,6 +29,23 @@
         });
     </script>
     {% block head %}{% endblock %}
+    {# ── PWA (1단계: 설치·아이콘) ── #}
+    <link rel="manifest" href="{{ url_for('pwa_manifest') }}">
+    <meta name="theme-color" content="#1d6340">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='icons/icon-180.png') }}">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="FarmLink">
+    <script>
+        // Service Worker 는 HTTPS 또는 localhost 에서만 등록된다.
+        // 등록 실패가 페이지 동작에 영향을 주지 않도록 조용히 무시한다.
+        if ('serviceWorker' in navigator &&
+            (location.protocol === 'https:' || location.hostname === 'localhost')) {
+            window.addEventListener('load', function () {
+                navigator.serviceWorker.register('/sw.js').catch(function () {});
+            });
+        }
+    </script>
 </head>
 <body class="{% block page_class %}{% endblock %}">
 

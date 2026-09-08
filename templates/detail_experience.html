@@ -350,6 +350,24 @@
     </div>
 </div>
 
+{# 모바일 전용 하단 고정 예약 바.
+   데스크톱에서는 우측 예약카드가 sticky 로 따라오지만, 모바일은 1단으로 쌓여
+   CTA 가 본문 맨 아래로 밀린다. 스크롤 위치와 무관하게 예약할 수 있도록 둔다.
+   기존 예약 링크와 같은 url_for 를 쓸 뿐 로직은 건드리지 않는다. #}
+{% set remaining_mobile = item.max_participants - item.current_participants %}
+<div class="ed-mobile-cta" aria-hidden="false">
+    <div class="ed-mobile-cta__price">
+        <strong>{{ "{:,}".format(item.cost) }}원</strong><span>/ 1인</span>
+    </div>
+    {% if remaining_mobile > 0 %}
+    <a href="{{ url_for('experience_apply', item_id=item.id) }}" class="ed-mobile-cta__btn fl-touch">
+        <i data-lucide="calendar-check"></i> 예약 신청
+    </a>
+    {% else %}
+    <button class="ed-mobile-cta__btn fl-touch" disabled>마감</button>
+    {% endif %}
+</div>
+
 <!-- 라이트박스 · 토스트 -->
 <div id="ed-lightbox" class="ed-lightbox"><button class="ed-lightbox__close" aria-label="닫기">&times;</button><img src="" alt="확대 이미지"></div>
 <div id="ed-toast" class="ed-toast"></div>

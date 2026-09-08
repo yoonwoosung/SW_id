@@ -164,3 +164,59 @@
 /* 찜 버튼: 찜 상태면 하트 채우기(Lucide svg) */
 #ed-wish.is-wished { color: var(--fl-danger, #e5484d); }
 #ed-wish.is-wished svg { fill: currentColor; }
+
+/* ============================================================================
+   [PWA 3단계] 모바일 반응형 — 체험 상세
+   ============================================================================ */
+
+/* 토스트가 아이폰 홈바에 가리지 않게 안전영역만큼 띄운다 */
+.ed-toast { bottom: calc(32px + var(--safe-bottom)); }
+
+/* 시간표·넓은 표는 가로 스크롤로 처리(세로 레이아웃이 밀리지 않게) */
+.detail-timetable-wrap { -webkit-overflow-scrolling: touch; }
+
+/* ---- 모바일 하단 고정 예약 바 (기본: 표시) ---- */
+.ed-mobile-cta {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1200;
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    background: var(--color-surface);
+    border-top: 1px solid var(--color-border);
+    box-shadow: 0 -2px 12px rgba(0, 0, 0, .08);
+    padding: var(--space-sm) var(--space-md);
+    /* 홈바 영역만큼 아래 여백을 더해 버튼이 가리지 않게 한다 */
+    padding-bottom: calc(var(--space-sm) + var(--safe-bottom));
+    padding-left: calc(var(--space-md) + var(--safe-left));
+    padding-right: calc(var(--space-md) + var(--safe-right));
+}
+.ed-mobile-cta__price { flex: 1; line-height: 1.2; }
+.ed-mobile-cta__price strong { font-size: var(--fs-lg); font-weight: 800; color: var(--color-accent); }
+.ed-mobile-cta__price span { font-size: var(--fs-xs); color: var(--color-text-muted); margin-left: 2px; }
+.ed-mobile-cta__btn {
+    flex: 0 0 auto;
+    padding: 0 var(--space-lg);
+    border: none;
+    border-radius: var(--radius);
+    background: var(--fl-green-700);
+    color: #fff;
+    font-size: var(--fs-base);
+    font-weight: 700;
+    text-decoration: none;
+    gap: 6px;
+}
+.ed-mobile-cta__btn:hover { color: #fff; text-decoration: none; filter: brightness(.94); }
+.ed-mobile-cta__btn[disabled] { background: #b9c2bb; cursor: default; }
+
+/* 하단 바에 본문이 가리지 않도록 페이지 아래 여백 확보 */
+.detail-page-bg { padding-bottom: calc(76px + var(--safe-bottom)); }
+
+/* ---- 데스크톱: 하단 바를 감추고 기존 레이아웃 그대로 ---- */
+@media (min-width: 901px) {
+    .ed-mobile-cta { display: none; }
+    .detail-page-bg { padding-bottom: 0; }
+}

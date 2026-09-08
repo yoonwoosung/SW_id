@@ -88,11 +88,11 @@
                 <h3 class="apply-step-title"><span class="apply-step-num">3</span> 체험 날짜 선택</h3>
                 <p class="apply-date-range">
                     <i data-lucide="calendar"></i>
-                    체험 가능 기간: {{ item.duration_start.strftime('%Y.%m.%d') }} ~ {{ item.end_date.strftime('%Y.%m.%d') }}
+                    {% if item.duration_start and item.end_date %}체험 가능 기간: {{ item.duration_start.strftime('%Y.%m.%d') }} ~ {{ item.end_date.strftime('%Y.%m.%d') }}{% elif item.end_date %}체험 마감일: {{ item.end_date.strftime('%Y.%m.%d') }}{% else %}체험 가능 기간: 미정{% endif %}
                 </p>
                 <input type="date" id="apply_date" name="apply_date" class="apply-date-input"
-                       min="{{ item.duration_start.strftime('%Y-%m-%d') }}"
-                       max="{{ item.end_date.strftime('%Y-%m-%d') }}" required>
+                       {% if item.duration_start %}min="{{ item.duration_start.strftime('%Y-%m-%d') }}"{% endif %}
+                       {% if item.end_date %}max="{{ item.end_date.strftime('%Y-%m-%d') }}"{% endif %} required>
             </div>
 
             <!-- Step 4: 시간 선택 -->

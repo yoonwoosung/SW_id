@@ -1,0 +1,157 @@
+/* ============================================================================
+   base.css — 모바일 반응형 공통 기반 (PWA 2단계)
+   ----------------------------------------------------------------------------
+   목적: 개별 화면을 고치기 전에, 모든 화면이 공유할 토대만 마련한다.
+         이 파일은 "시각적 변화 최소"가 원칙이며 기존 클래스를 재정의하지 않는다.
+
+   로드 순서: base.css → theme.css → style.css → (화면별 css)
+     같은 우선순위로 충돌하면 나중에 로드된 쪽이 이긴다.
+     즉 기존 스타일이 항상 우선하므로 현재 화면이 바뀌지 않는다.
+
+   브레이크포인트 (mobile-first, min-width 로만 확장):
+     모바일   ~480px    ← 기본값. 미디어쿼리 없이 여기에 작성
+     태블릿   481px~    @media (min-width: 481px)
+     데스크톱 769px~    @media (min-width: 769px)
+   ============================================================================ */
+
+/* ---- 디자인 토큰 -------------------------------------------------------- */
+:root {
+  /* 색 — 기존 --fl-* 을 참조만 한다(값을 새로 정하지 않음).
+     --color-primary 만 딥그린으로 신규 정의한다. 현재 화면에서 쓰는 초록은
+     --fl-green-700(#4CAF50)이며 166곳이 참조하므로 건드리지 않는다.
+     딥그린을 실제로 적용하는 것은 3·4단계 화면 작업에서 한다. */
+  --color-primary:      #1d6340;
+  --color-primary-alt:  var(--fl-green-700);   /* 현재 UI 초록 */
+  --color-bg:           var(--fl-bg);
+  --color-surface:      var(--fl-surface);
+  --color-accent:       var(--fl-orange);      /* 가격 표기용 */
+  --color-danger:       var(--fl-danger);
+  --color-text:         var(--fl-text);
+  --color-text-muted:   var(--fl-text-muted);
+  --color-border:       var(--fl-border);
+
+  /* 간격 — 기존 --fl-s* 에 그대로 매핑(값 동일) */
+  --space-xs: var(--fl-s1);   /*  4px */
+  --space-sm: var(--fl-s2);   /*  8px */
+  --space-md: var(--fl-s4);   /* 16px */
+  --space-lg: var(--fl-s5);   /* 24px */
+  --space-xl: var(--fl-s6);   /* 32px */
+
+  /* 반경·그림자 — 기존 값 매핑 */
+  --radius-sm:   var(--fl-radius-sm);
+  --radius:      var(--fl-radius);
+  --radius-lg:   var(--fl-radius-lg);
+  --radius-pill: var(--fl-pill);
+  --shadow-sm:   var(--fl-shadow-sm);
+  --shadow:      var(--fl-shadow);
+  --shadow-lg:   var(--fl-shadow-lg);
+
+  /* 글자 크기 — 모바일 기본. 아래 미디어쿼리에서 단계적으로 키운다. */
+  --fs-xs:   12px;
+  --fs-sm:   13px;
+  --fs-base: 15px;
+  --fs-lg:   18px;
+  --fs-xl:   22px;
+
+  /* 레이아웃 */
+  --wrap-max: 1240px;              /* 기존 .fl-header-inner 와 동일 */
+  --wrap-pad: var(--space-md);     /* 모바일 좌우 여백 */
+  --touch-min: 44px;               /* 터치 타겟 최소 크기 */
+
+  /* 안전영역(아이폰 노치·홈바). 지원하지 않는 환경에서는 0px. */
+  --safe-top:    env(safe-area-inset-top, 0px);
+  --safe-right:  env(safe-area-inset-right, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left:   env(safe-area-inset-left, 0px);
+}
+
+/* 태블릿 */
+@media (min-width: 481px) {
+  :root {
+    --fs-base: 16px;
+    --fs-lg:   19px;
+    --fs-xl:   24px;
+    --wrap-pad: var(--space-lg);
+  }
+}
+
+/* 데스크톱 */
+@media (min-width: 769px) {
+  :root {
+    --fs-sm:   14px;
+    --fs-base: 16px;
+    --fs-lg:   20px;
+    --fs-xl:   28px;
+    --wrap-pad: var(--space-lg);
+  }
+}
+
+/* ---- 전역 안전 규칙 ------------------------------------------------------
+   최소한만 둔다. 요소 선택자를 쓰므로 뒤에 오는 클래스 규칙이 언제나 우선한다. */
+
+/* 가로 스크롤 방지.
+   overflow-x: hidden 은 스크롤 컨테이너를 만들어 position:sticky 를 무력화한다.
+   현재 .fl-header 등 6곳이 sticky 를 쓰므로 clip 을 사용한다
+   (clip 은 스크롤 컨테이너를 만들지 않아 sticky 가 그대로 동작한다).
+   clip 미지원 구형 브라우저에서는 이 줄이 무시될 뿐 깨지지 않는다. */
+html {
+  overflow-x: clip;
+}
+
+/* 미디어가 컨테이너를 넘지 않게 */
+img,
+video {
+  max-width: 100%;
+  height: auto;
+}
+
+/* ---- 레이아웃 유틸리티 ---------------------------------------------------
+   전부 신규 클래스명이라 기존 스타일과 충돌하지 않는다.
+   3·4단계에서 화면별로 가져다 쓴다. */
+
+/* 페이지 콘텐츠 폭·좌우 여백. 안전영역까지 더해 노치 기기에서 잘리지 않게 한다. */
+.fl-wrap {
+  width: 100%;
+  max-width: var(--wrap-max);
+  margin-inline: auto;
+  padding-inline: calc(var(--wrap-pad) + var(--safe-left))
+                  calc(var(--wrap-pad) + var(--safe-right));
+}
+
+/* 터치 타겟 최소 크기(44x44). 버튼·아이콘 링크에 덧붙여 쓴다. */
+.fl-touch {
+  min-width: var(--touch-min);
+  min-height: var(--touch-min);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 넘치는 콘텐츠를 세로가 아닌 가로 스크롤로 처리(칩·탭 줄 등) */
+.fl-scroll-x {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+}
+
+/* 표는 이 래퍼로 감싸 가로 스크롤시킨다. table 자체는 건드리지 않는다. */
+.fl-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* 안전영역 여백 유틸 — 고정 헤더·하단 바에 사용 */
+.fl-safe-top    { padding-top: var(--safe-top); }
+.fl-safe-bottom { padding-bottom: var(--safe-bottom); }
+.fl-safe-x {
+  padding-left: var(--safe-left);
+  padding-right: var(--safe-right);
+}
+
+/* 화면 크기별 표시/숨김 — 모바일 우선 */
+.fl-only-mobile { display: none; }
+@media (max-width: 768px) {
+  .fl-only-mobile  { display: initial; }
+  .fl-from-tablet  { display: none; }
+}

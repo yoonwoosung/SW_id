@@ -4777,3 +4777,48 @@ header.header-volunteer { border-bottom-color: #FF9800; }
     .admin-pdf-view iframe { min-height: 650px !important; }
     .admin-page-bg { padding-bottom: 0; }
 }
+
+/* ============================================================================
+   [PWA 4단계-D] 모바일 반응형 — 부가 화면
+   대상: community(추억 광장) · album_create(앨범 에디터)
+
+   앨범 에디터는 자유 배치 캔버스라 모바일 최적화가 곧 UI 재설계다.
+   이번 범위는 레이아웃·스타일만이므로 캔버스 구조는 건드리지 않고
+   터치 타겟과 안전영역만 보완한다(최소 대응).
+   .ae-wrap 은 이미 overflow:hidden 이라 가로 넘침이 페이지로 새지 않는다.
+   ============================================================================ */
+
+/* ---- 커뮤니티 ----
+   .album-grid-container 는 repeat(auto-fill, minmax(250px,1fr)) 이라
+   좁은 화면에서 자동으로 1열이 된다. 터치 타겟과 탭바 넘침만 보완. */
+.cat-tab-btn,
+.page-btn,
+.viewer-nav-btn { min-height: var(--touch-min); }
+
+/* 카테고리 탭이 많아 넘칠 때 줄바꿈 대신 가로 스크롤로 흘린다 */
+.category-tab-bar { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+/* ---- 앨범 에디터(최소 대응) ---- */
+.ae-topbar-btn,
+.ae-topbar-back { min-height: var(--touch-min); }
+
+/* 40px 원형 버튼. min-height 만 키우면 타원이 되므로 양쪽 다 올린다 */
+.ae-nav-btn { width: var(--touch-min); height: var(--touch-min); }
+
+/* 상단 바가 노치에 가리지 않게 좌우 안전영역을 더한다(기본 16px 유지) */
+.ae-topbar {
+    padding-left: calc(16px + var(--safe-left));
+    padding-right: calc(16px + var(--safe-right));
+}
+
+/* ---- 데스크톱(769px+) 복원 ---- */
+@media (min-width: 769px) {
+    .cat-tab-btn,
+    .page-btn,
+    .viewer-nav-btn { min-height: auto; }
+    .category-tab-bar { overflow-x: visible; }
+    .ae-topbar-btn,
+    .ae-topbar-back { min-height: auto; }
+    .ae-nav-btn { width: 40px; height: 40px; }
+    .ae-topbar { padding-left: 16px; padding-right: 16px; }
+}

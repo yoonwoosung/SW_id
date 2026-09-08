@@ -4685,3 +4685,62 @@ header.header-volunteer { border-bottom-color: #FF9800; }
     .complete-page-bg { padding-bottom: 0; }
     .complete-card { padding: 48px 40px; }
 }
+
+/* ============================================================================
+   [PWA 4단계-B] 모바일 반응형 — 농장주 화면
+   대상: farmer_easy_mode · easy_create_experience · farmer_register
+        · farmer_calendar · easy_reservations · easy_communication
+        · easy_modify_list · easy_edit_bio · expired_experiences
+        · farm_manage · farmer_guide
+
+   이지모드는 --farmer-* 토큰(버튼 56px·입력 52px·본문 18px)을 써서
+   이미 터치 친화적이다. 여기서는 여백·표·달력·안전영역만 보완한다.
+   ============================================================================ */
+
+/* 페이지 컨테이너 좌우 여백을 모바일 기준으로 줄이고 노치를 보정 */
+.easy-mode-container,
+.calendar-page-wrapper {
+    padding-left: calc(var(--space-md) + var(--safe-left));
+    padding-right: calc(var(--space-md) + var(--safe-right));
+    padding-bottom: calc(var(--space-lg) + var(--safe-bottom));
+}
+
+/* .main-content-wrapper 는 index·album_create 에서도 쓰인다.
+   기존 하단 여백 60px 은 그대로 두고 좌우만 모바일 기준으로 줄이며,
+   홈바 높이만 더한다. */
+.main-content-wrapper {
+    padding-left: calc(var(--space-md) + var(--safe-left));
+    padding-right: calc(var(--space-md) + var(--safe-right));
+    padding-bottom: calc(60px + var(--safe-bottom));
+}
+
+/* 시간표는 8열이라 모바일 폭을 넘는다. 가로 스크롤로 흘려 세로 레이아웃을 지킨다.
+   (easy_create_experience 는 .timetable-wrapper 가 이미 처리하고 있어 그대로 둔다) */
+.fl-table-wrap .timetable { min-width: 560px; }
+
+/* 달력 툴바: 모바일에서 버튼이 겹치지 않게 줄바꿈·간격 확보 */
+.calendar-toolbar { gap: var(--space-sm); }
+.calendar-toolbar .btn { min-height: var(--touch-min); }
+
+/* 달력 본체 높이를 모바일에서 낮춰 스크롤 부담을 줄인다 */
+.apple-calendar-card .fc { font-size: var(--fs-sm); }
+
+/* 통계·목록 카드 여백 */
+.easy-stats-grid { gap: var(--space-sm); }
+
+/* ---- 데스크톱(901px+) 복원 ----
+   경계 901px 은 기존 max-width:900px 블록들과 맞춘 값. */
+@media (min-width: 901px) {
+    .easy-mode-container,
+    .calendar-page-wrapper {
+        padding-left: 0;
+        padding-right: 0;
+        padding-bottom: 0;
+    }
+    .main-content-wrapper { padding: 0 24px 60px; }
+    .fl-table-wrap .timetable { min-width: 0; }
+    .calendar-toolbar { gap: 0; }
+    .calendar-toolbar .btn { min-height: auto; }
+    .apple-calendar-card .fc { font-size: inherit; }
+    .easy-stats-grid { gap: inherit; }
+}

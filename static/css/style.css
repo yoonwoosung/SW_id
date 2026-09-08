@@ -4744,3 +4744,35 @@ header.header-volunteer { border-bottom-color: #FF9800; }
     .apple-calendar-card .fc { font-size: inherit; }
     .easy-stats-grid { gap: inherit; }
 }
+
+/* ============================================================================
+   [PWA 4단계-C] 모바일 반응형 — 관리자 화면
+   대상: admin/farm_audit_list · admin/farm_audit_detail
+   좌우 2단(col-lg-6)은 Bootstrap 이 992px 미만에서 이미 1단으로 쌓는다.
+   여기서는 표·PDF 뷰어·터치 타겟만 보완한다.
+   ============================================================================ */
+
+/* 심사 표는 열이 많아 모바일 폭을 넘는다. 래퍼로 가로 스크롤시켜
+   카드가 찌그러지거나 글자가 눌리지 않게 한다. */
+.fl-table-wrap .table { min-width: 640px; margin-bottom: 0; }
+
+/* 표를 감싼 카드가 overflow:hidden 이면 스크롤이 잘리므로 풀어준다 */
+.card.overflow-hidden:has(.fl-table-wrap) { overflow: visible !important; }
+
+/* 제출 서류 PDF 뷰어: 650px 은 모바일에서 화면을 다 먹는다 */
+.admin-pdf-view,
+.admin-pdf-view iframe { min-height: 360px !important; }
+
+/* 심사 버튼(승인/반려)은 이미 py-3(약 56px)이고,
+   4단계-A 의 .btn 규칙이 모바일 44px 을 보장하므로 별도 규칙을 두지 않는다. */
+
+/* 관리자 페이지 하단 안전영역 */
+.admin-page-bg { padding-bottom: calc(var(--space-lg) + var(--safe-bottom)); }
+
+/* ---- 데스크톱(992px+) 복원 — Bootstrap lg 경계와 맞춘다 ---- */
+@media (min-width: 992px) {
+    .fl-table-wrap .table { min-width: 0; }
+    .admin-pdf-view { min-height: 600px !important; }
+    .admin-pdf-view iframe { min-height: 650px !important; }
+    .admin-page-bg { padding-bottom: 0; }
+}

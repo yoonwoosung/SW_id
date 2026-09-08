@@ -4534,3 +4534,82 @@ header.header-volunteer { border-bottom-color: #FF9800; }
     .fl-card-body { padding: var(--fl-s5); font-size: var(--farmer-font-base); }
     .fl-rail { grid-auto-columns: 78%; }
 }
+
+/* ============================================================================
+   [PWA 3단계] 모바일 반응형 — 예약 신청(experience_apply)
+   ============================================================================ */
+
+/* 인원 증감 버튼: 32px 은 터치하기 작다. 모바일에서 44px 로 키운다. */
+.counter-btn {
+    width: var(--touch-min);
+    height: var(--touch-min);
+    font-size: var(--fs-lg);
+}
+
+/* 시간 선택: 4열은 모바일에서 글자가 눌린다. 3열로 넓히고 높이를 확보한다. */
+.time-btn-grid { grid-template-columns: repeat(3, 1fr); gap: var(--space-sm); }
+.time-btn {
+    min-height: var(--touch-min);
+    padding: var(--space-sm) var(--space-xs);
+    font-size: var(--fs-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* 날짜 입력도 터치 높이 확보 */
+.apply-date-input { min-height: var(--touch-min); font-size: var(--fs-base); }
+
+/* 폼 카드 여백을 모바일 기준으로 */
+.apply-form-card { padding: var(--space-md); }
+.apply-step-title { font-size: var(--fs-lg); }
+
+/* 제출 버튼을 하단에 고정해 스크롤 없이 누를 수 있게 한다.
+   원래 버튼은 흐름 안에 있으므로, 모바일에서만 고정 배치로 바꾼다. */
+.apply-submit-btn {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1200;
+    width: auto;
+    min-height: var(--touch-min);
+    margin-bottom: 0;
+    border-radius: 0;
+    font-size: var(--fs-base);
+    padding: var(--space-md);
+    /* 홈바·노치 영역 보정 */
+    padding-bottom: calc(var(--space-md) + var(--safe-bottom));
+    padding-left: calc(var(--space-md) + var(--safe-left));
+    padding-right: calc(var(--space-md) + var(--safe-right));
+    box-shadow: 0 -2px 12px rgba(0, 0, 0, .08);
+}
+
+/* 고정 버튼에 폼 끝이 가리지 않도록 아래 여백 확보 */
+.apply-page-bg { padding-bottom: calc(84px + var(--safe-bottom)); }
+
+/* ---- 데스크톱(901px+): 기존 레이아웃·크기로 복원 ----
+   경계 901px 은 기존 max-width:900px 블록(.apply-page-wrapper 1단 전환)과 맞춘 값. */
+@media (min-width: 901px) {
+    .counter-btn { width: 32px; height: 32px; font-size: 1.1rem; }
+    .time-btn-grid { grid-template-columns: repeat(4, 1fr); gap: 10px; }
+    .time-btn {
+        min-height: auto;
+        padding: 12px 8px;
+        font-size: 0.87rem;
+        display: block;
+    }
+    .apply-date-input { min-height: auto; font-size: inherit; }
+    .apply-form-card { padding: 24px; }
+    .apply-step-title { font-size: 1rem; }
+    .apply-submit-btn {
+        position: static;
+        width: 100%;
+        border-radius: 8px;
+        padding: 14px;
+        font-size: 1rem;
+        margin-bottom: 12px;
+        box-shadow: none;
+    }
+    .apply-page-bg { padding-bottom: 0; }
+}

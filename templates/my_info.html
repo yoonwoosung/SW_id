@@ -131,6 +131,31 @@
   .mi-nav-cat { display:none; }
   .mi-nav-divider { display:none; }
 }
+
+/* ── [PWA 3단계] 모바일 반응형 ──
+   .fl-layout(1단)·.fl-side-menu(가로 탭)는 theme.css 가 이미 처리하므로
+   여기서는 남은 세 가지만 보완한다. 데스크톱 값은 아래 min-width 에서 복원. */
+
+/* ① 앨범 3열은 모바일에서 썸네일이 너무 작다 → 2열 */
+.mi-album-grid { grid-template-columns: repeat(2, 1fr); gap: var(--space-sm); }
+
+/* ② 좌우 여백을 모바일 기준으로 줄이고 노치 영역을 보정 */
+.fl-scope.fl-container {
+  padding-left: calc(var(--space-md) + var(--safe-left));
+  padding-right: calc(var(--space-md) + var(--safe-right));
+}
+
+/* ③ 사이드 탭·목록 항목 터치 타겟 확보 */
+.fl-side-menu a { min-height: var(--touch-min); }
+
+/* ④ 하단 홈바에 콘텐츠가 붙지 않게 */
+.fl-scope { padding-bottom: calc(var(--space-lg) + var(--safe-bottom)); }
+
+@media (min-width: 861px) {
+  .mi-album-grid { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .fl-scope.fl-container { padding-left: var(--fl-s5); padding-right: var(--fl-s5); }
+  .fl-scope { padding-bottom: 0; }
+}
 </style>
 {% endblock %}
 

@@ -4491,3 +4491,46 @@ header.header-volunteer { border-bottom-color: #FF9800; }
     0%   { background-position: 200% 0; }
     100% { background-position: -200% 0; }
 }
+/* ============================================================================
+   [PWA 3단계] 모바일 반응형 — 메인(index)
+   mobile-first: 아래 기본값이 모바일, @media (min-width:768px) 에서 기존 값 복원
+   (경계 768px 은 theme.css 의 .fl-hero override 와 맞춘 값).
+   기존 max-width 블록은 그대로 두고 파일 끝에 추가해 우선순위를 확보한다.
+   ============================================================================ */
+
+/* 히어로 — 모바일에서 패딩·글자를 줄인다(데스크톱 값은 아래에서 복원) */
+.fl-hero { padding: var(--space-lg) var(--space-md); }
+.fl-hero h1 { font-size: var(--fs-xl); }
+.fl-hero p  { font-size: var(--fs-sm); }
+
+/* 섹션 제목·간격을 모바일 기준으로 */
+.fl-section { margin: var(--space-xl) 0; }
+.fl-section-head h2 { font-size: var(--fs-lg); }
+
+/* 카드 안쪽 여백·글자 */
+.fl-card-body { padding: var(--space-md); font-size: var(--fs-base); }
+
+/* 목록 카드의 링크·버튼 터치 타겟 확보 */
+.experience-card-grid .more-link,
+.fl-section-head .more-link,
+.fl-more {
+    min-height: var(--touch-min);
+    display: inline-flex;
+    align-items: center;
+}
+
+/* 가로 스크롤 레일: 모바일에서 카드 폭을 넓혀 한 손 스크롤이 쉽게 */
+.fl-rail { grid-auto-columns: 86%; }
+
+/* 데스크톱 복원 — 기존 디자인 값을 그대로 되돌린다.
+   theme.css 가 .fl-hero 를 min-width:768px 에서 override 하므로(padding s8 s8, h1 2.7rem)
+   경계를 768px 로 맞춘다. 769px 로 두면 768px 한 구간에서 값이 어긋난다. */
+@media (min-width: 768px) {
+    .fl-hero { padding: var(--fl-s8) var(--fl-s8); }
+    .fl-hero h1 { font-size: 2.7rem; }
+    .fl-hero p  { font-size: inherit; }
+    .fl-section { margin: var(--fl-s8) 0; }
+    .fl-section-head h2 { font-size: var(--farmer-font-heading); }
+    .fl-card-body { padding: var(--fl-s5); font-size: var(--farmer-font-base); }
+    .fl-rail { grid-auto-columns: 78%; }
+}

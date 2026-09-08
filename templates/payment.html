@@ -32,6 +32,29 @@
                    font-weight:800; color:#fff; background:var(--green); cursor:pointer; }
         .pay-btn:disabled { opacity:.6; cursor:default; }
         .pay-guide { text-align:center; font-size:.8rem; color:#9aa39c; margin:12px 0 0; }
+
+        /* ── [PWA 3단계] 모바일 반응형 ──
+           결제창은 원래 440px 지향이라 레이아웃은 그대로 두고,
+           홈바·노치 보정과 터치 타겟만 보강한다. */
+        .pay-wrap { padding-top: var(--safe-top); }
+        .pay-head { padding-left: calc(18px + var(--safe-left)); padding-right: calc(18px + var(--safe-right)); }
+        .pay-body { padding-left: calc(18px + var(--safe-left)); padding-right: calc(18px + var(--safe-right)); }
+        /* 결제 버튼이 아이폰 홈바에 가리지 않게 아래 여백을 더한다 */
+        .pay-foot {
+            padding-left: calc(18px + var(--safe-left));
+            padding-right: calc(18px + var(--safe-right));
+            padding-bottom: calc(22px + var(--safe-bottom));
+        }
+        /* 닫기(×)·전액 버튼 터치 타겟 확보 */
+        .pay-close {
+            min-width: var(--touch-min); min-height: var(--touch-min);
+            display: inline-flex; align-items: center; justify-content: center;
+        }
+        #pay-point-all { min-height: var(--touch-min); }
+        #pay-point-input { min-height: var(--touch-min); font-size: var(--fs-base); }
+        .pay-btn { min-height: var(--touch-min); }
+        /* 토스 위젯이 그리는 영역이 좌우로 넘치지 않게 */
+        #payment-method, #agreement { max-width: 100%; overflow-x: hidden; }
     </style>
 </head>
 <body>

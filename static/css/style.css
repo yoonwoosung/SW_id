@@ -4756,8 +4756,9 @@ header.header-volunteer { border-bottom-color: #FF9800; }
    카드가 찌그러지거나 글자가 눌리지 않게 한다. */
 .fl-table-wrap .table { min-width: 640px; margin-bottom: 0; }
 
-/* 표를 감싼 카드가 overflow:hidden 이면 스크롤이 잘리므로 풀어준다 */
-.card.overflow-hidden:has(.fl-table-wrap) { overflow: visible !important; }
+/* 참고: 표를 감싼 카드에 overflow:hidden 이 있어도 문제되지 않는다.
+   .fl-table-wrap 이 width:100% 자체 스크롤 컨테이너라 부모를 넘치지 않는다.
+   :has() 규칙은 불필요하고 구형 브라우저 지원 위험만 있어 두지 않는다. */
 
 /* 제출 서류 PDF 뷰어: 650px 은 모바일에서 화면을 다 먹는다 */
 .admin-pdf-view,

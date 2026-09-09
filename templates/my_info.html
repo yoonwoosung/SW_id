@@ -534,8 +534,8 @@ function openCourseModal(expId, cropName) {
                     ? (it.address || '')
                     : ((it.address || '') + (it.distance_km != null ? ' · ' + it.distance_km + 'km' : ''));
                 html += '<div style="display:flex;gap:14px;align-items:flex-start;">'
-                    + '<div style="min-width:44px;font-size:.78rem;font-weight:700;color:#2d6a4f;padding-top:2px;">' + (it.time || '') + '</div>'
-                    + '<div style="flex:1;border-left:2px dashed #b7e4c7;padding-left:14px;">'
+                    + '<div style="min-width:44px;font-size:.78rem;font-weight:700;color:var(--green-dark, var(--fl-green-700));padding-top:2px;">' + (it.time || '') + '</div>'
+                    + '<div style="flex:1;border-left:2px dashed var(--fl-green-100);padding-left:14px;">'
                     + '<div style="font-size:.88rem;font-weight:700;color:#1b4332;">' + label + ' ' + (it.name || '') + '</div>'
                     + (sub ? '<div style="font-size:.78rem;color:#888;margin-top:2px;">' + sub + '</div>' : '')
                     + '</div></div>';

@@ -22,7 +22,7 @@
     transition: background .1s;
 }
 .font-picker-option:hover { background: #f4fbf6; }
-.font-picker-option.selected { background: #ebf7f0; color: #2d6a4f; font-weight: 700; }
+.font-picker-option.selected { background: var(--fl-green-100); color: var(--green-dark, var(--fl-green-700)); font-weight: 700; }
 /* ─── 로컬 웹폰트 ─── */
 @font-face {
     font-family: 'NanumBarunHippi';
@@ -162,7 +162,7 @@
     background: #ffffff; display: flex; align-items: center; justify-content: center;
     cursor: pointer; transition: all .15s; color: #475569;
 }
-.modal-nav-bar .page-nav-btn:hover { background: #2d6a4f; color: #ffffff; border-color: #2d6a4f; }
+.modal-nav-bar .page-nav-btn:hover { background: var(--green-dark, var(--fl-green-700)); color: #ffffff; border-color: var(--green-dark, var(--fl-green-700)); }
 .modal-settings-column {
     display: flex; flex-direction: column; justify-content: space-between;
     height: 100%; overflow-y: auto; padding-right: 4px;
@@ -173,9 +173,9 @@
     border-radius: 10px; border: 1.5px solid #cbd5e1; background: #ffffff;
     cursor: pointer; margin-bottom: 8px; transition: all .18s ease; word-break: keep-all;
 }
-.share-option-card:hover { border-color: #2d6a4f; background: #f4fbf7; }
-.share-option-card.active { border-color: #2d6a4f; background: #ebf7f0; }
-.share-option-card input[type="radio"] { margin-top: 3px; flex-shrink: 0; accent-color: #2d6a4f; width: 16px; height: 16px; }
+.share-option-card:hover { border-color: var(--green-dark, var(--fl-green-700)); background: var(--fl-green-100); }
+.share-option-card.active { border-color: var(--green-dark, var(--fl-green-700)); background: var(--fl-green-100); }
+.share-option-card input[type="radio"] { margin-top: 3px; flex-shrink: 0; accent-color: var(--green-dark, var(--fl-green-700)); width: 16px; height: 16px; }
 .share-option-card .card-text-title { font-size: .85rem; font-weight: 700; color: #0f172a; display: block; margin-bottom: 2px; }
 .share-option-card .card-text-desc { font-size: .74rem; color: #64748b; line-height: 1.35; display: block; }
 .modal-action-btns { display: flex; flex-direction: column; gap: 8px; padding-top: 10px; }
@@ -342,34 +342,34 @@
         box-sizing: border-box;
         height: 68px;
     }
-    .bg-visual-card:hover { border-color: #2d6a4f; background: #f4fbf7; transform: translateY(-1px); }
+    .bg-visual-card:hover { border-color: var(--green-dark, var(--fl-green-700)); background: var(--fl-green-100); transform: translateY(-1px); }
     .bg-visual-card.active {
-        border-color: #2d6a4f;
-        background: #ebf7f0;
-        box-shadow: 0 0 0 1.5px #2d6a4f, 0 3px 8px rgba(45, 106, 79, 0.16);
+        border-color: var(--green-dark, var(--fl-green-700));
+        background: var(--fl-green-100);
+        box-shadow: 0 0 0 1.5px var(--green-dark, var(--fl-green-700)), 0 3px 8px rgba(45, 106, 79, 0.16);
     }
     .bg-visual-card .card-mini-preview-wrap { width: 100%; height: 32px; display: flex; align-items: center; justify-content: center; padding: 2px 4px; }
     .bg-visual-card .card-mini-preview { width: 82%; height: 22px; display: flex; align-items: center; justify-content: center; font-size: 0.68rem; font-weight: 700; color: #334155; position: relative; box-sizing: border-box; }
     .card-mini-preview.preview-default { background: #ffffff; border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.12); border: 1px solid rgba(0,0,0,0.08); }
     .card-mini-preview.preview-none { background: transparent; border: 1px dashed #94a3b8; border-radius: 3px; color: #64748b; }
-    .card-mini-preview.preview-sticker { background: #ffffff; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.15); border: 1.5px solid #2d6a4f; color: #2d6a4f; }
+    .card-mini-preview.preview-sticker { background: #ffffff; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.15); border: 1.5px solid var(--green-dark, var(--fl-green-700)); color: var(--green-dark, var(--fl-green-700)); }
     .card-mini-preview.preview-ribbon { background: #ffffff; border-radius: 2px; border: 1px solid #78350f; outline: 1px dashed #cbd5e1; outline-offset: -2.5px; color: #78350f; }
     .card-mini-preview.preview-band { background: #ffffff; border-left: 2px solid #94a3b8; border-right: 2px solid #94a3b8; border-radius: 1px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
     .card-mini-preview.preview-band::before { content: ''; position: absolute; top: -4px; left: 50%; transform: translateX(-50%); width: 24px; height: 7px; background: rgba(226,232,240,0.9); border-left: 1px dashed #94a3b8; border-right: 1px dashed #94a3b8; }
     .card-mini-preview.preview-memo { background: #ffffff; border-radius: 1px 1px 8px 1px; box-shadow: 1px 2px 5px rgba(0,0,0,0.1); border: 1px solid rgba(0,0,0,0.05); }
     .card-mini-preview.preview-memo::before { content: ''; position: absolute; top: -4px; left: 4px; width: 16px; height: 7px; background: #fde047; transform: rotate(-3deg); border-radius: 1px; }
     .bg-visual-card .card-title-text { font-size: 0.72rem; font-weight: 700; color: #475569; text-align: center; white-space: nowrap; margin-top: 2px; }
-    .bg-visual-card.active .card-title-text { color: #2d6a4f; }
+    .bg-visual-card.active .card-title-text { color: var(--green-dark, var(--fl-green-700)); }
     /* 원형 컬러 도트 */
     .color-dot { width: 24px; height: 24px; border-radius: 50%; border: 2px solid #ffffff; box-shadow: 0 0 0 1px #cbd5e1; cursor: pointer; padding: 0; transition: transform 0.15s ease, box-shadow 0.15s ease; outline: none !important; }
     .color-dot:hover { transform: scale(1.15); }
-    .color-dot.active { transform: scale(1.15); box-shadow: 0 0 0 2px #2d6a4f, 0 2px 4px rgba(0,0,0,0.15); }
+    .color-dot.active { transform: scale(1.15); box-shadow: 0 0 0 2px var(--green-dark, var(--fl-green-700)), 0 2px 4px rgba(0,0,0,0.15); }
     /* 무지개 스포이드 버튼 */
     .custom-color-picker-btn { width: 26px; height: 26px; border-radius: 50%; background: conic-gradient(red, yellow, lime, aqua, blue, magenta, red); display: inline-flex; align-items: center; justify-content: center; cursor: pointer; border: none; box-shadow: 0 2px 5px rgba(0,0,0,0.18); transition: transform 0.15s ease; padding: 0; }
     .custom-color-picker-btn:hover { transform: scale(1.12); }
     .custom-color-picker-btn i { font-size: 11px; color: #ffffff; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.7)); }
     /* 인라인 컬러 피커 패널 */
-    .custom-color-pop-panel { background: #ffffff; border: 1.5px solid #2d6a4f; border-radius: 10px; padding: 12px; margin-top: 10px; margin-bottom: 6px; box-shadow: 0 6px 16px rgba(0,0,0,0.1); animation: panelFadeIn 0.18s ease-out; }
+    .custom-color-pop-panel { background: #ffffff; border: 1.5px solid var(--green-dark, var(--fl-green-700)); border-radius: 10px; padding: 12px; margin-top: 10px; margin-bottom: 6px; box-shadow: 0 6px 16px rgba(0,0,0,0.1); animation: panelFadeIn 0.18s ease-out; }
     @keyframes panelFadeIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
     .color-map-wrapper { position: relative; width: 100%; height: 105px; border-radius: 6px; cursor: crosshair; overflow: hidden; user-select: none; margin-bottom: 8px; }
     .color-map-bg { width: 100%; height: 100%; }
@@ -386,9 +386,9 @@
     .close-panel-btn:hover { color: #1e293b; }
     /* 전문가 사진 썸네일 */
     .expert-thumb-img { width: 64px; height: 64px; object-fit: cover; border-radius: 6px; border: 1.5px solid #e2e8f0; cursor: pointer; transition: transform 0.15s, border-color 0.15s; }
-    .expert-thumb-img:hover { transform: scale(1.08); border-color: #2d6a4f; }
+    .expert-thumb-img:hover { transform: scale(1.08); border-color: var(--green-dark, var(--fl-green-700)); }
     .expert-tag-btn { transition: all 0.15s ease; cursor: pointer; }
-    .expert-tag-btn.active { background-color: #2d6a4f !important; color: #ffffff !important; border-color: #2d6a4f !important; box-shadow: 0 2px 5px rgba(45,106,79,0.25); }
+    .expert-tag-btn.active { background-color: var(--green-dark, var(--fl-green-700)) !important; color: #ffffff !important; border-color: var(--green-dark, var(--fl-green-700)) !important; box-shadow: 0 2px 5px rgba(45,106,79,0.25); }
 </style>
 {% endblock %}
 {% block content %}

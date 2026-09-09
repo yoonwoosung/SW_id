@@ -390,7 +390,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const slot = document.querySelector(`.detail-time-slot[data-day="${day}"][data-time="${time}"]`);
         if (slot) {
             slot.classList.add('selected');
-            slot.style.setProperty('background-color', '#2d6a4f', 'important');
+            slot.style.setProperty('background-color', getComputedStyle(document.documentElement).getPropertyValue('--green-dark').trim() || '#2d6a4f', 'important');
             slot.style.setProperty('color', '#ffffff', 'important');
             slot.innerHTML = '<span class="slot-check-mark">✓</span>';
         }

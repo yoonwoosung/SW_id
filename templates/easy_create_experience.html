@@ -117,7 +117,7 @@
                         </div>
 
                         <div id="organic-cert-fields-easy"
-                            style="display: {% if form_data.get('is_organic') or (item and item.pesticide_free) %}block{% else %}none{% endif %}; margin-top:16px; padding:16px; background:#f9fbf9; border-radius:12px; border-left:4px solid #2d6a4f;">
+                            style="display: {% if form_data.get('is_organic') or (item and item.pesticide_free) %}block{% else %}none{% endif %}; margin-top:16px; padding:16px; background:var(--fl-green-100); border-radius:12px; border-left:4px solid var(--green-dark, var(--fl-green-700));">
                             <div class="form-group">
                                 <label class="easy-form-label-lg" for="organic_certification_type">친환경 인증 종류</label>
                                 <input type="text" class="form-control" id="organic_certification_type"
@@ -349,8 +349,8 @@
 
 .custom-option-card:hover,
 .custom-terms-card:hover {
-    border-color: #2d6a4f;
-    background-color: #f8faf8;
+    border-color: var(--green-dark, var(--fl-green-700));
+    background-color: var(--fl-green-100);
 }
 
 .option-title,
@@ -365,12 +365,12 @@
     height: 24px !important;
     min-height: 24px !important;
     cursor: pointer;
-    accent-color: #2d6a4f;
+    accent-color: var(--green-dark, var(--fl-green-700));
     margin: 0 !important;
 }
 
 .terms-modal-trigger {
-    color: #2d6a4f;
+    color: var(--green-dark, var(--fl-green-700));
     font-weight: 600;
     text-decoration: underline;
     margin-left: 6px;
@@ -427,7 +427,7 @@
 }
 
 .time-slot.selected {
-    background-color: #2d6a4f !important;
+    background-color: var(--green-dark, var(--fl-green-700)) !important;
     color: #ffffff !important;
 }
 
@@ -646,7 +646,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (!slot || !slot.classList.contains('time-slot')) return;
         if (select) {
             slot.classList.add('selected');
-            slot.style.setProperty('background-color', '#2d6a4f', 'important');
+            slot.style.setProperty('background-color', getComputedStyle(document.documentElement).getPropertyValue('--green-dark').trim() || '#2d6a4f', 'important');
             slot.style.setProperty('color', '#ffffff', 'important');
             slot.innerText = '✓';
         } else {

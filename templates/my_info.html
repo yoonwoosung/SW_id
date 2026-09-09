@@ -183,9 +183,10 @@
       <div class="fl-card">
         <div class="fl-card-body fl-side-profile">
           {% if user.profile_image and user.profile_image not in ['shd.png', 'default.png'] %}
-            <img class="fl-avatar" src="{{ url_for('static', filename='uploads/' + user.profile_image) }}" alt="{{ user.nickname }}">
+            <img class="fl-avatar" src="{{ url_for('static', filename='uploads/' + user.profile_image) }}" alt="{{ user.nickname }}"
+                 onerror="this.onerror=null;this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 80 80\'%3E%3Ccircle cx=\'40\' cy=\'40\' r=\'40\' fill=\'%23d8f3dc\'/%3E%3Ccircle cx=\'40\' cy=\'32\' r=\'14\' fill=\'%232d6a4f\'/%3E%3Cellipse cx=\'40\' cy=\'68\' rx=\'22\' ry=\'16\' fill=\'%232d6a4f\'/%3E%3C/svg%3E';">
           {% else %}
-            <img class="fl-avatar" src="{{ url_for('static', filename='uploads/default.png') }}" alt="{{ user.nickname }}">
+            <img class="fl-avatar" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 80 80'%3E%3Ccircle cx='40' cy='40' r='40' fill='%23d8f3dc'/%3E%3Ccircle cx='40' cy='32' r='14' fill='%232d6a4f'/%3E%3Cellipse cx='40' cy='68' rx='22' ry='16' fill='%232d6a4f'/%3E%3C/svg%3E" alt="{{ user.nickname }}">
           {% endif %}
           <strong>{{ user.nickname }}</strong>
           <div class="fl-muted fl-meta">일반 회원</div>

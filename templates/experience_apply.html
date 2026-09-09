@@ -23,9 +23,9 @@
 
         <form method="POST" id="apply-form" action="{{ url_for('experience_apply', item_id=item.id) }}">
 
-            <!-- Step 1: 신청자 정보 -->
+            <!-- Step 1: 참가자 정보 -->
             <div class="apply-form-card">
-                <h3 class="apply-step-title"><span class="apply-step-num">1</span> 신청자 정보</h3>
+                <h3 class="apply-step-title"><span class="apply-step-num">1</span> 참가자 정보</h3>
                 <div class="apply-field-grid">
                     <div class="apply-field">
                         <label class="apply-label">이름 <span class="required">*</span></label>
@@ -131,7 +131,7 @@
             </div>
             <hr class="apply-summary-divider">
             <div class="apply-price-row apply-total-row">
-                <span>합계</span>
+                <span>최종 결제 금액</span>
                 <span class="apply-total-val" id="summary-total">{{ "{:,}".format(item.cost) }}원</span>
             </div>
             <div class="apply-summary-date-time" id="summary-date-time" style="display:none;">

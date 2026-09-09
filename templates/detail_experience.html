@@ -193,12 +193,12 @@
             <p class="ed-book-nocharge">예약 확정 전에는 요금이 청구되지 않아요</p>
             <div class="ed-book-breakdown">
                 <div class="ed-book-row"><span>1인 요금</span><span>{{ "{:,}".format(item.cost) }}원</span></div>
-                <div class="ed-book-row ed-book-total"><span>합계 (1인 기준)</span><span>{{ "{:,}".format(item.cost) }}원</span></div>
+                <div class="ed-book-row ed-book-total"><span>최종 결제 금액 (1인 기준)</span><span>{{ "{:,}".format(item.cost) }}원</span></div>
                 <p class="ed-book-note">＊날짜·시간·인원은 다음 단계에서 선택해요</p>
             </div>
             <p class="detail-booking-remaining">잔여 <strong>{{ remaining }}</strong>석 남았습니다.</p>
             {% else %}
-            <button class="detail-booking-btn disabled" disabled>마감되었습니다</button>
+            <button class="detail-booking-btn disabled" disabled>예약 마감</button>
             {% endif %}
             <div class="detail-booking-info">
                 <div class="detail-booking-info-row"><i data-lucide="map-pin"></i> <span>{{ item.address_detail }}</span></div>

@@ -274,7 +274,7 @@
 .timetable-display { width: 100%; text-align: center; }
 .timetable-display th, .timetable-display td { border: 1px solid #dee2e6; padding: 8px; }
 .timetable-display thead th { background-color: #f8f9fa; }
-.timetable-display td.selected { background-color: var(--fl-green-700); color: white; }
+.timetable-display td.selected { background-color: var(--green-dark, var(--fl-green-700)); color: white; }
 
 @media (max-width: 1200px) {
     .dashboard-grid {

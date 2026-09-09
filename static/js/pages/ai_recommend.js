@@ -36,7 +36,7 @@
         if (!list.length) { sec.hidden = true; return; }
         sec.hidden = false;
         row.innerHTML = list.map(function (c, i) {
-            return '<article class="fl-course-card" style="min-width:200px;max-width:220px;flex-shrink:0;">'
+            return '<article class="fl-course-card">'
                 + '<div class="fl-course-card__band"><span class="fl-badge fl-badge--day">저장됨</span></div>'
                 + '<div class="fl-course-card__head">'
                 + '<h3 class="fl-course-card__title">' + esc(c.title) + '</h3>'

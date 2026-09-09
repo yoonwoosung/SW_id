@@ -204,7 +204,7 @@
             </nav>
 
             <a href="{{ url_for('farmer_register') }}"
-                class="btn btn-success btn-block mt-auto font-weight-bold py-2 shadow-sm">
+                class="fl-btn fl-btn-primary fl-btn-block mt-auto">
                 <i class="fa-solid fa-plus mr-1"></i> 새 체험 등록하기
             </a>
         </aside>
@@ -218,7 +218,7 @@
             <section id="tab-operations" class="dash-tab-content active">
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <h5 class="mb-0 font-weight-bold text-dark">최근 활동 (내 체험 목록)</h5>
-                    <a href="{{ url_for('farmer_register') }}" class="btn btn-sm btn-outline-success font-weight-bold">+ 등록</a>
+                    <a href="{{ url_for('farmer_register') }}" class="fl-btn fl-btn-outline fl-btn-sm">+ 등록</a>
                 </div>
                 <div class="scrollable-list-box mb-4">
                     <ul class="activity-list pl-0 mb-0" style="list-style: none;">
@@ -323,7 +323,7 @@
                             <h5 class="mb-1 font-weight-bold text-dark">{{ user.nickname }}님</h5>
                             <span class="text-muted small">{{ user.email }}</span>
                         </div>
-                        <button type="button" id="account-security-btn" class="btn btn-sm btn-success ml-auto px-3 py-2 font-weight-bold">
+                        <button type="button" id="account-security-btn" class="fl-btn fl-btn-primary fl-btn-sm ml-auto">
                             <i class="fa-solid fa-shield-halved mr-1"></i>계정 보안
                         </button>
                     </form>
@@ -331,7 +331,7 @@
 
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <h5 class="mb-0 font-weight-bold text-dark">내 정보</h5>
-                    <button type="button" class="btn btn-sm btn-outline-secondary font-weight-bold px-3" id="farmer-edit-btn">수정</button>
+                    <button type="button" class="fl-btn fl-btn-outline fl-btn-sm" id="farmer-edit-btn">수정</button>
                 </div>
 
                 <form id="farmer-info-form" method="POST" action="{{ url_for('my_info') }}">
@@ -377,8 +377,8 @@
                             </div>
                         </div>
                         <div id="farmer-form-buttons" style="display: none;" class="mt-4 text-right">
-                            <button type="button" id="farmer-cancel-btn" class="btn btn-sm btn-secondary px-4 mr-1">취소</button>
-                            <button type="submit" class="btn btn-sm btn-success px-4 font-weight-bold">저장하기</button>
+                            <button type="button" id="farmer-cancel-btn" class="fl-btn fl-btn-outline fl-btn-sm mr-1">취소</button>
+                            <button type="submit" class="fl-btn fl-btn-primary fl-btn-sm">저장하기</button>
                         </div>
                     </fieldset>
                 </form>
@@ -645,7 +645,7 @@
                         통합 인원: ${group.totalCount}명 (성인 ${group.totalAdult}, 청소년 ${group.totalTeen}, 아동 ${group.totalChild})
                     </span>
                 </div>
-                <div class="small font-weight-bold text-secondary mb-2">신청자 명단 (${group.items.length}명)</div>
+                <div class="small font-weight-bold text-secondary mb-2">참가자 명단 (${group.items.length}명)</div>
             `;
 
             group.items.forEach((item, idx) => {

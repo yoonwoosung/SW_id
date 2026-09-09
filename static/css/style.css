@@ -997,6 +997,8 @@
     cursor: pointer;
     flex-shrink: 0;
     appearance: auto;
+    text-align: center;
+    text-align-last: center;
 }
 .hero-unified-select-wide { min-width: 160px; }
 

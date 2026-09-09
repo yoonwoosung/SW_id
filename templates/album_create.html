@@ -1768,6 +1768,8 @@
             albumPagesData[0].title = fullTitle;
             updateTitleDisplay();
         }
+        // 선택한 체험의 주소로 주변 명소 태그 갱신
+        updateExpertLocationTags(selectedOption.dataset.location || '');
     }
 
     function addImageToActivePage(imgUrl) {
@@ -3005,17 +3007,21 @@
         if (!container) return;
         container.innerHTML = '';
 
-        let large = '';
+        const tags = [];
         if (farmAddress) {
             const parts = farmAddress.split(' ');
-            large = parts[0] || '';
+            // 시·군 단위: parts[1] 에서 '시'/'군' 접미사 제거 (예: 천안시 → 천안)
+            const city = (parts[1] || '').replace(/(시|군)$/, '');
+            // 구·읍·면 단위: parts[2] 또는 parts[3] 중 '구'/'읍'/'면'으로 끝나는 것
+            const subMatch = parts.slice(2, 5).find(p => /(구|읍|면)$/.test(p));
+            const sub = subMatch ? subMatch.replace(/(구|읍|면)$/, '') : '';
+
+            if (city) tags.push({ label: `📍 ${city} 명소`, query: city, active: true });
+            if (sub)  tags.push({ label: `📍 ${sub} 명소`, query: sub, active: false });
         }
 
-        const tags = [];
-        if (large) {
-            tags.push({ label: `📍 ${large} 명소`, query: large, active: true });
-        } else {
-            tags.push({ label: '📍 충남 천안 명소', query: '충청남도 천안', active: true });
+        if (tags.length === 0) {
+            tags.push({ label: '📍 천안 명소', query: '천안', active: true });
         }
 
         tags.forEach((tag) => {
@@ -3279,13 +3285,25 @@
         }
     }
 
+    // 프록시를 거친 이미지 URL을 그대로 반환 (캔버스 CORS 오염 방지용)
+    function getSafeImageUrl(url) {
+        if (!url) return '';
+        // 이미 프록시 URL이면 그대로, 외부 URL이면 프록시로 감쌈
+        if (url.startsWith('/api/proxy-image')) return url;
+        if (url.startsWith('http')) return `/api/proxy-image?url=${encodeURIComponent(url)}`;
+        return url;
+    }
+
     // 페이지 로드 시 초기화
     document.addEventListener('DOMContentLoaded', function() {
         renderColorDots(currentActiveColor);
         renderBgColorDots(currentActiveBgColor);
         initColorMapDrag('text');
         initColorMapDrag('bg');
-        updateExpertLocationTags('');
+        // 체험 선택 드롭다운의 초기 주소로 위치 태그 생성
+        const sel = document.getElementById('albumExpSelect');
+        const initLocation = sel ? (sel.options[sel.selectedIndex] || {}).dataset?.location || '' : '';
+        updateExpertLocationTags(initLocation);
     });
 </script>
 

@@ -123,11 +123,19 @@
 
 /* ---- 코스 카드 ---- */
 .fl-course-list { display: grid; grid-template-columns: 1fr; gap: 14px; }
-/* 카드 상단 컬러 밴드 + 뱃지 */
+/* 카드 상단 이미지(또는 컬러 밴드) + 뱃지 */
 .fl-course-card__band {
-    height: 92px; background: linear-gradient(135deg, #c0dd97, #9fe1cb);
+    height: 120px; background: linear-gradient(135deg, #c0dd97, #9fe1cb);
     position: relative; display: flex; align-items: flex-start; gap: 6px; padding: 10px; flex-wrap: wrap;
+    overflow: hidden;
 }
+/* 농장 대표 사진 — 없으면 그린 그라디언트가 보임 */
+.fl-course-card__img {
+    position: absolute; inset: 0; width: 100%; height: 100%;
+    object-fit: cover; object-position: center;
+}
+/* 뱃지가 이미지 위에 보이도록 */
+.fl-badge { position: relative; z-index: 1; }
 .fl-badge { font-size: 0.7rem; font-weight: 700; border-radius: 6px; padding: 3px 8px; }
 .fl-badge--urgent { background: var(--fl-danger, #e5484d); color: #fff; }
 .fl-badge--eco { background: rgba(255,255,255,0.92); color: var(--fl-text, #1a1a1a); }

@@ -62,6 +62,7 @@ def personalized_recommendations():
         "esg_grade": compute_esg(exp)["grade"],   # ESG 코스 카드 등급 배지(A~D)용
         "d_day": exp.d_day,
         "distance_km": distance, "score": round(score, 3), "reasons": reasons,
+        "first_image": (exp.images.split(',')[0].strip() if exp.images else None),
     } for exp, distance, score, reasons in ranked]
     return success_response({
         "personalized": user is not None,

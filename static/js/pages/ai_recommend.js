@@ -184,8 +184,11 @@
             var reasons = (x.reasons || []).map(function (r) { return '<span class="fl-reason">' + esc(r) + '</span>'; }).join('');
             var storeKey = s.key + '-' + i;
             cardStore[storeKey] = { rec: x, course: d || {}, section: s };
+            var imgHtml = x.first_image
+                ? '<img class="fl-course-card__img" src="/uploads/' + esc(x.first_image) + '" alt="' + esc(x.crop) + '" loading="lazy" onerror="this.remove()">'
+                : '';
             return '<article class="fl-course-card" data-search="' + esc(searchKey) + '" data-store-key="' + storeKey + '">'
-                + '<div class="fl-course-card__band">' + badges(x, s.esg) + '</div>'
+                + '<div class="fl-course-card__band">' + imgHtml + badges(x, s.esg) + '</div>'
                 + '<div class="fl-course-card__head">'
                 + '<h3 class="fl-course-card__title">' + title + '</h3>'
                 + (viewers != null ? '<p class="fl-course-viewers"><i data-lucide="eye"></i> 지금 ' + esc(viewers) + '명이 보는 중</p>' : '')

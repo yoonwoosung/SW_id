@@ -149,7 +149,7 @@
     box-shadow: var(--shadow-card, 0 2px 12px rgba(0,0,0,0.06)); overflow: hidden;
     display: flex; flex-direction: column;
 }
-.fl-course-card__head { padding: 14px 16px; flex: 1; display: flex; flex-direction: column; min-height: 130px; }
+.fl-course-card__head { padding: 14px 16px; flex: 1; display: flex; flex-direction: column; }
 .fl-course-card__title { font-size: 1.02rem; font-weight: 800; color: #253027; margin: 0 0 8px; }
 .fl-course-badge {
     display: inline-block; font-size: 0.72rem; font-weight: 700; color: var(--green-dark, var(--fl-green-700));
@@ -260,7 +260,7 @@
 }
 .fl-row::-webkit-scrollbar { height: 6px; }
 .fl-row::-webkit-scrollbar-thumb { background: #dfe4dd; border-radius: 3px; }
-.fl-row .fl-course-card { flex: 0 0 280px; scroll-snap-align: start; }
+.fl-row .fl-course-card { flex: 0 0 280px; scroll-snap-align: start; min-height: 320px; }
 .fl-row .fl-empty { flex: 1; }
 
 /* ESG 등급 배지 */

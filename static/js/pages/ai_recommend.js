@@ -24,8 +24,22 @@
     var filterEl = $('cond-filter'), noteEl = $('rec-note'),
         quickEl = $('quick-segments'), searchInput = $('course-q'), searchEmpty = $('search-empty');
     var coords = { lat: null, lon: null };
-    var lastSelected = {};
     var currentQuery = '';
+
+    // URL 파라미터(cond_*)에서 초기 필터 상태 읽기 (상황 카드 연동)
+    var presetFromUrl = (function () {
+        var params = new URLSearchParams(window.location.search);
+        var out = {};
+        params.forEach(function (val, key) {
+            if (key.indexOf('cond_') === 0) {
+                var cat = key.slice(5);
+                if (!out[cat]) out[cat] = [];
+                out[cat].push(val);
+            }
+        });
+        return out;
+    })();
+    var lastSelected = Object.keys(presetFromUrl).length ? presetFromUrl : {};
     var cardStore = {};   // storeKey → { rec, course, section }
 
     // ---- 저장된 코스 렌더 ----
@@ -64,6 +78,40 @@
     renderSavedCourses();
 
     FarmFilter.mount(filterEl, { endpoint: filterEl.dataset.endpoint, onApply: function (sel) { lastSelected = sel; loadAll(); } });
+
+    // ---- URL 프리셋: FarmFilter 렌더 완료 후 체크박스 선택 + 필터 패널 오픈 ----
+    if (Object.keys(presetFromUrl).length) {
+        setTimeout(function () {
+            // 필터 아코디언 열기
+            var colToggle = document.querySelector('.fl-collapse__toggle');
+            if (colToggle && colToggle.getAttribute('aria-expanded') !== 'true') {
+                var colBody = document.getElementById(colToggle.getAttribute('aria-controls'));
+                colToggle.setAttribute('aria-expanded', 'true');
+                if (colBody) colBody.hidden = false;
+            }
+            // 카테고리별 체크박스 선택
+            Object.keys(presetFromUrl).forEach(function (cat) {
+                (presetFromUrl[cat] || []).forEach(function (val) {
+                    // 해당 탭으로 전환
+                    var tab = filterEl.querySelector('.fl-tab[data-cat="' + cat + '"]');
+                    if (tab) tab.click();
+                    // 체크박스 체크 후 change 이벤트로 FarmFilter 내부 상태 동기화
+                    var cb = filterEl.querySelector('input[data-cat="' + cat + '"][value="' + val + '"]');
+                    if (cb) {
+                        cb.checked = true;
+                        cb.dispatchEvent(new Event('change', { bubbles: true }));
+                        // 중분류 아코디언 안에 있으면 열기
+                        var accBody = cb.closest('.fl-acc__body');
+                        if (accBody) {
+                            accBody.hidden = false;
+                            var accToggle = accBody.closest('.fl-acc').querySelector('.fl-acc__toggle-btn');
+                            if (accToggle) accToggle.setAttribute('aria-expanded', 'true');
+                        }
+                    }
+                });
+            });
+        }, 900);  // FarmFilter 비동기 fetch + renderTree 완료 대기
+    }
 
     // ---- 상세조건 접힘 토글 ----
     var collapseToggle = document.querySelector('.fl-collapse__toggle');

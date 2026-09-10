@@ -186,7 +186,7 @@
             var storeKey = s.key + '-' + i;
             cardStore[storeKey] = { rec: x, course: d || {}, section: s };
             var imgHtml = x.first_image
-                ? '<img class="fl-course-card__img" src="/uploads/' + esc(x.first_image) + '" alt="' + esc(x.crop) + '" loading="lazy" onerror="this.remove()">'
+                ? '<img class="fl-course-card__img" src="/static/uploads/' + esc(x.first_image) + '" alt="' + esc(x.crop) + '" loading="lazy" onerror="this.remove()">'
                 : '';
             return '<article class="fl-course-card" data-search="' + esc(searchKey) + '" data-store-key="' + storeKey + '">'
                 + '<div class="fl-course-card__band">' + imgHtml + badges(x, s.esg) + '</div>'

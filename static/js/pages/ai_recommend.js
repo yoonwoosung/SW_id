@@ -40,6 +40,7 @@
                 + '<div class="fl-course-card__band"><span class="fl-badge fl-badge--day">저장됨</span></div>'
                 + '<div class="fl-course-card__head">'
                 + '<h3 class="fl-course-card__title">' + esc(c.title) + '</h3>'
+                + '<div style="flex:1;"></div>'
                 + (c.cost ? '<div class="fl-course-price"><span class="fl-cost">' + won(c.cost) + '</span><span class="fl-per">＊1인당 가격</span></div>' : '')
                 + '</div>'
                 + '<button type="button" class="fl-course-card__toggle saved-remove-btn" data-idx="' + i + '" style="color:var(--fl-text-muted);">'

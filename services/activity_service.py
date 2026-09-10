@@ -6,6 +6,7 @@ from common.constants import (
     APPLICATION_STATUS_CONFIRMED, APPLICATION_STATUS_CANCELLED,
 )
 from models import db, Application, Notification
+from services.thumbnail_service import first_image_name
 
 # 카드 상태 코드
 STATE_PAY_PENDING = 'pay_pending'     # 결제 대기
@@ -112,9 +113,7 @@ def reservation_cards(applications, today=None):
     for app in applications:
         exp = app.experience
         state = reservation_state(app, today)
-        image = ''
-        if exp is not None and exp.images:
-            image = exp.images.split(',')[0]
+        image = first_image_name(exp) or ''   # 없을 때 '' 는 기존 계약 유지
         cards.append({
             'app_id': app.id,
             'exp_id': app.experience_id,

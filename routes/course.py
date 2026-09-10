@@ -5,6 +5,7 @@ from common.constants import COURSE_SEARCH_RADIUS_M, MAX_SEARCH_RADIUS_M, COURSE
 from external import tour_api
 from services import course_builder
 from services.course_reason import build_course_reason
+from services.thumbnail_service import experience_thumbnail_url
 
 
 def _fetch_places(experience, content_type):
@@ -43,6 +44,7 @@ def experience_course(item_id):
         # 외부 장소를 못 가져와도 화면이 죽지 않게 200 + 안내 메시지로 응답.
         return success_response({
             "experience_id": item.id,
+            "thumbnail_url": experience_thumbnail_url(item),
             "reason": None,
             "items": items,
             "summary": summary,
@@ -51,6 +53,7 @@ def experience_course(item_id):
 
     return success_response({
         "experience_id": item.id,
+        "thumbnail_url": experience_thumbnail_url(item),
         "reason": build_course_reason(item, items),
         "items": items,
         "summary": summary,

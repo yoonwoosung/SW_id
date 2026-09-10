@@ -1,5 +1,6 @@
 # services/wishlist_service.py — 찜 등록·해제·목록 로직(DB 처리). 라우트는 이 함수들을 호출만 한다.
 from models import db, Wishlist, Experience
+from services.thumbnail_service import first_image_name
 
 
 def add_wishlist(user_id, experience_id):
@@ -48,7 +49,7 @@ def list_wishlists(user_id):
             "id": wishlist.id,
             "experience_id": experience.id,
             "name": f"{experience.crop} 체험",
-            "image": experience.images.split(',')[0] if experience.images else None,
+            "image": first_image_name(experience),
             "cost": experience.cost,
             "created_at": wishlist.created_at.isoformat(),
         })

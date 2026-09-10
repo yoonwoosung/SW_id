@@ -16,7 +16,7 @@
                 {% elif user.profile_image %}
                 <img class="fl-avatar" src="{{ url_for('static', filename='uploads/' + user.profile_image) }}" alt="{{ user.nickname }}">
                 {% else %}
-                <img class="fl-avatar" src="{{ url_for('static', filename='uploads/default.png') }}" alt="{{ user.nickname }}">
+                <img class="fl-avatar" src="{{ url_for('static', filename='images/no_image.svg') }}" alt="{{ user.nickname }}">
                 {% endif %}
                 <strong>{{ user.nickname }}</strong>
                 <div class="fl-muted fl-meta">{{ (user.farm_address or '지역 미등록').split(' ')[:2] | join(' ') }}</div>

@@ -14,6 +14,8 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 from sqlalchemy.sql import func
 from sqlalchemy import or_, case
+from sqlalchemy.orm import joinedload
+from services.thumbnail_service import experience_thumbnail_url, first_image_name
 from types import SimpleNamespace
 from PIL import Image
 
@@ -156,7 +158,8 @@ def api_search():
         per_page = 15
 
         today = date.today()
-        base_query = Experience.query.filter(
+        # 카드마다 farmer.farm_image 를 읽으므로 farmer 를 함께 가져온다(N+1 방지)
+        base_query = Experience.query.options(joinedload(Experience.farmer)).filter(
             Experience.status == 'recruiting',
             Experience.end_date >= today
         )
@@ -261,11 +264,7 @@ def api_search():
         # 6. JSON 응답 직렬화
         response_items = []
         for item in items_on_page:
-            first_image = None
-            if item.images:
-                imgs = [img.strip() for img in item.images.split(',') if img.strip()]
-                if imgs:
-                    first_image = imgs[0]
+            first_image = first_image_name(item)
 
             is_specialty = getattr(item, 'is_specialty_val', None)
             if is_specialty is None:
@@ -283,7 +282,8 @@ def api_search():
                 'crop': item.crop,
                 'address_detail': item.address_detail or item.location or '',
                 'cost': item.cost,
-                'first_image': first_image,
+                'first_image': first_image,          # 기존 프론트 호환용(파일명만)
+                'thumbnail_url': experience_thumbnail_url(item),
                 'remaining_spots': max(0, item.max_participants - item.current_participants),
                 'pesticide_free': bool(item.pesticide_free),
                 'is_specialty': bool(is_specialty),

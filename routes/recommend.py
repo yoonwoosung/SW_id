@@ -2,6 +2,7 @@
 from datetime import date
 
 from flask import request, session, render_template
+from sqlalchemy.orm import joinedload
 
 from models import Experience, User
 from common.response import success_response, error_response
@@ -12,11 +13,15 @@ from services.profile_service import has_recommendation_profile
 from services.trend_service import record_click, trending_experience_ids, trend_keywords
 from services import segment_service
 from services.esg_service import compute_esg
+from services.thumbnail_service import experience_thumbnail_url, first_image_name
 
 
 def _recruiting_experiences():
+    # 카드 대표 사진 폴백에서 farmer.farm_image 를 읽는다. 지연 로딩이면
+    # 직렬화하는 체험 1건당 쿼리 1번(N+1)이 붙으므로 farmer 를 함께 가져온다.
+    # rank_personalized 가 limit=15 로 자르므로 최대 15쿼리였다.
     today = date.today()
-    return Experience.query.filter(
+    return Experience.query.options(joinedload(Experience.farmer)).filter(
         Experience.status == 'recruiting', Experience.end_date >= today
     ).all()
 
@@ -35,6 +40,7 @@ def recommend_experiences():
     results = [{
         "id": exp.id, "crop": exp.crop, "address": exp.address_detail,
         "distance_km": distance, "score": round(score, 3),
+        "thumbnail_url": experience_thumbnail_url(exp),
     } for exp, distance, score in ranked]
     return success_response({"count": len(results), "results": results})
 
@@ -62,7 +68,8 @@ def personalized_recommendations():
         "esg_grade": compute_esg(exp)["grade"],   # ESG 코스 카드 등급 배지(A~D)용
         "d_day": exp.d_day,
         "distance_km": distance, "score": round(score, 3), "reasons": reasons,
-        "first_image": (exp.images.split(',')[0].strip() if exp.images else None),
+        "first_image": first_image_name(exp),   # 기존 프론트 호환용(파일명만)
+        "thumbnail_url": experience_thumbnail_url(exp),
     } for exp, distance, score, reasons in ranked]
     return success_response({
         "personalized": user is not None,

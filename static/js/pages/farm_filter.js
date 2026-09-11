@@ -120,18 +120,19 @@ window.FarmFilter = (function () {
 
         function renderTree(tree) {
             var init = opts.initialState || null;
-            // initialState가 있으면 해당 cat 탭을 첫 탭으로 활성화
             var firstInitCat = init && Object.keys(init)[0];
+            // initialState의 cat이 실제 트리에 없으면(API 실패 등) 첫 탭 기본 활성화로 폴백
+            var initCatExists = firstInitCat && tree.some(function (c) { return c.code === firstInitCat; });
             root.innerHTML =
                 '<div class="fl-chips" data-role="chips" aria-live="polite"></div>'
                 + '<div class="fl-filter">'
                 + '<div class="fl-tabbar fl-tabbar--vertical" role="tablist">' + tree.map(function (c, i) {
-                    var isActive = firstInitCat ? c.code === firstInitCat : i === 0;
+                    var isActive = initCatExists ? c.code === firstInitCat : i === 0;
                     return '<button type="button" class="fl-tab' + (isActive ? ' is-active' : '') + '" data-cat="' + esc(c.code) + '">'
                         + '<span class="fl-tab__label">' + esc(c.label) + '</span><span class="fl-tab__count" hidden>0</span></button>';
                 }).join('') + '</div>'
                 + '<div class="fl-panel-body">' + tree.map(function (c, i) {
-                    var isActive = firstInitCat ? c.code === firstInitCat : i === 0;
+                    var isActive = initCatExists ? c.code === firstInitCat : i === 0;
                     return '<div class="fl-catpanel" data-catpanel="' + esc(c.code) + '"' + (isActive ? '' : ' hidden') + '>'
                         + renderPanelNodes(c.children || [], c.code, init)
                         + (c.note ? '<div class="fl-note">' + esc(c.note) + '</div>' : '')

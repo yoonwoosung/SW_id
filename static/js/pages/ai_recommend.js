@@ -87,8 +87,9 @@
         setTimeout(function () {
             // 필터 아코디언 열기
             var colToggle = document.querySelector('.fl-collapse__toggle');
+            var colBody = null;
             if (colToggle && colToggle.getAttribute('aria-expanded') !== 'true') {
-                var colBody = document.getElementById(colToggle.getAttribute('aria-controls'));
+                colBody = document.getElementById(colToggle.getAttribute('aria-controls'));
                 colToggle.setAttribute('aria-expanded', 'true');
                 if (colBody) colBody.hidden = false;
             }
@@ -113,6 +114,15 @@
                     }
                 });
             });
+            // 필터 섹션으로 스크롤 + 선택된 칩 하이라이트
+            var colSection = document.querySelector('.fl-collapse');
+            if (colSection) colSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            setTimeout(function () {
+                filterEl.querySelectorAll('.fl-chip').forEach(function (chip) {
+                    chip.classList.add('fl-chip--preset');
+                    setTimeout(function () { chip.classList.remove('fl-chip--preset'); }, 1800);
+                });
+            }, 400);
         }, 900);  // FarmFilter 비동기 fetch + renderTree 완료 대기
     }
 

@@ -28,6 +28,12 @@
 }
 .fl-chip__x { cursor: pointer; border: none; background: none; color: var(--green-dark); font-size: 1rem; line-height: 1; padding: 0; }
 .fl-chip__x:hover { color: #b33; }
+@keyframes fl-chip-pop {
+    0%   { transform: scale(1);    box-shadow: 0 0 0 0 rgba(76,175,80,.6); }
+    40%  { transform: scale(1.12); box-shadow: 0 0 0 6px rgba(76,175,80,.25); }
+    100% { transform: scale(1);    box-shadow: 0 0 0 0 rgba(76,175,80,0); }
+}
+.fl-chip--preset { animation: fl-chip-pop 0.55s ease-out forwards; }
 
 /* ---- 필터: 세로 탭(왼쪽) + 세부 패널(오른쪽) 2단 ---- */
 .fl-filter { display: flex; gap: 12px; align-items: flex-start; }

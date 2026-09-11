@@ -27,6 +27,7 @@
     var currentQuery = '';
 
     // URL 파라미터(cond_*)에서 초기 필터 상태 읽기 (상황 카드 연동)
+    console.log('[FL debug] location.search:', window.location.search);
     var presetFromUrl = (function () {
         var params = new URLSearchParams(window.location.search);
         var out = {};
@@ -39,6 +40,7 @@
         });
         return out;
     })();
+    console.log('[FL debug] presetFromUrl:', JSON.stringify(presetFromUrl));
     var lastSelected = Object.keys(presetFromUrl).length ? presetFromUrl : {};
     var cardStore = {};   // storeKey → { rec, course, section }
 

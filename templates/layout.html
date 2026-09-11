@@ -32,9 +32,11 @@
     </script>
     {% block head %}{% endblock %}
     {# ── PWA (1단계: 설치·아이콘) ── #}
+    <link rel="icon" href="{{ url_for('static', filename='icons/icon-192.png') }}" type="image/png">
     <link rel="manifest" href="{{ url_for('pwa_manifest') }}">
     <meta name="theme-color" content="#1d6340">
     <link rel="apple-touch-icon" href="{{ url_for('static', filename='icons/icon-180.png') }}">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="FarmLink">

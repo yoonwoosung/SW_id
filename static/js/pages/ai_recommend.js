@@ -26,6 +26,17 @@
     var coords = { lat: null, lon: null };
     var currentQuery = '';
 
+    // cond_* 파라미터가 있고 아직 리로드 전이면 1회 강제 새로고침
+    (function () {
+        var p = new URLSearchParams(window.location.search);
+        var hasCond = false;
+        p.forEach(function (v, k) { if (k.indexOf('cond_') === 0) hasCond = true; });
+        if (hasCond && !p.get('_r')) {
+            p.set('_r', '1');
+            location.replace(location.pathname + '?' + p.toString());
+        }
+    })();
+
     // URL 파라미터(cond_*)에서 초기 필터 상태 읽기 (상황 카드 연동)
     var presetFromUrl = (function () {
         var params = new URLSearchParams(window.location.search);

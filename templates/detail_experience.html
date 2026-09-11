@@ -173,48 +173,7 @@
             </div>
         </div>
 
-    </div>
-
-    <!-- 오른쪽: 예약 패널 -->
-    <div class="detail-booking-col">
-        <div class="detail-booking-panel">
-            <div class="detail-booking-price">
-                <span class="detail-booking-price-num">{{ "{:,}".format(item.cost) }}원</span>
-                <span class="detail-booking-price-per">/ 1인</span>
-            </div>
-            <p style="font-size:0.78rem;color:#9aa39c;margin:-6px 0 10px;">* 1인당 가격입니다</p>
-            <div class="detail-booking-stats">
-                <div class="detail-booking-stat"><i data-lucide="users"></i> <span>{{ item.current_participants }}/{{ item.max_participants }}명</span></div>
-                <div class="detail-booking-stat"><i data-lucide="calendar-x"></i> <span>D-{{ item.d_day }}</span></div>
-            </div>
-            {% set remaining = item.max_participants - item.current_participants %}
-            {% if remaining > 0 %}
-            <a href="{{ url_for('experience_apply', item_id=item.id) }}" class="detail-booking-btn"><i data-lucide="calendar-check"></i> 예약 신청하기</a>
-            <p class="ed-book-nocharge">예약 확정 전에는 요금이 청구되지 않아요</p>
-            <div class="ed-book-breakdown">
-                <div class="ed-book-row"><span>1인 요금</span><span>{{ "{:,}".format(item.cost) }}원</span></div>
-                <div class="ed-book-row ed-book-total"><span>최종 결제 금액 (1인 기준)</span><span>{{ "{:,}".format(item.cost) }}원</span></div>
-                <p class="ed-book-note">＊날짜·시간·인원은 다음 단계에서 선택해요</p>
-            </div>
-            <p class="detail-booking-remaining">잔여 <strong>{{ remaining }}</strong>석 남았습니다.</p>
-            {% else %}
-            <button class="detail-booking-btn disabled" disabled>예약 마감</button>
-            {% endif %}
-            <div class="detail-booking-info">
-                <div class="detail-booking-info-row"><i data-lucide="map-pin"></i> <span>{{ item.address_detail }}</span></div>
-                <div class="detail-booking-info-row"><i data-lucide="leaf"></i> <span>친환경: {{ "예" if item.pesticide_free else "아니오" }}</span></div>
-                <div class="detail-booking-info-row"><i data-lucide="square-parking"></i> <span>주차: {{ "가능" if item.has_parking else "불가" }}</span></div>
-                <div class="detail-booking-info-row"><i data-lucide="calendar"></i> <span>마감: {{ item.end_date.strftime('%Y.%m.%d') }}</span></div>
-            </div>
-        </div>
-    </div>
-
-</div>
-</div>
-
-<!-- 하단 확장 섹션 -->
-<div class="detail-extra-bg">
-    <div class="detail-extra-inner">
+        <!-- 하단 확장 섹션 — detail-main-col 안에 포함시켜 우측 sticky가 페이지 끝까지 추적하도록 -->
 
         <!-- AI 추천 코스 -->
         <section id="ai-course-section" class="section-card">
@@ -347,8 +306,44 @@
             </div>
         </section>
 
-    </div>
-</div>
+    </div><!-- /detail-main-col -->
+
+    <!-- 오른쪽: 예약 패널 -->
+    <div class="detail-booking-col">
+        <div class="detail-booking-panel">
+            <div class="detail-booking-price">
+                <span class="detail-booking-price-num">{{ "{:,}".format(item.cost) }}원</span>
+                <span class="detail-booking-price-per">/ 1인</span>
+            </div>
+            <p style="font-size:0.78rem;color:#9aa39c;margin:-6px 0 10px;">* 1인당 가격입니다</p>
+            <div class="detail-booking-stats">
+                <div class="detail-booking-stat"><i data-lucide="users"></i> <span>{{ item.current_participants }}/{{ item.max_participants }}명</span></div>
+                <div class="detail-booking-stat"><i data-lucide="calendar-x"></i> <span>D-{{ item.d_day }}</span></div>
+            </div>
+            {% set remaining = item.max_participants - item.current_participants %}
+            {% if remaining > 0 %}
+            <a href="{{ url_for('experience_apply', item_id=item.id) }}" class="detail-booking-btn"><i data-lucide="calendar-check"></i> 예약 신청하기</a>
+            <p class="ed-book-nocharge">예약 확정 전에는 요금이 청구되지 않아요</p>
+            <div class="ed-book-breakdown">
+                <div class="ed-book-row"><span>1인 요금</span><span>{{ "{:,}".format(item.cost) }}원</span></div>
+                <div class="ed-book-row ed-book-total"><span>최종 결제 금액 (1인 기준)</span><span>{{ "{:,}".format(item.cost) }}원</span></div>
+                <p class="ed-book-note">＊날짜·시간·인원은 다음 단계에서 선택해요</p>
+            </div>
+            <p class="detail-booking-remaining">잔여 <strong>{{ remaining }}</strong>석 남았습니다.</p>
+            {% else %}
+            <button class="detail-booking-btn disabled" disabled>예약 마감</button>
+            {% endif %}
+            <div class="detail-booking-info">
+                <div class="detail-booking-info-row"><i data-lucide="map-pin"></i> <span>{{ item.address_detail }}</span></div>
+                <div class="detail-booking-info-row"><i data-lucide="leaf"></i> <span>친환경: {{ "예" if item.pesticide_free else "아니오" }}</span></div>
+                <div class="detail-booking-info-row"><i data-lucide="square-parking"></i> <span>주차: {{ "가능" if item.has_parking else "불가" }}</span></div>
+                <div class="detail-booking-info-row"><i data-lucide="calendar"></i> <span>마감: {{ item.end_date.strftime('%Y.%m.%d') }}</span></div>
+            </div>
+        </div>
+    </div><!-- /detail-booking-col -->
+
+</div><!-- /detail-page-wrapper -->
+</div><!-- /detail-page-bg -->
 
 {# 모바일 전용 하단 고정 예약 바.
    데스크톱에서는 우측 예약카드가 sticky 로 따라오지만, 모바일은 1단으로 쌓여

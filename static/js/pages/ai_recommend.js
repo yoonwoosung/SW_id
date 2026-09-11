@@ -82,14 +82,21 @@
 
     FarmFilter.mount(filterEl, { endpoint: filterEl.dataset.endpoint, onApply: function (sel) { lastSelected = sel; loadAll(); } });
 
-    // ---- URL 프리셋: FarmFilter 렌더 완료 후 체크박스 선택 + 필터 패널 오픈 ----
+    // ---- URL 프리셋: FarmFilter 렌더 완료를 폴링으로 감지 후 체크박스 선택 + 필터 패널 오픈 ----
     if (Object.keys(presetFromUrl).length) {
-        setTimeout(function () {
+        var firstCat = Object.keys(presetFromUrl)[0];
+        var presetAttempts = 0;
+        (function tryApplyPreset() {
+            presetAttempts++;
+            if (presetAttempts > 30) return;  // 최대 3초(100ms × 30회) 대기 후 포기
+            // FarmFilter 렌더 완료 여부: 해당 카테고리 탭이 DOM에 존재하는지로 판단
+            var readyCheck = filterEl.querySelector('.fl-tab[data-cat="' + firstCat + '"]');
+            if (!readyCheck) { setTimeout(tryApplyPreset, 100); return; }
+
             // 필터 아코디언 열기
             var colToggle = document.querySelector('.fl-collapse__toggle');
-            var colBody = null;
             if (colToggle && colToggle.getAttribute('aria-expanded') !== 'true') {
-                colBody = document.getElementById(colToggle.getAttribute('aria-controls'));
+                var colBody = document.getElementById(colToggle.getAttribute('aria-controls'));
                 colToggle.setAttribute('aria-expanded', 'true');
                 if (colBody) colBody.hidden = false;
             }
@@ -123,7 +130,7 @@
                     setTimeout(function () { chip.classList.remove('fl-chip--preset'); }, 1800);
                 });
             }, 400);
-        }, 900);  // FarmFilter 비동기 fetch + renderTree 완료 대기
+        })();
     }
 
     // ---- 상세조건 접힘 토글 ----

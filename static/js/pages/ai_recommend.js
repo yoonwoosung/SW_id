@@ -27,7 +27,6 @@
     var currentQuery = '';
 
     // URL 파라미터(cond_*)에서 초기 필터 상태 읽기 (상황 카드 연동)
-    console.log('[FL debug] location.search:', window.location.search);
     var presetFromUrl = (function () {
         var params = new URLSearchParams(window.location.search);
         var out = {};
@@ -40,7 +39,6 @@
         });
         return out;
     })();
-    console.log('[FL debug] presetFromUrl:', JSON.stringify(presetFromUrl));
     var lastSelected = Object.keys(presetFromUrl).length ? presetFromUrl : {};
 
     // 프리셋 파라미터가 있으면 API 응답 전에 아코디언을 즉시 열어둔다
@@ -91,57 +89,19 @@
     }
     renderSavedCourses();
 
+    var hasPreset = Object.keys(presetFromUrl).length > 0;
     FarmFilter.mount(filterEl, {
         endpoint: filterEl.dataset.endpoint,
+        initialState: hasPreset ? presetFromUrl : null,
         onApply: function (sel) { lastSelected = sel; loadAll(); },
-        onReady: Object.keys(presetFromUrl).length ? function () {
-            console.log('[FL preset] onReady fired, preset:', JSON.stringify(presetFromUrl));
-            // 1. 필터 아코디언 열기
-            var colToggle = document.querySelector('.fl-collapse__toggle');
-            var colBody = document.getElementById('cond-body');
-            console.log('[FL preset] colToggle:', !!colToggle, '| colBody:', !!colBody);
-            if (colToggle) colToggle.setAttribute('aria-expanded', 'true');
-            if (colBody) colBody.hidden = false;
-
-            // 2. 첫 번째 preset cat의 탭 활성화 (tab.click 대신 직접 DOM 조작)
-            var firstCat = Object.keys(presetFromUrl)[0];
-            if (firstCat) {
-                filterEl.querySelectorAll('.fl-tab').forEach(function (t) {
-                    t.classList.toggle('is-active', t.dataset.cat === firstCat);
-                });
-                filterEl.querySelectorAll('.fl-catpanel').forEach(function (p) {
-                    p.hidden = p.dataset.catpanel !== firstCat;
-                });
-                console.log('[FL preset] tab switched to:', firstCat);
-            }
-
-            // 3. 체크박스 선택
-            Object.keys(presetFromUrl).forEach(function (cat) {
-                (presetFromUrl[cat] || []).forEach(function (val) {
-                    var cb = filterEl.querySelector('input[data-cat="' + cat + '"][value="' + val + '"]');
-                    console.log('[FL preset] checkbox', cat, '=', val, 'found:', !!cb);
-                    if (cb) {
-                        cb.checked = true;
-                        cb.dispatchEvent(new Event('change', { bubbles: true }));
-                        var accBody = cb.closest('.fl-acc__body');
-                        if (accBody) {
-                            accBody.hidden = false;
-                            var accToggle = accBody.closest('.fl-acc').querySelector('.fl-acc__toggle-btn');
-                            if (accToggle) accToggle.setAttribute('aria-expanded', 'true');
-                        }
-                    }
-                });
-            });
-
-            // 4. 필터 섹션으로 스크롤 + 선택된 칩 하이라이트
-            var colSection = document.querySelector('.fl-collapse');
-            if (colSection) colSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        onReady: hasPreset ? function () {
+            // 칩 하이라이트 애니메이션
             setTimeout(function () {
                 filterEl.querySelectorAll('.fl-chip').forEach(function (chip) {
                     chip.classList.add('fl-chip--preset');
                     setTimeout(function () { chip.classList.remove('fl-chip--preset'); }, 1800);
                 });
-            }, 400);
+            }, 100);
         } : null
     });
 

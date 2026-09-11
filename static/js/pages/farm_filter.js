@@ -16,13 +16,14 @@ window.FarmFilter = (function () {
     function esc(s) { var d = document.createElement('div'); d.textContent = (s == null ? '' : String(s)); return d.innerHTML; }
 
     // 잎은 그리드 체크박스, 중분류(children 있음)는 가로 아코디언(헤더 토글 + 우측 '전체' 부모 체크박스 + 재귀 하위).
-    function renderPanelNodes(nodes, topCode) {
+    function renderPanelNodes(nodes, topCode, init) {
         var leaves = nodes.filter(function (n) { return !(n.children && n.children.length); });
         var groups = nodes.filter(function (n) { return n.children && n.children.length; });
         var html = '';
         if (leaves.length) {
             html += '<div class="fl-grid">' + leaves.map(function (n) {
-                return '<label class="fl-cell"><input type="checkbox" data-cat="' + esc(topCode) + '" value="' + esc(n.code) + '">'
+                var chk = init && (init[topCode] || []).indexOf(n.code) !== -1 ? ' checked' : '';
+                return '<label class="fl-cell"><input type="checkbox" data-cat="' + esc(topCode) + '" value="' + esc(n.code) + '"' + chk + '>'
                     + '<span>' + esc(n.label) + '</span></label>';
             }).join('') + '</div>';
         }
@@ -35,7 +36,7 @@ window.FarmFilter = (function () {
                 + '<label class="fl-acc__check" title="' + esc(g.label) + ' 전체 선택">'
                 + '<input type="checkbox" class="fl-parent" data-cat="' + esc(topCode) + '" value="' + esc(g.code) + '"><span>전체</span></label>'
                 + '</div>'
-                + '<div class="fl-acc__body" hidden>' + renderPanelNodes(g.children, topCode) + '</div>'
+                + '<div class="fl-acc__body" hidden>' + renderPanelNodes(g.children, topCode, init) + '</div>'
                 + '</div>';
         });
         return html;
@@ -118,16 +119,21 @@ window.FarmFilter = (function () {
         }
 
         function renderTree(tree) {
+            var init = opts.initialState || null;
+            // initialState가 있으면 해당 cat 탭을 첫 탭으로 활성화
+            var firstInitCat = init && Object.keys(init)[0];
             root.innerHTML =
                 '<div class="fl-chips" data-role="chips" aria-live="polite"></div>'
                 + '<div class="fl-filter">'
                 + '<div class="fl-tabbar fl-tabbar--vertical" role="tablist">' + tree.map(function (c, i) {
-                    return '<button type="button" class="fl-tab' + (i === 0 ? ' is-active' : '') + '" data-cat="' + esc(c.code) + '">'
+                    var isActive = firstInitCat ? c.code === firstInitCat : i === 0;
+                    return '<button type="button" class="fl-tab' + (isActive ? ' is-active' : '') + '" data-cat="' + esc(c.code) + '">'
                         + '<span class="fl-tab__label">' + esc(c.label) + '</span><span class="fl-tab__count" hidden>0</span></button>';
                 }).join('') + '</div>'
                 + '<div class="fl-panel-body">' + tree.map(function (c, i) {
-                    return '<div class="fl-catpanel" data-catpanel="' + esc(c.code) + '"' + (i === 0 ? '' : ' hidden') + '>'
-                        + renderPanelNodes(c.children || [], c.code)
+                    var isActive = firstInitCat ? c.code === firstInitCat : i === 0;
+                    return '<div class="fl-catpanel" data-catpanel="' + esc(c.code) + '"' + (isActive ? '' : ' hidden') + '>'
+                        + renderPanelNodes(c.children || [], c.code, init)
                         + (c.note ? '<div class="fl-note">' + esc(c.note) + '</div>' : '')
                         + '</div>';
                 }).join('') + '</div>'
@@ -178,6 +184,11 @@ window.FarmFilter = (function () {
             var url = opts.endpoint || root.dataset.endpoint;
             var done = function (tree) {
                 renderTree(tree && tree.length ? tree : MOCK_TREE);
+                // initialState로 체크박스가 렌더됐으면 칩 즉시 표시
+                if (opts.initialState && Object.keys(opts.initialState).length) {
+                    syncParents();
+                    refresh();
+                }
                 if (opts.onReady) opts.onReady();
             };
             if (!url) { done(MOCK_TREE); return; }

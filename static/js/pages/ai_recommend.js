@@ -42,6 +42,15 @@
     })();
     console.log('[FL debug] presetFromUrl:', JSON.stringify(presetFromUrl));
     var lastSelected = Object.keys(presetFromUrl).length ? presetFromUrl : {};
+
+    // 프리셋 파라미터가 있으면 API 응답 전에 아코디언을 즉시 열어둔다
+    // (onReady 지연으로 기본 뷰가 먼저 보이는 문제 방지)
+    if (Object.keys(presetFromUrl).length) {
+        var _preColBody = document.getElementById('cond-body');
+        var _preColToggle = document.querySelector('.fl-collapse__toggle');
+        if (_preColToggle) _preColToggle.setAttribute('aria-expanded', 'true');
+        if (_preColBody) _preColBody.hidden = false;
+    }
     var cardStore = {};   // storeKey → { rec, course, section }
 
     // ---- 저장된 코스 렌더 ----

@@ -2163,7 +2163,7 @@
 .detail-empty { font-size: 0.85rem; color: #bbb; text-align: center; padding: 20px 0; }
 
 /* Booking panel (right sticky) */
-.detail-booking-col { position: relative; }
+.detail-booking-col { position: sticky; top: 80px; align-self: start; }
 .detail-booking-panel {
     background: #fff;
     border-radius: var(--radius-card);
@@ -2237,7 +2237,7 @@
     .apply-page-wrapper { grid-template-columns: 1fr; }
     .apply-summary-card { position: static; }
     .detail-page-wrapper { grid-template-columns: 1fr; }
-    .detail-booking-panel { position: static; }
+    .detail-booking-col { position: static; }
 }
 @media (max-width: 600px) {
     .experience-card-grid { grid-template-columns: 1fr; }

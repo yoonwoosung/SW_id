@@ -80,19 +80,10 @@
     }
     renderSavedCourses();
 
-    FarmFilter.mount(filterEl, { endpoint: filterEl.dataset.endpoint, onApply: function (sel) { lastSelected = sel; loadAll(); } });
-
-    // ---- URL 프리셋: FarmFilter 렌더 완료를 폴링으로 감지 후 체크박스 선택 + 필터 패널 오픈 ----
-    if (Object.keys(presetFromUrl).length) {
-        var firstCat = Object.keys(presetFromUrl)[0];
-        var presetAttempts = 0;
-        (function tryApplyPreset() {
-            presetAttempts++;
-            if (presetAttempts > 30) return;  // 최대 3초(100ms × 30회) 대기 후 포기
-            // FarmFilter 렌더 완료 여부: 해당 카테고리 탭이 DOM에 존재하는지로 판단
-            var readyCheck = filterEl.querySelector('.fl-tab[data-cat="' + firstCat + '"]');
-            if (!readyCheck) { setTimeout(tryApplyPreset, 100); return; }
-
+    FarmFilter.mount(filterEl, {
+        endpoint: filterEl.dataset.endpoint,
+        onApply: function (sel) { lastSelected = sel; loadAll(); },
+        onReady: Object.keys(presetFromUrl).length ? function () {
             // 필터 아코디언 열기
             var colToggle = document.querySelector('.fl-collapse__toggle');
             if (colToggle && colToggle.getAttribute('aria-expanded') !== 'true') {
@@ -103,15 +94,12 @@
             // 카테고리별 체크박스 선택
             Object.keys(presetFromUrl).forEach(function (cat) {
                 (presetFromUrl[cat] || []).forEach(function (val) {
-                    // 해당 탭으로 전환
                     var tab = filterEl.querySelector('.fl-tab[data-cat="' + cat + '"]');
                     if (tab) tab.click();
-                    // 체크박스 체크 후 change 이벤트로 FarmFilter 내부 상태 동기화
                     var cb = filterEl.querySelector('input[data-cat="' + cat + '"][value="' + val + '"]');
                     if (cb) {
                         cb.checked = true;
                         cb.dispatchEvent(new Event('change', { bubbles: true }));
-                        // 중분류 아코디언 안에 있으면 열기
                         var accBody = cb.closest('.fl-acc__body');
                         if (accBody) {
                             accBody.hidden = false;
@@ -130,8 +118,8 @@
                     setTimeout(function () { chip.classList.remove('fl-chip--preset'); }, 1800);
                 });
             }, 400);
-        })();
-    }
+        } : null
+    });
 
     // ---- 상세조건 접힘 토글 ----
     var collapseToggle = document.querySelector('.fl-collapse__toggle');

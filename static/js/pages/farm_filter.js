@@ -176,7 +176,10 @@ window.FarmFilter = (function () {
 
         function load() {
             var url = opts.endpoint || root.dataset.endpoint;
-            var done = function (tree) { renderTree(tree && tree.length ? tree : MOCK_TREE); };
+            var done = function (tree) {
+                renderTree(tree && tree.length ? tree : MOCK_TREE);
+                if (opts.onReady) opts.onReady();
+            };
             if (!url) { done(MOCK_TREE); return; }
             fetch(url).then(function (r) { return r.json(); }).then(function (res) {
                 done((res && res.data && res.data.categories) || []);

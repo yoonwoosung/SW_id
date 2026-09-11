@@ -2163,14 +2163,14 @@
 .detail-empty { font-size: 0.85rem; color: #bbb; text-align: center; padding: 20px 0; }
 
 /* Booking panel (right sticky) */
-.detail-booking-col { position: sticky; top: 80px; align-self: start; }
+.detail-booking-col { align-self: stretch; }
 .detail-booking-panel {
     background: #fff;
     border-radius: var(--radius-card);
     box-shadow: var(--shadow-card);
     padding: 24px;
     position: sticky;
-    top: 84px;
+    top: 80px;
 }
 .detail-booking-price {
     display: flex;
@@ -2237,7 +2237,8 @@
     .apply-page-wrapper { grid-template-columns: 1fr; }
     .apply-summary-card { position: static; }
     .detail-page-wrapper { grid-template-columns: 1fr; }
-    .detail-booking-col { position: static; }
+    .detail-booking-col { align-self: auto; }
+    .detail-booking-panel { position: static; }
 }
 @media (max-width: 600px) {
     .experience-card-grid { grid-template-columns: 1fr; }

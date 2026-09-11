@@ -84,19 +84,31 @@
         endpoint: filterEl.dataset.endpoint,
         onApply: function (sel) { lastSelected = sel; loadAll(); },
         onReady: Object.keys(presetFromUrl).length ? function () {
-            // 필터 아코디언 열기
+            console.log('[FL preset] onReady fired, preset:', JSON.stringify(presetFromUrl));
+            // 1. 필터 아코디언 열기
             var colToggle = document.querySelector('.fl-collapse__toggle');
-            if (colToggle && colToggle.getAttribute('aria-expanded') !== 'true') {
-                var colBody = document.getElementById(colToggle.getAttribute('aria-controls'));
-                colToggle.setAttribute('aria-expanded', 'true');
-                if (colBody) colBody.hidden = false;
+            var colBody = document.getElementById('cond-body');
+            console.log('[FL preset] colToggle:', !!colToggle, '| colBody:', !!colBody);
+            if (colToggle) colToggle.setAttribute('aria-expanded', 'true');
+            if (colBody) colBody.hidden = false;
+
+            // 2. 첫 번째 preset cat의 탭 활성화 (tab.click 대신 직접 DOM 조작)
+            var firstCat = Object.keys(presetFromUrl)[0];
+            if (firstCat) {
+                filterEl.querySelectorAll('.fl-tab').forEach(function (t) {
+                    t.classList.toggle('is-active', t.dataset.cat === firstCat);
+                });
+                filterEl.querySelectorAll('.fl-catpanel').forEach(function (p) {
+                    p.hidden = p.dataset.catpanel !== firstCat;
+                });
+                console.log('[FL preset] tab switched to:', firstCat);
             }
-            // 카테고리별 체크박스 선택
+
+            // 3. 체크박스 선택
             Object.keys(presetFromUrl).forEach(function (cat) {
                 (presetFromUrl[cat] || []).forEach(function (val) {
-                    var tab = filterEl.querySelector('.fl-tab[data-cat="' + cat + '"]');
-                    if (tab) tab.click();
                     var cb = filterEl.querySelector('input[data-cat="' + cat + '"][value="' + val + '"]');
+                    console.log('[FL preset] checkbox', cat, '=', val, 'found:', !!cb);
                     if (cb) {
                         cb.checked = true;
                         cb.dispatchEvent(new Event('change', { bubbles: true }));
@@ -109,7 +121,8 @@
                     }
                 });
             });
-            // 필터 섹션으로 스크롤 + 선택된 칩 하이라이트
+
+            // 4. 필터 섹션으로 스크롤 + 선택된 칩 하이라이트
             var colSection = document.querySelector('.fl-collapse');
             if (colSection) colSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
             setTimeout(function () {

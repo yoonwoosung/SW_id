@@ -5,13 +5,24 @@ import os
 import requests
 
 from common.constants import HTTP_TIMEOUT_SEC, NEARBY_RESULT_LIMIT
+from services import tour_cache
 
 TOUR_API_URL = "https://apis.data.go.kr/B551011/KorService2/locationBasedList2"
 
 
 def find_nearby_places(lat, lng, radius_m, content_type_id=None):
     """좌표+반경 주변의 관광지/음식점 등을 반환한다. content_type_id로 종류를 지정한다.
-    실패 시(키 없음·네트워크·파싱 오류) 예외를 던지지 않고 빈 리스트를 반환한다."""
+    실패 시(키 없음·네트워크·파싱 오류) 예외를 던지지 않고 빈 리스트를 반환한다.
+
+    KTO 일일 한도(1,000건)를 아끼려고 결과를 파일에 캐싱한다. 캐시는 좌표를
+    반올림해 키를 만들므로 인접 농장끼리 조회를 나눠 쓴다. 캐시가 깨져도
+    tour_cache 가 예외를 삼키고 None 을 주므로 평소대로 API 를 호출한다.
+    """
+    cache_key = tour_cache.make_key(lat, lng, radius_m, content_type_id)
+    cached = tour_cache.get(cache_key)
+    if cached is not None:
+        return cached
+
     api_key = os.environ.get("TOUR_API_KEY", "DUMMY_TOUR_KEY")
     params = {
         "serviceKey": api_key,
@@ -30,9 +41,14 @@ def find_nearby_places(lat, lng, radius_m, content_type_id=None):
         resp = requests.get(TOUR_API_URL, params=params, timeout=HTTP_TIMEOUT_SEC)
         resp.raise_for_status()
         items = resp.json()["response"]["body"]["items"]["item"]
-        return [_to_place(it) for it in items]
+        places = [_to_place(it) for it in items]
     except Exception:
-        return []
+        places = []
+
+    # 빈 결과도 캐싱한다(짧은 TTL). 장소가 정말 없는 지역에서 매번 두 번씩
+    # 재조회하며 한도를 태우는 걸 막는다.
+    tour_cache.set(cache_key, places)
+    return places
 
 
 def _to_place(item):

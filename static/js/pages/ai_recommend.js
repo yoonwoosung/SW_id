@@ -21,6 +21,22 @@
     function shortRegion(addr) { if (!addr) return ''; var m = addr.match(/([가-힣]+?)(시|군|구)/); return m ? m[1] : addr.split(' ')[0]; }
     function won(n) { return Number(n || 0).toLocaleString() + '원'; }
 
+    // 같은 체험의 코스를 섹션마다 다시 부르지 않는다.
+    // 세 섹션(nearby/peers/esg)은 같은 후보 풀에서 뽑아 상위 결과가 겹치는데,
+    // loadAll() 이 셋을 동시에 띄우므로 첫 응답을 기다리는 동안에도 중복 요청이 나간다.
+    // 결과가 아니라 '진행 중인 Promise' 를 기억해 그 창까지 막는다.
+    // 실패하면 항목을 지워 다음 시도가 다시 요청할 수 있게 한다.
+    var courseCache = {};
+    function fetchCourse(id) {
+        var key = String(id);
+        if (!courseCache[key]) {
+            courseCache[key] = fetch('/api/experiences/' + encodeURIComponent(id) + '/course')
+                .then(function (r) { return r.json(); })
+                .catch(function (err) { delete courseCache[key]; throw err; });
+        }
+        return courseCache[key];
+    }
+
     var filterEl = $('cond-filter'), noteEl = $('rec-note'),
         quickEl = $('quick-segments'), searchInput = $('course-q'), searchEmpty = $('search-empty');
     var coords = { lat: null, lon: null };
@@ -191,8 +207,7 @@
                 var list = (res.data.results || []).slice(0, 3);
                 if (!list.length) { row.innerHTML = '<p class="fl-empty">추천할 코스를 찾지 못했어요.</p>'; return; }
                 Promise.all(list.map(function (x) {
-                    return fetch('/api/experiences/' + x.id + '/course')
-                        .then(function (r) { return r.json(); })
+                    return fetchCourse(x.id)
                         .then(function (c) { return { rec: x, course: c.data || {} }; });
                 })).then(function (cards) { renderRow(row, cards, s); });
             })
@@ -425,8 +440,7 @@
         if (!sec || !row) return;
         sec.hidden = false;
         row.innerHTML = '<p class="fl-empty">방금 예약한 체험 코스를 준비하는 중…</p>';
-        fetch('/api/experiences/' + encodeURIComponent(id) + '/course')
-            .then(function (r) { return r.json(); })
+        fetchCourse(id)
             .then(function (c) {
                 var d = c.data;
                 if (!d) { row.innerHTML = '<p class="fl-empty">코스를 불러오지 못했어요.</p>'; return; }

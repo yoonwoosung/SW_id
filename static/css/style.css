@@ -1182,6 +1182,7 @@
 }
 .situation-card:hover { box-shadow: 0 6px 18px rgba(0,0,0,0.11); transform: translateY(-2px); text-decoration: none; color: inherit; }
 .situation-icon { font-size: 2.2rem; margin-bottom: 9px; }
+.situation-icon img { width: 40px; height: 40px; object-fit: contain; }
 .situation-parking {
     width: 44px;
     height: 44px;

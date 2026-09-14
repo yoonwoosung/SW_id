@@ -516,7 +516,19 @@ function openCourseModal(expId, cropName) {
     modal.style.display = 'block';
     document.body.style.overflow = 'hidden';
 
-    var TYPE_LABEL = { experience: '🌱 체험', restaurant: '🍽 식사', attraction: '🏛 관광지', cafe: '☕ 카페' };
+    var ICON_BASE = "{{ url_for('static', filename='icons/') }}";
+    var TYPE_ICON = {
+        experience: '<img src="' + ICON_BASE + 'icon-rural-experience.svg" width="16" height="16" style="vertical-align:-3px;margin-right:4px;">',
+        restaurant: '<img src="' + ICON_BASE + 'icon-meal.svg" width="16" height="16" style="vertical-align:-3px;margin-right:4px;">',
+        attraction: '<img src="' + ICON_BASE + 'icon-tourist-attraction.svg" width="16" height="16" style="vertical-align:-3px;margin-right:4px;">',
+        cafe:       '<img src="' + ICON_BASE + 'icon-cafe.svg" width="16" height="16" style="vertical-align:-3px;margin-right:4px;">'
+    };
+    var TYPE_LABEL = {
+        experience: TYPE_ICON.experience + '체험',
+        restaurant: TYPE_ICON.restaurant + '식사',
+        attraction: TYPE_ICON.attraction + '관광지',
+        cafe:       TYPE_ICON.cafe + '카페'
+    };
     fetch('/api/experiences/' + expId + '/course')
         .then(function(r) { return r.json(); })
         .then(function(res) {
@@ -529,7 +541,7 @@ function openCourseModal(expId, cropName) {
             var html = reason ? '<p style="font-size:.83rem;color:#555;margin-bottom:16px;">' + reason + '</p>' : '';
             html += '<div style="display:flex;flex-direction:column;gap:12px;">';
             items.forEach(function(it) {
-                var label = TYPE_LABEL[it.type] || '📍';
+                var label = TYPE_LABEL[it.type] || '<img src="' + ICON_BASE + 'icon-map-location.svg" width="16" height="16" style="vertical-align:-3px;margin-right:4px;">';
                 var sub = it.type === 'experience'
                     ? (it.address || '')
                     : ((it.address || '') + (it.distance_km != null ? ' · ' + it.distance_km + 'km' : ''));

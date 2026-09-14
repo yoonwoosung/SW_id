@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" fill="none">
+  <!-- soft status background -->
+  <circle cx="16" cy="16" r="12" fill="#E8F5E9"/>
+
+  <!-- main confirmation circle -->
+  <circle cx="16" cy="16" r="7.2" fill="#4CAF50"/>
+
+  <!-- check -->
+  <path d="M12.2 16.1L15 18.9L20.1 13.8"
+        stroke="#FFFFFF"
+        stroke-width="2.4"
+        stroke-linecap="round"
+        stroke-linejoin="round"/>
+</svg>

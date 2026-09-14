@@ -111,7 +111,7 @@
 
                         <!-- 친환경 체크 행 -->
                         <div class="custom-option-card" onclick="toggleCheckbox('is_organic')">
-                            <span class="option-title">🌿 친환경 농법 사용</span>
+                            <span class="option-title"><img src="{{ url_for('static', filename='icons/icon-eco-friendly.svg') }}" width="20" height="20" style="vertical-align:-4px;margin-right:6px;"> 친환경 농법 사용</span>
                             <input type="checkbox" class="custom-large-check" id="is_organic" name="is_organic" 
                                 {% if form_data.get('is_organic') or (item and item.pesticide_free) %}checked{% endif %} onclick="event.stopPropagation()">
                         </div>

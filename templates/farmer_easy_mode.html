@@ -264,7 +264,7 @@
                             <div class="d-flex align-items-center mb-1">
                                 <strong class="text-dark mr-2" style="font-size: 1.1rem;">{{ farm.name or '기본 농장' }}</strong>
                                 {% if farm.status == 'APPROVED' %}
-                                <span class="fl-badge fl-badge--active">✅ 승인완료</span>
+                                <span class="fl-badge fl-badge--active"><img src="{{ url_for('static', filename='icons/icon-confirmed.svg') }}" width="16" height="16" style="vertical-align:-3px;margin-right:4px;"> 승인완료</span>
                                 {% elif farm.status == 'PENDING' %}
                                 <span class="badge badge-warning px-2 py-1" style="font-size:13px;">⏳ 심사 대기중</span>
                                 {% elif farm.status == 'REJECTED' %}
@@ -280,7 +280,7 @@
                                 <span class="fl-badge fl-badge--success"><i class="fa-solid fa-file-pdf"></i> 확인 서류 첨부됨</span>
                                 {% endif %}
                                 {% if farm.is_organic %}
-                                <span class="fl-badge fl-badge--active">🌿 친환경{% if farm.organic_cert_type %} · {{ farm.organic_cert_type }}{% endif %}</span>
+                                <span class="fl-badge fl-badge--active"><img src="{{ url_for('static', filename='icons/icon-eco-friendly.svg') }}" width="16" height="16" style="vertical-align:-3px;margin-right:4px;"> 친환경{% if farm.organic_cert_type %} · {{ farm.organic_cert_type }}{% endif %}</span>
                                 {% endif %}
                             </div>
 
@@ -391,19 +391,19 @@
                     <div class="fl-section-head"><h2>내 농장 통계</h2></div>
                     <div class="easy-stats-grid">
                         <div class="easy-stat-box">
-                            <span class="easy-stat-icon">🌾</span>
+                            <span class="easy-stat-icon"><img src="{{ url_for('static', filename='icons/icon-rural-experience.svg') }}" width="36" height="36"></span>
                             <strong class="easy-stat-value">{{ stats.total_experiences }}</strong>
                             <span class="easy-stat-label">등록 체험</span>
                             <span class="easy-stat-unit">건</span>
                         </div>
                         <div class="easy-stat-box">
-                            <span class="easy-stat-icon">⭐</span>
+                            <span class="easy-stat-icon"><img src="{{ url_for('static', filename='icons/icon-rating.svg') }}" width="36" height="36"></span>
                             <strong class="easy-stat-value">{{ stats.average_rating }}</strong>
                             <span class="easy-stat-label">평균 별점</span>
                             <span class="easy-stat-unit">/ 5.0</span>
                         </div>
                         <div class="easy-stat-box">
-                            <span class="easy-stat-icon">👥</span>
+                            <span class="easy-stat-icon"><img src="{{ url_for('static', filename='icons/icon-my-page.svg') }}" width="36" height="36"></span>
                             <strong class="easy-stat-value">{{ stats.total_visitors }}</strong>
                             <span class="easy-stat-label">총 방문자</span>
                             <span class="easy-stat-unit">명</span>
@@ -419,10 +419,10 @@
                         <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom flex-wrap gap-2">
                             <div>
                                 <h3 class="st-report-exp-name mb-1" style="font-size:1.25rem; font-weight:800; color:var(--green-dark, var(--fl-green-700));">
-                                    🌾 {{ feedback.farm_name }}
+                                    <img src="{{ url_for('static', filename='icons/icon-rural-experience.svg') }}" width="22" height="22" style="vertical-align:-4px;margin-right:6px;">{{ feedback.farm_name }}
                                 </h3>
                                 <div class="text-muted small">
-                                    {{ feedback.farm_address }} · 총 리뷰 {{ feedback.total_reviews }}개 (평균 ⭐ {{ feedback.avg_rating }})
+                                    {{ feedback.farm_address }} · 총 리뷰 {{ feedback.total_reviews }}개 (평균 <img src="{{ url_for('static', filename='icons/icon-rating.svg') }}" width="14" height="14" style="vertical-align:-2px;"> {{ feedback.avg_rating }})
                                     <span class="ml-2 text-secondary font-weight-bold" id="report-time-{{ farm_id }}">
                                         {% if feedback.ai_report_updated_at %}
                                             (최근 분석: {{ feedback.ai_report_updated_at.strftime('%Y.%m.%d %H:%M') if feedback.ai_report_updated_at is not string else feedback.ai_report_updated_at }})
@@ -449,14 +449,14 @@
 
                         <div class="st-report-cards">
                             <div class="st-report-card st-pos">
-                                <div class="st-report-card-icon">👍</div>
+                                <div class="st-report-card-icon"><img src="{{ url_for('static', filename='icons/icon-positive-review.svg') }}" width="40" height="40"></div>
                                 <div class="st-report-card-content">
                                     <p class="st-report-card-head">농장 긍정 포인트 요약</p>
                                     <p class="st-report-card-text" id="report-strengths-{{ farm_id }}">{{ feedback.strengths_summary or '분석된 데이터가 없습니다. 우측 상단의 [AI 분석 갱신]을 눌러보세요!' }}</p>
                                 </div>
                             </div>
                             <div class="st-report-card st-imp">
-                                <div class="st-report-card-icon">💡</div>
+                                <div class="st-report-card-icon"><img src="{{ url_for('static', filename='icons/icon-improvement-suggestion.svg') }}" width="40" height="40"></div>
                                 <div class="st-report-card-content">
                                     <p class="st-report-card-head">농장 개선 피드백 요약</p>
                                     <p class="st-report-card-text" id="report-improvements-{{ farm_id }}">{{ feedback.improvements_summary or '개선 피드백이 없어요. 잘 하고 있어요!' }}</p>
@@ -486,7 +486,7 @@
 {# 💡 로그인 시 대기 예약 알림 팝업 모달 #}
 <div id="pending-alert-modal" class="ac-modal-overlay" style="display:none;">
     <div class="ac-modal-box" style="text-align:center; max-width:440px;">
-        <p style="font-size:42px; margin-bottom:12px;">🔔</p>
+        <img src="{{ url_for('static', filename='icons/icon-notification.svg') }}" width="56" height="56" style="margin-bottom:12px;">
         <h3 class="ac-modal-title" style="font-size:22px;">수락 대기 중인 예약 알림</h3>
         <p class="ac-modal-desc" style="font-size:16px; color:#444; line-height:1.5;">
             현재 수락을 기다리는 예약이 <strong class="text-danger" style="font-size:18px;">{{ pending_applications | length }}건</strong> 있습니다!<br>
@@ -672,8 +672,8 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function statusBadge(status) {
-        if (status === '확정') return '<span class="fl-badge fl-badge--confirmed">✅ 확정</span>';
-        if (status === '완료') return '<span class="fl-badge fl-badge--done">🔵 완료</span>';
+        if (status === '확정') return '<span class="fl-badge fl-badge--confirmed"><img src="/static/icons/icon-confirmed.svg" width="14" height="14" style="vertical-align:-2px;margin-right:3px;"> 확정</span>';
+        if (status === '완료') return '<span class="fl-badge fl-badge--done"><img src="/static/icons/icon-completed.svg" width="14" height="14" style="vertical-align:-2px;margin-right:3px;"> 완료</span>';
         return '<span class="fl-badge fl-badge--cancelled">❌ 취소</span>';
     }
 

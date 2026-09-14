@@ -3587,6 +3587,14 @@
         return (titleEl && titleEl.color) ? titleEl.color : '#eab308';
     }
 
+    function getSafeImageUrl(url) {
+        if (!url) return '';
+        if (url.startsWith('http://')) {
+            return url.replace('http://', 'https://');
+        }
+        return url;
+    }
+
     
     function buildThumbHTML(spreadIdx, totalSpreads, albumObj, isActive, onclickStr, thumbClass, spreadClass, pageClass, labelClass) {
         var coverColor = COVER_COLORS[albumObj.coverTheme] || '#4CAF50';

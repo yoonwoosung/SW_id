@@ -520,7 +520,7 @@ document.addEventListener('DOMContentLoaded', function () {
         '',
         '첫 번째 단계예요! 천천히 입력해 주세요.',
         '잘 하고 계세요! 3단계만 더 입력하면 등록이 완료돼요.',
-        '절반을 넘었어요! 거의 다 왔습니다 🌱',
+        '절반을 넘었어요! 거의 다 왔습니다.',
         '한 단계만 더예요! 봉사자 정보를 입력해 주세요.',
         '다 됐어요! 내용을 확인하고 등록해 주세요.'
     ];
@@ -539,7 +539,7 @@ document.addEventListener('DOMContentLoaded', function () {
             if (line) line.classList.toggle('done', i < n);
         }
         document.getElementById('step-label').textContent = n + '단계 / 전체 ' + total + '단계 — ' + LABELS[n];
-        document.getElementById('step-encourage').textContent = '🌱 ' + ENCOURAGE[n];
+        document.getElementById('step-encourage').textContent = ENCOURAGE[n];
         
         const prevBtn = document.getElementById('btn-prev');
         const nextBtn = document.getElementById('btn-next');

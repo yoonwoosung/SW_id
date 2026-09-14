@@ -215,32 +215,32 @@
                     <h2 class="section-title mb-3"><i data-lucide="sprout" class="text-success"></i> 내 상황에 맞는 체험 찾기</h2>
                     <div class="situation-grid">
                         <a href="{{ url_for('ai_recommend_page') }}?cond_companion_type=family_child" class="situation-card">
-                            <div class="situation-icon"><i data-lucide="users"></i></div>
+                            <div class="situation-icon"><img src="{{ url_for('static', filename='icons/icon-with-children.svg') }}" width="32" height="32" alt="아이와 함께"></div>
                             <div class="situation-label">아이와 함께</div>
                             <div class="situation-sub">가족 맞춤 체험</div>
                         </a>
                         <a href="{{ url_for('ai_recommend_page') }}?cond_companion_type=with_pet" class="situation-card">
-                            <div class="situation-icon"><i data-lucide="dog"></i></div>
+                            <div class="situation-icon"><img src="{{ url_for('static', filename='icons/icon-with-dog.svg') }}" width="32" height="32" alt="반려견과 함께"></div>
                             <div class="situation-label">반려견과 함께</div>
                             <div class="situation-sub">펫 프렌들리</div>
                         </a>
                         <a href="{{ url_for('ai_recommend_page') }}?cond_schedule=day_trip" class="situation-card">
-                            <div class="situation-icon"><i data-lucide="car"></i></div>
+                            <div class="situation-icon"><img src="{{ url_for('static', filename='icons/icon-day-trip.svg') }}" width="32" height="32" alt="당일치기 여행"></div>
                             <div class="situation-label">당일치기 여행</div>
                             <div class="situation-sub">가볍게 떠나요</div>
                         </a>
                         <a href="{{ url_for('ai_recommend_page') }}?cond_facility=barrier_free" class="situation-card">
-                            <div class="situation-icon"><i data-lucide="shopping-cart"></i></div>
+                            <div class="situation-icon"><img src="{{ url_for('static', filename='icons/icon-stroller-friendly.svg') }}" width="32" height="32" alt="유아차 가능"></div>
                             <div class="situation-label">유아차 가능</div>
                             <div class="situation-sub">편하게 다녀요</div>
                         </a>
                         <a href="{{ url_for('ai_recommend_page') }}?cond_schedule=one_night" class="situation-card">
-                            <div class="situation-icon"><i data-lucide="home"></i></div>
+                            <div class="situation-icon"><img src="{{ url_for('static', filename='icons/icon-stay-available.svg') }}" width="32" height="32" alt="숙박 가능한"></div>
                             <div class="situation-label">숙박 가능한</div>
                             <div class="situation-sub">1박 2일 힐링</div>
                         </a>
                         <a href="{{ url_for('ai_recommend_page') }}?cond_facility=parking" class="situation-card">
-                            <div class="situation-icon situation-parking">P</div>
+                            <div class="situation-icon"><img src="{{ url_for('static', filename='icons/icon-parking-available.svg') }}" width="32" height="32" alt="주차 가능한"></div>
                             <div class="situation-label">주차 가능한</div>
                             <div class="situation-sub">편리한 주차</div>
                         </a>

@@ -88,7 +88,7 @@
             <div class="detail-info-meta">
                 <span><i data-lucide="map-pin"></i> {{ item.address_detail }}</span>
                 {% if review_count %}
-                <span class="ed-rating"><span class="ed-rating__star">★</span> {{ '%.1f'|format(rating_avg) }}
+                <span class="ed-rating"><img src="{{ url_for('static', filename='icons/icon-rating.svg') }}" class="fl-icon-sm" alt="별점"> {{ '%.1f'|format(rating_avg) }}
                     <span class="ed-rating__count">· 후기 {{ review_count }}</span></span>
                 {% else %}
                 <span class="ed-rating ed-rating--empty">아직 후기가 없어요</span>

@@ -80,7 +80,7 @@
     <!-- 2. 검색바 + 여행 조건 설정하기 (한 블록으로 묶음) -->
     <div class="fl-search-block">
         <form class="fl-searchbar" id="course-search" role="search" onsubmit="return false;">
-            <i data-lucide="search" aria-hidden="true"></i>
+            <img src="{{ url_for('static', filename='icons/icon-search.svg') }}" class="fl-icon-sm" alt="">
             <input type="search" id="course-q" placeholder="지역·체험·농장 이름으로 검색" autocomplete="off">
         </form>
         <section class="fl-panel fl-collapse">
@@ -124,7 +124,7 @@
 
     <section class="fl-sec" data-section="peers">
         <div class="fl-sec__head">
-            <h2 class="fl-sec__title" id="peers-title"><i data-lucide="leaf"></i> 또래가 놀러가기 좋은 코스</h2>
+            <h2 class="fl-sec__title" id="peers-title"><img src="{{ url_for('static', filename='icons/icon-eco-friendly.svg') }}" class="fl-icon-sm" alt=""> 또래가 놀러가기 좋은 코스</h2>
             <span class="fl-sec__sub">또래 인기순</span>
         </div>
         <div class="fl-row" id="sec-peers"></div>

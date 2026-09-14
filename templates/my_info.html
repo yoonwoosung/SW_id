@@ -322,9 +322,9 @@
                 {% if next_trip.status == '확정' %}예약 확정{% elif next_trip.status == '결제완료' %}수락 대기중{% else %}결제 대기{% endif %}
               </span>
               <div class="mi-next-title">{{ next_trip.experience.crop }} 체험</div>
-              <div class="mi-next-meta"><i data-lucide="calendar"></i> {{ next_trip.apply_date.strftime('%Y.%m.%d') }} {{ next_trip.apply_time or '' }}</div>
-              <div class="mi-next-meta"><i data-lucide="map-pin"></i> {{ next_trip.experience.address_detail or next_trip.experience.location or '' }}</div>
-              <div class="mi-next-meta"><i data-lucide="users"></i> {{ next_trip.participants_count }}명</div>
+              <div class="mi-next-meta"><img src="{{ url_for('static', filename='icons/icon-calendar-schedule.svg') }}" class="fl-icon-sm" alt=""> {{ next_trip.apply_date.strftime('%Y.%m.%d') }} {{ next_trip.apply_time or '' }}</div>
+              <div class="mi-next-meta"><img src="{{ url_for('static', filename='icons/icon-map-location.svg') }}" class="fl-icon-sm" alt=""> {{ next_trip.experience.address_detail or next_trip.experience.location or '' }}</div>
+              <div class="mi-next-meta"><img src="{{ url_for('static', filename='icons/icon-participants.svg') }}" class="fl-icon-sm" alt=""> {{ next_trip.participants_count }}명</div>
             </div>
             <div class="mi-next-actions">
               {% if next_trip.status == '확정' %}
@@ -337,7 +337,7 @@
         {% endif %}
 
         <section class="fl-card"><div class="fl-card-body" style="padding-bottom:0;">
-          <div class="fl-section-head"><h2><i data-lucide="calendar-check"></i> 전체 예약 내역</h2></div>
+          <div class="fl-section-head"><h2><img src="{{ url_for('static', filename='icons/icon-calendar-schedule.svg') }}" class="fl-icon-sm" alt=""> 전체 예약 내역</h2></div>
         </div>
         {% if applications %}
           <div class="mi-res-list" style="padding:0 20px 16px;">
@@ -351,8 +351,8 @@
               <div class="mi-res-body">
                 {{ res_badge(app.status) }}
                 <div class="mi-res-title">{{ app.experience.crop }} 체험</div>
-                <div class="mi-res-meta"><i data-lucide="calendar"></i> {{ app.apply_date.strftime('%Y.%m.%d') }} {{ app.apply_time or '' }} &nbsp;·&nbsp; <i data-lucide="users"></i> {{ app.participants_count }}명</div>
-                <div class="mi-res-meta"><i data-lucide="map-pin"></i> {{ app.experience.address_detail or app.experience.location or '' }}</div>
+                <div class="mi-res-meta"><img src="{{ url_for('static', filename='icons/icon-calendar-schedule.svg') }}" class="fl-icon-sm" alt=""> {{ app.apply_date.strftime('%Y.%m.%d') }} {{ app.apply_time or '' }} &nbsp;·&nbsp; <img src="{{ url_for('static', filename='icons/icon-participants.svg') }}" class="fl-icon-sm" alt=""> {{ app.participants_count }}명</div>
+                <div class="mi-res-meta"><img src="{{ url_for('static', filename='icons/icon-map-location.svg') }}" class="fl-icon-sm" alt=""> {{ app.experience.address_detail or app.experience.location or '' }}</div>
                 <div style="font-size:.72rem;color:var(--fl-text-muted);margin-top:3px;">예약번호 FLT-{{ '%06d' | format(app.id) }}</div>
               </div>
               <div class="mi-res-actions">
@@ -388,7 +388,7 @@
       {# ── 찜 ── #}
       <div id="panel-wish" class="mi-panel" style="display:none;flex-direction:column;gap:var(--fl-s4);">
         <section class="fl-card"><div class="fl-card-body">
-          <div class="fl-section-head"><h2><i data-lucide="heart"></i> 찜한 체험</h2></div>
+          <div class="fl-section-head"><h2><img src="{{ url_for('static', filename='icons/icon-favorites.svg') }}" class="fl-icon-sm" alt=""> 찜한 체험</h2></div>
           <div id="mi-wish-list"><p class="mi-empty">불러오는 중…</p></div>
         </div></section>
       </div>

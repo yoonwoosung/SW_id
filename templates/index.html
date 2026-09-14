@@ -82,7 +82,7 @@
                     <option value="5+">5명+</option>
                 </select>
                 <button type="submit" class="hero-unified-btn">
-                    <i data-lucide="search"></i> 검색
+                    <img src="{{ url_for('static', filename='icons/icon-search.svg') }}" class="fl-icon-sm" alt=""> 검색
                 </button>
             </form>
         </div>
@@ -137,17 +137,17 @@
                     </div>
                     {% if sort_by == 'recommended' and item.distance is defined %}
                     <div class="exp-card-dist-badge">
-                        <i data-lucide="map-pin"></i> {{ "%.1f"|format(item.distance) }}km
+                        <img src="{{ url_for('static', filename='icons/icon-map-location.svg') }}" class="fl-icon-sm" alt=""> {{ "%.1f"|format(item.distance) }}km
                     </div>
                     {% endif %}
                 </div>
                 <div class="exp-card-body">
                     <div class="exp-card-title">{{ item.crop }} 체험</div>
-                    <div class="exp-card-location"><i data-lucide="map-pin"></i> {{ item.address_detail }}
+                    <div class="exp-card-location"><img src="{{ url_for('static', filename='icons/icon-map-location.svg') }}" class="fl-icon-sm" alt=""> {{ item.address_detail }}
                     </div>
                     <div class="exp-card-meta">
-                        <span><i data-lucide="users"></i> 2-4인 추천</span>
-                        <span><i data-lucide="clock"></i>
+                        <span><img src="{{ url_for('static', filename='icons/icon-participants.svg') }}" class="fl-icon-sm" alt=""> 2-4인 추천</span>
+                        <span><img src="{{ url_for('static', filename='icons/icon-time.svg') }}" class="fl-icon-sm" alt="">
                             {% if item.d_day >= 0 and item.d_day < 999 %} {% if item.d_day <=3 %} <span
                                 class="text-danger font-weight-bold">D-{{ item.d_day }}</span>
                         {% else %}
@@ -294,7 +294,7 @@
     <!-- 지역별 추천 -->
     <section class="section-block">
         <div class="section-header">
-            <h2 class="section-title"><i data-lucide="map-pin" class="text-success"></i> 지역별 추천</h2>
+            <h2 class="section-title"><img src="{{ url_for('static', filename='icons/icon-map-location.svg') }}" class="fl-icon-sm" alt=""> 지역별 추천</h2>
             <a href="{{ url_for('index') }}" class="more-link">지역 전체보기 <i data-lucide="chevron-right"></i></a>
         </div>
         <div class="region-tabs">

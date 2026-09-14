@@ -18,7 +18,7 @@
                     <span class="complete-booking-val">{{ item.crop }} 수확 체험</span>
                 </div>
                 <div class="complete-booking-row">
-                    <span class="complete-booking-label"><i data-lucide="map-pin"></i> 장소</span>
+                    <span class="complete-booking-label"><img src="{{ url_for('static', filename='icons/icon-map-location.svg') }}" class="fl-icon-sm" alt=""> 장소</span>
                     <span class="complete-booking-val">{{ item.address_detail }}</span>
                 </div>
                 <div class="complete-booking-row">
@@ -26,7 +26,7 @@
                     <span class="complete-booking-val">{{ "{:,}".format(item.cost) }}원 / 1인</span>
                 </div>
                 <div class="complete-booking-row">
-                    <span class="complete-booking-label"><i data-lucide="user"></i> 참가자</span>
+                    <span class="complete-booking-label"><img src="{{ url_for('static', filename='icons/icon-my-page.svg') }}" class="fl-icon-sm" alt=""> 참가자</span>
                     <span class="complete-booking-val">{{ name }}</span>
                 </div>
             </div>

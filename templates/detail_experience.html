@@ -79,14 +79,14 @@
         <!-- 2. 핵심 정보 -->
         <div class="detail-info-card">
             <div class="detail-info-badges">
-                {% if item.pesticide_free %}<span class="detail-badge badge-eco"><i data-lucide="leaf"></i> 친환경</span>{% endif %}
+                {% if item.pesticide_free %}<span class="detail-badge badge-eco"><img src="{{ url_for('static', filename='icons/icon-eco-friendly.svg') }}" class="fl-icon-sm" alt=""> 친환경</span>{% endif %}
                 {% if item.has_parking %}<span class="detail-badge badge-parking"><i data-lucide="square-parking"></i> 주차 가능</span>{% endif %}
                 {% if item.barrier_free %}<span class="detail-badge badge-family"><i data-lucide="accessibility"></i> 무장애</span>{% endif %}
                 <span id="ed-esg-chip" class="detail-badge badge-esg" hidden></span>
             </div>
             <h1 class="detail-crop-title">{{ item.crop }} 수확 체험</h1>
             <div class="detail-info-meta">
-                <span><i data-lucide="map-pin"></i> {{ item.address_detail }}</span>
+                <span><img src="{{ url_for('static', filename='icons/icon-map-location.svg') }}" class="fl-icon-sm" alt=""> {{ item.address_detail }}</span>
                 {% if review_count %}
                 <span class="ed-rating"><img src="{{ url_for('static', filename='icons/icon-rating.svg') }}" class="fl-icon-sm" alt="별점"> {{ '%.1f'|format(rating_avg) }}
                     <span class="ed-rating__count">· 후기 {{ review_count }}</span></span>
@@ -105,7 +105,7 @@
 
             <!-- 찜하기 / 공유 -->
             <div class="ed-actions">
-                <button type="button" id="ed-wish" class="ed-icon-btn"><i data-lucide="heart"></i> <span class="ed-wish-label">찜하기</span></button>
+                <button type="button" id="ed-wish" class="ed-icon-btn"><img src="{{ url_for('static', filename='icons/icon-favorites.svg') }}" class="fl-icon-sm" alt=""> <span class="ed-wish-label">찜하기</span></button>
                 <button type="button" id="ed-share" class="ed-icon-btn"><i data-lucide="share-2"></i> 공유</button>
             </div>
 
@@ -128,7 +128,7 @@
         <!-- 3. 예약 안내: 운영 시간표 -->
         {% if item.timetable_data %}
         <div class="detail-section-card">
-            <h3 class="detail-section-title"><i data-lucide="calendar-check"></i> 운영 시간표</h3>
+            <h3 class="detail-section-title"><img src="{{ url_for('static', filename='icons/icon-calendar-schedule.svg') }}" class="fl-icon-sm" alt=""> 운영 시간표</h3>
             <div class="detail-timetable-wrap">
                 <table class="timetable-display text-center" id="detail-timetable">
                     <thead>
@@ -237,7 +237,7 @@
 
         <!-- 방문자 후기 -->
         <section class="section-card">
-            <h2 class="section-title" style="margin-bottom:16px;"><i data-lucide="star"></i> 방문자 후기</h2>
+            <h2 class="section-title" style="margin-bottom:16px;"><img src="{{ url_for('static', filename='icons/icon-rating.svg') }}" class="fl-icon-sm" alt=""> 방문자 후기</h2>
             {% if review_count %}
             <div class="ed-review-summary">
                 <div class="ed-review-avg">
@@ -317,12 +317,12 @@
             </div>
             <p style="font-size:0.78rem;color:#9aa39c;margin:-6px 0 10px;">* 1인당 가격입니다</p>
             <div class="detail-booking-stats">
-                <div class="detail-booking-stat"><i data-lucide="users"></i> <span>{{ item.current_participants }}/{{ item.max_participants }}명</span></div>
+                <div class="detail-booking-stat"><img src="{{ url_for('static', filename='icons/icon-participants.svg') }}" class="fl-icon-sm" alt=""> <span>{{ item.current_participants }}/{{ item.max_participants }}명</span></div>
                 <div class="detail-booking-stat"><i data-lucide="calendar-x"></i> <span>D-{{ item.d_day }}</span></div>
             </div>
             {% set remaining = item.max_participants - item.current_participants %}
             {% if remaining > 0 %}
-            <a href="{{ url_for('experience_apply', item_id=item.id) }}" class="detail-booking-btn"><i data-lucide="calendar-check"></i> 예약 신청하기</a>
+            <a href="{{ url_for('experience_apply', item_id=item.id) }}" class="detail-booking-btn"><img src="{{ url_for('static', filename='icons/icon-calendar-schedule.svg') }}" class="fl-icon-sm" alt=""> 예약 신청하기</a>
             <p class="ed-book-nocharge">예약 확정 전에는 요금이 청구되지 않아요</p>
             <div class="ed-book-breakdown">
                 <div class="ed-book-row"><span>1인 요금</span><span>{{ "{:,}".format(item.cost) }}원</span></div>
@@ -334,10 +334,10 @@
             <button class="detail-booking-btn disabled" disabled>예약 마감</button>
             {% endif %}
             <div class="detail-booking-info">
-                <div class="detail-booking-info-row"><i data-lucide="map-pin"></i> <span>{{ item.address_detail }}</span></div>
-                <div class="detail-booking-info-row"><i data-lucide="leaf"></i> <span>친환경: {{ "예" if item.pesticide_free else "아니오" }}</span></div>
+                <div class="detail-booking-info-row"><img src="{{ url_for('static', filename='icons/icon-map-location.svg') }}" class="fl-icon-sm" alt=""> <span>{{ item.address_detail }}</span></div>
+                <div class="detail-booking-info-row"><img src="{{ url_for('static', filename='icons/icon-eco-friendly.svg') }}" class="fl-icon-sm" alt=""> <span>친환경: {{ "예" if item.pesticide_free else "아니오" }}</span></div>
                 <div class="detail-booking-info-row"><i data-lucide="square-parking"></i> <span>주차: {{ "가능" if item.has_parking else "불가" }}</span></div>
-                <div class="detail-booking-info-row"><i data-lucide="calendar"></i> <span>마감: {{ item.end_date.strftime('%Y.%m.%d') }}</span></div>
+                <div class="detail-booking-info-row"><img src="{{ url_for('static', filename='icons/icon-calendar-schedule.svg') }}" class="fl-icon-sm" alt=""> <span>마감: {{ item.end_date.strftime('%Y.%m.%d') }}</span></div>
             </div>
         </div>
     </div><!-- /detail-booking-col -->
@@ -356,7 +356,7 @@
     </div>
     {% if remaining_mobile > 0 %}
     <a href="{{ url_for('experience_apply', item_id=item.id) }}" class="ed-mobile-cta__btn fl-touch">
-        <i data-lucide="calendar-check"></i> 예약 신청
+        <img src="{{ url_for('static', filename='icons/icon-calendar-schedule.svg') }}" class="fl-icon-sm" alt=""> 예약 신청
     </a>
     {% else %}
     <button class="ed-mobile-cta__btn fl-touch" disabled>마감</button>

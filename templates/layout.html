@@ -91,7 +91,7 @@
                     
                     <!-- 2️ 일반 회원(Experiencer) 전용 메뉴 -->
                     {% elif session.get('role') != 'farmer' %}
-                    <a href="{{ url_for('my_info') }}"><i data-lucide="user" class="mr-1"></i> 내 정보</a>
+                    <a href="{{ url_for('my_info') }}"><img src="{{ url_for('static', filename='icons/icon-my-page.svg') }}" class="fl-icon-sm" style="margin-right:4px;" alt=""> 내 정보</a>
                     <a href="{{ url_for('album_create') }}"><i data-lucide="book-open" class="mr-1"></i> 추억 앨범 만들기</a>
                     <hr style="margin:4px 0; border-top:1px solid #f0f0f0;">
                     {% endif %}

@@ -127,7 +127,7 @@
       {# ── 예약 내역 ── #}
       <div id="panel-res" class="mp-panel" style="display:flex;flex-direction:column;gap:var(--fl-s4);">
         <section class="fl-card"><div class="fl-card-body" style="padding-bottom:0;">
-          <div class="fl-section-head"><h2><i data-lucide="calendar-check"></i> 예약 내역</h2></div>
+          <div class="fl-section-head"><h2><img src="{{ url_for('static', filename='icons/icon-calendar-schedule.svg') }}" class="fl-icon-sm" alt=""> 예약 내역</h2></div>
         </div>
         {% if reservation_cards %}
           <div class="mp-res-list" style="padding:0 20px 16px;">
@@ -141,8 +141,8 @@
               <div class="mp-res-body">
                 <span class="mp-bdg mp-bdg--{{ r.state }}">{{ r.badge }}</span>
                 <h3 class="mp-res-title">{{ r.crop }} 체험</h3>
-                <div class="mp-res-meta"><i data-lucide="calendar"></i> {{ r.date }} {{ r.time }} &nbsp;·&nbsp; <i data-lucide="users"></i> {{ r.participants }}명</div>
-                <div class="mp-res-meta"><i data-lucide="map-pin"></i> {{ r.location or '장소 미정' }}</div>
+                <div class="mp-res-meta"><img src="{{ url_for('static', filename='icons/icon-calendar-schedule.svg') }}" class="fl-icon-sm" alt=""> {{ r.date }} {{ r.time }} &nbsp;·&nbsp; <img src="{{ url_for('static', filename='icons/icon-participants.svg') }}" class="fl-icon-sm" alt=""> {{ r.participants }}명</div>
+                <div class="mp-res-meta"><img src="{{ url_for('static', filename='icons/icon-map-location.svg') }}" class="fl-icon-sm" alt=""> {{ r.location or '장소 미정' }}</div>
                 <div style="font-size:.72rem;color:var(--fl-text-muted);margin-top:3px;">예약번호 FLT-{{ '%06d' | format(r.app_id) }}</div>
               </div>
               <div class="mp-res-actions">
@@ -180,7 +180,7 @@
       {# ── 찜 ── #}
       <div id="panel-wish" class="mp-panel" style="display:none;flex-direction:column;gap:var(--fl-s4);">
         <section class="fl-card"><div class="fl-card-body">
-          <div class="fl-section-head"><h2><i data-lucide="heart"></i> 찜한 체험</h2></div>
+          <div class="fl-section-head"><h2><img src="{{ url_for('static', filename='icons/icon-favorites.svg') }}" class="fl-icon-sm" alt=""> 찜한 체험</h2></div>
           <div id="mp-wish-list"><p class="mp-empty">불러오는 중…</p></div>
         </div></section>
       </div>

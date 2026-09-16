@@ -1,0 +1,91 @@
+# develop 에 push 되면 PythonAnywhere 서버에 자동 반영한다.
+#
+# 순서: SSH 코드 갱신 → 의존성 → DB 스키마 동기화 → 웹앱 reload → 헬스체크
+#
+# PythonAnywhere API 에는 셸 명령 실행 엔드포인트가 없어서(reload 만 가능)
+# git 갱신은 SSH 로 처리한다. SSH 는 유료 계정에서만 열린다.
+name: Deploy to PythonAnywhere
+
+on:
+  push:
+    branches: [develop]
+  workflow_dispatch:        # Actions 탭에서 수동 실행(첫 테스트용)
+
+# 배포가 겹치면 서버에서 git 과 pip 이 동시에 돌아 꼬인다. 순차 실행을 강제한다.
+concurrency:
+  group: deploy-pythonanywhere
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      # ── 1. 서버에서 코드 갱신 + 의존성 + DB 스키마 ──
+      - name: 서버 코드 갱신 및 준비
+        uses: appleboy/ssh-action@v1.2.5
+        with:
+          host: ssh.pythonanywhere.com
+          username: ${{ secrets.PAW_USERNAME }}
+          key: ${{ secrets.PAW_SSH_KEY }}
+          script_stop: true
+          script: |
+            set -e
+            cd /home/wws030816/SW_id
+
+            echo "── 배포 전 상태 ──"
+            git rev-parse --abbrev-ref HEAD
+            git log --oneline -1
+
+            echo "── develop 으로 갱신 ──"
+            git fetch origin
+            # -f -B: 서버가 다른 브랜치를 보고 있든, 파일이 수정돼 있든,
+            # 팀원이 force-push 해 히스토리가 갈라져 있든 한 번에 origin/develop 에 맞춘다.
+            # (git pull --ff-only 은 이 상황들에서 배포가 멈춘다)
+            # 서버는 저장소를 그대로 반영하는 곳이라 로컬 수정을 남기지 않는다.
+            # .env 와 사용자 업로드 파일은 untracked/ignored 라 영향받지 않는다.
+            git checkout -f -B develop origin/develop
+            git reset --hard origin/develop
+
+            echo "── 의존성 ──"
+            # 앱이 실제로 import 하는 8개만 설치한다.
+            # requirements.txt(83개)는 supabase·psycopg2 등 앱 미사용분이 섞여 있어
+            # 빌드가 깨지면 배포 전체가 멈춘다.
+            source /home/wws030816/.virtualenvs/farmlink/bin/activate
+            pip install -q -r requirements-deploy.txt
+
+            echo "── DB 스키마 동기화 ──"
+            # 모델에 새로 생긴 컬럼을 ALTER TABLE 로 채운다. 변경 없으면 즉시 통과.
+            # SECRET_KEY 누락·DB 접속 실패도 여기서 잡혀 배포가 중단된다.
+            python deploy_setup.py
+
+            echo "── 배포 후 상태 ──"
+            git log --oneline -1
+
+      # ── 2. 웹앱 reload ──
+      # 코드를 받아도 reload 하지 않으면 이전 프로세스가 계속 돈다.
+      # PythonAnywhere 공식 reload API. -f 로 4xx/5xx 를 실패로 잡는다.
+      - name: 웹앱 reload
+        run: |
+          curl -f -s -S -X POST \
+            -H "Authorization: Token ${{ secrets.PAW_TOKEN }}" \
+            "https://www.pythonanywhere.com/api/v0/user/${{ secrets.PAW_USERNAME }}/webapps/${{ secrets.PAW_DOMAIN }}/reload/"
+          echo "reload 요청 완료"
+
+      # ── 3. 헬스체크 ──
+      # reload 직후 첫 요청은 앱이 뜨는 시간이 걸리므로 기다렸다 확인한다.
+      - name: 배포 확인
+        run: |
+          for i in 1 2 3; do
+            sleep 10
+            code=$(curl -s -o /dev/null -w '%{http_code}' "https://${{ secrets.PAW_DOMAIN }}/")
+            echo "시도 $i — HTTP $code"
+            if [ "$code" = "200" ]; then
+              echo "배포 성공"
+              exit 0
+            fi
+          done
+          echo "사이트가 200 을 반환하지 않는다. PythonAnywhere 에러 로그를 확인할 것:"
+          echo "  tail -n 40 /var/log/${{ secrets.PAW_DOMAIN }}.error.log"
+          exit 1

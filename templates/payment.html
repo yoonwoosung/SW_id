@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>간편결제</title>
+    <style>
+        :root { --green:#4CAF50; --orange:#ea6a1e; --cream:#faf8f3; }
+        * { box-sizing: border-box; }
+        body { margin:0; font-family:'Noto Sans KR',sans-serif; background:var(--cream); padding:0; color:#253027; }
+        .pay-wrap { max-width:440px; margin:0 auto; min-height:100vh; display:flex; flex-direction:column; }
+        .pay-head { display:flex; align-items:center; justify-content:space-between; padding:16px 18px; }
+        .pay-head h1 { font-size:1.15rem; font-weight:800; margin:0; color:var(--green); }
+        .pay-close { border:none; background:none; font-size:1.3rem; color:#8a938c; cursor:pointer; line-height:1; text-decoration:none; }
+        .pay-body { flex:1; padding:4px 18px 18px; }
+        .pay-sec { background:#fff; border:1px solid #eef1ee; border-radius:14px; padding:16px; margin-bottom:14px; }
+        .pay-sec__title { font-size:.8rem; font-weight:800; color:#8a938c; margin:0 0 10px; padding:0; }
+        .pay-row { display:flex; justify-content:space-between; gap:12px; font-size:.92rem; margin:7px 0; }
+        .pay-row .lbl { color:#6a746d; }
+        .pay-row .val { color:#253027; font-weight:600; text-align:right; }
+        .pay-exp-name { font-size:1.05rem; font-weight:800; margin:0 0 10px; }
+        .pay-amount-row { display:flex; justify-content:space-between; align-items:baseline; margin-top:8px; padding-top:12px; border-top:1px solid #f0f0f0; }
+        .pay-amount-row .lbl { font-weight:800; }
+        .pay-amount { font-size:1.7rem; font-weight:800; color:var(--orange); }
+        .pay-methods { display:flex; gap:10px; }
+        .pay-method { flex:1; border:1.5px solid #dbe5dd; border-radius:11px; padding:12px; cursor:pointer;
+                      font-weight:700; font-size:.9rem; text-align:center; color:#45514a; }
+        .pay-method input { display:none; }
+        .pay-method.is-active { border-color:var(--green); background:#eef5f0; color:var(--green); }
+        .pay-foot { padding:14px 18px 22px; }
+        .pay-btn { width:100%; border:none; border-radius:12px; padding:15px; font-size:1.05rem;
+                   font-weight:800; color:#fff; background:var(--green); cursor:pointer; }
+        .pay-btn:disabled { opacity:.6; cursor:default; }
+        .pay-guide { text-align:center; font-size:.8rem; color:#9aa39c; margin:12px 0 0; }
+
+        /* ── [PWA 3단계] 모바일 반응형 ──
+           결제창은 원래 440px 지향이라 레이아웃은 그대로 두고,
+           홈바·노치 보정과 터치 타겟만 보강한다. */
+        .pay-wrap { padding-top: var(--safe-top); }
+        .pay-head { padding-left: calc(18px + var(--safe-left)); padding-right: calc(18px + var(--safe-right)); }
+        .pay-body { padding-left: calc(18px + var(--safe-left)); padding-right: calc(18px + var(--safe-right)); }
+        /* 결제 버튼이 아이폰 홈바에 가리지 않게 아래 여백을 더한다 */
+        .pay-foot {
+            padding-left: calc(18px + var(--safe-left));
+            padding-right: calc(18px + var(--safe-right));
+            padding-bottom: calc(22px + var(--safe-bottom));
+        }
+        /* 닫기(×)·전액 버튼 터치 타겟 확보 */
+        .pay-close {
+            min-width: var(--touch-min); min-height: var(--touch-min);
+            display: inline-flex; align-items: center; justify-content: center;
+        }
+        #pay-point-all { min-height: var(--touch-min); }
+        #pay-point-input { min-height: var(--touch-min); font-size: var(--fs-base); }
+        .pay-btn { min-height: var(--touch-min); }
+        /* 토스 위젯이 그리는 영역이 좌우로 넘치지 않게 */
+        #payment-method, #agreement { max-width: 100%; overflow-x: hidden; }
+    </style>
+</head>
+<body>
+<div class="pay-wrap">
+    <div class="pay-head">
+        <h1>결제</h1>
+        <a class="pay-close" href="{{ url_for('experience_detail', item_id=experience.id) }}" aria-label="닫기">&times;</a>
+    </div>
+
+    <div class="pay-body">
+        <div class="pay-sec">
+            <h3 class="pay-sec__title">예약 정보</h3>
+            <p class="pay-exp-name">{{ experience.crop }} 체험</p>
+            <div class="pay-row"><span class="lbl">날짜·시간</span><span class="val">{{ application.apply_date }} {{ application.apply_time }}</span></div>
+            <div class="pay-row"><span class="lbl">인원</span><span class="val">{{ application.participants_count }}명</span></div>
+            <div class="pay-row"><span class="lbl">장소</span><span class="val">{{ experience.address_detail or experience.location or '농장 현장' }}</span></div>
+        </div>
+
+        <div class="pay-sec">
+            <h3 class="pay-sec__title">결제 금액</h3>
+            <div class="pay-row"><span class="lbl">체험비 ({{ "{:,}".format(experience.cost or 0) }}원 × {{ application.participants_count }}명)</span><span class="val">{{ "{:,}".format(amount) }}원</span></div>
+            <div class="pay-row" id="pay-point-row" style="display:none;"><span class="lbl">포인트 사용</span><span class="val" id="pay-point-used">0원</span></div>
+            <div class="pay-amount-row"><span class="lbl">최종 결제 금액</span><span class="pay-amount" id="pay-final">{{ "{:,}".format(amount) }}원</span></div>
+        </div>
+
+        <div class="pay-sec">
+            <h3 class="pay-sec__title">포인트 사용</h3>
+            <div class="pay-row"><span class="lbl">보유 포인트</span><span class="val">{{ "{:,}".format(point_balance) }}P</span></div>
+            <div style="display:flex; gap:8px; margin-top:10px;">
+                <input type="number" id="pay-point-input" min="0" step="1" value="0"
+                       max="{{ [point_balance, amount]|min }}"
+                       style="flex:1; padding:11px; border:1.5px solid #dbe5dd; border-radius:10px; font-size:1rem;">
+                <button type="button" id="pay-point-all"
+                        style="border:1.5px solid var(--green); background:#fff; color:var(--green);
+                               border-radius:10px; padding:0 14px; font-weight:700; cursor:pointer;">전액</button>
+            </div>
+            <p id="pay-point-msg" style="margin:8px 0 0; font-size:.8rem; color:#e5484d; display:none;"></p>
+        </div>
+
+        {# 토스 결제위젯이 이 두 곳에 결제수단 선택 UI와 약관 UI를 그린다.
+           위젯을 쓰면 method 를 지정하지 않고 사용자가 카드·계좌이체·간편결제 등에서 직접 고른다. #}
+        <div class="pay-sec">
+            <h3 class="pay-sec__title">결제 수단</h3>
+            <div id="payment-method"></div>
+        </div>
+
+        <div class="pay-sec">
+            <div id="agreement"></div>
+        </div>
+
+    </div>
+
+    <div class="pay-foot">
+        <button type="button" id="pay-btn" class="pay-btn">{{ "{:,}".format(amount) }}원 결제하기</button>
+        <p class="pay-guide">토스페이먼츠 테스트 결제창이 열립니다. 실제 금액이 청구되지 않아요.</p>
+        <p id="pay-err" class="pay-guide" style="color:#e5484d;display:none;"></p>
+    </div>
+</div>
+
+<script id="pay-data" type="application/json">{{ {
+    'application_id': application.id,
+    'amount': amount,
+    'client_key': toss_client_key,
+    'point_balance': point_balance,
+    'success_url': success_url,
+    'fail_url': fail_url
+}|tojson|safe }}</script>
+<script src="https://js.tosspayments.com/v2/standard"></script>
+<script>
+(function () {
+    var DATA = JSON.parse(document.getElementById('pay-data').textContent);
+    var btn = document.getElementById('pay-btn');
+    var err = document.getElementById('pay-err');
+    var pInput = document.getElementById('pay-point-input');
+    var pMsg = document.getElementById('pay-point-msg');
+    var pRow = document.getElementById('pay-point-row');
+    var pUsed = document.getElementById('pay-point-used');
+    var pFinal = document.getElementById('pay-final');
+    var MAX_POINT = Math.min(DATA.point_balance, DATA.amount);
+    var widgets = null;
+
+    function won(n) { return n.toLocaleString('ko-KR') + '원'; }
+
+    function fail(msg) {
+        btn.disabled = false;
+        btn.textContent = won(DATA.amount - usePoint()) + ' 결제하기';
+        err.textContent = msg;
+        err.style.display = 'block';
+    }
+
+    // 입력값은 화면 표시용일 뿐이고, 실제 검증·차감은 서버(prepare)가 한다.
+    function usePoint() {
+        var v = parseInt(pInput.value, 10);
+        if (isNaN(v) || v < 0) v = 0;
+        return Math.min(v, MAX_POINT);
+    }
+
+    function finalAmount() { return DATA.amount - usePoint(); }
+
+    // 포인트 사용액이 바뀌면 위젯이 청구할 금액도 함께 바꿔야 한다.
+    function syncPoint() {
+        var v = usePoint();
+        if (parseInt(pInput.value, 10) > MAX_POINT) {
+            pMsg.textContent = '최대 ' + won(MAX_POINT) + '까지 사용할 수 있어요.';
+            pMsg.style.display = 'block';
+            pInput.value = MAX_POINT;
+        } else {
+            pMsg.style.display = 'none';
+        }
+        pRow.style.display = v > 0 ? 'flex' : 'none';
+        pUsed.textContent = '-' + won(v);
+        pFinal.textContent = won(finalAmount());
+        btn.textContent = won(finalAmount()) + ' 결제하기';
+        if (widgets) {
+            widgets.setAmount({ currency: 'KRW', value: finalAmount() });
+        }
+    }
+
+    pInput.addEventListener('input', syncPoint);
+    document.getElementById('pay-point-all').addEventListener('click', function () {
+        pInput.value = MAX_POINT; syncPoint();
+    });
+
+    // 클라이언트 키가 없으면 결제창을 열 수 없다. 원인을 화면에 알려준다.
+    if (!DATA.client_key) {
+        btn.disabled = true;
+        err.textContent = '결제 설정이 완료되지 않았습니다(TOSS_CLIENT_KEY 미설정). 관리자에게 문의해 주세요.';
+        err.style.display = 'block';
+        return;
+    }
+
+    // ── 결제위젯 초기화 ──
+    // 결제창(payment)과 달리 위젯은 method 를 받지 않는다.
+    // renderPaymentMethods 가 그린 UI에서 사용자가 수단을 직접 고른다.
+    btn.disabled = true;
+    var tossPayments = TossPayments(DATA.client_key);
+    widgets = tossPayments.widgets({ customerKey: TossPayments.ANONYMOUS });
+
+    widgets.setAmount({ currency: 'KRW', value: finalAmount() })
+        .then(function () {
+            return Promise.all([
+                widgets.renderPaymentMethods({ selector: '#payment-method', variantKey: 'DEFAULT' }),
+                widgets.renderAgreement({ selector: '#agreement', variantKey: 'AGREEMENT' })
+            ]);
+        })
+        .then(function () {
+            btn.disabled = false;
+            syncPoint();
+        })
+        .catch(function (e) {
+            btn.disabled = true;
+            err.textContent = '결제 수단을 불러오지 못했습니다. ' + ((e && e.message) || '');
+            err.style.display = 'block';
+        });
+
+    // ── 결제 요청 ──
+    btn.addEventListener('click', function () {
+        btn.disabled = true;
+        btn.textContent = '결제 준비 중…';
+        err.style.display = 'none';
+
+        // 1) 서버가 주문번호·금액을 확정하고 포인트를 차감한다.
+        //    클라이언트가 계산한 금액은 신뢰하지 않는다.
+        fetch('/api/payments/prepare', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ application_id: DATA.application_id, use_point: usePoint() })
+        }).then(function (r) { return r.json(); }).then(function (res) {
+            if (!res.success || !res.data) {
+                fail((res.error && res.error.message) || '결제를 준비하지 못했습니다.');
+                return;
+            }
+            var order = res.data;
+            // 2) 위젯 금액을 서버가 확정한 금액으로 맞춘 뒤 결제를 요청한다.
+            //    (여기서 어긋나면 토스가 금액 불일치로 거부한다.)
+            return widgets.setAmount({ currency: 'KRW', value: order.amount }).then(function () {
+                return widgets.requestPayment({
+                    orderId: order.order_id,
+                    orderName: order.order_name,
+                    successUrl: DATA.success_url,
+                    failUrl: DATA.fail_url
+                });
+            });
+        }).catch(function (e) {
+            // 사용자가 결제창을 닫은 경우는 오류가 아니다.
+            if (e && e.code === 'USER_CANCEL') {
+                btn.disabled = false;
+                btn.textContent = won(finalAmount()) + ' 결제하기';
+                return;
+            }
+            fail((e && e.message) || '결제 중 오류가 발생했습니다.');
+        });
+    });
+})();
+</script>
+</body>
+</html>

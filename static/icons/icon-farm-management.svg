@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg"
+     viewBox="0 0 32 32"
+     width="32"
+     height="32"
+     fill="none">
+
+  <!-- soft background -->
+  <circle cx="16" cy="16" r="12" fill="#E8F5E9"/>
+
+  <!-- farm roof -->
+  <path d="M7.5 14L16 8.5L24.5 14"
+        stroke="#4CAF50"
+        stroke-width="2.2"
+        stroke-linecap="round"
+        stroke-linejoin="round"/>
+
+  <!-- farm body -->
+  <rect x="9.2" y="14" width="13.6" height="9.5" rx="2.2"
+        fill="#FFFFFF"
+        stroke="#4CAF50"
+        stroke-width="2"/>
+
+  <!-- door -->
+  <rect x="14" y="17.4" width="4" height="6.1" rx="1"
+        fill="#4CAF50"/>
+
+  <!-- small management gear -->
+  <g transform="translate(21.6 20.9)">
+    <circle cx="0" cy="0" r="3.1" fill="#4CAF50"/>
+    <circle cx="0" cy="0" r="1.15" fill="#FFFFFF"/>
+
+    <path d="M0 -4V-3.1
+             M0 3.1V4
+             M-4 0H-3.1
+             M3.1 0H4
+             M-2.8 -2.8L-2.2 -2.2
+             M2.2 2.2L2.8 2.8
+             M2.8 -2.8L2.2 -2.2
+             M-2.2 2.2L-2.8 2.8"
+          stroke="#4CAF50"
+          stroke-width="1.2"
+          stroke-linecap="round"/>
+  </g>
+</svg>

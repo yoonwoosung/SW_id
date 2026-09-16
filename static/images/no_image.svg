@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 240" role="img" aria-label="사진 없음">
+  <!-- 카드에서 object-fit:cover 로 잘려도 괜찮도록 배경은 단색, 아이콘은 가운데 배치 -->
+  <rect width="400" height="240" fill="#e9f1ec"/>
+  <!-- 이랑 -->
+  <path d="M132 186 Q200 172 268 186" stroke="#1d6340" stroke-width="7"
+        stroke-linecap="round" fill="none" opacity="0.3"/>
+  <!-- 줄기: 잎보다 먼저 그려 잎이 줄기를 덮게 한다(이음새가 붙어 보이도록) -->
+  <path d="M200 176 L200 92" stroke="#1d6340" stroke-width="9"
+        stroke-linecap="round" fill="none"/>
+  <!-- 오른쪽 잎 -->
+  <path d="M200 110 C214 80 240 62 256 58 C258 84 238 110 200 110 Z" fill="#1d6340"/>
+  <!-- 왼쪽 잎 -->
+  <path d="M200 138 C186 108 160 90 144 86 C142 112 162 138 200 138 Z"
+        fill="#1d6340" opacity="0.72"/>
+</svg>

@@ -86,8 +86,11 @@
         if (!list.length) { sec.hidden = true; return; }
         sec.hidden = false;
         row.innerHTML = list.map(function (c, i) {
+            var imgHtml = c.first_image
+                ? '<img class="fl-course-card__img" src="/static/uploads/' + esc(c.first_image) + '" alt="" loading="lazy" onerror="this.remove()">'
+                : '';
             return '<article class="fl-course-card">'
-                + '<div class="fl-course-card__band"><span class="fl-badge fl-badge--day">저장됨</span></div>'
+                + '<div class="fl-course-card__band">' + imgHtml + '<span class="fl-badge fl-badge--day">저장됨</span></div>'
                 + '<div class="fl-course-card__head">'
                 + '<h3 class="fl-course-card__title">' + esc(c.title) + '</h3>'
                 + '<div class="fl-reasons"></div>'
@@ -205,7 +208,11 @@
             .then(function (res) {
                 if (!res.success) { row.innerHTML = '<p class="fl-empty">' + esc((res.error && res.error.message) || '추천을 불러올 수 없어요.') + '</p>'; return; }
                 var list = (res.data.results || []).slice(0, 3);
-                if (!list.length) { row.innerHTML = '<p class="fl-empty">추천할 코스를 찾지 못했어요.</p>'; return; }
+                // 0건이어도 섹션을 숨기거나 조건을 완화하지 않는다. 필터가 동작했음을 보여준다.
+                if (!list.length) {
+                    row.innerHTML = '<p class="fl-empty">조건에 맞는 체험이 아직 없습니다.</p>';
+                    return;
+                }
                 Promise.all(list.map(function (x) {
                     return fetchCourse(x.id)
                         .then(function (c) { return { rec: x, course: c.data || {} }; });
@@ -371,7 +378,7 @@
             if (this.disabled) return;
             var list = JSON.parse(localStorage.getItem('fl-saved-courses') || '[]');
             if (!list.some(function (c) { return String(c.id) === String(rec.id); })) {
-                list.push({ id: rec.id, title: title, cost: sm.estimated_cost || null });
+                list.push({ id: rec.id, title: title, cost: sm.estimated_cost || null, first_image: rec.first_image || null });
                 localStorage.setItem('fl-saved-courses', JSON.stringify(list));
             }
             this.innerHTML = '<i class="fa-solid fa-bookmark" style="margin-right:5px;"></i>저장됨';

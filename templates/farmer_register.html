@@ -18,7 +18,7 @@
             </div>
             <div class="form-group row">
                 <label class="col-sm-2 col-form-label">부가 정보</label>
-                <div class="col-sm-10 d-flex align-items-center">
+                <div class="col-sm-10 d-flex align-items-center flex-wrap">
                     <div class="form-check mr-4">
                         <input class="form-check-input" type="checkbox" name="is_organic" value="true" id="is_organic" {% if item and item.pesticide_free %}checked{% endif %}>
                         <label class="form-check-label" for="is_organic">친환경 작물</label>
@@ -27,8 +27,135 @@
                         <input class="form-check-input" type="checkbox" name="has_parking" value="true" id="has_parking" {% if item and item.has_parking %}checked{% endif %}>
                         <label class="form-check-label" for="has_parking">주차장 제공</label>
                     </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="pet_allowed" value="true" id="pet_allowed"
+                               {% if item and item.pet_allowed %}checked{% endif %}
+                               onchange="document.getElementById('pet-weight-row').hidden = !this.checked;">
+                        <label class="form-check-label" for="pet_allowed">반려견 동반 가능</label>
+                    </div>
+                    <div id="pet-weight-row" class="mt-2 w-100" {% if not (item and item.pet_allowed) %}hidden{% endif %}>
+                        <label for="pet_max_weight_kg" class="small mb-1">허용 최대 몸무게(kg)</label>
+                        <input type="number" class="form-control form-control-sm" style="max-width:180px;"
+                               name="pet_max_weight_kg" id="pet_max_weight_kg" min="1" max="100" step="1"
+                               placeholder="예) 15"
+                               value="{{ item.pet_max_weight_kg if item and item.pet_max_weight_kg else '' }}">
+                        <small class="form-text text-muted">
+                            검색 필터가 이 값으로 소형(5kg~)·중형(15kg~)·대형(25kg~)을 매칭합니다.
+                        </small>
+                    </div>
+
+                    <hr class="my-3 w-100">
+                    <div class="form-check w-100">
+                        <input class="form-check-input" type="checkbox" name="is_surplus" value="true" id="is_surplus"
+                               {% if item and item.is_surplus %}checked{% endif %}
+                               onchange="document.getElementById('surplus-box').hidden = !this.checked;">
+                        <label class="form-check-label" for="is_surplus"><strong>과생산 농산물 수확 체험</strong></label>
+                        <small class="form-text text-muted">과잉생산된 농산물을 방문객이 직접 수확해 가는 체험입니다.</small>
+                    </div>
+
+                    <div id="surplus-box" class="mt-3 p-3 border rounded w-100"
+                         {% if not (item and item.is_surplus) %}hidden{% endif %}>
+                        <div class="form-row">
+                            <div class="form-group col-md-6">
+                                <label for="list_price" class="small mb-1">정가(원, 1인)</label>
+                                <input type="number" class="form-control form-control-sm" name="list_price"
+                                       id="list_price" min="1" step="1" placeholder="예) 50000"
+                                       value="{{ item.list_price if item and item.list_price else '' }}"
+                                       oninput="flUpdateSurplus()">
+                            </div>
+                            <div class="form-group col-md-6">
+                                <label class="small mb-1">할인율</label>
+                                <p id="surplus-rate" class="form-control-plaintext font-weight-bold mb-0">—</p>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group col-md-4">
+                                <label for="surplus_qty_total" class="small mb-1">총 수량</label>
+                                <input type="number" class="form-control form-control-sm" name="surplus_qty_total"
+                                       id="surplus_qty_total" min="1" step="1" placeholder="예) 500"
+                                       value="{{ item.surplus_qty_total if item and item.surplus_qty_total else '' }}"
+                                       oninput="flUpdateSurplus()">
+                            </div>
+                            <div class="form-group col-md-4">
+                                <label for="surplus_per_person" class="small mb-1">1인당 수확량</label>
+                                <input type="number" class="form-control form-control-sm" name="surplus_per_person"
+                                       id="surplus_per_person" min="1" step="1" placeholder="예) 5"
+                                       value="{{ item.surplus_per_person if item and item.surplus_per_person else '' }}"
+                                       oninput="flUpdateSurplus()">
+                            </div>
+                            <div class="form-group col-md-4">
+                                <label for="surplus_unit" class="small mb-1">단위</label>
+                                <select class="form-control form-control-sm" name="surplus_unit" id="surplus_unit">
+                                    {% for u in ['kg', 'g', '박스', '구좌', '포기', '단'] %}
+                                    <option value="{{ u }}" {% if item and item.surplus_unit == u %}selected{% endif %}>{{ u }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+
+                        <p id="surplus-capacity" class="small text-muted mb-2">—</p>
+
+                        <div class="form-group">
+                            <label for="surplus_origin" class="small mb-1">원산지</label>
+                            <input type="text" class="form-control form-control-sm" name="surplus_origin"
+                                   id="surplus_origin" placeholder="예) 충남 논산시"
+                                   value="{{ item.surplus_origin if item and item.surplus_origin else '' }}">
+                            <small class="form-text text-muted">농산물 원산지 표시 의무 항목입니다. 주소를 바탕으로 수정하세요.</small>
+                        </div>
+
+                        <div class="alert alert-secondary py-2 px-3 small mb-2">
+                            <strong>현장 수확·수령만 가능합니다.</strong> 택배 발송은 제공하지 않습니다.
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="surplus_terms_agreed" value="true"
+                                   id="surplus_terms_agreed" {% if item and item.surplus_terms_agreed %}checked{% endif %}>
+                            <label class="form-check-label small" for="surplus_terms_agreed">
+                                정가 대비 <strong>20% 이상 저렴하게</strong> 판매하는 것에 동의합니다. (필수)
+                            </label>
+                        </div>
+                    </div>
                 </div>
             </div>
+
+            <script>
+            // 할인율·정원을 입력하는 즉시 보여준다. 서버가 같은 규칙으로 다시 검증한다.
+            function flUpdateSurplus() {
+                var listPrice = parseInt(document.getElementById('list_price').value, 10);
+                var price = parseInt((document.getElementById('price') || {}).value, 10);
+                var rateEl = document.getElementById('surplus-rate');
+                if (listPrice > 0 && price >= 0 && price < listPrice) {
+                    var rate = (listPrice - price) / listPrice * 100;
+                    rateEl.textContent = rate.toFixed(1) + '%';
+                    rateEl.className = 'form-control-plaintext font-weight-bold mb-0 '
+                        + (rate >= 20 ? 'text-success' : 'text-danger');
+                    if (rate < 20) rateEl.textContent += ' (20% 이상 필요)';
+                } else {
+                    rateEl.textContent = '—';
+                    rateEl.className = 'form-control-plaintext font-weight-bold mb-0';
+                }
+
+                var total = parseInt(document.getElementById('surplus_qty_total').value, 10);
+                var per = parseInt(document.getElementById('surplus_per_person').value, 10);
+                var unit = document.getElementById('surplus_unit').value;
+                var capEl = document.getElementById('surplus-capacity');
+                if (total > 0 && per > 0) {
+                    var cap = Math.floor(total / per);
+                    var rest = total - cap * per;
+                    capEl.textContent = '최대 ' + cap + '명까지 받을 수 있습니다.'
+                        + (rest > 0 ? ' (자투리 ' + rest + unit + '은 예약받지 않습니다)' : '');
+                    var maxEl = document.getElementById('max_participants');
+                    if (maxEl && (!maxEl.value || parseInt(maxEl.value, 10) > cap)) maxEl.value = cap;
+                } else {
+                    capEl.textContent = '—';
+                }
+            }
+            document.addEventListener('DOMContentLoaded', function () {
+                var priceEl = document.getElementById('price');
+                if (priceEl) priceEl.addEventListener('input', flUpdateSurplus);
+                flUpdateSurplus();
+            });
+            </script>
 
             <!-- 친환경 인증 이미지 업로드 필드 -->
             <div class="form-group row {% if not item or not item.pesticide_free %}d-none{% endif %}" id="organic-cert-field">
@@ -103,7 +230,7 @@
             <div class="form-group row">
                 <label class="col-sm-2 col-form-label">모집 인원 (세션 당)</label>
                 <div class="col-sm-4">
-                    <input type="number" name="max_participants" class="form-control" 
+                    <input type="number" id="max_participants" name="max_participants" class="form-control" 
                         value="{{ item.max_participants if item else '' }}" 
                         placeholder="예: 10" min="1" required
                         {% if item %}readonly{% endif %}>
@@ -118,7 +245,7 @@
              <div class="form-group row">
                 <label class="col-sm-2 col-form-label">참가비 (1인 기준)</label>
                 <div class="col-sm-4">
-                    <input type="number" name="price" class="form-control" value="{{ item.cost if item else '' }}" placeholder="예: 20000" min="0" required>
+                    <input type="number" id="price" name="price" class="form-control" value="{{ item.cost if item else '' }}" placeholder="예: 20000" min="0" required>
                 </div>
             </div>
         </div>

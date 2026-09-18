@@ -260,6 +260,15 @@
                     </div>
                 </section>
 
+                <!-- 과생산 수확 체험: 별도 섹션. 기존 추천 알고리즘은 건드리지 않는다 -->
+                <section class="section-block mb-0 section-card slider-card" id="surplus-sec" hidden>
+                    <div class="section-header">
+                        <h2 class="section-title">🥕 과생산 농산물 수확 체험</h2>
+                        <span class="more-link" style="cursor:default;">직접 수확해 가는 만큼 저렴합니다</span>
+                    </div>
+                    <div id="surplus-row" class="fl-scroll-x" style="display:flex;gap:12px;"></div>
+                </section>
+
                 <!-- 💡 카드 3: 추억일지 (실제 DB 저장 앨범 연동) -->
                 <section class="section-block mb-0 section-card slider-card">
                     <div class="section-header">
@@ -291,20 +300,6 @@
         </button>
     </div>
 
-    <!-- 지역별 추천 -->
-    <section class="section-block">
-        <div class="section-header">
-            <h2 class="section-title"><img src="{{ url_for('static', filename='icons/icon-map-location.svg') }}" class="fl-icon-sm" alt=""> 지역별 추천</h2>
-            <a href="{{ url_for('index') }}" class="more-link">지역 전체보기 <i data-lucide="chevron-right"></i></a>
-        </div>
-        <div class="region-tabs">
-            {% for r in ["천안", "공주", "부여", "논산", "아산"] %}
-            <a href="{{ url_for('index', region=r) }}"
-                class="region-tab {% if request.args.get('region') == r %}active{% endif %}">{{ r }}</a>
-            {% endfor %}
-            <a href="{{ url_for('index') }}" class="region-tab-more"><i data-lucide="chevron-right"></i></a>
-        </div>
-    </section>
 
 </div>
 
@@ -497,6 +492,56 @@
         } else {
             loadCourse(null, null);
         }
+    })();
+
+    // --- 과생산 수확 체험 섹션 ---
+    (function () {
+        var sec = document.getElementById('surplus-sec');
+        var row = document.getElementById('surplus-row');
+        if (!sec || !row) return;
+
+        function esc(t) {
+            var d = document.createElement('div');
+            d.textContent = (t == null ? '' : String(t));
+            return d.innerHTML;
+        }
+
+        fetch('/api/experiences/surplus?limit=8')
+            .then(function (r) { return r.json(); })
+            .then(function (res) {
+                var list = (res.success && res.data && res.data.results) || [];
+                if (!list.length) return;          // 과생산 체험이 없으면 섹션째 숨긴다
+                sec.hidden = false;
+                row.innerHTML = list.map(function (x) {
+                    var img = '<img src="' + esc(x.thumbnail_url) + '" alt="' + esc(x.crop) +
+                        '" loading="lazy" style="width:100%;height:120px;object-fit:cover;border-radius:10px 10px 0 0;">';
+                    var price = '<span style="text-decoration:line-through;color:#9aa;font-size:.82rem;">' +
+                        Number(x.list_price || 0).toLocaleString() + '원</span> ' +
+                        '<strong style="color:#c0392b;">' + Number(x.cost || 0).toLocaleString() + '원</strong>';
+                    var left = x.qty_left != null
+                        ? '<div style="font-size:.8rem;color:#5b6b5e;">' + esc(x.qty_total) + esc(x.unit) +
+                          ' 중 <strong>' + esc(x.qty_left) + esc(x.unit) + ' 남음</strong></div>'
+                        : '';
+                    return '<a href="/experience/' + x.id + '"' +
+                        ' style="flex:0 0 190px;border:1px solid #e6ebe6;border-radius:12px;overflow:hidden;' +
+                        'background:#fff;text-decoration:none;color:inherit;' + (x.sold_out ? 'opacity:.55;' : '') + '">' +
+                        img +
+                        '<div style="padding:10px;">' +
+                        '<div style="display:flex;gap:4px;margin-bottom:6px;">' +
+                        '<span style="background:#fdecea;color:#c0392b;font-size:.72rem;font-weight:700;' +
+                        'padding:2px 6px;border-radius:5px;">' + esc(x.discount_rate) + '% 할인</span>' +
+                        (x.sold_out ? '<span style="background:#eee;color:#777;font-size:.72rem;padding:2px 6px;border-radius:5px;">소진</span>' : '') +
+                        '</div>' +
+                        '<div style="font-weight:700;font-size:.92rem;">' + esc(x.crop) + '</div>' +
+                        '<div style="font-size:.78rem;color:#8a938c;margin-bottom:4px;">' + esc(x.address) + '</div>' +
+                        '<div style="margin-bottom:4px;">' + price + '</div>' +
+                        left +
+                        '<div style="font-size:.74rem;color:#8a938c;margin-top:4px;">현장 수확·수령만</div>' +
+                        '</div></a>';
+                }).join('');
+                if (window.lucide) lucide.createIcons();
+            })
+            .catch(function () { /* 섹션은 숨긴 채로 둔다 */ });
     })();
 </script>
 {% endblock %}

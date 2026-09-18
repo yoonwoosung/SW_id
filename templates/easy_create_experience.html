@@ -109,6 +109,74 @@
                                 {% if form_data.get('has_parking') or (item and item.has_parking) %}checked{% endif %} onclick="event.stopPropagation()">
                         </div>
 
+                        <!-- 반려견 동반 체크 행 -->
+                        <div class="custom-option-card" onclick="toggleCheckbox('pet_allowed')">
+                            <span class="option-title">🐕 반려견 동반 가능</span>
+                            <input type="checkbox" class="custom-large-check" id="pet_allowed" name="pet_allowed"
+                                {% if form_data.get('pet_allowed') or (item and item.pet_allowed) %}checked{% endif %}
+                                onclick="event.stopPropagation()"
+                                onchange="document.getElementById('pet-weight-row').hidden = !this.checked;">
+                        </div>
+                        <div id="pet-weight-row" class="mb-3"
+                             {% if not (form_data.get('pet_allowed') or (item and item.pet_allowed)) %}hidden{% endif %}>
+                            <label for="pet_max_weight_kg" class="option-title d-block mb-2">허용 최대 몸무게(kg)</label>
+                            <input type="number" class="form-control" name="pet_max_weight_kg" id="pet_max_weight_kg"
+                                   min="1" max="100" step="1" placeholder="예) 15"
+                                   value="{{ form_data.get('pet_max_weight_kg') or (item.pet_max_weight_kg if item and item.pet_max_weight_kg else '') }}">
+                            <small class="text-muted">소형 5kg~ · 중형 15kg~ · 대형 25kg~ 검색에 쓰입니다.</small>
+                        </div>
+
+                        <!-- 과생산 체크 행 -->
+                        <div class="custom-option-card" onclick="toggleCheckbox('is_surplus')">
+                            <span class="option-title">🥕 과생산 농산물 수확 체험</span>
+                            <input type="checkbox" class="custom-large-check" id="is_surplus" name="is_surplus"
+                                {% if form_data.get('is_surplus') or (item and item.is_surplus) %}checked{% endif %}
+                                onclick="event.stopPropagation()"
+                                onchange="document.getElementById('surplus-box').hidden = !this.checked; flUpdateSurplus();">
+                        </div>
+                        <div id="surplus-box" class="mb-3 p-3" style="background:#f7f9f7;border-radius:10px;"
+                             {% if not (form_data.get('is_surplus') or (item and item.is_surplus)) %}hidden{% endif %}>
+                            <label for="list_price" class="option-title d-block mb-2">정가(원, 1인)</label>
+                            <input type="number" class="form-control mb-2" name="list_price" id="list_price"
+                                   min="1" step="1" placeholder="예) 50000" oninput="flUpdateSurplus()"
+                                   value="{{ form_data.get('list_price') or (item.list_price if item and item.list_price else '') }}">
+                            <p id="surplus-rate" class="font-weight-bold mb-3">할인율 —</p>
+
+                            <label for="surplus_qty_total" class="option-title d-block mb-2">총 수량</label>
+                            <input type="number" class="form-control mb-2" name="surplus_qty_total" id="surplus_qty_total"
+                                   min="1" step="1" placeholder="예) 500" oninput="flUpdateSurplus()"
+                                   value="{{ form_data.get('surplus_qty_total') or (item.surplus_qty_total if item and item.surplus_qty_total else '') }}">
+
+                            <label for="surplus_per_person" class="option-title d-block mb-2">1인당 수확량</label>
+                            <input type="number" class="form-control mb-2" name="surplus_per_person" id="surplus_per_person"
+                                   min="1" step="1" placeholder="예) 5" oninput="flUpdateSurplus()"
+                                   value="{{ form_data.get('surplus_per_person') or (item.surplus_per_person if item and item.surplus_per_person else '') }}">
+
+                            <label for="surplus_unit" class="option-title d-block mb-2">단위</label>
+                            <select class="form-control mb-2" name="surplus_unit" id="surplus_unit" onchange="flUpdateSurplus()">
+                                {% for u in ['kg', 'g', '박스', '구좌', '포기', '단'] %}
+                                <option value="{{ u }}" {% if item and item.surplus_unit == u %}selected{% endif %}>{{ u }}</option>
+                                {% endfor %}
+                            </select>
+                            <p id="surplus-capacity" class="text-muted mb-3">—</p>
+
+                            <label for="surplus_origin" class="option-title d-block mb-2">원산지</label>
+                            <input type="text" class="form-control mb-1" name="surplus_origin" id="surplus_origin"
+                                   placeholder="예) 충남 논산시"
+                                   value="{{ form_data.get('surplus_origin') or (item.surplus_origin if item and item.surplus_origin else '') }}">
+                            <small class="text-muted d-block mb-3">농산물 원산지 표시 의무 항목입니다.</small>
+
+                            <div class="alert alert-secondary py-2 px-3 mb-2">
+                                <strong>현장 수확·수령만 가능합니다.</strong> 택배 발송은 제공하지 않습니다.
+                            </div>
+                            <div class="custom-option-card" onclick="toggleCheckbox('surplus_terms_agreed')">
+                                <span class="option-title" style="font-size:.95rem;">정가 대비 20% 이상 저렴하게 판매 (필수 동의)</span>
+                                <input type="checkbox" class="custom-large-check" id="surplus_terms_agreed"
+                                       name="surplus_terms_agreed" onclick="event.stopPropagation()"
+                                       {% if item and item.surplus_terms_agreed %}checked{% endif %}>
+                            </div>
+                        </div>
+
                         <!-- 친환경 체크 행 -->
                         <div class="custom-option-card" onclick="toggleCheckbox('is_organic')">
                             <span class="option-title"><img src="{{ url_for('static', filename='icons/icon-eco-friendly.svg') }}" width="20" height="20" style="vertical-align:-4px;margin-right:6px;"> 친환경 농법 사용</span>
@@ -767,5 +835,46 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 });
+
+// --- 과생산: 할인율·정원 즉시 표시 (서버가 같은 규칙으로 다시 검증한다) ---
+function flUpdateSurplus() {
+    var lp = document.getElementById('list_price');
+    var priceEl = document.getElementById('price');
+    var rateEl = document.getElementById('surplus-rate');
+    if (!lp || !rateEl) return;
+
+    var listPrice = parseInt(lp.value, 10);
+    var price = priceEl ? parseInt(priceEl.value, 10) : NaN;
+    if (listPrice > 0 && price >= 0 && price < listPrice) {
+        var rate = (listPrice - price) / listPrice * 100;
+        rateEl.textContent = '할인율 ' + rate.toFixed(1) + '%'
+            + (rate < 20 ? ' — 20% 이상이어야 합니다' : '');
+        rateEl.style.color = rate >= 20 ? '#2e7d32' : '#c62828';
+    } else {
+        rateEl.textContent = '할인율 —';
+        rateEl.style.color = '';
+    }
+
+    var total = parseInt(document.getElementById('surplus_qty_total').value, 10);
+    var per = parseInt(document.getElementById('surplus_per_person').value, 10);
+    var unit = document.getElementById('surplus_unit').value;
+    var capEl = document.getElementById('surplus-capacity');
+    if (total > 0 && per > 0) {
+        var cap = Math.floor(total / per);
+        var rest = total - cap * per;
+        capEl.textContent = '최대 ' + cap + '명까지 받을 수 있습니다.'
+            + (rest > 0 ? ' (자투리 ' + rest + unit + '은 예약받지 않습니다)' : '');
+        var maxEl = document.getElementById('max_participants');
+        if (maxEl && (!maxEl.value || parseInt(maxEl.value, 10) > cap)) maxEl.value = cap;
+    } else {
+        capEl.textContent = '—';
+    }
+}
+document.addEventListener('DOMContentLoaded', function () {
+    var priceEl = document.getElementById('price');
+    if (priceEl) priceEl.addEventListener('input', flUpdateSurplus);
+    flUpdateSurplus();
+});
+
 </script>
 {% endblock %}

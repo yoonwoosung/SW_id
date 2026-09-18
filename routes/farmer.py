@@ -250,6 +250,25 @@ def easy_create_experience():
         if pet_error:
             flash(pet_error, "warning")
             return render_template('easy_create_experience.html', item=None, approved_farms=approved_farms, form_data=request.form)
+
+        cost, cost_error = experience_validator._parse_int(
+            request.form.get('price'), "가격", minimum=0)
+        if cost_error:
+            flash(cost_error, "warning")
+            return render_template('easy_create_experience.html', item=None, approved_farms=approved_farms, form_data=request.form)
+
+        surplus, surplus_error = experience_validator.parse_surplus_fields(request.form, cost)
+        if surplus_error:
+            flash(surplus_error, "warning")
+            return render_template('easy_create_experience.html', item=None, approved_farms=approved_farms, form_data=request.form)
+
+        capacity = experience_validator.capacity_from_quantity(
+            surplus['surplus_qty_total'], surplus['surplus_per_person'])
+        max_participants, cap_error = experience_validator.resolve_max_participants(
+            request.form.get('max_participants'), capacity)
+        if cap_error:
+            flash(cap_error, "warning")
+            return render_template('easy_create_experience.html', item=None, approved_farms=approved_farms, form_data=request.form)
         is_organic = 'is_organic' in request.form
         cert_filename = None
         cert_type = None
@@ -270,8 +289,8 @@ def easy_create_experience():
         new_experience = Experience(
             farm_id=selected_farm.id,
             crop=request.form.get('crop'),
-            cost=int(request.form.get('price')),
-            max_participants=int(request.form.get('max_participants')),
+            cost=cost,
+            max_participants=max_participants,
             duration_start=datetime.strptime(request.form.get('duration_start'), '%Y-%m-%d').date(),
             end_date=datetime.strptime(request.form.get('duration_end'), '%Y-%m-%d').date(),
             farmer_id=session['user_id'],
@@ -285,6 +304,7 @@ def easy_create_experience():
             has_parking='has_parking' in request.form,
             pet_allowed=pet_allowed,
             pet_max_weight_kg=pet_max_weight_kg,
+            **surplus,
             volunteer_needed=int(request.form.get('volunteer_needed', 0)),
             volunteer_duties=request.form.get('volunteer_duties'),
             pesticide_free=is_organic,
@@ -366,6 +386,25 @@ def easy_modify_experience(item_id):
         if pet_error:
             flash(pet_error, "warning")
             return render_template('easy_create_experience.html', item=item, approved_farms=approved_farms, form_data=request.form)
+
+        cost, cost_error = experience_validator._parse_int(
+            request.form.get('price'), "가격", minimum=0)
+        if cost_error:
+            flash(cost_error, "warning")
+            return render_template('easy_create_experience.html', item=item, approved_farms=approved_farms, form_data=request.form)
+
+        surplus, surplus_error = experience_validator.parse_surplus_fields(request.form, cost)
+        if surplus_error:
+            flash(surplus_error, "warning")
+            return render_template('easy_create_experience.html', item=item, approved_farms=approved_farms, form_data=request.form)
+
+        capacity = experience_validator.capacity_from_quantity(
+            surplus['surplus_qty_total'], surplus['surplus_per_person'])
+        max_participants, cap_error = experience_validator.resolve_max_participants(
+            request.form.get('max_participants'), capacity)
+        if cap_error:
+            flash(cap_error, "warning")
+            return render_template('easy_create_experience.html', item=item, approved_farms=approved_farms, form_data=request.form)
         is_organic = 'is_organic' in request.form
         if is_organic:
             item.pesticide_free = True
@@ -393,8 +432,8 @@ def easy_modify_experience(item_id):
         item.lng = selected_farm.lng
 
         item.crop = request.form.get('crop')
-        item.cost = int(request.form.get('price'))
-        item.max_participants = int(request.form.get('max_participants'))
+        item.cost = cost
+        item.max_participants = max_participants
         item.duration_start = datetime.strptime(request.form.get('duration_start'), '%Y-%m-%d').date()
         item.end_date = datetime.strptime(request.form.get('duration_end'), '%Y-%m-%d').date()
         item.phone = request.form.get('phone')
@@ -405,6 +444,8 @@ def easy_modify_experience(item_id):
         item.has_parking = 'has_parking' in request.form
         item.pet_allowed = pet_allowed
         item.pet_max_weight_kg = pet_max_weight_kg
+        for _field, _value in surplus.items():
+            setattr(item, _field, _value)
         item.volunteer_needed = int(request.form.get('volunteer_needed', 0))
         item.volunteer_duties = request.form.get('volunteer_duties')
 

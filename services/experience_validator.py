@@ -169,3 +169,36 @@ def parse_surplus_fields(form, cost):
         'surplus_unit': unit,
         'surplus_origin': origin,
     }, None
+
+
+def resolve_max_participants(requested_raw, capacity):
+    """과생산 체험의 정원을 정한다.
+
+    capacity 는 수량으로 받을 수 있는 최대 인원(총수량 ÷ 1인당수확량, 버림)이다.
+    농장주가 이보다 적게 받는 건 허용한다(재고는 100명분이지만 하루 20명만
+    받고 싶은 경우). 늘리는 건 재고 초과라 막는다.
+
+    과생산이 아니면(capacity is None) 입력값을 그대로 쓴다.
+
+    반환: (max_participants, error)
+    """
+    if capacity is None:
+        value, err = _parse_int(requested_raw, "하루 최대 인원", minimum=1)
+        return (None, err) if err else (value, None)
+
+    if capacity < 1:
+        return None, "총 수량이 1인당 수확량보다 적어 체험을 등록할 수 없습니다."
+
+    # 비워 두면 수량으로 계산한 값을 그대로 쓴다.
+    if requested_raw is None or not str(requested_raw).strip():
+        return capacity, None
+
+    requested, err = _parse_int(requested_raw, "하루 최대 인원", minimum=1)
+    if err:
+        return None, err
+    if requested > capacity:
+        return None, (
+            f"총 수량으로 받을 수 있는 인원은 {capacity}명입니다. "
+            f"({requested}명은 재고를 넘습니다. 인원을 줄이거나 총 수량을 늘려주세요.)"
+        )
+    return requested, None

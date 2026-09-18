@@ -252,3 +252,46 @@ def test_suggest_origin_fallback_to_first_token():
 def test_suggest_origin_empty():
     for bad in ('', '   ', None):
         assert suggest_origin(bad) is None
+
+
+# ---- 정원 조정 (줄이기 허용 / 늘리기 차단) ----
+
+from services.experience_validator import resolve_max_participants
+
+
+def test_non_surplus_uses_input_as_is():
+    value, err = resolve_max_participants('20', capacity=None)
+    assert err is None and value == 20
+
+
+def test_non_surplus_bad_input_rejected():
+    value, err = resolve_max_participants('abc', capacity=None)
+    assert value is None and err is not None
+
+
+def test_blank_uses_capacity():
+    """비워 두면 수량으로 계산한 정원을 그대로 쓴다."""
+    value, err = resolve_max_participants('', capacity=100)
+    assert err is None and value == 100
+
+
+def test_reducing_allowed():
+    """★재고는 100명분이지만 하루 20명만 받고 싶은 경우 — 허용.★"""
+    value, err = resolve_max_participants('20', capacity=100)
+    assert err is None and value == 20
+
+
+def test_equal_to_capacity_allowed():
+    value, err = resolve_max_participants('100', capacity=100)
+    assert err is None and value == 100
+
+
+def test_increasing_blocked():
+    """★재고를 넘는 정원은 막는다.★"""
+    value, err = resolve_max_participants('101', capacity=100)
+    assert value is None and '100명' in err
+
+
+def test_capacity_zero_rejected():
+    value, err = resolve_max_participants('5', capacity=0)
+    assert value is None and err is not None

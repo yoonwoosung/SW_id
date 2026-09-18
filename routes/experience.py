@@ -363,6 +363,27 @@ def farmer_register(item_id=None):
         if pet_error:
             flash(pet_error, "danger")
             return render_template('farmer_register.html', item=item, form_data=request.form)
+
+        # 과생산 검증은 판매가가 필요하다. price 파싱을 앞으로 당긴다
+        # (기존에는 Experience(...) 안에서 맨몸 int() 였다 — 비정수 입력에 500).
+        cost, cost_error = experience_validator._parse_int(
+            request.form.get('price'), "가격", minimum=0)
+        if cost_error:
+            flash(cost_error, "danger")
+            return render_template('farmer_register.html', item=item, form_data=request.form)
+
+        surplus, surplus_error = experience_validator.parse_surplus_fields(request.form, cost)
+        if surplus_error:
+            flash(surplus_error, "danger")
+            return render_template('farmer_register.html', item=item, form_data=request.form)
+
+        capacity = experience_validator.capacity_from_quantity(
+            surplus['surplus_qty_total'], surplus['surplus_per_person'])
+        max_participants, cap_error = experience_validator.resolve_max_participants(
+            request.form.get('max_participants'), capacity)
+        if cap_error:
+            flash(cap_error, "danger")
+            return render_template('farmer_register.html', item=item, form_data=request.form)
         cert_filename = item.organic_certification_image if item and item.organic_certification_image else None
         cert_file = request.files.get('organic_certification_image')
 
@@ -411,8 +432,8 @@ def farmer_register(item_id=None):
             item.farm_size = request.form.get('farm_size')
             item.duration_start = datetime.strptime(request.form.get('duration_start'), '%Y-%m-%d').date()
             item.end_date = datetime.strptime(request.form.get('duration_end'), '%Y-%m-%d').date()
-            item.max_participants = int(request.form.get('max_participants'))
-            item.cost = int(request.form.get('price'))
+            item.max_participants = max_participants
+            item.cost = cost
             item.images = image_string
             item.notes = request.form.get('notes')
             item.includes = request.form.get('includes')
@@ -428,6 +449,8 @@ def farmer_register(item_id=None):
             item.has_parking = has_parking
             item.pet_allowed = pet_allowed
             item.pet_max_weight_kg = pet_max_weight_kg
+            for _field, _value in surplus.items():
+                setattr(item, _field, _value)
             flash("체험 정보가 성공적으로 수정되었습니다!", "success")
         else:
             farmer = User.query.get(session['user_id'])
@@ -441,8 +464,8 @@ def farmer_register(item_id=None):
                 farm_size=request.form.get('farm_size'),
                 duration_start=datetime.strptime(request.form.get('duration_start'), '%Y-%m-%d').date(),
                 end_date=datetime.strptime(request.form.get('duration_end'), '%Y-%m-%d').date(),
-                max_participants=int(request.form.get('max_participants')),
-                cost=int(request.form.get('price')),
+                max_participants=max_participants,
+                cost=cost,
                 images=image_string,
                 notes=request.form.get('notes'),
                 includes=request.form.get('includes'),
@@ -458,6 +481,7 @@ def farmer_register(item_id=None):
                 has_parking=has_parking,
                 pet_allowed=pet_allowed,
                 pet_max_weight_kg=pet_max_weight_kg,
+                **surplus,
                 volunteer_duties=request.form.get('volunteer_duties'),
                 status='recruiting'
             )

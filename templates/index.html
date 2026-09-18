@@ -114,7 +114,8 @@
             {% set first_image = item.images.split(',')[0] if item.images else None %}
             {% set remaining_spots = item.max_participants - item.current_participants %}
             <a href="{{ url_for('experience_detail', item_id=item.id) }}"
-                class="exp-card {% if remaining_spots == 0 %}closed{% endif %}">
+                class="exp-card {% if remaining_spots == 0 %}closed{% endif %}{% if loop.index > 8 %} exp-card--hidden{% endif %}"
+                {% if loop.index > 8 %}style="display:none;"{% endif %}>
                 <div class="exp-card-img-wrap">
                     {% if first_image %}
                     <img src="{{ url_for('static', filename='uploads/' + first_image) }}" alt="{{ item.crop }}"
@@ -173,6 +174,14 @@
             </div>
             {% endif %}
         </div>
+
+        {% if items|length > 8 %}
+        <div class="text-center mt-4" id="show-more-wrap">
+            <button type="button" id="show-more-btn" class="btn btn-outline-success px-4 font-weight-bold" style="border-radius:20px;">
+                체험 더보기 <i data-lucide="chevron-down"></i>
+            </button>
+        </div>
+        {% endif %}
 
         {% if pagination and pagination.pages > 1 %}
         <nav class="pagination-container mt-4">
@@ -306,6 +315,17 @@
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         loadMyAlbumsOnIndex();
+
+        var showMoreBtn = document.getElementById('show-more-btn');
+        var showMoreWrap = document.getElementById('show-more-wrap');
+        if (showMoreBtn) {
+            showMoreBtn.addEventListener('click', function () {
+                document.querySelectorAll('.exp-card--hidden').forEach(function (card) {
+                    card.style.display = '';
+                });
+                showMoreWrap.style.display = 'none';
+            });
+        }
     });
 
     // 메인 화면 내 추억 앨범 동적 로드

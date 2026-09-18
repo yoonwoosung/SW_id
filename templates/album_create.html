@@ -3,6 +3,8 @@
 <link
     href="https://fonts.googleapis.com/css2?family=Nanum+Gothic:wght@400;700;800&family=Nanum+Myeongjo:wght@400;700&family=Noto+Sans+KR:wght@400;700&display=swap"
     rel="stylesheet">
+<link rel="stylesheet" as="style" crossorigin
+    href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
 <style>
     /* ─── 커스텀 글꼴 드롭다운 ─── */
     .font-picker {
@@ -1170,7 +1172,7 @@
 
 <!-- PDF 및 캔버스 라이브러리 -->
 <script src="{{ url_for('static', filename='js/html2canvas.min.js') }}"></script>
-<script src="{{ url_for('static', filename='js/html2pdf.bundle.min.js') }}"></script>
+<script src="{{ url_for('static', filename='js/jspdf.umd.min.js') }}"></script>
 
 <!-- ===== 앨범 목록 화면 (1200px, 최초 진입 시 표시) ===== -->
 <div class="main-content-wrapper" id="album-landing" style="padding-top:var(--fl-s5);padding-bottom:60px;">
@@ -1299,11 +1301,11 @@
             <div class="ae-panel-content" id="ae-panel-photo" style="display:none;">
                 <p class="ae-panel-title">사진 보관함</p>
                 <div class="ae-form-group">
-                    <label class="ae-label">사진 업로드 (5~20장)</label>
+                    <label class="ae-label">사진 업로드 (최대 50장)</label>
                     <input type="file" id="photoUploader" class="form-control-file border p-1 rounded small" multiple
                         accept="image/*" onchange="handlePhotoUpload(event)">
-                    <small id="photoCountNotice" class="text-info d-block mt-1" style="font-size:.72rem;">* 최소 5장 이상
-                        권장합니다.</small>
+                    <small id="photoCountNotice" class="text-info d-block mt-1" style="font-size:.72rem;">* 최대 50장까지 업로드
+                        가능합니다.</small>
                 </div>
                 <div class="ae-form-group">
                     <label class="ae-label">클릭하면 앨범에 추가</label>
@@ -1313,7 +1315,7 @@
                     </div>
                 </div>
                 <div class="ae-form-group">
-                    <label class="ae-label"><i class="fa-solid fa-camera-retro text-primary mr-1"></i> 주변 명소 전문가
+                    <label class="ae-label"> 주변 명소 전문가
                         사진</label>
                     <small class="text-muted d-block mb-2" style="font-size:.71rem;">원하는 명소를 직접 검색하거나 추천 태그를 눌러 사진을
                         추가하세요.</small>
@@ -2159,7 +2161,7 @@
         if (trimmed === '' || trimmed === '✏️ 더블 클릭하여 수정' || trimmed === '제목을 입력하세요 ✏️') {
             const targetData = albumPagesData[pageIdx].elements.find(e => e.id === elemId);
             const defaultText = (targetData && targetData.isCoverTitle) ? '제목을 입력하세요 ✏️' : '✏️ 더블 클릭하여 수정';
-            
+
             el.innerText = defaultText;
             el.classList.add('is-placeholder');
             updateTextContent(elemId, pageIdx, defaultText);
@@ -2207,7 +2209,7 @@
                     if (!el.isCoverSlot) {
                         el.left = (el.left || 0) * ratioX;
                         el.top = (el.top || 0) * ratioY;
-                        
+
                         if (el.type === 'text') {
                             if (el.width) el.width = el.width * ratioX;
                             let minSafeHeight = (el.fontSize || 16) * 1.5 + 16; // 줄간격 포함 글자 높이 + 상하 패딩(16px)
@@ -2802,8 +2804,10 @@
         const tray = document.getElementById('photoTray');
         const countNotice = document.getElementById('photoCountNotice');
 
-        if (files.length < 5 || files.length > 20) {
-            alert("사진은 최소 5장에서 최대 20장까지 등록 가능합니다.");
+        if (files.length > 50) {
+            alert("최대 50장까지입니다!");
+            e.target.value = '';
+            return;
         }
 
         tray.innerHTML = '';
@@ -2825,7 +2829,7 @@
             reader.readAsDataURL(file);
         });
 
-        countNotice.innerText = `현재 업로드된 사진: ${files.length}장`;
+        countNotice.innerText = `현재 업로드된 사진: ${files.length}장 (최대 50장)`;
     }
 
     function renderBookView() {
@@ -3516,7 +3520,7 @@
 
         // 💡 표지 제목의 색상을 바꿨다면 고정 문구/아이콘 색상도 실시간 동기화
         if (data.isCoverTitle && prop === 'color') {
-            document.querySelectorAll('.sync-cover-color').forEach(function(el) {
+            document.querySelectorAll('.sync-cover-color').forEach(function (el) {
                 el.style.color = value;
             });
         }
@@ -3583,14 +3587,14 @@
 
     function getCoverTitleColor(pagesData) {
         if (!pagesData || !pagesData[0] || !pagesData[0].elements) return '#eab308'; // 기본 황금색
-        var titleEl = pagesData[0].elements.find(function(el) { return el.isCoverTitle; });
+        var titleEl = pagesData[0].elements.find(function (el) { return el.isCoverTitle; });
         return (titleEl && titleEl.color) ? titleEl.color : '#eab308';
     }
-    
+
     function buildThumbHTML(spreadIdx, totalSpreads, albumObj, isActive, onclickStr, thumbClass, spreadClass, pageClass, labelClass) {
         var coverColor = COVER_COLORS[albumObj.coverTheme] || '#4CAF50';
         var label, pagesHTML;
-        
+
         // 💡 썸네일에 들어갈 빈 도화지에 고유 id 부여
         var uid = Date.now() + Math.random().toString(36).substring(2, 7);
 
@@ -3620,7 +3624,7 @@
             } else {
                 label = lIdx + '-' + rIdx;
                 var paperBg = albumObj.paperTheme === 'paper-white' ? '#fff' : (albumObj.paperTheme === 'paper-cream' ? '#fdfbf7' : (albumObj.paperTheme === 'paper-kraft' ? '#d4bfa6' : '#fff'));
-                
+
                 pagesHTML = '<div id="thumb_page_' + lIdx + '_' + uid + '" class="' + pageClass + '" style="background:' + paperBg + '; position:relative; overflow:hidden; width:' + scaledW + 'px !important;"></div>'
                     + '<div class="av-spine"></div>'
                     + '<div id="thumb_page_' + rIdx + '_' + uid + '" class="' + pageClass + '" style="background:' + paperBg + '; position:relative; overflow:hidden; width:' + scaledW + 'px !important;"></div>';
@@ -3645,7 +3649,7 @@
 
         function renderEl(data, offsetX) {
             if (!data.src && data.type !== 'text') return; // src 없는 빈 슬롯은 제외
-            
+
             var wrapper = document.createElement('div');
             wrapper.style.cssText = 'position:absolute;'
                 + 'top:' + (data.top * scale) + 'px;'
@@ -3674,12 +3678,12 @@
         }
 
         if (elements) {
-            elements.forEach(function(data) { renderEl(data, 0); });
+            elements.forEach(function (data) { renderEl(data, 0); });
         }
 
         // 왼쪽 페이지에서 넘어온 파노라마(Spill) 요소를 우측 썸네일에 이어붙여 렌더링
         if (leftSpillElements && baseW) {
-            leftSpillElements.forEach(function(data) {
+            leftSpillElements.forEach(function (data) {
                 // 요소의 너비가 페이지를 넘어가면
                 if (data.left + data.width > baseW + 5) {
                     renderEl(data, -baseW); // 좌표를 왼쪽으로 당겨서 오른쪽 페이지에 맞게 그림
@@ -3706,10 +3710,10 @@
 
         // 💡 HTML이 삽입된 후 썸네일 그리기 실행
         var baseW = shapeTheme === 'shape-landscape' ? 550 : (shapeTheme === 'shape-square' ? 480 : 437);
-        strip.querySelectorAll('.et-thumb').forEach(function(thumbEl) {
+        strip.querySelectorAll('.et-thumb').forEach(function (thumbEl) {
             var sIdx = parseInt(thumbEl.getAttribute('data-spread-idx'), 10);
             var uid = thumbEl.getAttribute('data-uid');
-            
+
             if (sIdx === 0) {
                 drawThumbElements('thumb_page_0_' + uid, albumPagesData[0] ? albumPagesData[0].elements : [], shapeTheme);
             } else if (sIdx !== totalSpreads && sIdx <= Math.ceil(innerPageCount / 2)) {
@@ -3717,7 +3721,7 @@
                 var rIdx = lIdx + 1;
                 var lEls = albumPagesData[lIdx] ? albumPagesData[lIdx].elements : [];
                 var rEls = albumPagesData[rIdx] ? albumPagesData[rIdx].elements : [];
-                
+
                 drawThumbElements('thumb_page_' + lIdx + '_' + uid, lEls, shapeTheme);
                 // 오른쪽 그릴 때 파노라마용으로 왼쪽 요소(lEls) 같이 넘김
                 drawThumbElements('thumb_page_' + rIdx + '_' + uid, rEls, shapeTheme, lEls, baseW);
@@ -3832,7 +3836,7 @@
                 + '<div class="text-center sync-cover-color" style="color:' + titleColor + ';"><i class="fa-solid fa-heart fa-3x mb-3"></i>'
                 + '<h4 class="font-weight-bold">소중한 순간을 기억하며</h4>'
                 + '<p class="small opacity-75">FarmLink Travel Archive</p></div></div>';
-        }else {
+        } else {
             var lIdx = (viewerSpreadIdx - 1) * 2 + 1;
             var rIdx = lIdx + 1;
             container.innerHTML = '<div class="book-page left-page" id="av-pageL" style="position:relative;">'
@@ -3872,14 +3876,9 @@
             } else if (data.type === 'image' && data.src) {
                 wrapper.innerHTML = '<img src="' + data.src + '" style="width:100%;height:100%;object-fit:cover;border-radius:4px;' + clipStyle + '">';
             } else if (data.type === 'text') {
-                var bgStyle = data.bgStyle || 'default';
-                var bgColor = (bgStyle === 'none') ? 'transparent' : (data.backgroundColor || '#ffffff');
-                var fSize = (data.fontSize || 16) + 'px';
-                var fWeight = data.fontWeight || 'normal';
-                var fStyle = data.fontStyle || 'normal';
-                var fDecor = data.textDecoration || 'none';
-
-                wrapper.innerHTML = '<div class="editable-text-box bg-style-' + bgStyle + '" style="font-family:\'' + (data.fontFamily || 'NanumBarunHippi') + '\',sans-serif;font-size:' + fSize + ';font-weight:' + fWeight + ';font-style:' + fStyle + ';text-decoration:' + fDecor + ';color:' + (data.color || '#333333') + ';background-color:' + bgColor + ';text-align:' + (data.textAlign || 'center') + ';word-break:break-word;white-space:pre-wrap;width:100%;height:100%;padding:8px;box-sizing:border-box;">' + esc(data.text || '') + '</div>';
+                var txtInlineStyle = buildTextInlineStyle(data);
+                var bgClass = data.bgStyle ? ' bg-style-' + data.bgStyle : ' bg-style-default';
+                wrapper.innerHTML = '<div class="editable-text-box' + bgClass + '" style="' + txtInlineStyle + '">' + esc(data.text || '').replace(/\n/g, '<br>') + '</div>';
             }
             canvas.appendChild(wrapper);
         });
@@ -3917,13 +3916,13 @@
                 'av-thumb', 'av-thumb-spread', 'av-thumb-page', 'av-thumb-label');
         }
         strip.innerHTML = html;
-        
+
         // 💡 뷰어 썸네일도 동일하게 그리기 로직 적용
         var baseW = viewerAlbum.shapeTheme === 'shape-landscape' ? 550 : (viewerAlbum.shapeTheme === 'shape-square' ? 480 : 437);
-        strip.querySelectorAll('.av-thumb').forEach(function(thumbEl) {
+        strip.querySelectorAll('.av-thumb').forEach(function (thumbEl) {
             var sIdx = parseInt(thumbEl.getAttribute('data-spread-idx'), 10);
             var uid = thumbEl.getAttribute('data-uid');
-            
+
             if (sIdx === 0) {
                 drawThumbElements('thumb_page_0_' + uid, viewerAlbum.pagesData[0] ? viewerAlbum.pagesData[0].elements : [], viewerAlbum.shapeTheme);
             } else if (sIdx !== totalSpreads && sIdx <= Math.ceil(viewerAlbum.innerPageCount / 2)) {
@@ -3955,33 +3954,48 @@
         btn.disabled = true;
 
         const tempContainer = document.createElement('div');
-        tempContainer.style.width = '1000px';
-        tempContainer.style.position = 'fixed';
+
+        // 앨범 전체 펼침 규격
+        let baseW = shapeTheme === 'shape-square' ? 962 : (shapeTheme === 'shape-landscape' ? 1102 : 874);
+        let baseH = shapeTheme === 'shape-square' ? 480 : (shapeTheme === 'shape-landscape' ? 420 : 640);
+
+        // 렌더링 오작동(잘림 등)을 막기 위해 fixed 대신 absolute, 모달 아래 z-index 설정
+        tempContainer.style.position = 'absolute';
         tempContainer.style.top = '0';
         tempContainer.style.left = '0';
-        tempContainer.style.opacity = '1';
-        tempContainer.style.zIndex = '-9999';
+        tempContainer.style.zIndex = '1000';
         tempContainer.style.backgroundColor = '#ffffff';
         tempContainer.style.pointerEvents = 'none';
         document.body.appendChild(tempContainer);
 
         const totalSpreads = Math.ceil(innerPageCount / 2) + 1;
-
         const titleColor = getCoverTitleColor(albumPagesData);
 
+        // 1. 임시 캔버스에 모든 페이지 HTML 렌더링
         for (let s = 0; s <= totalSpreads; s++) {
+            let isCover = (s === 0 || s === totalSpreads);
+            // 표지는 절반(1페이지), 속지는 펼침(2페이지)
+            let currentW = isCover ? (baseW / 2) : baseW;
+
             const pageBox = document.createElement('div');
-            pageBox.className = `book-container ${coverTheme} ${paperTheme} ${shapeTheme} mb-4`;
-            pageBox.style.pageBreakAfter = 'always';
+            pageBox.className = `book-container ${isCover ? 'is-closed' : ''} ${coverTheme} ${paperTheme} ${shapeTheme}`;
+
+            // 💡 중요: 외부 CSS 간섭을 완벽히 차단하고 규격을 고정합니다.
+            pageBox.style.setProperty('width', currentW + 'px', 'important');
+            pageBox.style.setProperty('height', baseH + 'px', 'important');
+            pageBox.style.setProperty('min-width', currentW + 'px', 'important');
+            pageBox.style.setProperty('min-height', baseH + 'px', 'important');
+            pageBox.style.position = 'relative';
+            pageBox.style.display = 'flex';
+            pageBox.style.overflow = 'hidden';
             pageBox.style.margin = '0 auto';
+            pageBox.style.boxSizing = 'border-box';
 
             if (s === 0) {
-                pageBox.innerHTML = `
-                    <div class="book-page single-page book-cover-page" id="pdfCanvas_0" style="position:relative; overflow:hidden;"></div>
-                `;
+                pageBox.innerHTML = `<div class="book-page single-page book-cover-page" id="pdfCanvas_0" style="position:relative; width:100%; height:100%;"></div>`;
             } else if (s === totalSpreads) {
                 pageBox.innerHTML = `
-                    <div class="book-page single-page book-cover-page d-flex flex-column align-items-center justify-content-center p-4">
+                    <div class="book-page single-page book-cover-page d-flex flex-column align-items-center justify-content-center p-4" style="width:100%; height:100%;">
                         <div class="text-center sync-cover-color" style="color:${titleColor};">
                             <h4 class="font-weight-bold">소중한 순간을 기억하며</h4>
                             <p class="small opacity-75">FarmLink Travel Archive</p>
@@ -3992,15 +4006,15 @@
                 const lIdx = (s - 1) * 2 + 1;
                 const rIdx = lIdx + 1;
                 pageBox.innerHTML = `
-                    <div class="book-page left-page" id="pdfCanvas_${lIdx}"><span class="page-num-tag">${lIdx}p</span></div>
-                    <div class="book-spine"></div>
-                    <div class="book-page right-page" id="pdfCanvas_${rIdx}"><span class="page-num-tag">${rIdx}p</span></div>
+                    <div class="book-page left-page" id="pdfCanvas_${lIdx}" style="position:relative; flex:1; height:100%;"><span class="page-num-tag">${lIdx}p</span></div>
+                    <div class="book-spine" style="width:2px; background:#c8c8c8; flex-shrink:0;"></div>
+                    <div class="book-page right-page" id="pdfCanvas_${rIdx}" style="position:relative; flex:1; height:100%;"><span class="page-num-tag">${rIdx}p</span></div>
                 `;
             }
 
             tempContainer.appendChild(pageBox);
 
-            if (s !== totalSpreads) { // 마지막 장이 아니면 요소 복구
+            if (s !== totalSpreads) {
                 const lIdx = (s === 0) ? 0 : (s - 1) * 2 + 1;
                 const rIdx = (s === 0) ? 0 : lIdx + 1;
                 const targetPages = (s === 0) ? [0] : [lIdx, rIdx];
@@ -4017,24 +4031,27 @@
                             if (data.height) wrapper.style.height = data.height + 'px';
                             if (data.rotation) wrapper.style.transform = `rotate(${data.rotation}deg)`;
 
-                            if (data.type === 'slot' && data.src) {
-                                wrapper.innerHTML = `<img src="${data.src}" crossOrigin="anonymous" style="width:100%;height:100%;object-fit:cover;border-radius:6px;">`;
-                            } else if (data.type === 'image' && data.src) {
-                                wrapper.innerHTML = `<img src="${data.src}" crossOrigin="anonymous" style="width:100%;height:100%;object-fit:cover;border-radius:4px;">`;
+                            var safeImgSrc = data.src ? ((typeof getSafeImageUrl !== 'undefined') ? getSafeImageUrl(data.src) : data.src) : null;
+
+                            if ((data.type === 'slot' || data.type === 'image') && safeImgSrc) {
+                                var clipStyle = '';
+                                if (data.shape && data.shape !== 'rect') {
+                                    var shapeObj = SHAPES.find(s => s.id === data.shape);
+                                    if (shapeObj) clipStyle = 'clip-path:' + shapeObj.clip + ';';
+                                }
+                                wrapper.innerHTML = `<img src="${safeImgSrc}" crossOrigin="anonymous" style="width:100%;height:100%;object-fit:cover;border-radius:4px;display:block;${clipStyle}">`;
                             } else if (data.type === 'text') {
-                                const pdfBgStyle = data.bgStyle || 'default';
-                                const pdfBgColor = (pdfBgStyle === 'none') ? 'transparent' : (data.backgroundColor || '#ffffff');
-                                wrapper.innerHTML = `<div class="editable-text-box bg-style-${pdfBgStyle}" style="font-family:'${data.fontFamily || 'NanumBarunHippi'}',sans-serif; font-size:${data.fontSize || 16}px; font-weight:${data.fontWeight || 'normal'}; color:${data.color || '#333333'}; background-color:${pdfBgColor}; text-align:${data.textAlign || 'left'}; width:100%; height:100%; min-width:0 !important; padding:8px; box-sizing:border-box; word-break:break-word; white-space:pre-wrap;">${data.text}</div>`;
+                                const txtInlineStyle = buildTextInlineStyle(data);
+                                const bgClass = data.bgStyle ? ' bg-style-' + data.bgStyle : ' bg-style-default';
+                                wrapper.innerHTML = `<div class="editable-text-box${bgClass}" style="${txtInlineStyle}">${esc(data.text || '').replace(/\n/g, '<br>')}</div>`;
                             }
                             pdfCanvas.appendChild(wrapper);
                         });
 
-                        // 핵심: 표지(0페이지)인 경우 요소 렌더링 끝난 후 맨 위에 텍스트를 올려줍니다!
                         if (pIdx === 0) {
                             const overlay = document.createElement('div');
                             overlay.className = "cover-emboss-border w-100 h-100";
                             overlay.style.cssText = "pointer-events:none; position:absolute; z-index:100; inset:0; margin:16px;";
-
                             const cameraIcon = coverPhotoLayout === 'none' ? `<div style="position:absolute; top:40%; left:0; right:0; text-align:center;"><i class="fa-solid fa-camera-retro fa-4x sync-cover-color" style="color:${titleColor}; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));"></i></div>` : '';
                             overlay.innerHTML = `
                                 ${cameraIcon}
@@ -4047,29 +4064,59 @@
                     }
                 });
             }
-
-            setTimeout(() => {
-                const opt = {
-                    margin: 0,
-                    filename: 'FarmLink_추억_앨범.pdf',
-                    image: { type: 'jpeg', quality: 1.0 },
-                    html2canvas: { scale: 2, useCORS: true, logging: false },
-                    jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
-                };
-
-                html2pdf().set(opt).from(tempContainer).save().then(() => {
-                    document.body.removeChild(tempContainer);
-                    btn.innerHTML = originalHTML;
-                    btn.disabled = false;
-                }).catch(err => {
-                    console.error("PDF 생성 에러:", err);
-                    alert("PDF 발급 중 오류가 발생했습니다.");
-                    if (tempContainer.parentNode) document.body.removeChild(tempContainer);
-                    btn.innerHTML = originalHTML;
-                    btn.disabled = false;
-                });
-            }, 800);
         }
+
+        // 2. jsPDF 캡처 및 PDF 생성
+        setTimeout(async () => {
+            try {
+                const { jsPDF } = window.jspdf;
+                const pages = tempContainer.querySelectorAll('.book-container');
+                let pdf;
+
+                for (let i = 0; i < pages.length; i++) {
+                    const canvas = await html2canvas(pages[i], {
+                        scale: 2,
+                        useCORS: true,
+                        logging: false,
+                        scrollX: 0,
+                        scrollY: 0
+                    });
+
+                    // 💡 핵심 해결: html2canvas가 캡처한 픽셀 크기를 '그대로' 가져와서 사용합니다.
+                    // 강제 예측값(currentW, baseH)을 쓰지 않기 때문에 늘어남(stretch) 현상이 원천 차단됩니다.
+                    const pdfW = canvas.width / 2;
+                    const pdfH = canvas.height / 2;
+
+                    // 가로/세로 길이를 비교해 용지 방향(세로형/가로형)을 자동 인식시킵니다.
+                    const pageOrientation = pdfW > pdfH ? 'landscape' : 'portrait';
+
+                    const imgData = canvas.toDataURL('image/jpeg', 1.0);
+
+                    if (i === 0) {
+                        pdf = new jsPDF({
+                            orientation: pageOrientation,
+                            unit: 'px',
+                            format: [pdfW, pdfH]
+                        });
+                        pdf.addImage(imgData, 'JPEG', 0, 0, pdfW, pdfH);
+                    } else {
+                        pdf.addPage([pdfW, pdfH], pageOrientation);
+                        pdf.addImage(imgData, 'JPEG', 0, 0, pdfW, pdfH);
+                    }
+                }
+
+                pdf.save('FarmLink_추억_앨범.pdf');
+
+            } catch (err) {
+                console.error("PDF 생성 에러:", err);
+                alert("PDF 발급 중 오류가 발생했습니다.");
+            } finally {
+                // 작업 완료 후 돔에서 제거 및 버튼 텍스트 복구
+                if (tempContainer.parentNode) document.body.removeChild(tempContainer);
+                btn.innerHTML = originalHTML;
+                btn.disabled = false;
+            }
+        }, 1500);
     }
 
     // ── 공유 모달 ──────────────────────────────────────
@@ -4175,8 +4222,8 @@
         }
 
         const tags = [];
-        if (cityTag) tags.push({ label: `📍 ${cityTag} 명소`, query: cityTag, active: true });
-        if (townTag) tags.push({ label: `📍 ${townTag} 명소`, query: townTag, active: false });
+        if (cityTag) tags.push({ label: `${cityTag} 명소`, query: cityTag, active: true });
+        if (townTag) tags.push({ label: `${townTag} 명소`, query: townTag, active: false });
 
         if (tags.length === 0) {
             const tray = document.getElementById('expertPhotoTray');
@@ -4592,25 +4639,19 @@
             elemDiv.style.cssText = 'position:absolute;top:' + (el.top || 0) + 'px;left:' + (el.left || 0) + 'px;width:' + (el.width || 100) + 'px;';
             if (el.height) elemDiv.style.height = el.height + 'px';
             if (el.rotation) elemDiv.style.transform = 'rotate(' + el.rotation + 'deg)';
-            
             var safeImgSrc = el.src ? ((typeof getSafeImageUrl !== 'undefined') ? getSafeImageUrl(el.src) : el.src) : null;
-            
+
             if ((el.type === 'slot' || el.type === 'image') && safeImgSrc) {
                 var clipStyle = '';
                 if (el.shape && el.shape !== 'rect') {
-                    var shapeObj = SHAPES.find(function(s) { return s.id === el.shape; });
+                    var shapeObj = SHAPES.find(function (s) { return s.id === el.shape; });
                     if (shapeObj) clipStyle = 'clip-path:' + shapeObj.clip + ';';
                 }
                 elemDiv.innerHTML = '<img src="' + safeImgSrc + '" crossOrigin="anonymous" style="width:100%;height:100%;object-fit:cover;border-radius:4px;display:block;' + clipStyle + '">';
             } else if (el.type === 'text') {
-                var bgStyle = el.bgStyle || 'default';
-                var bgColor = (bgStyle === 'none') ? 'transparent' : (el.backgroundColor || '#ffffff');
-                var fSize = (el.fontSize || 16) + 'px';
-                var fWeight = el.fontWeight || 'normal';
-                var fStyle = el.fontStyle || 'normal';
-                var fDecor = el.textDecoration || 'none';
-                
-                elemDiv.innerHTML = '<div class="editable-text-box bg-style-' + bgStyle + '" style="font-family:\'' + (el.fontFamily || 'NanumBarunHippi') + '\',sans-serif;font-size:' + fSize + ';font-weight:' + fWeight + ';font-style:' + fStyle + ';text-decoration:' + fDecor + ';color:' + (el.color || '#333333') + ';background-color:' + bgColor + ';text-align:' + (el.textAlign || 'center') + ';word-break:break-word;white-space:pre-wrap;width:100%;height:100%;padding:8px;box-sizing:border-box;">' + esc(el.text || '') + '</div>';
+                var txtInlineStyle = buildTextInlineStyle(el);
+                var bgClass = el.bgStyle ? ' bg-style-' + el.bgStyle : ' bg-style-default';
+                elemDiv.innerHTML = '<div class="editable-text-box' + bgClass + '" style="' + txtInlineStyle + '">' + esc(el.text || '').replace(/\n/g, '<br>') + '</div>';
             }
             canvas.appendChild(elemDiv);
         });

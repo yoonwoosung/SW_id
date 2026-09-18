@@ -40,9 +40,16 @@
 
 /* 세로 탭바 */
 .fl-tabbar--vertical {
-    flex: 0 0 104px; display: flex; flex-direction: column; gap: 2px;
+    /* 대분류 라벨 최대 길이가 '계절·제철'(5자)이고 선택하면 카운트 배지가 붙는다.
+       104px 일 때는 라벨 가용 폭이 45px 밖에 안 남아 4자 이상이 두 줄로 나뉘었다.
+       132px 로 잡으면 배지를 달고도 73px 가 남아 여유가 있다(가장 긴 라벨이 65px).
+       390px 화면에서 오른쪽 패널이 1열이 되지만 셀이 가로로 늘어날 뿐 깨지지 않고,
+       터치 대상이 커져 모바일에서는 오히려 낫다. */
+    flex: 0 0 132px; display: flex; flex-direction: column; gap: 2px;
     border-right: 1px solid var(--fl-border); padding-right: 8px;
 }
+/* 라벨이 길어져도 줄바꿈 대신 가로로 흐르게 한다(향후 라벨 추가 대비). */
+.fl-tab__label { white-space: nowrap; }
 .fl-tabbar--vertical .fl-tab {
     display: flex; align-items: center; justify-content: space-between; gap: 5px;
     width: 100%; text-align: left; border: none; background: none; color: #55605a;

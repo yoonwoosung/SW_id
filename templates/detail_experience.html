@@ -83,6 +83,7 @@
                 {% if item.has_parking %}<span class="detail-badge badge-parking"><i data-lucide="square-parking"></i> 주차 가능</span>{% endif %}
                 {% if item.barrier_free %}<span class="detail-badge badge-family"><i data-lucide="accessibility"></i> 무장애</span>{% endif %}
                 {% if item.pet_allowed %}<span class="detail-badge badge-family"><i data-lucide="dog"></i> 반려견 동반{% if item.pet_max_weight_kg %} · {{ item.pet_max_weight_kg }}kg까지{% endif %}</span>{% endif %}
+                {% if item.is_surplus %}<span class="detail-badge" style="background:#fdecea;color:#c0392b;">🥕 과생산{% if item.list_price and item.cost %} · {{ ((item.list_price - item.cost) * 100 / item.list_price) | round(0, 'floor') | int }}% 할인{% endif %}</span>{% endif %}
                 <span id="ed-esg-chip" class="detail-badge badge-esg" hidden></span>
             </div>
             <h1 class="detail-crop-title">{{ item.crop }} 수확 체험</h1>
@@ -313,7 +314,7 @@
     <div class="detail-booking-col">
         <div class="detail-booking-panel">
             <div class="detail-booking-price">
-                <span class="detail-booking-price-num">{{ "{:,}".format(item.cost) }}원</span>
+                {% if item.is_surplus and item.list_price %}<span style="text-decoration:line-through;color:#9aa;font-size:.9rem;margin-right:6px;">{{ "{:,}".format(item.list_price) }}원</span>{% endif %}<span class="detail-booking-price-num">{{ "{:,}".format(item.cost) }}원</span>
                 <span class="detail-booking-price-per">/ 1인</span>
             </div>
             <p style="font-size:0.78rem;color:#9aa39c;margin:-6px 0 10px;">* 1인당 가격입니다</p>
@@ -339,6 +340,19 @@
                 <div class="detail-booking-info-row"><img src="{{ url_for('static', filename='icons/icon-eco-friendly.svg') }}" class="fl-icon-sm" alt=""> <span>친환경: {{ "예" if item.pesticide_free else "아니오" }}</span></div>
                 <div class="detail-booking-info-row"><i data-lucide="square-parking"></i> <span>주차: {{ "가능" if item.has_parking else "불가" }}</span></div>
                 <div class="detail-booking-info-row"><i data-lucide="dog"></i> <span>반려견: {% if item.pet_allowed %}동반 가능{% if item.pet_max_weight_kg %} (최대 {{ item.pet_max_weight_kg }}kg){% endif %}{% else %}동반 불가{% endif %}</span></div>
+                {% if item.is_surplus %}
+                <div class="detail-booking-info-row"><i data-lucide="carrot"></i>
+                    <span>1인 수확량: {{ item.surplus_per_person }}{{ item.surplus_unit or 'kg' }}</span></div>
+                <div class="detail-booking-info-row"><i data-lucide="package"></i>
+                    <span>남은 수량: <strong>{{ (item.surplus_qty_total or 0) - (item.surplus_qty_taken or 0) }}{{ item.surplus_unit or 'kg' }}</strong>
+                    / 총 {{ item.surplus_qty_total }}{{ item.surplus_unit or 'kg' }}</span></div>
+                {% if item.surplus_origin %}
+                <div class="detail-booking-info-row"><i data-lucide="map-pin"></i>
+                    <span>원산지: {{ item.surplus_origin }}</span></div>
+                {% endif %}
+                <div class="detail-booking-info-row"><i data-lucide="truck"></i>
+                    <span><strong>현장 수확·수령만 가능</strong> (택배 없음)</span></div>
+                {% endif %}
                 <div class="detail-booking-info-row"><img src="{{ url_for('static', filename='icons/icon-calendar-schedule.svg') }}" class="fl-icon-sm" alt=""> <span>마감: {{ item.end_date.strftime('%Y.%m.%d') }}</span></div>
             </div>
         </div>

@@ -300,20 +300,6 @@
         </button>
     </div>
 
-    <!-- 지역별 추천 -->
-    <section class="section-block">
-        <div class="section-header">
-            <h2 class="section-title"><img src="{{ url_for('static', filename='icons/icon-map-location.svg') }}" class="fl-icon-sm" alt=""> 지역별 추천</h2>
-            <a href="{{ url_for('index') }}" class="more-link">지역 전체보기 <i data-lucide="chevron-right"></i></a>
-        </div>
-        <div class="region-tabs">
-            {% for r in ["천안", "공주", "부여", "논산", "아산"] %}
-            <a href="{{ url_for('index', region=r) }}"
-                class="region-tab {% if request.args.get('region') == r %}active{% endif %}">{{ r }}</a>
-            {% endfor %}
-            <a href="{{ url_for('index') }}" class="region-tab-more"><i data-lucide="chevron-right"></i></a>
-        </div>
-    </section>
 
 </div>
 

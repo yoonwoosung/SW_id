@@ -24,6 +24,7 @@ from services.recommend_service import matches_specialty, score_components, calc
 from services.recommend_reason import recommendation_reason
 from services.review_service import analyze_review_with_clova
 from services import reservation_validator
+from services import surplus_service
 from external.kakao_map import get_coords_from_address
 from common.validators import allowed_file
 from common.constants import (APPLICATION_STATUS_PENDING, APPLICATION_STATUS_PAID,
@@ -64,6 +65,15 @@ def experience_apply(item_id):
             flash(f"죄송합니다. 남은 자리가 부족합니다. (현재 {item.max_participants - item.current_participants}명 신청 가능)", "danger")
             return redirect(url_for('experience_detail', item_id=item.id))
 
+        # 과생산은 수량도 본다. 정원과 별개로 재고가 모자랄 수 있다.
+        if surplus_service.is_surplus(item):
+            need = surplus_service.required_qty(item, total_participants)
+            left = surplus_service.remaining(item)
+            if need > left:
+                flash(f"남은 수량이 부족합니다. (남은 양 {left}{item.surplus_unit or ''}, "
+                      f"신청 {need}{item.surplus_unit or ''})", "danger")
+                return redirect(url_for('experience_detail', item_id=item.id))
+
         new_application = Application(
             applicant_name=request.form.get('applicant_name'),
             phone_number=request.form.get('phone_number'),
@@ -76,6 +86,11 @@ def experience_apply(item_id):
             user_id=session['user_id'],
             experience_id=item.id
         )
+
+        # 조건을 UPDATE 에 실어 보내 동시 요청이 겹쳐도 총량을 넘지 않게 한다.
+        if not surplus_service.take(item, total_participants):
+            flash("방금 다른 분이 먼저 신청해 남은 수량이 부족해졌습니다. 다시 확인해 주세요.", "danger")
+            return redirect(url_for('experience_detail', item_id=item.id))
 
         item.current_participants += total_participants
         db.session.add(new_application)
@@ -136,6 +151,7 @@ def reject_application(app_id):
         abort(403)
     if application.status in ('예정', APPLICATION_STATUS_PENDING, APPLICATION_STATUS_PAID):
         experience.current_participants = max(0, experience.current_participants - application.participants_count)
+        surplus_service.restore(experience, application.participants_count)
         application.status = '취소'
         db.session.commit()
         flash(f"{application.applicant_name}님의 예약을 거절했습니다.", "success")
@@ -152,6 +168,7 @@ def delete_application(app_id):
     experience = Experience.query.get(application.experience_id)
     if experience and application.status != '취소':
         experience.current_participants = max(0, experience.current_participants - application.participants_count)
+        surplus_service.restore(experience, application.participants_count)
 
     application.status = '취소'
 

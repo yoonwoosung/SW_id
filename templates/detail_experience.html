@@ -40,6 +40,94 @@
     font-weight: bold;
     color: #ffffff;
 }
+
+/* 👇 슬라이더(캐러셀) 스타일 👇 */
+.ed-carousel-container {
+    position: relative;
+    width: 100%;
+    overflow: hidden;
+    border-radius: 12px;
+    aspect-ratio: 16 / 9; /* 이미지 비율 16:9 강제 고정 */
+    background-color: #f8f9fa;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+.ed-carousel-track {
+    display: flex;
+    width: 100%;
+    height: 100%;
+    transition: transform 0.5s ease-in-out; /* 부드러운 슬라이딩 효과 */
+}
+.ed-carousel-slide {
+    min-width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.ed-carousel-slide img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover; /* 이미지가 찌그러지지 않고 꽉 차게 덮음 */
+}
+
+/* 양옆 화살표 버튼 */
+.ed-carousel-btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(255, 255, 255, 0.85);
+    border: none;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    z-index: 10;
+    transition: background 0.2s, transform 0.1s;
+    color: #333;
+}
+.ed-carousel-btn:hover { background: #ffffff; transform: translateY(-50%) scale(1.05); }
+.ed-carousel-btn-prev { left: 16px; }
+.ed-carousel-btn-next { right: 16px; }
+
+/* 하단 동그라미 인디케이터 */
+.ed-carousel-indicators {
+    position: absolute;
+    bottom: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 8px;
+    z-index: 10;
+}
+.ed-carousel-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.5);
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+.ed-carousel-dot.active {
+    background: #ffffff;
+    width: 24px;
+    border-radius: 4px;
+}
+
+/* 등록된 사진이 없을 때 빈 공간 처리 */
+.detail-img-placeholder {
+    aspect-ratio: 16 / 9;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background-color: #f1f3f5;
+    border-radius: 12px;
+    color: #adb5bd;
+}
 </style>
 {% endblock %}
 
@@ -53,25 +141,40 @@
     <!-- 왼쪽: 메인 콘텐츠 -->
     <div class="detail-main-col">
 
-        <!-- 1. 이미지 갤러리 -->
+        <!-- 1. 이미지 갤러리 (슬라이더로 변경됨) -->
         <div class="detail-gallery-card">
             {% if item.images %}
             {% set imgs = item.images.split(',') %}
-            <div class="ed-photogrid ed-photogrid--{{ 'multi' if imgs|length > 1 else 'single' }}">
-                <img id="ed-gallery-main" class="ed-photogrid__main"
-                     src="{{ url_for('static', filename='uploads/' + imgs[0]) }}" alt="{{ item.crop }} 체험 사진">
-                {% for image in imgs[1:5] %}
-                <div class="ed-photogrid__cell">
-                    <img class="ed-gallery__thumb" src="{{ url_for('static', filename='uploads/' + image) }}" alt="썸네일 {{ loop.index + 1 }}">
-                    {% if loop.last and imgs|length > 5 %}
-                    <span class="ed-photogrid__more">사진 {{ imgs|length }}장 →</span>
-                    {% endif %}
+            <div class="ed-carousel-container" id="ed-carousel">
+                <!-- 슬라이드 트랙 -->
+                <div class="ed-carousel-track" id="ed-carousel-track">
+                    {% for image in imgs %}
+                    <div class="ed-carousel-slide">
+                        <img src="{{ url_for('static', filename='uploads/' + image) }}" alt="{{ item.crop }} 체험 사진 {{ loop.index }}">
+                    </div>
+                    {% endfor %}
                 </div>
-                {% endfor %}
+                
+                <!-- 여러 장일 경우 화살표와 인디케이터 표시 -->
+                {% if imgs|length > 1 %}
+                <button class="ed-carousel-btn ed-carousel-btn-prev" onclick="moveCarousel(-1)" title="이전 사진">
+                    <i data-lucide="chevron-left"></i>
+                </button>
+                <button class="ed-carousel-btn ed-carousel-btn-next" onclick="moveCarousel(1)" title="다음 사진">
+                    <i data-lucide="chevron-right"></i>
+                </button>
+                
+                <div class="ed-carousel-indicators" id="ed-carousel-indicators">
+                    {% for image in imgs %}
+                    <span class="ed-carousel-dot {% if loop.index0 == 0 %}active{% endif %}" onclick="goToCarouselSlide({{ loop.index0 }})"></span>
+                    {% endfor %}
+                </div>
+                {% endif %}
             </div>
             {% else %}
             <div class="detail-img-placeholder">
-                <i data-lucide="camera"></i><span>아직 등록된 사진이 없습니다.</span>
+                <i data-lucide="camera" style="width:48px;height:48px;margin-bottom:10px;"></i>
+                <span>아직 등록된 사진이 없습니다.</span>
             </div>
             {% endif %}
         </div>
@@ -225,7 +328,6 @@
             </div>
         </section>
 
-
         <!-- 방문자 후기 -->
         <section class="section-card">
             <h2 class="section-title" style="margin-bottom:16px;"><img src="{{ url_for('static', filename='icons/icon-rating.svg') }}" class="fl-icon-sm" alt=""> 방문자 후기</h2>
@@ -350,10 +452,7 @@
 </div><!-- /detail-page-wrapper -->
 </div><!-- /detail-page-bg -->
 
-{# 모바일 전용 하단 고정 예약 바.
-   데스크톱에서는 우측 예약카드가 sticky 로 따라오지만, 모바일은 1단으로 쌓여
-   CTA 가 본문 맨 아래로 밀린다. 스크롤 위치와 무관하게 예약할 수 있도록 둔다.
-   기존 예약 링크와 같은 url_for 를 쓸 뿐 로직은 건드리지 않는다. #}
+{# 모바일 전용 하단 고정 예약 바 #}
 {% set remaining_mobile = item.max_participants - item.current_participants %}
 <div class="ed-mobile-cta" aria-hidden="false">
     <div class="ed-mobile-cta__price">
@@ -381,8 +480,63 @@
 </script>
 
 <script>
-// 💡 상세 페이지 운영 시간표 렌더링 엔진
+// 👇 새로 추가되는 이미지 슬라이더 동작 로직 👇
+let currentSlideIdx = 0;
+let slideTimer = null;
+
+function updateCarousel() {
+    const track = document.getElementById('ed-carousel-track');
+    const dots = document.querySelectorAll('.ed-carousel-dot');
+    if (!track) return;
+    
+    // 트랙의 X축을 이동시켜 사진을 넘김
+    track.style.transform = `translateX(-${currentSlideIdx * 100}%)`;
+    
+    // 하단 동그라미(인디케이터) 상태 업데이트
+    dots.forEach((dot, index) => {
+        dot.classList.toggle('active', index === currentSlideIdx);
+    });
+}
+
+function moveCarousel(direction) {
+    const slides = document.querySelectorAll('.ed-carousel-slide');
+    if (slides.length <= 1) return;
+    
+    currentSlideIdx += direction;
+    
+    // 무한 루프 처리: 맨 끝에서 넘기면 처음으로, 처음에서 뒤로가면 맨 끝으로
+    if (currentSlideIdx < 0) {
+        currentSlideIdx = slides.length - 1;
+    } else if (currentSlideIdx >= slides.length) {
+        currentSlideIdx = 0;
+    }
+    
+    updateCarousel();
+    resetCarouselTimer(); // 사용자가 직접 넘겼으므로 타이머 초기화
+}
+
+function goToCarouselSlide(index) {
+    currentSlideIdx = index;
+    updateCarousel();
+    resetCarouselTimer();
+}
+
+function resetCarouselTimer() {
+    if (slideTimer) clearInterval(slideTimer);
+    const slides = document.querySelectorAll('.ed-carousel-slide');
+    if (slides.length > 1) {
+        // 7초(7000ms)마다 자동으로 다음 사진으로 넘김
+        slideTimer = setInterval(() => {
+            moveCarousel(1);
+        }, 7000);
+    }
+}
+
+// 💡 상세 페이지 로딩 시 실행되는 기존 로직
 document.addEventListener('DOMContentLoaded', function() {
+    // 슬라이더 타이머 시작
+    resetCarouselTimer();
+
     const rawData = {{ (item.timetable_data or '') | tojson | safe }};
     if (!rawData) return;
 
@@ -399,7 +553,7 @@ document.addEventListener('DOMContentLoaded', function() {
     try {
         const trimmed = rawData.trim();
         if (trimmed.startsWith('[')) {
-            // 1. 시드 데이터 JSON 포맷: [{"time": "10:00", "available": true}, ...]
+            // 1. 시드 데이터 JSON 포맷
             const parsed = JSON.parse(trimmed);
             if (Array.isArray(parsed)) {
                 parsed.forEach(item => {
@@ -411,7 +565,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
             }
         } else {
-            // 2. 간편 등록 쉼표 포맷: "월-09:00,화-10:00"
+            // 2. 간편 등록 쉼표 포맷
             trimmed.split(',').forEach(part => {
                 const sp = part.split('-');
                 if (sp.length >= 2) {

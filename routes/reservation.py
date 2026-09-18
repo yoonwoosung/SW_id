@@ -23,6 +23,7 @@ from services.recommend_data import REGIONAL_SPECIALTIES
 from services.recommend_service import matches_specialty, score_components, calculate_score
 from services.recommend_reason import recommendation_reason
 from services.review_service import analyze_review_with_clova
+from services import reservation_validator
 from external.kakao_map import get_coords_from_address
 from common.validators import allowed_file
 from common.constants import (APPLICATION_STATUS_PENDING, APPLICATION_STATUS_PAID,
@@ -46,13 +47,17 @@ def experience_apply(item_id):
         if not apply_date_str or not apply_time_str:
             flash("신청 날짜와 시간을 모두 선택해주세요.", "danger")
             return redirect(url_for('experience_apply', item_id=item.id))
-        count_adult = int(request.form.get('count_adult', 0))
-        count_teen = int(request.form.get('count_teen', 0))
-        count_child = int(request.form.get('count_child', 0))
-        total_participants = count_adult + count_teen + count_child
+        counts, total_participants, error = reservation_validator.parse_participants(request.form)
+        if error:
+            flash(error, "danger")
+            return redirect(url_for('experience_apply', item_id=item.id))
+        count_adult = counts['count_adult']
+        count_teen = counts['count_teen']
+        count_child = counts['count_child']
 
-        if total_participants == 0:
-            flash("참가 인원을 1명 이상 선택해주세요.", "danger")
+        apply_date, error = reservation_validator.parse_apply_date(apply_date_str)
+        if error:
+            flash(error, "danger")
             return redirect(url_for('experience_apply', item_id=item.id))
 
         if item.current_participants + total_participants > item.max_participants:
@@ -66,7 +71,7 @@ def experience_apply(item_id):
             count_adult=count_adult,
             count_teen=count_teen,
             count_child=count_child,
-            apply_date=datetime.strptime(request.form.get('apply_date'), '%Y-%m-%d').date(),
+            apply_date=apply_date,
             apply_time=request.form.get('apply_time'),
             user_id=session['user_id'],
             experience_id=item.id

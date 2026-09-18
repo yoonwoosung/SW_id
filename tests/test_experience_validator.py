@@ -80,3 +80,175 @@ def test_weight_matches_search_tier(weight, tier_min):
     assert err is None
     assert parsed >= tier_min
     assert tier_min in PET_WEIGHT_MIN_KG.values()
+
+
+# ======================================================================
+# 과생산(잉여) 수확 체험
+# ======================================================================
+
+from services.experience_validator import (
+    parse_surplus_fields, discount_rate, capacity_from_quantity,
+    suggest_origin, SURPLUS_MIN_DISCOUNT_RATE,
+)
+
+
+def surplus_form(**kw):
+    base = {
+        'is_surplus': 'true', 'surplus_terms_agreed': 'true',
+        'list_price': '50000', 'surplus_qty_total': '500',
+        'surplus_per_person': '5', 'surplus_unit': 'kg',
+    }
+    base.update(kw)
+    return {k: v for k, v in base.items() if v is not None}
+
+
+# ---- 할인율 ----
+
+def test_discount_rate_basic():
+    assert discount_rate(50000, 25000) == 0.5
+    assert discount_rate(10000, 8000) == pytest.approx(0.2)
+
+
+def test_discount_rate_guards():
+    assert discount_rate(0, 100) is None
+    assert discount_rate(None, 100) is None
+    assert discount_rate(10000, None) is None
+
+
+def test_exactly_20_percent_allowed():
+    """경계값: 정확히 20% 는 통과한다(이상 조건)."""
+    data, err = parse_surplus_fields(surplus_form(list_price='10000'), cost=8000)
+    assert err is None and data['is_surplus'] is True
+
+
+def test_just_under_20_percent_rejected():
+    data, err = parse_surplus_fields(surplus_form(list_price='10000'), cost=8001)
+    assert data is None and "20%" in err
+
+
+def test_no_discount_rejected():
+    data, err = parse_surplus_fields(surplus_form(list_price='25000'), cost=25000)
+    assert data is None and err is not None
+
+
+def test_cost_above_list_price_rejected():
+    data, err = parse_surplus_fields(surplus_form(list_price='20000'), cost=25000)
+    assert data is None and err is not None
+
+
+# ---- 약관 ----
+
+def test_terms_required():
+    form = surplus_form()
+    del form['surplus_terms_agreed']
+    data, err = parse_surplus_fields(form, cost=25000)
+    assert data is None and "약관" in err
+
+
+def test_not_surplus_returns_all_off():
+    data, err = parse_surplus_fields({}, cost=25000)
+    assert err is None
+    assert data['is_surplus'] is False and data['surplus_terms_agreed'] is False
+    assert data['list_price'] is None and data['surplus_qty_total'] is None
+
+
+def test_unchecking_clears_previous_values():
+    """체크를 껐으면 폼에 값이 남아 있어도 전부 비운다."""
+    data, err = parse_surplus_fields(
+        {'list_price': '50000', 'surplus_qty_total': '500'}, cost=25000)
+    assert err is None and data['is_surplus'] is False and data['list_price'] is None
+
+
+# ---- 수량 ----
+
+def test_normal_quantity():
+    data, err = parse_surplus_fields(surplus_form(), cost=25000)
+    assert err is None
+    assert data['surplus_qty_total'] == 500 and data['surplus_per_person'] == 5
+
+
+def test_per_person_over_total_rejected():
+    data, err = parse_surplus_fields(
+        surplus_form(surplus_qty_total='3', surplus_per_person='5'), cost=25000)
+    assert data is None and err is not None
+
+
+def test_zero_and_negative_quantity_rejected():
+    for bad in ('0', '-10'):
+        data, err = parse_surplus_fields(surplus_form(surplus_qty_total=bad), cost=25000)
+        assert data is None, bad
+
+
+def test_non_numeric_quantity_rejected():
+    data, err = parse_surplus_fields(surplus_form(surplus_qty_total='많이'), cost=25000)
+    assert data is None and "숫자" in err
+
+
+def test_missing_quantity_rejected():
+    form = surplus_form()
+    del form['surplus_qty_total']
+    data, err = parse_surplus_fields(form, cost=25000)
+    assert data is None and err is not None
+
+
+# ---- 단위 ----
+
+def test_valid_units():
+    for unit in ('kg', '박스', '구좌'):
+        data, err = parse_surplus_fields(surplus_form(surplus_unit=unit), cost=25000)
+        assert err is None and data['surplus_unit'] == unit
+
+
+def test_unit_defaults_to_kg():
+    form = surplus_form()
+    del form['surplus_unit']
+    data, err = parse_surplus_fields(form, cost=25000)
+    assert err is None and data['surplus_unit'] == 'kg'
+
+
+def test_unknown_unit_rejected():
+    data, err = parse_surplus_fields(surplus_form(surplus_unit='자루'), cost=25000)
+    assert data is None and err is not None
+
+
+# ---- 정원 계산 (버림) ----
+
+def test_capacity_exact_division():
+    assert capacity_from_quantity(500, 5) == 100
+
+
+def test_capacity_floors_remainder():
+    """★503 ÷ 5 = 100.6 → 100명. 자투리 3kg 은 예약받지 않는다.★"""
+    assert capacity_from_quantity(503, 5) == 100
+
+
+def test_capacity_guards():
+    assert capacity_from_quantity(None, 5) is None
+    assert capacity_from_quantity(500, 0) is None
+    assert capacity_from_quantity(500, None) is None
+
+
+def test_capacity_smaller_than_one_person():
+    assert capacity_from_quantity(3, 5) == 0
+
+
+# ---- 원산지 제안 ----
+
+@pytest.mark.parametrize('address,expected', [
+    ('충남 논산시 연무읍 123-4', '충남 논산시'),
+    ('경기도 이천시 부발읍', '경기도 이천시'),
+    ('전라남도 해남군 송지면 1', '전라남도 해남군'),
+    ('서울특별시 강남구 역삼동', '서울특별시 강남구'),
+])
+def test_suggest_origin(address, expected):
+    assert suggest_origin(address) == expected
+
+
+def test_suggest_origin_fallback_to_first_token():
+    # 시군구가 없으면 시도만이라도 준다
+    assert suggest_origin('제주특별자치도') == '제주특별자치도'
+
+
+def test_suggest_origin_empty():
+    for bad in ('', '   ', None):
+        assert suggest_origin(bad) is None

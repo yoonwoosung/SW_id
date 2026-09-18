@@ -3,9 +3,19 @@
 # 체험 등록 경로가 두 개다(routes/experience.py 일반 등록, routes/farmer.py 간편 등록).
 # 검증을 여기 모아 양쪽이 같은 규칙을 쓰게 한다. 한쪽만 검증하면 우회된다.
 
+import math
+import re
+
 # 반려견 허용 몸무게 상한. 검색 필터의 최대 티어가 25kg(dog_large)이라
 # 그보다 넉넉히 잡되 오입력(300kg 등)은 거른다.
 PET_MAX_WEIGHT_KG = 100
+
+# --- 과생산(잉여) 수확 체험 ---
+# 약관: 정가 대비 이 비율 이상 싸게 판다. 미만이면 등록을 막는다.
+SURPLUS_MIN_DISCOUNT_RATE = 0.20
+SURPLUS_UNITS = ('kg', 'g', '박스', '구좌', '포기', '단')
+SURPLUS_MAX_QTY = 100000          # 총 수량 상한(오입력 방지)
+SURPLUS_MAX_PER_PERSON = 1000     # 1인당 수확량 상한
 
 
 def parse_pet_fields(form):
@@ -38,3 +48,124 @@ def parse_pet_fields(form):
         return None, None, f"반려견 허용 몸무게는 {PET_MAX_WEIGHT_KG}kg 이하로 입력해 주세요."
 
     return True, weight, None
+
+
+# ----------------------------------------------------------------------
+# 과생산(잉여) 수확 체험
+# ----------------------------------------------------------------------
+
+def discount_rate(list_price, cost):
+    """정가 대비 할인율(0~1). 정가가 없거나 0 이면 None."""
+    if not list_price or list_price <= 0 or cost is None:
+        return None
+    return (list_price - cost) / list_price
+
+
+def capacity_from_quantity(qty_total, per_person):
+    """총 수량으로 받을 수 있는 최대 인원. 나머지는 버린다.
+
+    503kg 을 1인 5kg 씩 주면 100명까지다. 101명째는 3kg 밖에 못 받아
+    분쟁이 되므로 버림으로 처리하고 자투리는 표시만 한다.
+    """
+    if not qty_total or not per_person or per_person <= 0:
+        return None
+    return math.floor(qty_total / per_person)
+
+
+def suggest_origin(address):
+    """농장 주소에서 '시도 + 시군구' 수준의 원산지 기본값을 뽑는다.
+
+    등록 화면의 기본값 제안일 뿐이고 농장주가 고칠 수 있다.
+    지역마다 주소 형식이 달라 완벽할 수 없으므로 실패하면 None 을 준다.
+    """
+    if not address or not str(address).strip():
+        return None
+    tokens = str(address).split()
+    if not tokens:
+        return None
+    sido = tokens[0]
+    for token in tokens[1:]:
+        if re.search(r'(시|군|구)$', token):
+            return f"{sido} {token}"
+    return sido
+
+
+def _parse_int(raw, field_label, minimum=1, maximum=None):
+    if raw is None or not str(raw).strip():
+        return None, f"{field_label}을(를) 입력해 주세요."
+    try:
+        value = int(str(raw).strip())
+    except (TypeError, ValueError):
+        return None, f"{field_label}은(는) 숫자로 입력해 주세요."
+    if value < minimum:
+        return None, f"{field_label}은(는) {minimum} 이상이어야 합니다."
+    if maximum is not None and value > maximum:
+        return None, f"{field_label}은(는) {maximum} 이하로 입력해 주세요."
+    return value, None
+
+
+def parse_surplus_fields(form, cost):
+    """과생산 입력을 파싱·검증한다.
+
+    cost 는 이미 파싱된 판매가(기존 price 필드)다. 과생산은 별도 판매가 컬럼을
+    두지 않고 cost 를 그대로 쓴다(결제 흐름을 건드리지 않기 위해서다).
+
+    반환: (data, error)
+      data: 과생산이 아니면 모든 값이 꺼진 dict, 맞으면 채워진 dict
+    """
+    off = {
+        'is_surplus': False, 'surplus_terms_agreed': False, 'list_price': None,
+        'surplus_qty_total': None, 'surplus_per_person': None,
+        'surplus_unit': None, 'surplus_origin': None,
+    }
+    if 'is_surplus' not in form:
+        return off, None
+
+    # 약관 동의 없이는 과생산으로 올릴 수 없다.
+    if 'surplus_terms_agreed' not in form:
+        return None, "과생산 농산물로 등록하려면 정가 대비 20% 이상 할인 약관에 동의해야 합니다."
+
+    list_price, err = _parse_int(form.get('list_price'), "정가", minimum=1)
+    if err:
+        return None, err
+
+    if cost is None:
+        return None, "판매 가격을 먼저 입력해 주세요."
+    if cost >= list_price:
+        return None, "판매 가격이 정가보다 낮아야 합니다."
+
+    rate = discount_rate(list_price, cost)
+    if rate < SURPLUS_MIN_DISCOUNT_RATE:
+        return None, (
+            f"과생산 농산물은 정가 대비 {int(SURPLUS_MIN_DISCOUNT_RATE * 100)}% 이상 "
+            f"저렴해야 합니다. (현재 {rate * 100:.1f}%)"
+        )
+
+    qty_total, err = _parse_int(form.get('surplus_qty_total'), "총 수량",
+                                minimum=1, maximum=SURPLUS_MAX_QTY)
+    if err:
+        return None, err
+
+    per_person, err = _parse_int(form.get('surplus_per_person'), "1인당 수확량",
+                                 minimum=1, maximum=SURPLUS_MAX_PER_PERSON)
+    if err:
+        return None, err
+
+    if per_person > qty_total:
+        return None, "1인당 수확량이 총 수량보다 많을 수 없습니다."
+
+    unit = (form.get('surplus_unit') or 'kg').strip()
+    if unit not in SURPLUS_UNITS:
+        return None, "수량 단위가 올바르지 않습니다."
+
+    origin = (form.get('surplus_origin') or '').strip() or None
+
+    return {
+        'is_surplus': True,
+        'surplus_terms_agreed': True,
+        'list_price': list_price,
+        'surplus_qty_total': qty_total,
+        'surplus_per_person': per_person,
+        'surplus_unit': unit,
+        'surplus_origin': origin,
+    }, None

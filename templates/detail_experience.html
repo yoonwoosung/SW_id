@@ -169,11 +169,14 @@
                 </a>
             </div>
             <div id="map" class="detail-map"></div>
-            <div id="nearby-distances" class="detail-nearby">
-                <h5 class="detail-nearby-title">주요 시설까지 거리</h5>
-                <div id="distance-list"><small class="text-muted">검색 중...</small></div>
-            </div>
         </div>
+
+        <!-- 주변 맛집·카페·편의점 -->
+        <section class="section-card">
+            <div class="section-header"><h2 class="section-title"><i data-lucide="store"></i> 주변 맛집·카페·편의점</h2></div>
+            <p class="ed-amenities__lead">체험 농장 반경 안의 편의시설을 가까운 순으로 하나씩 모았어요.</p>
+            <div id="ed-amenities" class="ed-amenities"><small class="text-muted">주변 편의시설을 불러오는 중…</small></div>
+        </section>
 
         <!-- 하단 확장 섹션 — detail-main-col 안에 포함시켜 우측 sticky가 페이지 끝까지 추적하도록 -->
 
@@ -222,13 +225,6 @@
                 </details>
                 {% endfor %}
             </div>
-        </section>
-
-        <!-- 주변 맛집·카페·편의점 -->
-        <section class="section-card">
-            <div class="section-header"><h2 class="section-title"><i data-lucide="store"></i> 주변 맛집·카페·편의점</h2></div>
-            <p class="ed-amenities__lead">체험 농장 반경 안의 편의시설을 가까운 순으로 하나씩 모았어요.</p>
-            <div id="ed-amenities" class="ed-amenities"><small class="text-muted">주변 편의시설을 불러오는 중…</small></div>
         </section>
 
         <!-- 비슷한 체험 -->

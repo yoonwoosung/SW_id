@@ -3,6 +3,9 @@
    기존 detail-* 레이아웃 클래스는 그대로 재사용하고, 여기서는 신규 요소(ed-*)만 정의한다.
    데스크톱 기준(모바일 보류). */
 
+/* 상세 페이지 section-card 간 간격 */
+.detail-main-col .section-card { margin-bottom: 20px; }
+
 /* ---- 갤러리(대표 + 썸네일 + 라이트박스) ---- */
 .ed-gallery { display: flex; flex-direction: column; gap: 10px; }
 .ed-gallery__main {

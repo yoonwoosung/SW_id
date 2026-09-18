@@ -61,6 +61,12 @@ def experience_apply(item_id):
             flash(error, "danger")
             return redirect(url_for('experience_apply', item_id=item.id))
 
+        # 폼의 min/max 는 브라우저 힌트일 뿐이라 직접 POST 하면 뚫린다.
+        error = reservation_validator.validate_apply_date_range(apply_date, item)
+        if error:
+            flash(error, "danger")
+            return redirect(url_for('experience_apply', item_id=item.id))
+
         if item.current_participants + total_participants > item.max_participants:
             flash(f"죄송합니다. 남은 자리가 부족합니다. (현재 {item.max_participants - item.current_participants}명 신청 가능)", "danger")
             return redirect(url_for('experience_detail', item_id=item.id))

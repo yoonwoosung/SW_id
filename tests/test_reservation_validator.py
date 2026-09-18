@@ -144,3 +144,102 @@ def test_empty_date_rejected():
     for bad in ('', '   ', None):
         d, err = parse_apply_date(bad)
         assert d is None and err is not None
+
+
+# ---- 날짜 범위 ----
+
+from datetime import timedelta
+from services.reservation_validator import validate_apply_date_range
+
+TODAY = date(2026, 9, 18)
+
+
+class FakeExp:
+    def __init__(self, start=None, end=None):
+        self.duration_start = start
+        self.end_date = end
+
+
+def d(offset):
+    return TODAY + timedelta(days=offset)
+
+
+def test_within_period_ok():
+    exp = FakeExp(start=d(-5), end=d(30))
+    assert validate_apply_date_range(d(3), exp, today=TODAY) is None
+
+
+def test_today_allowed():
+    """당일 예약은 막지 않는다."""
+    exp = FakeExp(start=d(-5), end=d(30))
+    assert validate_apply_date_range(TODAY, exp, today=TODAY) is None
+
+
+def test_past_date_rejected():
+    """★과거 날짜는 언제나 거부.★"""
+    exp = FakeExp(start=d(-30), end=d(30))
+    err = validate_apply_date_range(d(-1), exp, today=TODAY)
+    assert err == "지난 날짜로는 신청할 수 없습니다."
+
+
+def test_after_end_date_rejected():
+    exp = FakeExp(start=d(-5), end=d(10))
+    err = validate_apply_date_range(d(11), exp, today=TODAY)
+    assert err is not None and '2026.09.28' in err
+
+
+def test_before_start_rejected():
+    exp = FakeExp(start=d(10), end=d(30))
+    err = validate_apply_date_range(d(5), exp, today=TODAY)
+    assert err is not None and '2026.09.28' in err
+
+
+def test_boundary_dates_allowed():
+    """시작일·마감일 당일은 허용(이상·이하)."""
+    exp = FakeExp(start=d(5), end=d(10))
+    assert validate_apply_date_range(d(5), exp, today=TODAY) is None
+    assert validate_apply_date_range(d(10), exp, today=TODAY) is None
+
+
+def test_started_period_lower_bound_is_today():
+    """★기간이 이미 시작됐어도 지난 날짜로는 못 간다.★
+
+    duration_start 가 한 달 전이어도 어제 날짜는 거부한다.
+    """
+    exp = FakeExp(start=d(-30), end=d(30))
+    assert validate_apply_date_range(d(-1), exp, today=TODAY) is not None
+    assert validate_apply_date_range(TODAY, exp, today=TODAY) is None
+
+
+# ---- NULL 처리 (컬럼이 nullable) ----
+
+def test_both_null_only_blocks_past():
+    """둘 다 없으면 과거만 막고 미래는 허용한다."""
+    exp = FakeExp(start=None, end=None)
+    assert validate_apply_date_range(d(1), exp, today=TODAY) is None
+    assert validate_apply_date_range(d(365), exp, today=TODAY) is None
+    assert validate_apply_date_range(d(-1), exp, today=TODAY) is not None
+
+
+def test_only_end_date_set():
+    exp = FakeExp(start=None, end=d(10))
+    assert validate_apply_date_range(d(5), exp, today=TODAY) is None
+    assert validate_apply_date_range(d(11), exp, today=TODAY) is not None
+    assert validate_apply_date_range(d(-1), exp, today=TODAY) is not None
+
+
+def test_only_start_date_set():
+    exp = FakeExp(start=d(10), end=None)
+    assert validate_apply_date_range(d(15), exp, today=TODAY) is None
+    assert validate_apply_date_range(d(5), exp, today=TODAY) is not None
+
+
+def test_none_apply_date():
+    assert validate_apply_date_range(None, FakeExp(), today=TODAY) is not None
+
+
+def test_experience_without_attributes():
+    """속성이 아예 없는 객체가 와도 터지지 않는다."""
+    class Bare:
+        pass
+    assert validate_apply_date_range(d(1), Bare(), today=TODAY) is None

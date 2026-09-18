@@ -129,7 +129,7 @@
                     var courseRes = results[1];
                     openCourseModal({
                         rec: rec,
-                        course: courseRes.success ? courseRes : {},
+                        course: courseRes.success ? courseRes.data : {},
                         section: { key: 'saved', esg: false }
                     });
                 });

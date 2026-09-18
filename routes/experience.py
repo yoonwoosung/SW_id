@@ -31,6 +31,7 @@ from common.search_categories import SEARCH_CATEGORIES, CATEGORY_CODES, CATEGORY
 from common.response import success_response
 from external.kakao_map import get_coords_from_address
 from common.validators import allowed_file
+from services import experience_validator
 from services import farm_service
 
 
@@ -358,6 +359,10 @@ def farmer_register(item_id=None):
     if request.method == 'POST':
         is_organic = 'is_organic' in request.form
         has_parking = 'has_parking' in request.form
+        pet_allowed, pet_max_weight_kg, pet_error = experience_validator.parse_pet_fields(request.form)
+        if pet_error:
+            flash(pet_error, "danger")
+            return render_template('farmer_register.html', item=item, form_data=request.form)
         cert_filename = item.organic_certification_image if item and item.organic_certification_image else None
         cert_file = request.files.get('organic_certification_image')
 
@@ -421,6 +426,8 @@ def farmer_register(item_id=None):
             item.volunteer_needed = volunteer_needed
             item.volunteer_duties = request.form.get('volunteer_duties')
             item.has_parking = has_parking
+            item.pet_allowed = pet_allowed
+            item.pet_max_weight_kg = pet_max_weight_kg
             flash("체험 정보가 성공적으로 수정되었습니다!", "success")
         else:
             farmer = User.query.get(session['user_id'])
@@ -449,6 +456,8 @@ def farmer_register(item_id=None):
                 farmer_id=session['user_id'],
                 volunteer_needed=volunteer_needed,
                 has_parking=has_parking,
+                pet_allowed=pet_allowed,
+                pet_max_weight_kg=pet_max_weight_kg,
                 volunteer_duties=request.form.get('volunteer_duties'),
                 status='recruiting'
             )

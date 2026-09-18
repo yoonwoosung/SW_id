@@ -25,6 +25,7 @@ from services.recommend_reason import recommendation_reason
 from services.review_service import analyze_review_with_clova
 from external.kakao_map import get_coords_from_address
 from common.validators import allowed_file
+from services import experience_validator
 from services import farm_service
 
 
@@ -245,6 +246,10 @@ def easy_create_experience():
                 flash(f"'{name}' 항목을 입력해주세요. 모든 항목은 필수입니다.", "warning")
                 return render_template('easy_create_experience.html', item=None, approved_farms=approved_farms, form_data=request.form)
             
+        pet_allowed, pet_max_weight_kg, pet_error = experience_validator.parse_pet_fields(request.form)
+        if pet_error:
+            flash(pet_error, "warning")
+            return render_template('easy_create_experience.html', item=None, approved_farms=approved_farms, form_data=request.form)
         is_organic = 'is_organic' in request.form
         cert_filename = None
         cert_type = None
@@ -278,6 +283,8 @@ def easy_create_experience():
             excludes=request.form.get('excludes'),
             timetable_data=request.form.get('timetable_data'),
             has_parking='has_parking' in request.form,
+            pet_allowed=pet_allowed,
+            pet_max_weight_kg=pet_max_weight_kg,
             volunteer_needed=int(request.form.get('volunteer_needed', 0)),
             volunteer_duties=request.form.get('volunteer_duties'),
             pesticide_free=is_organic,
@@ -355,6 +362,10 @@ def easy_modify_experience(item_id):
                 flash(f"'{name}' 항목을 입력해주세요. 모든 항목은 필수입니다.", "warning")
                 return render_template('easy_create_experience.html', item=item, approved_farms=approved_farms, form_data=request.form)
         
+        pet_allowed, pet_max_weight_kg, pet_error = experience_validator.parse_pet_fields(request.form)
+        if pet_error:
+            flash(pet_error, "warning")
+            return render_template('easy_create_experience.html', item=item, approved_farms=approved_farms, form_data=request.form)
         is_organic = 'is_organic' in request.form
         if is_organic:
             item.pesticide_free = True
@@ -392,6 +403,8 @@ def easy_modify_experience(item_id):
         item.excludes = request.form.get('excludes')
         item.timetable_data = request.form.get('timetable_data')
         item.has_parking = 'has_parking' in request.form
+        item.pet_allowed = pet_allowed
+        item.pet_max_weight_kg = pet_max_weight_kg
         item.volunteer_needed = int(request.form.get('volunteer_needed', 0))
         item.volunteer_duties = request.form.get('volunteer_duties')
 

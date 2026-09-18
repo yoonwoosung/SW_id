@@ -109,6 +109,23 @@
                                 {% if form_data.get('has_parking') or (item and item.has_parking) %}checked{% endif %} onclick="event.stopPropagation()">
                         </div>
 
+                        <!-- 반려견 동반 체크 행 -->
+                        <div class="custom-option-card" onclick="toggleCheckbox('pet_allowed')">
+                            <span class="option-title">🐕 반려견 동반 가능</span>
+                            <input type="checkbox" class="custom-large-check" id="pet_allowed" name="pet_allowed"
+                                {% if form_data.get('pet_allowed') or (item and item.pet_allowed) %}checked{% endif %}
+                                onclick="event.stopPropagation()"
+                                onchange="document.getElementById('pet-weight-row').hidden = !this.checked;">
+                        </div>
+                        <div id="pet-weight-row" class="mb-3"
+                             {% if not (form_data.get('pet_allowed') or (item and item.pet_allowed)) %}hidden{% endif %}>
+                            <label for="pet_max_weight_kg" class="option-title d-block mb-2">허용 최대 몸무게(kg)</label>
+                            <input type="number" class="form-control" name="pet_max_weight_kg" id="pet_max_weight_kg"
+                                   min="1" max="100" step="1" placeholder="예) 15"
+                                   value="{{ form_data.get('pet_max_weight_kg') or (item.pet_max_weight_kg if item and item.pet_max_weight_kg else '') }}">
+                            <small class="text-muted">소형 5kg~ · 중형 15kg~ · 대형 25kg~ 검색에 쓰입니다.</small>
+                        </div>
+
                         <!-- 친환경 체크 행 -->
                         <div class="custom-option-card" onclick="toggleCheckbox('is_organic')">
                             <span class="option-title"><img src="{{ url_for('static', filename='icons/icon-eco-friendly.svg') }}" width="20" height="20" style="vertical-align:-4px;margin-right:6px;"> 친환경 농법 사용</span>

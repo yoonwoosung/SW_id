@@ -27,6 +27,22 @@
                         <input class="form-check-input" type="checkbox" name="has_parking" value="true" id="has_parking" {% if item and item.has_parking %}checked{% endif %}>
                         <label class="form-check-label" for="has_parking">주차장 제공</label>
                     </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="pet_allowed" value="true" id="pet_allowed"
+                               {% if item and item.pet_allowed %}checked{% endif %}
+                               onchange="document.getElementById('pet-weight-row').hidden = !this.checked;">
+                        <label class="form-check-label" for="pet_allowed">반려견 동반 가능</label>
+                    </div>
+                    <div id="pet-weight-row" class="mt-2" {% if not (item and item.pet_allowed) %}hidden{% endif %}>
+                        <label for="pet_max_weight_kg" class="small mb-1">허용 최대 몸무게(kg)</label>
+                        <input type="number" class="form-control form-control-sm" style="max-width:180px;"
+                               name="pet_max_weight_kg" id="pet_max_weight_kg" min="1" max="100" step="1"
+                               placeholder="예) 15"
+                               value="{{ item.pet_max_weight_kg if item and item.pet_max_weight_kg else '' }}">
+                        <small class="form-text text-muted">
+                            검색 필터가 이 값으로 소형(5kg~)·중형(15kg~)·대형(25kg~)을 매칭합니다.
+                        </small>
+                    </div>
                 </div>
             </div>
 

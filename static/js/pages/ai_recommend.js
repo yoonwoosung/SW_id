@@ -86,10 +86,12 @@
         if (!list.length) { sec.hidden = true; return; }
         sec.hidden = false;
         row.innerHTML = list.map(function (c, i) {
-            var imgHtml = c.first_image
-                ? '<img class="fl-course-card__img" src="/static/uploads/' + esc(c.first_image) + '" alt="" loading="lazy" onerror="this.remove()">'
+            // thumbnail_url 이 있으면 그걸 쓴다. 옛 저장분에는 first_image 만 있어 폴백을 둔다.
+            var imgSrc = c.thumbnail_url || (c.first_image ? '/static/uploads/' + c.first_image : null);
+            var imgHtml = imgSrc
+                ? '<img class="fl-course-card__img" src="' + esc(imgSrc) + '" alt="" loading="lazy" onerror="this.remove()">'
                 : '';
-            return '<article class="fl-course-card">'
+            return '<article class="fl-course-card fl-saved-card" data-saved-id="' + esc(c.id) + '" style="cursor:pointer;">'
                 + '<div class="fl-course-card__band">' + imgHtml + '<span class="fl-badge fl-badge--day">저장됨</span></div>'
                 + '<div class="fl-course-card__head">'
                 + '<h3 class="fl-course-card__title">' + esc(c.title) + '</h3>'
@@ -285,6 +287,84 @@
         if (data) openCourseModal(data);
     });
 
+    // ---- 저장된 코스 클릭 → 체험 상세로 이동 ----
+    // 저장 목록은 localStorage 에 id·title·cost 만 들고 있어 cardStore 에 없다.
+    // 그래서 위 핸들러의 [data-store-key] 선택자에 걸리지 않아 클릭해도 아무 일도
+    // 일어나지 않았다(요청조차 나가지 않았다). 여기서 따로 받는다.
+    //
+    // 이동 전에 코스 API 로 한 번 확인한다. 저장 당시의 체험이 지워졌으면
+    // /experience/<id> 가 404 를 띄워 빈 화면처럼 보이기 때문이다.
+    // fetchCourse 는 진행 중인 Promise 를 재사용하고 서버에도 캐시가 있어 가볍다.
+    (function bindSavedCards() {
+        var wrap = document.querySelector('.ai-rec-wrap');
+        if (!wrap) return;
+        wrap.addEventListener('click', function (e) {
+            if (e.target.closest('.saved-remove-btn')) return;   // 저장 취소 버튼은 제외
+            var card = e.target.closest('.fl-course-card[data-saved-id]');
+            if (!card) return;
+
+            var id = card.dataset.savedId;
+            if (card.dataset.checking === '1') return;           // 연타 방지
+            card.dataset.checking = '1';
+            showSavedNotice(card, '코스를 확인하는 중…', false);
+
+            fetchCourse(id)
+                .then(function (res) {
+                    card.dataset.checking = '';
+                    if (res && res.success) {
+                        window.location.href = '/experience/' + encodeURIComponent(id);
+                        return;
+                    }
+                    var code = res && res.error && res.error.code;
+                    showSavedNotice(card,
+                        code === 'EXPERIENCE_NOT_FOUND'
+                            ? '저장 당시의 체험을 찾을 수 없습니다. 삭제되었거나 마감되었을 수 있어요.'
+                            : '코스를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.',
+                        code === 'EXPERIENCE_NOT_FOUND');
+                })
+                .catch(function () {
+                    card.dataset.checking = '';
+                    showSavedNotice(card, '코스를 불러오는 중 오류가 발생했어요.', false);
+                });
+        });
+    })();
+
+    // 안내 문구 안의 '목록에서 지우기' 는 렌더 후에 만들어져서 기존 리스너가 없다.
+    // id 로 지우는 위임 핸들러를 따로 둔다(기존 버튼은 data-idx 로 동작하므로 건드리지 않는다).
+    (function bindRemoveById() {
+        var wrap = document.querySelector('.ai-rec-wrap');
+        if (!wrap) return;
+        wrap.addEventListener('click', function (e) {
+            var btn = e.target.closest('.saved-remove-btn[data-id]');
+            if (!btn) return;
+            e.stopPropagation();
+            var id = String(btn.dataset.id);
+            var cur = JSON.parse(localStorage.getItem('fl-saved-courses') || '[]');
+            localStorage.setItem('fl-saved-courses',
+                JSON.stringify(cur.filter(function (c) { return String(c.id) !== id; })));
+            renderSavedCourses();
+        });
+    })();
+
+    // 카드 안에 안내 문구를 띄운다(빈 화면 대신). 사라진 체험이면 지우기 버튼도 함께.
+    function showSavedNotice(card, message, offerRemove) {
+        var box = card.querySelector('.fl-saved-notice');
+        if (!box) {
+            box = document.createElement('div');
+            box.className = 'fl-saved-notice';
+            box.style.cssText = 'padding:8px 12px;font-size:.82rem;color:#8a938c;'
+                + 'border-top:1px solid #eef1ee;line-height:1.5;';
+            card.appendChild(box);
+        }
+        box.innerHTML = esc(message)
+            + (offerRemove
+                ? ' <button type="button" class="saved-remove-btn" data-id="' + esc(card.dataset.savedId)
+                  + '" style="background:none;border:none;padding:0;color:#c0392b;'
+                  + 'font-weight:700;text-decoration:underline;cursor:pointer;">목록에서 지우기</button>'
+                : '');
+        if (window.lucide) lucide.createIcons();
+    }
+
     var ciModal = document.getElementById('ci-modal');
 
     function computeDuration(items) {
@@ -378,7 +458,10 @@
             if (this.disabled) return;
             var list = JSON.parse(localStorage.getItem('fl-saved-courses') || '[]');
             if (!list.some(function (c) { return String(c.id) === String(rec.id); })) {
-                list.push({ id: rec.id, title: title, cost: sm.estimated_cost || null, first_image: rec.first_image || null });
+                list.push({ id: rec.id, title: title, cost: sm.estimated_cost || null,
+                    first_image: rec.first_image || null,
+                    // thumbnail_url 은 항상 채워지는 완전한 경로다(농장 사진 폴백·기본 이미지 포함).
+                    thumbnail_url: rec.thumbnail_url || null });
                 localStorage.setItem('fl-saved-courses', JSON.stringify(list));
             }
             this.innerHTML = '<i class="fa-solid fa-bookmark" style="margin-right:5px;"></i>저장됨';

@@ -46,6 +46,8 @@ def index():
         sort_by = request.args.get('sort', 'recommended', type=str)
         region = request.args.get('region', type=str)
         crop_query = request.args.get('crop_query', type=str)
+        view = request.args.get('view', type=str)
+        per_page = 12 if view == 'list' else 15
         selected_conditions = {code: request.args.getlist('cond_' + code) for code in CATEGORY_CODES}
 
         today = date.today()
@@ -96,32 +98,32 @@ def index():
 
                 sorted_items = sorted(ranked_experiences, key=lambda x: x.recommendation_score, reverse=True)
 
-                start = (page - 1) * 15
-                end = start + 15
+                start = (page - 1) * per_page
+                end = start + per_page
                 items_on_page = sorted_items[start:end]
                 total_items = len(sorted_items)
-            
-                total_pages = math.ceil(total_items / 15) if total_items > 0 else 1
+
+                total_pages = math.ceil(total_items / per_page) if total_items > 0 else 1
                 pagination = SimpleNamespace(
-                    items=items_on_page, page=page, per_page=15, total=total_items,
+                    items=items_on_page, page=page, per_page=per_page, total=total_items,
                     pages=total_pages, has_prev=(page > 1), has_next=(page < total_pages),
                     prev_num=page - 1, next_num=page + 1,
                     iter_pages=lambda **kwargs: range(1, total_pages + 1)
                 )
             else:
                 query = base_query.order_by(is_closed.asc(), Experience.end_date.asc())
-                pagination = query.paginate(page=page, per_page=15, error_out=False)
+                pagination = query.paginate(page=page, per_page=per_page, error_out=False)
                 items_on_page = pagination.items
 
         elif sort_by == 'reviews':
             review_count = func.count(Review.id).label('review_count')
             query = base_query.outerjoin(Review).group_by(Experience.id).order_by(is_closed.asc(), review_count.desc())
-            pagination = query.paginate(page=page, per_page=15, error_out=False)
+            pagination = query.paginate(page=page, per_page=per_page, error_out=False)
             items_on_page = pagination.items
 
         else:
             query = base_query.order_by(is_closed.asc(), Experience.end_date.asc())
-            pagination = query.paginate(page=page, per_page=15, error_out=False)
+            pagination = query.paginate(page=page, per_page=per_page, error_out=False)
             items_on_page = pagination.items
 
         if items_on_page:
@@ -140,7 +142,8 @@ def index():
                                items=items_on_page,
                                pagination=pagination,
                                featured=featured,
-                               sort_by=sort_by)
+                               sort_by=sort_by,
+                               view=view)
 
 
 # ==========================================
@@ -531,6 +534,21 @@ def get_experiences_json():
     return jsonify(experience_list)
 
 
+def get_experience_json(item_id):
+    item = Experience.query.get_or_404(item_id)
+    imgs = [x.strip() for x in item.images.split(',') if x.strip()] if item.images else []
+    return jsonify({
+        'id': item.id,
+        'crop': item.crop,
+        'address': item.address_detail or item.location or '',
+        'cost': item.cost,
+        'eco': item.pesticide_free,
+        'first_image': imgs[0] if imgs else None,
+        'esg_grade': None,
+        'reasons': [],
+    })
+
+
 def search_categories():
     return success_response({"categories": SEARCH_CATEGORIES, "groups": CATEGORY_GROUPS})
 
@@ -545,3 +563,4 @@ def register(app):
     app.add_url_rule('/experience/delete/<int:item_id>', 'delete_experience', delete_experience, methods=['POST'])
     app.add_url_rule('/api/experience/<int:item_id>/toggle_visibility', 'toggle_visibility', toggle_visibility, methods=['PATCH'])
     app.add_url_rule('/api/experiences', 'get_experiences_json', get_experiences_json)
+    app.add_url_rule('/api/experiences/<int:item_id>', 'get_experience_json', get_experience_json)

@@ -89,16 +89,20 @@
             var imgHtml = c.first_image
                 ? '<img class="fl-course-card__img" src="/static/uploads/' + esc(c.first_image) + '" alt="" loading="lazy" onerror="this.remove()">'
                 : '';
-            return '<article class="fl-course-card">'
+            var sm = c.summary || {};
+            var chips = [];
+            if (sm.duration) chips.push('<span class="ci-modal__summary-chip"><i class="fa-solid fa-clock"></i> 총 ' + esc(sm.duration) + '</span>');
+            if (sm.transport) chips.push('<span class="ci-modal__summary-chip"><i class="fa-solid fa-' + (sm.transport === '자가용' ? 'car' : 'bus') + '"></i> ' + esc(sm.transport) + ' 추천</span>');
+            if (sm.count) chips.push('<span class="ci-modal__summary-chip"><i class="fa-solid fa-map-pin"></i> ' + sm.count + '개 장소</span>');
+            var chipsHtml = chips.length ? '<div class="ci-modal__summary" style="margin:6px 0 4px;">' + chips.join('') + '</div>' : '';
+            return '<article class="fl-course-card" data-saved-id="' + c.id + '" style="cursor:pointer;">'
                 + '<div class="fl-course-card__band">' + imgHtml + '<span class="fl-badge fl-badge--day">저장됨</span></div>'
                 + '<div class="fl-course-card__head">'
                 + '<h3 class="fl-course-card__title">' + esc(c.title) + '</h3>'
-                + '<div class="fl-reasons"></div>'
-                + '<div class="fl-course-meta"></div>'
+                + chipsHtml
                 + '<div class="fl-course-price">'
                 + (c.cost ? '<span class="fl-cost">' + won(c.cost) + '</span><span class="fl-per">＊1인당 가격</span>' : '')
-                + '</div>'
-                + '</div>'
+                + '</div></div>'
                 + '<button type="button" class="fl-course-card__toggle saved-remove-btn" data-idx="' + i + '" style="color:var(--fl-text-muted);">'
                 + '저장 취소 <i class="fa-solid fa-xmark" aria-hidden="true"></i></button>'
                 + '</article>';
@@ -116,6 +120,25 @@
             localStorage.removeItem('fl-saved-courses');
             renderSavedCourses();
         };
+
+        row.querySelectorAll('.fl-course-card[data-saved-id]').forEach(function (card) {
+            card.addEventListener('click', function (e) {
+                if (e.target.closest('.saved-remove-btn')) return;
+                var id = this.dataset.savedId;
+                Promise.all([
+                    fetch('/api/experiences/' + id).then(function (r) { return r.json(); }),
+                    fetch('/api/experiences/' + id + '/course').then(function (r) { return r.json(); })
+                ]).then(function (results) {
+                    var rec = results[0];
+                    var courseRes = results[1];
+                    openCourseModal({
+                        rec: rec,
+                        course: courseRes.success ? courseRes.data : {},
+                        section: { key: 'saved', esg: false }
+                    });
+                });
+            });
+        });
     }
     renderSavedCourses();
 
@@ -378,7 +401,7 @@
             if (this.disabled) return;
             var list = JSON.parse(localStorage.getItem('fl-saved-courses') || '[]');
             if (!list.some(function (c) { return String(c.id) === String(rec.id); })) {
-                list.push({ id: rec.id, title: title, cost: sm.estimated_cost || null, first_image: rec.first_image || null });
+                list.push({ id: rec.id, title: title, cost: sm.estimated_cost || null, first_image: rec.first_image || null, summary: { duration: computeDuration(items), transport: sm.transport || null, count: items.length || 0 } });
                 localStorage.setItem('fl-saved-courses', JSON.stringify(list));
             }
             this.innerHTML = '<i class="fa-solid fa-bookmark" style="margin-right:5px;"></i>저장됨';

@@ -208,7 +208,11 @@
             .then(function (res) {
                 if (!res.success) { row.innerHTML = '<p class="fl-empty">' + esc((res.error && res.error.message) || '추천을 불러올 수 없어요.') + '</p>'; return; }
                 var list = (res.data.results || []).slice(0, 3);
-                if (!list.length) { row.innerHTML = '<p class="fl-empty">추천할 코스를 찾지 못했어요.</p>'; return; }
+                // 0건이어도 섹션을 숨기거나 조건을 완화하지 않는다. 필터가 동작했음을 보여준다.
+                if (!list.length) {
+                    row.innerHTML = '<p class="fl-empty">조건에 맞는 체험이 아직 없습니다.</p>';
+                    return;
+                }
                 Promise.all(list.map(function (x) {
                     return fetchCourse(x.id)
                         .then(function (c) { return { rec: x, course: c.data || {} }; });

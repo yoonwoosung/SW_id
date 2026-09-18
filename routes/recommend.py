@@ -14,6 +14,7 @@ from services.trend_service import record_click, trending_experience_ids, trend_
 from services import segment_service
 from services.esg_service import compute_esg
 from services.thumbnail_service import experience_thumbnail_url, first_image_name
+from services import eco_filter
 
 
 def _recruiting_experiences():
@@ -58,7 +59,15 @@ def personalized_recommendations():
     trending = trending_experience_ids(user.gender, user.age_group) if has_recommendation_profile(user) else set()
 
     ranked = rank_personalized(_recruiting_experiences(), user, lat, lon, conditions, trending_ids=trending)
-    if segment == 'esg':  # ESG 세그먼트: 친환경 점수 높은 순으로 재정렬
+
+    # 조건은 지금까지 점수 가점이라 하나도 못 맞춘 체험도 뒤에 남았다.
+    # 사용자는 필터를 켰다고 생각하므로 제외로 바꾼다(섹션 구분 없이 모두 적용).
+    ranked = [item for item in ranked if eco_filter.passes_conditions(conditions, item[0])]
+
+    if segment == 'esg':
+        # '친환경 인증 농장' 섹션: 정렬만 하면 친환경이 아닌 체험도 남는다.
+        # 친환경 항목(E축)이 있고 ESG 등급 B 이상인 것만 남기고, 그 안에서 점수순.
+        ranked = [item for item in ranked if eco_filter.passes_eco_section(item[0])]
         ranked.sort(key=lambda item: compute_esg(item[0])["score"], reverse=True)
 
     results = [{

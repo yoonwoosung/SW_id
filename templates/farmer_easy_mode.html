@@ -657,7 +657,10 @@ document.addEventListener('DOMContentLoaded', function () {
     const farmAddBtn = document.getElementById('farm-add-btn');
     const farmCancelBtn = document.getElementById('farm-form-cancel');
 
-    if (farmAddBtn) farmAddBtn.addEventListener('click', function () { farmFormArea.style.display = 'block'; });
+    if (farmAddBtn) farmAddBtn.addEventListener('click', function () {
+        farmFormArea.style.display = 'block';
+        farmFormArea.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
     if (farmCancelBtn) farmCancelBtn.addEventListener('click', function () { farmFormArea.style.display = 'none'; });
 
     // ===== 4. 날짜별 예약 목록 =====

@@ -1,7 +1,8 @@
 # routes/admin.py
+import os
 from datetime import datetime
 from functools import wraps
-from flask import render_template, request, redirect, url_for, flash, session, jsonify
+from flask import render_template, request, redirect, url_for, flash, session, jsonify, current_app
 from models import db, Farm, User, Notification, Experience
 
 def admin_required(f):
@@ -88,7 +89,15 @@ def organic_cert_list():
 @admin_required
 def organic_cert_detail(exp_id):
     exp = Experience.query.get_or_404(exp_id)
-    return render_template('admin/organic_cert_detail.html', exp=exp)
+    img_debug = None
+    if exp.organic_certification_image:
+        full_path = os.path.join(current_app.config['UPLOAD_FOLDER'], exp.organic_certification_image)
+        img_debug = {
+            'db_value': exp.organic_certification_image,
+            'full_path': full_path,
+            'exists': os.path.exists(full_path),
+        }
+    return render_template('admin/organic_cert_detail.html', exp=exp, img_debug=img_debug)
 
 
 @admin_required

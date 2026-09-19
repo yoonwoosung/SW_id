@@ -315,6 +315,20 @@ def discount_percent(experience):
     return int(math.floor(rate * 100))
 
 
+def shows_surplus(experience):
+    """과생산 표시(목록 리본·상세 배지)를 띄울 대상인가.
+
+    ★두 요소가 같은 조건을 쓰도록 한 곳에 모은다.★ 예전에는 배지가
+    is_surplus 만 봐서, 약관 미동의 건이 리본 없이 배지만 뜨는
+    한 화면 불일치가 있었다. 정상 등록 경로에서는 약관 동의 없이 과생산으로
+    저장할 수 없지만, 컬럼이 생기기 전의 옛 데이터에는 있을 수 있다.
+    """
+    if experience is None:
+        return False
+    return bool(getattr(experience, 'is_surplus', False)
+                and getattr(experience, 'surplus_terms_agreed', False))
+
+
 def ribbon_text(experience):
     """카드·상세 리본 문구. 과생산이 아니거나 약관 미동의면 None.
 
@@ -329,11 +343,9 @@ def ribbon_text(experience):
 
     리본 폭이 한계라 사유는 등록 때 6자로 제한해 뒀다.
     """
-    if experience is None or not getattr(experience, 'is_surplus', False):
-        return None
-    # 목록 쿼리가 이미 거르지만 함수에서도 막는다.
+    # 목록 쿼리가 약관을 이미 거르지만 함수에서도 막는다.
     # 상세 등 쿼리를 거치지 않는 화면에서 직접 부르기 때문이다.
-    if not getattr(experience, 'surplus_terms_agreed', False):
+    if not shows_surplus(experience):
         return None
 
     label = getattr(experience, 'surplus_reason', None) or SURPLUS_RIBBON_DEFAULT_REASON

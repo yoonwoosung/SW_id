@@ -565,3 +565,26 @@ def test_ribbon_and_badge_use_same_percent():
     for lp, cost in ((30000, 10000), (30000, 20000), (150000, 15000), (50000, 25000)):
         exp = FakeSurplus(list_price=lp, cost=cost)
         assert f"{discount_percent(exp)}%" in ribbon_text(exp)
+
+
+# ---- 리본과 상세 배지가 같은 조건을 쓰는가 ----
+
+from services.experience_validator import shows_surplus
+
+
+def test_shows_surplus_requires_both_flags():
+    assert shows_surplus(FakeSurplus()) is True
+    assert shows_surplus(FakeSurplus(is_surplus=False)) is False
+    assert shows_surplus(FakeSurplus(terms=False)) is False
+    assert shows_surplus(None) is False
+
+
+def test_badge_and_ribbon_share_one_condition():
+    """★리본이 안 뜨면 배지도 안 뜬다.★
+
+    예전에는 배지가 is_surplus 만 봐서, 약관 미동의 건이 리본 없이
+    배지만 뜨는 한 화면 불일치가 있었다.
+    """
+    for exp in (FakeSurplus(), FakeSurplus(reason=None), FakeSurplus(list_price=None),
+                FakeSurplus(is_surplus=False), FakeSurplus(terms=False)):
+        assert bool(ribbon_text(exp)) == shows_surplus(exp)

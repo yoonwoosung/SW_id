@@ -613,10 +613,11 @@ document.addEventListener('DOMContentLoaded', function () {
         
         const nextBtn = document.getElementById('btn-next');
         const prevNavBtn = document.getElementById('btn-prev-nav');
+        const navSection = document.querySelector('.step-nav-btns');
 
-        if (nextBtn) {
-            if (n === total) nextBtn.classList.add('is-hidden');
-            else nextBtn.classList.remove('is-hidden');
+        if (navSection) {
+            if (n === total) navSection.classList.add('is-hidden');
+            else navSection.classList.remove('is-hidden');
         }
         if (prevNavBtn) {
             if (n <= 1) prevNavBtn.classList.add('is-hidden');

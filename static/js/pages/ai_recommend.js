@@ -267,6 +267,8 @@
         if (!stops) return '<p class="fl-empty">주변 장소가 부족해 상세 코스를 만들지 못했어요.</p>';
         return (items || []).map(function (it) {
             var sub = it.type === 'experience' ? '이 체험' : (esc(it.address || '') + (it.distance_km != null ? ' · ' + it.distance_km + 'km' : ''));
+            // 충남도가 제공한 장소는 출처를 밝힌다(공공누리 제4유형 출처표시).
+            if (it.source === 'chungnam') sub += ' <span class="fl-src-cn">충남도 제공</span>';
             return '<div class="ai-timeline-item"><div class="ai-time">' + esc(it.time) + '</div><div class="ai-dot"></div>'
                 + '<div class="ai-timeline-body"><div class="ai-act-name">' + esc(it.name || '') + '</div><div class="ai-act-sub">' + sub + '</div></div>'
                 + '<div class="ai-thumb">' + ('<i data-lucide="' + (TYPE_ICON[it.type] || 'map-pin') + '"></i>') + '</div></div>';
@@ -430,13 +432,17 @@
                 + '<div class="ci-tl-time">' + esc(it.time) + '</div>'
                 + '<div class="ci-tl-icon"><i data-lucide="' + icon + '"></i></div>'
                 + '<div><div class="ci-tl-name">' + esc(it.name || '') + '</div>'
-                + (sub ? '<div class="ci-tl-sub">' + esc(sub) + '</div>' : '')
+                + (sub ? '<div class="ci-tl-sub">' + esc(sub)
+                    + (it.source === 'chungnam' ? ' <span class="fl-src-cn">충남도 제공</span>' : '')
+                    + '</div>' : '')
                 + '</div></div>';
         }).join('') + '</div>';
+        // 공공누리 제4유형 출처표시. 프론트가 문구를 지어내지 않게 고정 문자열로 둔다.
+        var srcHtml = '<p class="ci-source">관광지 정보 출처: 한국관광공사, 충청남도</p>';
         if (!stops.length) {
-            return '<p class="fl-empty" style="margin-bottom:10px;">주변 관광지 정보를 불러오지 못했어요.<br>체험 장소만 표시됩니다.</p>' + tlHtml;
+            return '<p class="fl-empty" style="margin-bottom:10px;">주변 관광지 정보를 불러오지 못했어요.<br>체험 장소만 표시됩니다.</p>' + tlHtml + srcHtml;
         }
-        return tlHtml;
+        return tlHtml + srcHtml;
     }
 
     document.getElementById('ci-close').addEventListener('click', closeCourseModal);

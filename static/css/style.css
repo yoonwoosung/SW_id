@@ -4964,3 +4964,34 @@ header.header-volunteer { border-bottom-color: #FF9800; }
 .fl-ribbon.detail-ribbon .fl-ribbon__text {
     width: 212px; top: 34px; right: -56px; font-size: 13px;
 }
+
+/* ============================================================================
+   [충남] 공공누리 제4유형 출처표시
+   ============================================================================ */
+/* 코스 장소가 충남도 데이터일 때 붙는 작은 배지 */
+.fl-src-cn {
+    display: inline-block;
+    margin-left: 4px;
+    padding: 1px 5px;
+    border-radius: 4px;
+    background: #e8f0fe;
+    color: #1a5fb4;
+    font-size: 0.68rem;
+    font-weight: 700;
+    white-space: nowrap;
+    vertical-align: 1px;
+}
+/* 코스 모달 하단 출처 문구 */
+.ci-source {
+    margin: 10px 0 0;
+    font-size: 0.74rem;
+    color: #8a938c;
+    text-align: right;
+}
+/* 푸터 출처 문구 */
+.site-footer-src {
+    margin: 4px 0 0;
+    font-size: 0.72rem;
+    opacity: 0.75;
+    line-height: 1.5;
+}

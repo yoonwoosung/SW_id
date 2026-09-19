@@ -2528,6 +2528,9 @@ a svg, a i { pointer-events: none; }
     flex: 0 0 calc(50% - 12px);
     box-sizing: border-box;
     padding: 24px;
+    background: transparent;
+    box-shadow: none;
+    border-radius: 0;
 }
 
 .card-slider-btn {

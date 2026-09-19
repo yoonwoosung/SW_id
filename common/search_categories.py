@@ -31,13 +31,14 @@ CATEGORY_GROUPS = [
 # 나머지 6개는 같은 이름의 시군이 없어 '서울'처럼 짧게 둬도 안전하다
 # ("서울특별시 강남구"·"서울 강남구" 둘 다 매칭).
 _METRO_REGIONS = [
-    ("seoul",   "서울", ["서울"],       []),
-    ("busan",   "부산", ["부산"],       []),
-    ("daegu",   "대구", ["대구"],       []),
-    ("incheon", "인천", ["인천"],       []),
-    ("gwangju", "광주", ["광주광역시"], []),
-    ("daejeon", "대전", ["대전"],       []),
-    ("ulsan",   "울산", ["울산"],       []),
+    ("seoul",   "서울", ["서울"],          []),
+    ("busan",   "부산", ["부산"],          []),
+    ("daegu",   "대구", ["대구"],          []),
+    ("incheon", "인천", ["인천"],          []),
+    ("gwangju", "광주", ["광주광역시"],    []),
+    ("daejeon", "대전", ["대전"],          []),
+    ("ulsan",   "울산", ["울산"],          []),
+    ("sejong",  "세종", ["세종특별자치시"], []),
 ]
 
 # 지역: 광역시 7 + 8도(+제주) → 시/군. 구 단위는 나누지 않는다.
@@ -110,7 +111,7 @@ def _region_node():
         for prov_code, prov_label, _aliases, cities in _PROVINCES
     ]
     return {"code": "region", "label": "지역", "group": "travel", "children": [
-        {"code": "metro", "label": "광역시", "children": metro_children},
+        {"code": "metro", "label": "광역시·특별시", "children": metro_children},
         *province_children,
     ]}
 

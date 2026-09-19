@@ -47,6 +47,8 @@ def build_course(experience, places_by_type):
             "name": picked["name"],
             "address": picked.get("address"),
             "distance_km": picked["distance_km"],
+            # 출처를 화면까지 넘긴다. 충남 데이터면 '충남도 제공'을 표시한다.
+            "source": picked.get("source"),
         })
     return items
 

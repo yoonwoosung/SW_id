@@ -98,20 +98,22 @@
                     {% endif %}
                 </div>
 
-                {% if img_debug %}
-                <div class="alert alert-secondary small mb-2 px-3 py-2">
-                    <strong>디버그:</strong> DB값=[{{ img_debug.db_value }}] | 파일존재={{ img_debug.exists }} | 경로={{ img_debug.full_path }}
-                </div>
-                {% endif %}
-                <div class="flex-grow-1 border rounded-lg bg-light d-flex align-items-center justify-content-center" style="min-height:500px;">
+<div class="flex-grow-1 border rounded-lg bg-light d-flex align-items-center justify-content-center" style="min-height:500px;">
                     {% if exp.organic_certification_image %}
-                    <img src="{{ url_for('static', filename='uploads/' + exp.organic_certification_image) }}"
-                        alt="친환경 인증 서류"
-                        style="max-width:100%; max-height:680px; object-fit:contain; border-radius:8px;">
+                        {% set _ext = exp.organic_certification_image.rsplit('.', 1)[-1].lower() %}
+                        {% if _ext == 'pdf' %}
+                        <embed src="{{ url_for('static', filename='uploads/' + exp.organic_certification_image) }}"
+                            type="application/pdf"
+                            style="width:100%; height:680px; border-radius:8px;">
+                        {% else %}
+                        <img src="{{ url_for('static', filename='uploads/' + exp.organic_certification_image) }}"
+                            alt="친환경 인증 서류"
+                            style="max-width:100%; max-height:680px; object-fit:contain; border-radius:8px;">
+                        {% endif %}
                     {% else %}
                     <div class="text-center text-muted p-5">
                         <i class="fa-solid fa-image-slash fa-3x mb-3 text-secondary"></i>
-                        <p class="mb-0">제출된 인증 이미지가 없습니다.</p>
+                        <p class="mb-0">제출된 인증 서류가 없습니다.</p>
                     </div>
                     {% endif %}
                 </div>

@@ -208,6 +208,24 @@ def verify_password():
     return jsonify({'ok': check_password_hash(user.password, password)})
 
 
+def change_password():
+    if 'user_id' not in session:
+        return jsonify({'ok': False, 'msg': '로그인이 필요합니다.'})
+    data = request.json or {}
+    current = data.get('current_password', '')
+    new_pw = data.get('new_password', '')
+    if not current or not new_pw:
+        return jsonify({'ok': False, 'msg': '값을 모두 입력해주세요.'})
+    if len(new_pw) < 6:
+        return jsonify({'ok': False, 'msg': '새 비밀번호는 6자 이상이어야 합니다.'})
+    user = User.query.get(session['user_id'])
+    if not check_password_hash(user.password, current):
+        return jsonify({'ok': False, 'msg': '현재 비밀번호가 올바르지 않습니다.'})
+    user.password = generate_password_hash(new_pw, method='pbkdf2:sha256')
+    db.session.commit()
+    return jsonify({'ok': True})
+
+
 def farmer_update_info():
     if 'user_id' not in session or session.get('role') != 'farmer':
         return redirect(url_for('login_page'))
@@ -307,6 +325,7 @@ def register(app):
     
     # FE 신규 기능 라우트 등록
     app.add_url_rule('/verify_password', 'verify_password', verify_password, methods=['POST'])
+    app.add_url_rule('/change_password', 'change_password', change_password, methods=['POST'])
     app.add_url_rule('/farmer/update_info', 'farmer_update_info', farmer_update_info, methods=['POST'])
     app.add_url_rule('/farmer/farm/add', 'add_farm', add_farm, methods=['POST'])
     app.add_url_rule('/farmer/farm/<int:farm_id>/delete', 'delete_farm', delete_farm, methods=['POST'])

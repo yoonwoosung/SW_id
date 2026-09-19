@@ -121,6 +121,17 @@ def index():
             pagination = query.paginate(page=page, per_page=per_page, error_out=False)
             items_on_page = pagination.items
 
+        elif sort_by == 'surplus':
+            # 과생산만 보기. 정렬이 아니라 목록을 좁히는 탭이지만 sort 파라미터를 같이 쓰면
+            # 탭 UI·페이지네이션·지역/검색어 유지가 그대로 따라온다.
+            # 약관에 동의하지 않은 건 노출하지 않는다(등록 화면과 같은 기준).
+            query = base_query.filter(
+                Experience.is_surplus.is_(True),
+                Experience.surplus_terms_agreed.is_(True),
+            ).order_by(is_closed.asc(), Experience.end_date.asc())
+            pagination = query.paginate(page=page, per_page=per_page, error_out=False)
+            items_on_page = pagination.items
+
         else:
             query = base_query.order_by(is_closed.asc(), Experience.end_date.asc())
             pagination = query.paginate(page=page, per_page=per_page, error_out=False)

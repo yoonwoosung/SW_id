@@ -389,7 +389,8 @@
 
         {# 하단 이전/다음 버튼 영역 #}
         <div class="step-nav-btns">
-            <button type="button" id="btn-next" class="easy-nav-btn easy-submit-button">다음 단계 →</button>
+            <button type="button" id="btn-next" class="easy-nav-btn easy-submit-button" style="width:100%;">다음 단계 →</button>
+            <button type="button" id="btn-prev-nav" class="easy-nav-btn easy-back-button is-hidden" style="width:100%;">← 이전 단계</button>
         </div>
 
     </form>
@@ -516,7 +517,8 @@
 
 .step-nav-btns {
     display: flex;
-    gap: 16px;
+    flex-direction: column;
+    gap: 14px;
     margin-top: 24px;
     width: 100%;
 }
@@ -624,10 +626,15 @@ document.addEventListener('DOMContentLoaded', function () {
         document.getElementById('step-encourage').textContent = ENCOURAGE[n];
         
         const nextBtn = document.getElementById('btn-next');
+        const prevNavBtn = document.getElementById('btn-prev-nav');
 
         if (nextBtn) {
             if (n === total) nextBtn.classList.add('is-hidden');
             else nextBtn.classList.remove('is-hidden');
+        }
+        if (prevNavBtn) {
+            if (n <= 1) prevNavBtn.classList.add('is-hidden');
+            else prevNavBtn.classList.remove('is-hidden');
         }
 
         if (n === total) fillConfirm();
@@ -700,6 +707,10 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     document.getElementById('btn-prev-final').addEventListener('click', function () {
+        if (cur > 1) { cur--; showStep(cur); }
+    });
+
+    document.getElementById('btn-prev-nav').addEventListener('click', function () {
         if (cur > 1) { cur--; showStep(cur); }
     });
 

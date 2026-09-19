@@ -31,8 +31,8 @@ def auto_segments(user):
 _GENDER_BUTTON = {'male': ('남자', '👬'), 'female': ('여자', '👭')}
 # 프로필이 없을 때 채울 기본 버튼(순서대로 부족분을 채움).
 _FALLBACK_BUTTONS = [
-    {'label': '요즘 인기 있는 곳', 'icon': '🔥', 'segment': 'peers'},
-    {'label': '친환경으로 즐기기', 'icon': '🌱', 'segment': 'esg'},
+    {'label': '요즘 인기 있는 곳', 'icon': '', 'segment': 'nearby'},
+    {'label': '친환경으로 즐기기', 'icon': '', 'segment': 'esg'},
 ]
 
 

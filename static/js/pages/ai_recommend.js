@@ -13,7 +13,7 @@
     // segment 값은 URL 파라미터(?segment=...)로도 쓰이므로 키는 바꾸지 않는다.
     // 'peers' 는 화면에서 '가볍게 다녀오기 좋은 코스'로 표시된다(기준: 저렴·가까움).
     var SECTIONS = [
-        { key: 'nearby',       rowId: 'sec-nearby',       segment: null,          esg: false },
+        { key: 'nearby',       rowId: 'sec-nearby',       segment: 'nearby',      esg: false },
         { key: 'peers_age',    rowId: 'sec-peers-age',    segment: 'peers_age',   esg: false },
         { key: 'peers_gender', rowId: 'sec-peers-gender', segment: 'peers_gender',esg: false },
         { key: 'light',        rowId: 'sec-peers',        segment: 'peers',       esg: false },
@@ -219,7 +219,7 @@
     function buildQuery(selected, segment) {
         var qs = new URLSearchParams();
         if (coords.lat != null && coords.lon != null) { qs.set('lat', coords.lat); qs.set('lon', coords.lon); }
-        if (segment) qs.set('segment', segment);
+        if (segment && segment !== 'nearby') qs.set('segment', segment);
         Object.keys(selected || {}).forEach(function (cat) {
             (selected[cat] || []).forEach(function (v) { qs.append('cond_' + cat, v); });
         });

@@ -13,12 +13,12 @@
     // segment 값은 URL 파라미터(?segment=...)로도 쓰이므로 키는 바꾸지 않는다.
     // 'peers' 는 화면에서 '가볍게 다녀오기 좋은 코스'로 표시된다(기준: 저렴·가까움).
     var SECTIONS = [
-        { key: 'nearby',       rowId: 'sec-nearby',       segment: 'nearby',      esg: false },
-        { key: 'peers_age',    rowId: 'sec-peers-age',    segment: 'peers_age',   esg: false },
-        { key: 'peers_gender', rowId: 'sec-peers-gender', segment: 'peers_gender',esg: false },
-        { key: 'light',        rowId: 'sec-peers',        segment: 'peers',       esg: false },
-        { key: 'group',        rowId: 'sec-group',        segment: 'group',       esg: false },
-        { key: 'esg',          rowId: 'sec-esg',          segment: 'esg',         esg: true  }
+        { key: 'nearby',       rowId: 'sec-nearby',       segment: 'nearby',       esg: false, titleId: null },
+        { key: 'peers_age',    rowId: 'sec-peers-age',    segment: 'peers_age',    esg: false, titleId: 'peers-age-title' },
+        { key: 'peers_gender', rowId: 'sec-peers-gender', segment: 'peers_gender', esg: false, titleId: 'peers-gender-title' },
+        { key: 'light',        rowId: 'sec-peers',        segment: 'peers',        esg: false, titleId: 'peers-title' },
+        { key: 'group',        rowId: 'sec-group',        segment: 'group',        esg: false, titleId: null },
+        { key: 'esg',          rowId: 'sec-esg',          segment: 'esg',          esg: true,  titleId: null }
     ];
 
     function esc(s) { var d = document.createElement('div'); d.textContent = (s == null ? '' : String(s)); return d.innerHTML; }
@@ -199,9 +199,20 @@
         var seg = btn.dataset.segment;
         var target = SECTIONS.filter(function (s) { return (s.segment || '') === (seg || ''); })[0];
         if (!target) return;
-        // 해당 섹션으로 스크롤 이동 (헤더 높이 오프셋 보정)
+        // 섹션 제목을 버튼 라벨로 변경 (아이콘 뒤 텍스트 노드만 교체)
+        if (target.titleId) {
+            var titleEl = $(target.titleId);
+            if (titleEl) {
+                var nodes = titleEl.childNodes;
+                for (var ni = nodes.length - 1; ni >= 0; ni--) {
+                    if (nodes[ni].nodeType === 3) { nodes[ni].textContent = ' ' + btn.dataset.label; break; }
+                }
+            }
+        }
+        // 해당 섹션으로 스크롤 이동 (헤더 + 여유 공간 오프셋 보정)
         var sec = $(target.rowId).closest('.fl-sec');
-        var offset = (document.querySelector('.fl-header') || document.querySelector('nav') || { offsetHeight: 70 }).offsetHeight + 12;
+        var headerEl = document.querySelector('.fl-header') || document.querySelector('nav') || document.querySelector('header');
+        var offset = (headerEl ? headerEl.offsetHeight : 70) + 80;
         var top = sec.getBoundingClientRect().top + window.pageYOffset - offset;
         window.scrollTo({ top: top, behavior: 'smooth' });
     });

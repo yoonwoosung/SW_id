@@ -1,8 +1,6 @@
 # models/experience.py — 체험(Experience) 엔티티. 농장주가 등록하는 농촌체험 상품.
 from datetime import date
-
 from models.base import db
-
 
 class Experience(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -19,7 +17,7 @@ class Experience(db.Model):
     lat = db.Column(db.Float, default=36.8583)
     lng = db.Column(db.Float, default=127.2943)
     farmer_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    farm_id = db.Column(db.Integer, db.ForeignKey('farm.id'), nullable=True)  # B안: Experience→Farm→User
+    farm_id = db.Column(db.Integer, db.ForeignKey('farm.id'), nullable=True)
     notes = db.Column(db.Text, nullable=True)
     includes = db.Column(db.Text, nullable=True)
     excludes = db.Column(db.Text, nullable=True)
@@ -36,25 +34,26 @@ class Experience(db.Model):
     has_parking = db.Column(db.Boolean, default=False, nullable=False)
     organic_certification_image = db.Column(db.String(255), nullable=True)
     organic_certification_type = db.Column(db.String(100), nullable=True)
-    # 세분화 카테고리 채점용(파트1). 값 없으면 해당 조건은 미충족으로 처리.
-    activity_type = db.Column(db.String(50), nullable=True)          # activity 코드(harvest, kayak, ...)
-    pet_allowed = db.Column(db.Boolean, default=False, nullable=False)  # 반려견 동반 가능 여부
-    pet_max_weight_kg = db.Column(db.Integer, nullable=True)         # 허용하는 반려견 최대 몸무게(kg)
-    has_wifi = db.Column(db.Boolean, default=False, nullable=False)  # 와이파이 제공 여부
-    barrier_free = db.Column(db.Boolean, default=False, nullable=False)  # 무장애(휠체어 등) 확인 여부 — 코스 무장애 로고용
+    activity_type = db.Column(db.String(50), nullable=True)
+    pet_allowed = db.Column(db.Boolean, default=False, nullable=False)
+    pet_max_weight_kg = db.Column(db.Integer, nullable=True)
+    has_wifi = db.Column(db.Boolean, default=False, nullable=False)
+    barrier_free = db.Column(db.Boolean, default=False, nullable=False)
 
     # --- 과생산(잉여) 수확 체험 ---
-    # 별도 커머스가 아니라 체험의 한 종류다. 방문객이 직접 수확·운반하므로 물류비가 없다.
-    # 판매가는 기존 cost 를 그대로 쓴다(결제 흐름 미변경).
-    # 남은 수량은 컬럼으로 두지 않고 surplus_qty_total - surplus_qty_taken 으로 계산한다.
-    is_surplus = db.Column(db.Boolean, default=False, nullable=False)      # 과생산 체험 여부
-    surplus_terms_agreed = db.Column(db.Boolean, default=False, nullable=False)  # 20% 할인 약관 동의
-    list_price = db.Column(db.Integer, nullable=True)                     # 정가(1인). cost 가 할인가
-    surplus_qty_total = db.Column(db.Integer, nullable=True)              # 총 수량
-    surplus_qty_taken = db.Column(db.Integer, default=0, nullable=False)  # 예약된 누적 수량
-    surplus_per_person = db.Column(db.Integer, nullable=True)             # 1인당 수확량(단위는 surplus_unit)
-    surplus_unit = db.Column(db.String(20), default='kg', nullable=True)  # kg·박스·구좌
-    surplus_origin = db.Column(db.String(255), nullable=True)             # 원산지 표시(시도+시군구)
+    is_surplus = db.Column(db.Boolean, default=False, nullable=False)
+    surplus_terms_agreed = db.Column(db.Boolean, default=False, nullable=False)
+    list_price = db.Column(db.Integer, nullable=True)
+    surplus_qty_total = db.Column(db.Integer, nullable=True)
+    surplus_qty_taken = db.Column(db.Integer, default=0, nullable=False)
+    surplus_per_person = db.Column(db.Integer, nullable=True)
+    surplus_unit = db.Column(db.String(20), default='kg', nullable=True)
+    surplus_origin = db.Column(db.String(255), nullable=True)
+
+    # 👇 --- 새로 추가된 레시피 전수 기능 --- 👇
+    has_recipe = db.Column(db.Boolean, default=False, nullable=False) # 레시피 전수 여부
+    recipe_text = db.Column(db.Text, nullable=True)                   # 작성된 레시피 내용
+    recipe_image = db.Column(db.String(255), nullable=True)           # 업로드된 레시피 사진 경로
 
     farmer = db.relationship('User', back_populates='experiences')
     farm = db.relationship('Farm', backref='experiences')

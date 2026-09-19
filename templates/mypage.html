@@ -2,6 +2,9 @@
 {% block page_class %}page-mypage{% endblock %}
 
 {% block head %}
+<!-- 💡 레시피 PDF 변환을 위한 라이브러리 추가 -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
 /* ── 뱃지 ── */
 .mp-bdg { display:inline-block; font-size:.72rem; font-weight:800; border-radius:999px; padding:3px 10px; }
@@ -73,7 +76,6 @@
 
     {# ══ 사이드바 ══ #}
     <aside class="fl-sidebar">
-
       {# 프로필 카드 #}
       <div class="fl-card">
         <div class="fl-card-body fl-side-profile">
@@ -118,12 +120,10 @@
       <a href="{{ url_for('logout') }}" class="fl-btn fl-btn-outline" style="width:100%;justify-content:center;">
         <i class="fa-solid fa-arrow-right-from-bracket"></i> 로그아웃
       </a>
-
     </aside>
 
     {# ══ 메인 ══ #}
     <main style="display:flex;flex-direction:column;gap:var(--fl-s4);">
-
       {# ── 예약 내역 ── #}
       <div id="panel-res" class="mp-panel" style="display:flex;flex-direction:column;gap:var(--fl-s4);">
         <section class="fl-card"><div class="fl-card-body" style="padding-bottom:0;">
@@ -132,7 +132,8 @@
         {% if reservation_cards %}
           <div class="mp-res-list" style="padding:0 20px 16px;">
             {% for r in reservation_cards %}
-            <article class="mp-res-card" data-state="{{ r.state }}">
+            <!-- 💡 data-exp-id 속성 추가 (API 통신용) -->
+            <article class="mp-res-card" data-state="{{ r.state }}" data-exp-id="{{ r.exp_id }}">
               {% if r.image %}
                 <img class="mp-res-thumb" src="{{ r.image if r.image.startswith('http') else url_for('static', filename='uploads/' + r.image) }}" alt="{{ r.crop }}">
               {% else %}
@@ -202,8 +203,33 @@
           <div style="margin-top:16px;" id="mp-point-logs"><p class="mp-empty">불러오는 중…</p></div>
         </div></section>
       </div>
-
     </main>
+  </div>
+</div>
+
+<!-- 💡 레시피 다운로드 모달 💡 -->
+<div id="recipeModalOverlay" class="modal-overlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999; align-items:center; justify-content:center;">
+  <div class="modal-content" style="background:#fff; padding:20px; border-radius:12px; max-width:500px; width:90%; position:relative; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
+      <button onclick="document.getElementById('recipeModalOverlay').style.display='none'" style="position:absolute; right:15px; top:15px; border:none; background:none; font-size:1.5rem; cursor:pointer;">&times;</button>
+      <h3 id="recipeModalTitle" style="margin-bottom:15px; font-weight:bold; color:var(--fl-green-700);"></h3>
+      
+      <!-- PDF로 변환될 영역 -->
+      <div id="recipePrintArea" style="padding:20px; background:#fff3e0; border:2px dashed #ff9800; border-radius:8px; text-align:center;">
+          <h2 id="recipePrintCrop" style="color:#e65100; margin-bottom:20px; font-weight:900;"></h2>
+          <div id="recipePrintImageContainer" style="margin-bottom:15px; display:none;">
+              <img id="recipePrintImage" src="" style="max-width:100%; border-radius:8px;">
+          </div>
+          <p id="recipePrintText" style="white-space:pre-wrap; text-align:left; line-height:1.6; color:#333; font-size:1.1rem;"></p>
+          <div style="margin-top:30px; color:#ff9800; font-weight:bold; font-size:0.9rem;">
+              FarmLink 특별 레시피 <i class="fa-solid fa-leaf"></i>
+          </div>
+      </div>
+
+      <div style="margin-top:20px; text-align:center;">
+          <button type="button" class="fl-btn fl-btn-primary" onclick="downloadRecipePDF()" style="width:100%; font-size:1.1rem; padding:12px;">
+              <i class="fa-solid fa-download"></i> PDF로 저장하기
+          </button>
+      </div>
   </div>
 </div>
 {% endblock %}
@@ -296,7 +322,6 @@
     }).catch(function () {});
   }
 
-  /* ── 사이드바 숫자 초기 로드 ── */
   fetch('/api/users/me/points').then(function (r) { return r.json(); }).then(function (res) {
     if (res.success) setText('mp-side-points', Number(res.data.balance || 0).toLocaleString() + 'P');
   }).catch(function () {});
@@ -304,5 +329,73 @@
     if (res.success) setText('mp-side-wish', (res.data.wishlists || []).length);
   }).catch(function () {});
 })();
+
+// 💡 체험 상태가 '완료'인 카드들을 찾아서, API를 찔러보고 레시피가 있다면 버튼을 자동 생성!
+document.addEventListener('DOMContentLoaded', function () {
+    const completedCards = document.querySelectorAll('.mp-res-card[data-state="completed"]');
+    
+    completedCards.forEach(card => {
+        const expId = card.getAttribute('data-exp-id');
+        const actionsDiv = card.querySelector('.mp-res-actions');
+        
+        // farmer.py에 만든 레시피 확인 API 호출
+        fetch('/api/experiences/' + expId + '/recipe')
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    // 성공했다면(레시피가 등록되어 있다면) 버튼을 만들어서 메뉴 맨 위에 끼워넣기
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.className = 'fl-btn fl-btn-sm';
+                    btn.style.cssText = 'background:#ff9800; color:#fff; margin-bottom:4px;';
+                    btn.innerHTML = '<i class="fa-solid fa-file-pdf"></i> 레시피 다운';
+                    btn.onclick = () => openRecipeModal(data);
+                    
+                    actionsDiv.insertBefore(btn, actionsDiv.firstChild);
+                }
+            })
+            .catch(e => console.error("레시피 조회 오류:", e));
+    });
+});
+
+// 💡 레시피 모달창 열기 및 데이터 뿌려주기
+let currentRecipeCrop = '';
+function openRecipeModal(data) {
+    currentRecipeCrop = data.crop;
+    document.getElementById('recipeModalTitle').innerText = data.crop + ' 레시피';
+    document.getElementById('recipePrintCrop').innerText = data.crop + ' 맛있는 비법 👩‍🍳';
+    
+    const imgContainer = document.getElementById('recipePrintImageContainer');
+    const imgEl = document.getElementById('recipePrintImage');
+    
+    if (data.recipe_image) {
+        imgEl.src = '/static/uploads/' + data.recipe_image;
+        imgContainer.style.display = 'block';
+    } else {
+        imgContainer.style.display = 'none';
+        imgEl.src = '';
+    }
+    
+    document.getElementById('recipePrintText').innerText = data.recipe_text || '';
+    document.getElementById('recipeModalOverlay').style.display = 'flex';
+}
+
+// 💡 표시된 모달 화면을 그대로 캡처해서 PDF로 저장 (html2canvas + jsPDF)
+function downloadRecipePDF() {
+    const printArea = document.getElementById('recipePrintArea');
+    
+    // 모달 내용 캡처
+    html2canvas(printArea, { scale: 2, useCORS: true }).then(canvas => {
+        const imgData = canvas.toDataURL('image/png');
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF('p', 'mm', 'a4'); // 세로(p), 밀리미터(mm), A4용지 기준
+        
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+        
+        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+        pdf.save(currentRecipeCrop + '_레시피.pdf'); // 파일 이름 자동 설정
+    });
+}
 </script>
 {% endblock %}

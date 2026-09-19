@@ -185,7 +185,7 @@
                         </div>
 
                         <div id="organic-cert-fields-easy"
-                            style="display: {% if form_data.get('is_organic') or (item and item.pesticide_free) %}block{% else %}none{% endif %}; margin-top:16px; padding:16px; background:var(--fl-green-100); border-radius:12px; border-left:4px solid var(--green-dark, var(--fl-green-700));">
+                            style="display: {% if form_data.get('is_organic') or (item and item.pesticide_free) %}block{% else %}none{% endif %}; margin-top:16px; margin-bottom: 12px; padding:16px; background:var(--fl-green-100); border-radius:12px; border-left:4px solid var(--green-dark, var(--fl-green-700));">
                             <div class="form-group">
                                 <label class="easy-form-label-lg" for="organic_certification_type">친환경 인증 종류</label>
                                 <input type="text" class="form-control" id="organic_certification_type"
@@ -202,6 +202,31 @@
                                 {% endif %}
                             </div>
                         </div>
+                        
+                        <!-- 👇 레시피 전수 추가 👇 -->
+                        <div class="custom-option-card" onclick="toggleCheckbox('has_recipe')">
+                            <span class="option-title">🍳 나만의 손글씨 레시피 전수</span>
+                            <input type="checkbox" class="custom-large-check" id="has_recipe" name="has_recipe"
+                                {% if form_data.get('has_recipe') or (item and item.has_recipe) %}checked{% endif %} onclick="event.stopPropagation()">
+                        </div>
+
+                        <div id="recipe-fields-easy"
+                            style="display: {% if form_data.get('has_recipe') or (item and item.has_recipe) %}block{% else %}none{% endif %}; margin-top:16px; padding:16px; background:#fff3e0; border-radius:12px; border-left:4px solid #ff9800;">
+                            <p class="text-muted small mb-3">체험을 완료한 손님에게만 특별한 레시피를 선물합니다! <b>글이나 사진 중 하나를 반드시 남겨주세요.</b></p>
+                            <div class="form-group">
+                                <label class="easy-form-label-lg" for="recipe_text">레시피 수기 작성</label>
+                                <textarea class="form-control" id="recipe_text" name="recipe_text" rows="4"
+                                    placeholder="예) 수확한 작물로 맛있는 요리를 만드는 비법을 적어주세요.">{{ form_data.get('recipe_text') or (item.recipe_text if item else '') }}</textarea>
+                            </div>
+                            <div class="form-group mb-0">
+                                <label class="easy-form-label-lg" for="recipe_image">레시피 손글씨 사진</label>
+                                <input type="file" class="form-control-file" id="recipe_image" name="recipe_image" accept="image/*">
+                                {% if item and item.recipe_image %}
+                                <small class="form-text text-muted" id="existing_recipe_img">현재 파일: {{ item.recipe_image }}</small>
+                                {% endif %}
+                            </div>
+                        </div>
+
                     </div>
                 </div>
             </section>
@@ -640,7 +665,7 @@ document.addEventListener('DOMContentLoaded', function () {
         document.getElementById('confirm-price').textContent = get('price') ? Number(get('price')).toLocaleString() + '원' : '—';
     }
 
-    // 단계별 필수 항목 검증
+    // 단계별 필수 항목 검증 (👇 1단계에 레시피 검증 추가 👇)
     function validateStep(n) {
         if (n === 1) {
             const crop = document.getElementById('crop').value.trim();
@@ -654,6 +679,20 @@ document.addEventListener('DOMContentLoaded', function () {
                 return false; 
             }
             if (!phone) { alert('농장 연락처를 입력해 주세요.'); document.getElementById('phone').focus(); return false; }
+
+            // 💡 레시피 전수 유효성 검사 (글이나 사진 중 하나는 필수)
+            const hasRecipe = document.getElementById('has_recipe');
+            if (hasRecipe && hasRecipe.checked) {
+                const recipeText = document.getElementById('recipe_text').value.trim();
+                const recipeImgCount = document.getElementById('recipe_image').files.length;
+                const existingImg = document.getElementById('existing_recipe_img');
+
+                if (!recipeText && recipeImgCount === 0 && !existingImg) {
+                    alert('레시피 전수를 선택하셨습니다. 수기로 요리 비법을 작성하거나 손글씨 사진을 첨부해 주세요!');
+                    document.getElementById('recipe_text').focus();
+                    return false;
+                }
+            }
         }
         if (n === 2) {
             const ds = document.getElementById('duration_start').value;
@@ -695,12 +734,21 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
-    // ===== 3. 친환경 인증 토글 =====
+    // ===== 3. 토글 항목 처리 (친환경 & 레시피) =====
     const organicCb = document.getElementById('is_organic');
     const certFields = document.getElementById('organic-cert-fields-easy');
     if (organicCb && certFields) {
         organicCb.addEventListener('change', function () {
             certFields.style.display = this.checked ? 'block' : 'none';
+        });
+    }
+    
+    // 👇 레시피 입력창 토글 처리 추가 👇
+    const recipeCb = document.getElementById('has_recipe');
+    const recipeFields = document.getElementById('recipe-fields-easy');
+    if (recipeCb && recipeFields) {
+        recipeCb.addEventListener('change', function () {
+            recipeFields.style.display = this.checked ? 'block' : 'none';
         });
     }
 
@@ -836,7 +884,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 });
 
-// --- 과생산: 할인율·정원 즉시 표시 (서버가 같은 규칙으로 다시 검증한다) ---
+// --- 과생산: 할인율·정원 즉시 표시 ---
 function flUpdateSurplus() {
     var lp = document.getElementById('list_price');
     var priceEl = document.getElementById('price');
@@ -875,6 +923,5 @@ document.addEventListener('DOMContentLoaded', function () {
     if (priceEl) priceEl.addEventListener('input', flUpdateSurplus);
     flUpdateSurplus();
 });
-
 </script>
 {% endblock %}

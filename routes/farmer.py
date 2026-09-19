@@ -182,7 +182,6 @@ def farmer_easy_mode():
             'crops': list(crops),
             'total_reviews': len(all_farm_reviews),
             'avg_rating': avg_farm_rating,
-            # DB 캐시 우선 매핑 (새로고침 버튼 클릭 시 Gemini 결과가 여기에 들어옴)
             'strengths_summary': cached_strengths or _build_summary(s_list, True),
             'improvements_summary': cached_improvements or _build_summary(i_list, False),
             'satisfaction_rate': cached_sat_rate if cached_sat_rate is not None else satisfaction_rate,
@@ -269,6 +268,7 @@ def easy_create_experience():
         if cap_error:
             flash(cap_error, "warning")
             return render_template('easy_create_experience.html', item=None, approved_farms=approved_farms, form_data=request.form)
+            
         is_organic = 'is_organic' in request.form
         cert_filename = None
         cert_type = None
@@ -283,6 +283,18 @@ def easy_create_experience():
             else:
                 flash("친환경 농법 사용 시 인증서 이미지를 반드시 등록해야 합니다.", "warning")
                 return render_template('easy_create_experience.html', item=None, approved_farms=approved_farms, form_data=request.form)
+
+        # 👇 레시피 전수 업로드 처리 로직 👇
+        has_recipe = 'has_recipe' in request.form
+        recipe_text = request.form.get('recipe_text')
+        recipe_image_filename = None
+
+        if has_recipe:
+            recipe_file = request.files.get('recipe_image')
+            if recipe_file and recipe_file.filename and allowed_file(recipe_file.filename):
+                ext = recipe_file.filename.rsplit('.', 1)[1].lower()
+                recipe_image_filename = f"recipe_{session['user_id']}_{uuid.uuid4().hex}.{ext}"
+                recipe_file.save(os.path.join(current_app.config['UPLOAD_FOLDER'], recipe_image_filename))
 
         full_address = f"{selected_farm.address} {selected_farm.address_detail or ''}".strip()
 
@@ -310,6 +322,9 @@ def easy_create_experience():
             pesticide_free=is_organic,
             organic_certification_type=cert_type,
             organic_certification_image=cert_filename,
+            has_recipe=has_recipe,                 # 레시피 데이터 연결
+            recipe_text=recipe_text,               # 레시피 글
+            recipe_image=recipe_image_filename,    # 레시피 사진
             lat=selected_farm.lat,
             lng=selected_farm.lng,
             status='recruiting'
@@ -405,6 +420,7 @@ def easy_modify_experience(item_id):
         if cap_error:
             flash(cap_error, "warning")
             return render_template('easy_create_experience.html', item=item, approved_farms=approved_farms, form_data=request.form)
+        
         is_organic = 'is_organic' in request.form
         if is_organic:
             item.pesticide_free = True
@@ -423,6 +439,20 @@ def easy_modify_experience(item_id):
             item.pesticide_free = False
             item.organic_certification_type = None
             item.organic_certification_image = None
+
+        # 👇 레시피 수정 처리 로직 👇
+        item.has_recipe = 'has_recipe' in request.form
+        if item.has_recipe:
+            item.recipe_text = request.form.get('recipe_text')
+            recipe_file = request.files.get('recipe_image')
+            if recipe_file and recipe_file.filename and allowed_file(recipe_file.filename):
+                ext = recipe_file.filename.rsplit('.', 1)[1].lower()
+                new_recipe_filename = f"recipe_{session['user_id']}_{uuid.uuid4().hex}.{ext}"
+                recipe_file.save(os.path.join(current_app.config['UPLOAD_FOLDER'], new_recipe_filename))
+                item.recipe_image = new_recipe_filename
+        else:
+            item.recipe_text = None
+            item.recipe_image = None
 
         full_address = f"{selected_farm.address} {selected_farm.address_detail or ''}".strip()
         item.farm_id = selected_farm.id
@@ -542,6 +572,20 @@ def close_experience(item_id):
     return redirect(url_for('farmer_easy_mode', tab='operations'))
 
 
+# 👇 마이페이지에서 레시피 데이터를 가져오기 위한 API 👇
+def get_recipe_api(item_id):
+    exp = Experience.query.get_or_404(item_id)
+    if not exp.has_recipe:
+        return jsonify({"success": False, "message": "등록된 레시피가 없습니다."}), 404
+        
+    return jsonify({
+        "success": True,
+        "crop": exp.crop,
+        "recipe_text": exp.recipe_text,
+        "recipe_image": exp.recipe_image
+    })
+
+
 def register(app):
     app.add_url_rule('/easy_mode', 'farmer_easy_mode', farmer_easy_mode)
     app.add_url_rule('/easy_mode/edit_bio', 'easy_edit_bio', easy_edit_bio, methods=['GET', 'POST'])
@@ -551,3 +595,5 @@ def register(app):
     app.add_url_rule('/easy_mode/reservations', 'easy_reservations', easy_reservations)
     app.add_url_rule('/easy_mode/communication', 'easy_communication', easy_communication)
     app.add_url_rule('/easy_mode/close_experience/<int:item_id>', 'close_experience', close_experience, methods=['POST'])
+    # 마이페이지 레시피 요청 API 라우트 등록
+    app.add_url_rule('/api/experiences/<int:item_id>/recipe', 'get_recipe_api', get_recipe_api)

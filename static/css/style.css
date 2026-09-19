@@ -1320,9 +1320,8 @@ a svg, a i { pointer-events: none; }
     align-items: flex-start;
     gap: 10px;
     padding: 10px 0;
-    border-bottom: 1px solid #f0f0f0;
 }
-.ai-timeline-item:last-child { border-bottom: none; }
+
 .ai-time { font-size: 0.76rem; font-weight: 700; color: #666; min-width: 40px; padding-top: 2px; }
 .ai-dot { width: 9px; height: 9px; background: var(--green-mid); border-radius: 50%; margin-top: 4px; flex-shrink: 0; }
 .ai-timeline-body { flex: 1; }

@@ -80,7 +80,7 @@
 .fl-panel-body { flex: 1 1 auto; min-width: 0; min-height: 0; overflow-y: auto; padding-right: 4px; }
 .fl-catpanel[hidden] { display: none; }
 .fl-grid {
-    display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr));
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(112px, 1fr));
     gap: 6px; margin: 4px 0;
 }
 .fl-cell {

@@ -282,6 +282,7 @@ def add_farm():
         is_organic=is_organic,
         organic_cert_image=organic_img_name,
         organic_cert_type=organic_cert_type,
+        organic_cert_status='PENDING' if is_organic else None,
     )
     db.session.add(farm)
 

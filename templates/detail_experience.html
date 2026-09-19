@@ -193,7 +193,12 @@
         <!-- 2. 핵심 정보 -->
         <div class="detail-info-card">
             <div class="detail-info-badges">
-                {% if item.pesticide_free %}<span class="detail-badge badge-eco"><img src="{{ url_for('static', filename='icons/icon-eco-friendly.svg') }}" class="fl-icon-sm" alt=""> 친환경</span>{% endif %}
+                {% if item.pesticide_free %}
+                <span class="detail-badge badge-eco">
+                    <img src="{{ url_for('static', filename='icons/icon-eco-friendly.svg') }}" class="fl-icon-sm" alt=""> 친환경
+                    {% if item.farm and item.farm.organic_cert_status == 'APPROVED' %}<span class="badge badge-success ml-1" style="font-size:0.7rem;">인증완료</span>{% endif %}
+                </span>
+                {% endif %}
                 {% if item.has_parking %}<span class="detail-badge badge-parking"><i data-lucide="square-parking"></i> 주차 가능</span>{% endif %}
                 {% if item.barrier_free %}<span class="detail-badge badge-family"><i data-lucide="accessibility"></i> 무장애</span>{% endif %}
                 {% if item.pet_allowed %}<span class="detail-badge badge-family"><i data-lucide="dog"></i> 반려견 동반{% if item.pet_max_weight_kg %} · {{ item.pet_max_weight_kg }}kg까지{% endif %}</span>{% endif %}
@@ -439,7 +444,13 @@
             {% endif %}
             <div class="detail-booking-info">
                 <div class="detail-booking-info-row"><img src="{{ url_for('static', filename='icons/icon-map-location.svg') }}" class="fl-icon-sm" alt=""> <span>{{ item.address_detail }}</span></div>
-                <div class="detail-booking-info-row"><img src="{{ url_for('static', filename='icons/icon-eco-friendly.svg') }}" class="fl-icon-sm" alt=""> <span>친환경: {{ "예" if item.pesticide_free else "아니오" }}</span></div>
+                <div class="detail-booking-info-row"><img src="{{ url_for('static', filename='icons/icon-eco-friendly.svg') }}" class="fl-icon-sm" alt="">
+                    <span>친환경:
+                        {% if item.pesticide_free %}
+                            예{% if item.farm and item.farm.organic_cert_status == 'APPROVED' %} (인증완료){% endif %}
+                        {% else %}아니오{% endif %}
+                    </span>
+                </div>
                 <div class="detail-booking-info-row"><i data-lucide="square-parking"></i> <span>주차: {{ "가능" if item.has_parking else "불가" }}</span></div>
                 <div class="detail-booking-info-row"><i data-lucide="dog"></i> <span>반려견: {% if item.pet_allowed %}동반 가능{% if item.pet_max_weight_kg %} (최대 {{ item.pet_max_weight_kg }}kg){% endif %}{% else %}동반 불가{% endif %}</span></div>
                 {% if item.is_surplus %}

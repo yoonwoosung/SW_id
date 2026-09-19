@@ -80,8 +80,11 @@ def delete_notification(notification_id):
 
 
 def upload_profile():
-    if 'user_id' not in session: return redirect(url_for('login_page'))
+    is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+    if 'user_id' not in session:
+        return (jsonify({'ok': False, 'msg': '로그인이 필요합니다.'}), 401) if is_ajax else redirect(url_for('login_page'))
     if 'profile_pic' not in request.files or request.files['profile_pic'].filename == '':
+        if is_ajax: return jsonify({'ok': False, 'msg': '선택된 파일이 없습니다.'})
         flash('선택된 파일이 없습니다.', 'warning')
         return redirect(url_for('my_info'))
     file = request.files['profile_pic']
@@ -92,12 +95,14 @@ def upload_profile():
         img = Image.open(file.stream)
         img.thumbnail((400, 400))
         img.save(filepath)
-
         user = User.query.get(session['user_id'])
         user.profile_image = filename
         db.session.commit()
+        if is_ajax:
+            return jsonify({'ok': True, 'url': '/static/uploads/' + filename})
         flash('프로필 사진이 변경되었습니다.', 'success')
     else:
+        if is_ajax: return jsonify({'ok': False, 'msg': '허용되지 않는 파일 형식입니다.'})
         flash('허용되지 않는 파일 형식입니다.', 'danger')
     return redirect(url_for('my_info'))
 

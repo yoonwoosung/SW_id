@@ -101,6 +101,16 @@
 .mi-tl-name { font-weight:700; font-size:.97rem; }
 .mi-tl-sub { font-size:.83rem; color:var(--fl-text-muted); margin-top:2px; }
 
+/* ── 아바타 변경 ── */
+.mi-avatar-wrap { position:relative; width:80px; height:80px; cursor:pointer; }
+.mi-avatar-wrap .fl-avatar { width:80px; height:80px; border-radius:50%; object-fit:cover; display:block; }
+.mi-avatar-overlay {
+  position:absolute; inset:0; border-radius:50%;
+  background:rgba(0,0,0,0.42); display:flex; align-items:center; justify-content:center;
+  opacity:0; transition:opacity .18s; color:#fff; font-size:.75rem; flex-direction:column; gap:3px;
+}
+.mi-avatar-wrap:hover .mi-avatar-overlay { opacity:1; }
+
 /* ── 사이드바 프로필 스탯 ── */
 .mi-side-stats { display:flex; gap:0; border-top:1px solid var(--fl-border); margin-top:10px; width:100%; }
 .mi-side-stat { flex:1; text-align:center; padding:10px 4px; border-right:1px solid var(--fl-border); }
@@ -168,12 +178,14 @@
       {# 프로필 카드 #}
       <div class="fl-card">
         <div class="fl-card-body fl-side-profile">
-          {% if user.profile_image and user.profile_image not in ['shd.png', 'default.png'] %}
-            <img class="fl-avatar" src="{{ url_for('static', filename='uploads/' + user.profile_image) }}" alt="{{ user.nickname }}"
-                 onerror="this.onerror=null;this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 80 80\'%3E%3Ccircle cx=\'40\' cy=\'40\' r=\'40\' fill=\'%23d8f3dc\'/%3E%3Ccircle cx=\'40\' cy=\'32\' r=\'14\' fill=\'%232d6a4f\'/%3E%3Cellipse cx=\'40\' cy=\'68\' rx=\'22\' ry=\'16\' fill=\'%232d6a4f\'/%3E%3C/svg%3E';">
-          {% else %}
-            <img class="fl-avatar" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 80 80'%3E%3Ccircle cx='40' cy='40' r='40' fill='%23d8f3dc'/%3E%3Ccircle cx='40' cy='32' r='14' fill='%232d6a4f'/%3E%3Cellipse cx='40' cy='68' rx='22' ry='16' fill='%232d6a4f'/%3E%3C/svg%3E" alt="{{ user.nickname }}">
-          {% endif %}
+          <div class="mi-avatar-wrap" id="mi-avatar-wrap" title="프로필 사진 변경">
+            <img class="fl-avatar" id="mi-avatar-img"
+              src="{% if user.profile_image and user.profile_image not in ['shd.png','default.png'] %}{{ url_for('static', filename='uploads/' + user.profile_image) }}{% else %}data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 80 80'%3E%3Ccircle cx='40' cy='40' r='40' fill='%23d8f3dc'/%3E%3Ccircle cx='40' cy='32' r='14' fill='%232d6a4f'/%3E%3Cellipse cx='40' cy='68' rx='22' ry='16' fill='%232d6a4f'/%3E%3C/svg%3E{% endif %}"
+              alt="{{ user.nickname }}"
+              onerror="this.onerror=null;this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 80 80\'%3E%3Ccircle cx=\'40\' cy=\'40\' r=\'40\' fill=\'%23d8f3dc\'/%3E%3Ccircle cx=\'40\' cy=\'32\' r=\'14\' fill=\'%232d6a4f\'/%3E%3Cellipse cx=\'40\' cy=\'68\' rx=\'22\' ry=\'16\' fill=\'%232d6a4f\'/%3E%3C/svg%3E';">
+            <div class="mi-avatar-overlay"><i class="fa-solid fa-camera"></i><span>변경</span></div>
+          </div>
+          <input type="file" id="mi-avatar-input" accept="image/*" style="display:none;">
           <strong>{{ user.nickname }}</strong>
           <div class="fl-muted fl-meta">일반 회원</div>
           <div class="mi-side-stats">
@@ -483,6 +495,33 @@
 {% block scripts %}
 <script>
 var AI_REC_URL = "{{ url_for('ai_recommend_page') }}";
+
+/* ── 프로필 사진 변경 ── */
+(function () {
+  var wrap  = document.getElementById('mi-avatar-wrap');
+  var input = document.getElementById('mi-avatar-input');
+  var img   = document.getElementById('mi-avatar-img');
+  if (!wrap || !input || !img) return;
+
+  wrap.addEventListener('click', function () { input.click(); });
+  input.addEventListener('change', function () {
+    if (!input.files || !input.files[0]) return;
+    var fd = new FormData();
+    fd.append('profile_pic', input.files[0]);
+    fetch('/upload_profile', {
+      method: 'POST',
+      headers: { 'X-Requested-With': 'XMLHttpRequest' },
+      body: fd
+    }).then(function (r) { return r.json(); }).then(function (res) {
+      if (res.ok) {
+        img.src = res.url + '?t=' + Date.now();
+      } else {
+        alert(res.msg || '업로드에 실패했습니다.');
+      }
+    }).catch(function () { alert('오류가 발생했습니다.'); });
+    input.value = '';
+  });
+})();
 
 function openCourseModal(expId, cropName) {
     var modal = document.getElementById('mi-course-modal');

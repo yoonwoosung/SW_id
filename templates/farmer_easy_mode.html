@@ -11,13 +11,23 @@
         {# ===== 사이드바 ===== #}
         <aside class="fl-sidebar">
             <div class="fl-card"><div class="fl-card-body fl-side-profile">
-                {% if user.farm_image %}
-                <img class="fl-avatar" src="{{ url_for('static', filename='uploads/' + user.farm_image) }}" alt="{{ user.nickname }}">
-                {% elif user.profile_image %}
-                <img class="fl-avatar" src="{{ url_for('static', filename='uploads/' + user.profile_image) }}" alt="{{ user.nickname }}">
-                {% else %}
-                <img class="fl-avatar" src="{{ url_for('static', filename='images/no_image.svg') }}" alt="{{ user.nickname }}">
-                {% endif %}
+                <style>
+                .em-avatar-wrap { position:relative; width:80px; height:80px; cursor:pointer; }
+                .em-avatar-wrap .fl-avatar { width:80px; height:80px; border-radius:50%; object-fit:cover; display:block; }
+                .em-avatar-overlay {
+                  position:absolute; inset:0; border-radius:50%;
+                  background:rgba(0,0,0,0.42); display:flex; align-items:center; justify-content:center;
+                  opacity:0; transition:opacity .18s; color:#fff; font-size:.75rem; flex-direction:column; gap:3px;
+                }
+                .em-avatar-wrap:hover .em-avatar-overlay { opacity:1; }
+                </style>
+                <div class="em-avatar-wrap" id="em-avatar-wrap" title="프로필 사진 변경">
+                  <img class="fl-avatar" id="em-avatar-img"
+                    src="{% if user.profile_image %}{{ url_for('static', filename='uploads/' + user.profile_image) }}{% elif user.farm_image %}{{ url_for('static', filename='uploads/' + user.farm_image) }}{% else %}{{ url_for('static', filename='images/no_image.svg') }}{% endif %}"
+                    alt="{{ user.nickname }}">
+                  <div class="em-avatar-overlay"><i class="fa-solid fa-camera"></i><span>변경</span></div>
+                </div>
+                <input type="file" id="em-avatar-input" accept="image/*" style="display:none;">
                 <strong>{{ user.nickname }}</strong>
                 <div class="fl-muted fl-meta">{{ (user.farm_address or '지역 미등록').split(' ')[:2] | join(' ') }}</div>
             </div></div>
@@ -501,6 +511,29 @@
 
 {% block scripts %}
 <script>
+/* ── 프로필 사진 변경 ── */
+(function () {
+  var wrap  = document.getElementById('em-avatar-wrap');
+  var input = document.getElementById('em-avatar-input');
+  var img   = document.getElementById('em-avatar-img');
+  if (!wrap || !input || !img) return;
+  wrap.addEventListener('click', function () { input.click(); });
+  input.addEventListener('change', function () {
+    if (!input.files || !input.files[0]) return;
+    var fd = new FormData();
+    fd.append('profile_pic', input.files[0]);
+    fetch('/upload_profile', {
+      method: 'POST',
+      headers: { 'X-Requested-With': 'XMLHttpRequest' },
+      body: fd
+    }).then(function (r) { return r.json(); }).then(function (res) {
+      if (res.ok) { img.src = res.url + '?t=' + Date.now(); }
+      else { alert(res.msg || '업로드에 실패했습니다.'); }
+    }).catch(function () { alert('오류가 발생했습니다.'); });
+    input.value = '';
+  });
+})();
+
 function execDaumPostcode() {
     new daum.Postcode({
         oncomplete: function(data) {

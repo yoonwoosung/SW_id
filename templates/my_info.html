@@ -477,26 +477,69 @@
 </div>
 
 <!-- 💡 레시피 다운로드 모달 💡 -->
-<div id="recipeModalOverlay" class="modal-overlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999; align-items:center; justify-content:center;">
-  <div class="modal-content" style="background:#fff; padding:20px; border-radius:12px; max-width:500px; width:90%; position:relative; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
-      <button onclick="document.getElementById('recipeModalOverlay').style.display='none'" style="position:absolute; right:15px; top:15px; border:none; background:none; font-size:1.5rem; cursor:pointer;">&times;</button>
-      <h3 id="recipeModalTitle" style="margin-bottom:15px; font-weight:bold; color:var(--fl-green-700);"></h3>
+<div id="recipeModalOverlay" class="modal-overlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:9999; align-items:center; justify-content:center;">
+  <div class="modal-content" style="background:#f4faec; padding:0; border-radius:16px; max-width:480px; width:90%; position:relative; box-shadow: 0 10px 30px rgba(0,0,0,0.2); overflow:hidden;">
       
-      <!-- PDF로 변환될 영역 -->
-      <div id="recipePrintArea" style="padding:20px; background:#fff3e0; border:2px dashed #ff9800; border-radius:8px; text-align:center;">
-          <h2 id="recipePrintCrop" style="color:#e65100; margin-bottom:20px; font-weight:900;"></h2>
-          <div id="recipePrintImageContainer" style="margin-bottom:15px; display:none;">
-              <img id="recipePrintImage" src="" style="max-width:100%; border-radius:8px;">
+      <!-- 상단 헤더 -->
+      <div style="background:#fff; padding:16px 20px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #e0e0e0;">
+          <div style="font-weight:800; color:var(--fl-green-700); font-size:1.05rem;">
+              <i class="fa-solid fa-leaf"></i> FarmLink 레시피북
           </div>
-          <p id="recipePrintText" style="white-space:pre-wrap; text-align:left; line-height:1.6; color:#333; font-size:1.1rem;"></p>
-          <div style="margin-top:30px; color:#ff9800; font-weight:bold; font-size:0.9rem;">
-              FarmLink 특별 레시피 <i class="fa-solid fa-leaf"></i>
+          <button onclick="document.getElementById('recipeModalOverlay').style.display='none'" style="border:none; background:none; font-size:1.5rem; color:#888; cursor:pointer;">&times;</button>
+      </div>
+
+      <!-- PDF로 캡처될 진짜 영역 -->
+      <div id="recipePrintArea" style="padding:24px; background:#f4faec;">
+          <!-- 타이틀 & 농장 사진 영역 -->
+          <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:24px;">
+              <div style="flex:1; padding-right:16px;">
+                  <h2 id="r_title" style="font-size:1.6rem; font-weight:900; color:#2e3b32; margin-bottom:8px; line-height:1.3;">가을 송이버섯 소금구이</h2>
+                  <p style="font-size:0.85rem; color:#666; margin-bottom:12px;">자연의 향을 그대로, 가장 간단하지만 특별한 레시피</p>
+                  <div style="display:flex; gap:6px;">
+                      <span style="background:#fff; border:1px solid #ddd; padding:4px 10px; border-radius:20px; font-size:0.75rem; color:#555;">🍄 <span id="r_crop_tag">송이버섯</span></span>
+                      <span style="background:#fff; border:1px solid #ddd; padding:4px 10px; border-radius:20px; font-size:0.75rem; color:#555;">간단 요리</span>
+                  </div>
+              </div>
+              <img id="r_img" src="" style="width:100px; height:100px; object-fit:cover; border-radius:14px; box-shadow:0 4px 10px rgba(0,0,0,0.1); display:none;">
+          </div>
+
+          <!-- 재료 & Tip 영역 -->
+          <div style="display:flex; gap:16px; margin-bottom:24px;">
+              <div id="r_ing_box" style="flex:1; background:#fff; padding:16px; border-radius:12px; box-shadow:0 2px 8px rgba(0,0,0,0.03); display:none;">
+                  <div style="font-weight:800; color:#2e3b32; margin-bottom:12px; font-size:0.95rem;">🍲 재료</div>
+                  <ul id="r_ing_list" style="list-style:none; padding:0; margin:0; font-size:0.85rem; color:#444;">
+                  </ul>
+              </div>
+              <div id="r_tip_box" style="flex:1; background:#fff9c4; padding:16px; border-radius:12px; box-shadow:0 2px 8px rgba(0,0,0,0.03); display:none;">
+                  <div style="font-weight:800; color:#f57f17; margin-bottom:8px; font-size:0.95rem;">💡 Tip!</div>
+                  <p id="r_tip_text" style="font-size:0.85rem; color:#555; line-height:1.5; margin:0; word-break:keep-all;"></p>
+              </div>
+          </div>
+
+          <!-- 만드는 방법 영역 -->
+          <div id="r_steps_box" style="background:#fff; padding:20px; border-radius:12px; box-shadow:0 2px 8px rgba(0,0,0,0.03); margin-bottom:24px; display:none;">
+              <div style="font-weight:800; color:#2e3b32; margin-bottom:16px; font-size:1rem;"><i class="fa-solid fa-utensils"></i> 만드는 방법</div>
+              <div id="r_steps_list">
+                  <!-- JS에서 동적 생성 -->
+              </div>
+          </div>
+
+          <!-- 하단 마무리 멘트 -->
+          <div style="background:#e8f5e9; padding:20px; border-radius:12px; display:flex; justify-content:space-between; align-items:center;">
+              <div>
+                  <div style="font-weight:900; color:var(--fl-green-700); font-size:1.1rem; margin-bottom:4px;">따뜻할 때 바로 드세요! <i class="fa-solid fa-seedling"></i></div>
+                  <div style="font-size:0.75rem; color:#666;">농촌에서의 특별한 경험이, 식탁에서도 이어지길 바랍니다.</div>
+              </div>
+              <div style="font-family:'궁서', serif; font-size:0.85rem; color:#333; transform:rotate(-5deg);">
+                  여행의 맛이<br>일상이 되다 ♥
+              </div>
           </div>
       </div>
 
-      <div style="margin-top:20px; text-align:center;">
-          <button type="button" class="fl-btn fl-btn-primary" onclick="downloadRecipePDF()" style="width:100%; font-size:1.1rem; padding:12px;">
-              <i class="fa-solid fa-download"></i> PDF로 저장하기
+      <!-- 하단 버튼 영역 -->
+      <div style="padding:16px 20px; background:#fff; border-top:1px solid #e0e0e0;">
+          <button type="button" class="fl-btn fl-btn-primary" onclick="downloadRecipePDF()" style="width:100%; font-size:1rem; padding:12px; border-radius:10px;">
+              <i class="fa-solid fa-file-pdf"></i> PDF로 저장하기
           </button>
       </div>
   </div>
@@ -597,6 +640,7 @@ function closeCourseModal() {
 document.getElementById('mi-course-modal').addEventListener('click', function(e) {
     if (e.target === this) closeCourseModal();
 });
+
 (function () {
   /* ── 사이드 내비 ── */
   var navLinks = document.querySelectorAll('.fl-side-menu a[data-panel]');
@@ -789,9 +833,10 @@ document.getElementById('mi-course-modal').addEventListener('click', function(e)
   }).catch(function () {});
 })();
 
-// 💡 체험 상태가 '완료'인 카드들을 찾아서, API를 찔러보고 레시피가 있다면 버튼을 자동 생성!
+// 💡 레시피 자동 로드 로직
 document.addEventListener('DOMContentLoaded', function () {
-    const completedCards = document.querySelectorAll('.mi-res-card[data-state="확정"]');
+    // ⚠️ 당장 버튼을 확인하고 싶다면 "완료" 대신 "확정"으로 임시 변경하세요!
+    const completedCards = document.querySelectorAll('.mi-res-card[data-state="완료"]');
     
     completedCards.forEach(card => {
         const expId = card.getAttribute('data-exp-id');
@@ -799,17 +844,15 @@ document.addEventListener('DOMContentLoaded', function () {
         
         if (!expId || !actionsDiv) return;
 
-        // farmer.py에 만든 레시피 확인 API 호출
         fetch('/api/experiences/' + expId + '/recipe')
             .then(res => res.json())
             .then(data => {
                 if (data.success) {
-                    // 성공했다면(레시피가 등록되어 있다면) 버튼을 만들어서 메뉴 맨 위에 끼워넣기
                     const btn = document.createElement('button');
                     btn.type = 'button';
                     btn.className = 'fl-btn fl-btn-sm';
-                    btn.style.cssText = 'background:#ff9800; color:#fff; margin-bottom:4px; border:none;';
-                    btn.innerHTML = '<i class="fa-solid fa-file-pdf"></i> 레시피 다운';
+                    btn.style.cssText = 'background:#4caf50; color:#fff; margin-bottom:4px; border:none; border-radius:8px; font-weight:700;';
+                    btn.innerHTML = '<i class="fa-solid fa-book-open"></i> 레시피 보기';
                     btn.onclick = () => openRecipeModal(data);
                     
                     actionsDiv.insertBefore(btn, actionsDiv.firstChild);
@@ -819,43 +862,83 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 });
 
-// 💡 레시피 모달창 열기 및 데이터 뿌려주기
+// 💡 모달창 & PDF 생성 로직
 let currentRecipeCrop = '';
 function openRecipeModal(data) {
     currentRecipeCrop = data.crop;
-    document.getElementById('recipeModalTitle').innerText = data.crop + ' 레시피';
-    document.getElementById('recipePrintCrop').innerText = data.crop + ' 맛있는 비법 👩‍🍳';
     
-    const imgContainer = document.getElementById('recipePrintImageContainer');
-    const imgEl = document.getElementById('recipePrintImage');
+    // 제목 세팅
+    document.getElementById('r_title').innerText = data.recipe_name || data.crop + ' 맛있는 비법';
+    document.getElementById('r_crop_tag').innerText = data.crop;
     
+    // 사진 세팅
+    const imgEl = document.getElementById('r_img');
     if (data.recipe_image) {
         imgEl.src = '/static/uploads/' + data.recipe_image;
-        imgContainer.style.display = 'block';
+        imgEl.style.display = 'block';
+    } else if (data.exp_image) {
+        imgEl.src = '/static/uploads/' + data.exp_image;
+        imgEl.style.display = 'block';
     } else {
-        imgContainer.style.display = 'none';
-        imgEl.src = '';
+        imgEl.style.display = 'none';
     }
-    
-    document.getElementById('recipePrintText').innerText = data.recipe_text || '';
+
+    // 재료 파싱
+    const ingBox = document.getElementById('r_ing_box');
+    if (data.recipe_ingredients) {
+        const lines = data.recipe_ingredients.split('\n').filter(l => l.trim() !== '');
+        let html = '';
+        lines.forEach(l => {
+            html += `<li style="margin-bottom:8px; display:flex; align-items:flex-start;"><div style="width:6px; height:6px; background:#a5d6a7; border-radius:50%; margin-right:8px; margin-top:6px; flex-shrink:0;"></div>${l.trim()}</li>`;
+        });
+        document.getElementById('r_ing_list').innerHTML = html;
+        ingBox.style.display = 'block';
+    } else {
+        ingBox.style.display = 'none';
+    }
+
+    // 팁 파싱
+    const tipBox = document.getElementById('r_tip_box');
+    if (data.recipe_tip) {
+        document.getElementById('r_tip_text').innerText = data.recipe_tip;
+        tipBox.style.display = 'block';
+    } else {
+        tipBox.style.display = 'none';
+    }
+
+    // 만드는 방법 파싱
+    const stepsBox = document.getElementById('r_steps_box');
+    if (data.recipe_steps) {
+        const lines = data.recipe_steps.split('\n').filter(l => l.trim() !== '');
+        let html = '';
+        lines.forEach((l, idx) => {
+            html += `<div style="display:flex; margin-bottom:14px; align-items:flex-start;">
+                <div style="background:var(--fl-green-700); color:white; border-radius:50%; width:22px; height:22px; display:flex; align-items:center; justify-content:center; font-weight:bold; font-size:0.8rem; margin-right:10px; flex-shrink:0;">${idx+1}</div>
+                <div style="font-size:0.9rem; color:#444; line-height:1.5; padding-top:2px;">${l.trim()}</div>
+            </div>`;
+        });
+        document.getElementById('r_steps_list').innerHTML = html;
+        stepsBox.style.display = 'block';
+    } else {
+        stepsBox.style.display = 'none';
+    }
+
     document.getElementById('recipeModalOverlay').style.display = 'flex';
 }
 
-// 💡 표시된 모달 화면을 그대로 캡처해서 PDF로 저장 (html2canvas + jsPDF)
 function downloadRecipePDF() {
     const printArea = document.getElementById('recipePrintArea');
     
-    // 모달 내용 캡처
-    html2canvas(printArea, { scale: 2, useCORS: true }).then(canvas => {
+    html2canvas(printArea, { scale: 2, useCORS: true, backgroundColor: '#f4faec' }).then(canvas => {
         const imgData = canvas.toDataURL('image/png');
         const { jsPDF } = window.jspdf;
-        const pdf = new jsPDF('p', 'mm', 'a4'); // 세로(p), 밀리미터(mm), A4용지 기준
+        const pdf = new jsPDF('p', 'mm', 'a4');
         
         const pdfWidth = pdf.internal.pageSize.getWidth();
         const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
         
         pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-        pdf.save(currentRecipeCrop + '_레시피.pdf'); // 파일 이름 자동 설정
+        pdf.save(currentRecipeCrop + '_레시피북.pdf');
     });
 }
 </script>

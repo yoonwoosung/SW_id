@@ -222,21 +222,38 @@
                         
                         <!-- 👇 레시피 전수 추가 👇 -->
                         <div class="custom-option-card" onclick="toggleCheckbox('has_recipe')">
-                            <span class="option-title">🍳 나만의 손글씨 레시피 전수</span>
+                            <span class="option-title">🍳 나만의 특별한 레시피 전수</span>
                             <input type="checkbox" class="custom-large-check" id="has_recipe" name="has_recipe"
                                 {% if form_data.get('has_recipe') or (item and item.has_recipe) %}checked{% endif %} onclick="event.stopPropagation()">
                         </div>
 
                         <div id="recipe-fields-easy"
-                            style="display: {% if form_data.get('has_recipe') or (item and item.has_recipe) %}block{% else %}none{% endif %}; margin-top:16px; padding:16px; background:#fff3e0; border-radius:12px; border-left:4px solid #ff9800;">
-                            <p class="text-muted small mb-3">체험을 완료한 손님에게만 특별한 레시피를 선물합니다! <b>글이나 사진 중 하나를 반드시 남겨주세요.</b></p>
+                            style="display: {% if form_data.get('has_recipe') or (item and item.has_recipe) %}block{% else %}none{% endif %}; margin-top:16px; padding:20px; background:#f4faec; border-radius:12px; border:1px solid #c8e6c9;">
+                            <p class="text-muted small mb-3">체험을 완료한 손님에게만 특별한 레시피가 제공됩니다. <br><b>모든 칸을 채울 필요 없이, 빈칸이나 사진 중 하나만 등록해도 됩니다!</b></p>
+                            
                             <div class="form-group">
-                                <label class="easy-form-label-lg" for="recipe_text">레시피 수기 작성</label>
-                                <textarea class="form-control" id="recipe_text" name="recipe_text" rows="4"
-                                    placeholder="예) 수확한 작물로 맛있는 요리를 만드는 비법을 적어주세요.">{{ form_data.get('recipe_text') or (item.recipe_text if item else '') }}</textarea>
+                                <label class="easy-form-label-lg" style="font-size:1rem;" for="recipe_name">요리 이름 (선택)</label>
+                                <input type="text" class="form-control" id="recipe_name" name="recipe_name" placeholder="예) 가을 송이버섯 소금구이"
+                                    value="{{ form_data.get('recipe_name') or (item.recipe_name if item else '') }}">
                             </div>
+                            <div class="form-group">
+                                <label class="easy-form-label-lg" style="font-size:1rem;" for="recipe_ingredients">재료 (선택)</label>
+                                <textarea class="form-control" id="recipe_ingredients" name="recipe_ingredients" rows="2"
+                                    placeholder="엔터로 줄바꿈 해주세요.&#13;&#10;예) 송이버섯 3~4개&#13;&#10;소금 약간">{{ form_data.get('recipe_ingredients') or (item.recipe_ingredients if item else '') }}</textarea>
+                            </div>
+                            <div class="form-group">
+                                <label class="easy-form-label-lg" style="font-size:1rem;" for="recipe_steps">만드는 방법 (선택)</label>
+                                <textarea class="form-control" id="recipe_steps" name="recipe_steps" rows="3"
+                                    placeholder="엔터로 줄바꿈 하면 번호가 자동 생성됩니다.&#13;&#10;예) 송이버섯을 두툼하게 썰어주세요.&#13;&#10;팬을 달군 뒤 구워주세요.">{{ form_data.get('recipe_steps') or (item.recipe_steps if item else '') }}</textarea>
+                            </div>
+                            <div class="form-group">
+                                <label class="easy-form-label-lg" style="font-size:1rem;" for="recipe_tip">Tip! (선택)</label>
+                                <input type="text" class="form-control" id="recipe_tip" name="recipe_tip" placeholder="예) 버섯은 물에 씻지 말고 흙만 털어내세요."
+                                    value="{{ form_data.get('recipe_tip') or (item.recipe_tip if item else '') }}">
+                            </div>
+
                             <div class="form-group mb-0">
-                                <label class="easy-form-label-lg" for="recipe_image">레시피 손글씨 사진</label>
+                                <label class="easy-form-label-lg" style="font-size:1rem;" for="recipe_image">요리 완성 사진 또는 손글씨 사진 (선택)</label>
                                 <input type="file" class="form-control-file" id="recipe_image" name="recipe_image" accept="image/*">
                                 {% if item and item.recipe_image %}
                                 <small class="form-text text-muted" id="existing_recipe_img">현재 파일: {{ item.recipe_image }}</small>
@@ -660,13 +677,16 @@ document.addEventListener('DOMContentLoaded', function () {
             // 💡 레시피 전수 유효성 검사 (글이나 사진 중 하나는 필수)
             const hasRecipe = document.getElementById('has_recipe');
             if (hasRecipe && hasRecipe.checked) {
-                const recipeText = document.getElementById('recipe_text').value.trim();
-                const recipeImgCount = document.getElementById('recipe_image').files.length;
+                const rName = document.getElementById('recipe_name').value.trim();
+                const rIng = document.getElementById('recipe_ingredients').value.trim();
+                const rSteps = document.getElementById('recipe_steps').value.trim();
+                const rTip = document.getElementById('recipe_tip').value.trim();
+                const rImgCount = document.getElementById('recipe_image').files.length;
                 const existingImg = document.getElementById('existing_recipe_img');
 
-                if (!recipeText && recipeImgCount === 0 && !existingImg) {
-                    alert('레시피 전수를 선택하셨습니다. 수기로 요리 비법을 작성하거나 손글씨 사진을 첨부해 주세요!');
-                    document.getElementById('recipe_text').focus();
+                if (!rName && !rIng && !rSteps && !rTip && rImgCount === 0 && !existingImg) {
+                    alert('레시피 전수를 선택하셨습니다. 내용이나 사진 중 하나는 반드시 입력해 주세요!');
+                    document.getElementById('recipe_name').focus();
                     return false;
                 }
             }

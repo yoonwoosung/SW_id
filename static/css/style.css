@@ -3288,14 +3288,14 @@ a svg, a i { pointer-events: none; }
 }
 
 .easy-back-button {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 48px;
-    padding: 10px 20px;
-    font-size: var(--farmer-font-label, 16px);
-    font-weight: 600;
-    border-radius: 10px;
+    display: block;
+    width: 100%;
+    min-height: var(--farmer-btn-height, 56px);
+    padding: var(--farmer-btn-padding, 14px 28px);
+    font-size: var(--farmer-font-btn, 18px);
+    font-weight: 700;
+    border-radius: 12px;
+    text-align: center;
 }
 
 .easy-reservation-card,

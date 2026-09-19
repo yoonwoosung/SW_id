@@ -326,9 +326,12 @@ def easy_create_experience():
             organic_certification_type=cert_type,
             organic_certification_image=cert_filename,
             organic_cert_status='PENDING' if (is_organic and cert_filename) else None,
-            has_recipe=has_recipe,                 # 레시피 데이터 연결
-            recipe_text=recipe_text,               # 레시피 글
-            recipe_image=recipe_image_filename,    # 레시피 사진
+            has_recipe=has_recipe,
+            recipe_name=request.form.get('recipe_name'),
+            recipe_ingredients=request.form.get('recipe_ingredients'),
+            recipe_steps=request.form.get('recipe_steps'),
+            recipe_tip=request.form.get('recipe_tip'),
+            recipe_image=recipe_image_filename,
             lat=selected_farm.lat,
             lng=selected_farm.lng,
             status='recruiting'
@@ -451,7 +454,11 @@ def easy_modify_experience(item_id):
         # 👇 레시피 수정 처리 로직 👇
         item.has_recipe = 'has_recipe' in request.form
         if item.has_recipe:
-            item.recipe_text = request.form.get('recipe_text')
+            item.recipe_name = request.form.get('recipe_name')
+            item.recipe_ingredients = request.form.get('recipe_ingredients')
+            item.recipe_steps = request.form.get('recipe_steps')
+            item.recipe_tip = request.form.get('recipe_tip')
+            
             recipe_file = request.files.get('recipe_image')
             if recipe_file and recipe_file.filename and allowed_file(recipe_file.filename):
                 ext = recipe_file.filename.rsplit('.', 1)[1].lower()
@@ -459,7 +466,10 @@ def easy_modify_experience(item_id):
                 recipe_file.save(os.path.join(current_app.config['UPLOAD_FOLDER'], new_recipe_filename))
                 item.recipe_image = new_recipe_filename
         else:
-            item.recipe_text = None
+            item.recipe_name = None
+            item.recipe_ingredients = None
+            item.recipe_steps = None
+            item.recipe_tip = None
             item.recipe_image = None
 
         full_address = f"{selected_farm.address} {selected_farm.address_detail or ''}".strip()
@@ -601,8 +611,12 @@ def get_recipe_api(item_id):
     return jsonify({
         "success": True,
         "crop": exp.crop,
-        "recipe_text": exp.recipe_text,
-        "recipe_image": exp.recipe_image
+        "recipe_name": exp.recipe_name,
+        "recipe_ingredients": exp.recipe_ingredients,
+        "recipe_steps": exp.recipe_steps,
+        "recipe_tip": exp.recipe_tip,
+        "recipe_image": exp.recipe_image,
+        "exp_image": exp.images.split(',')[0] if exp.images else None
     })
 
 

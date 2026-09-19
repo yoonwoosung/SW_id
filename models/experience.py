@@ -58,7 +58,10 @@ class Experience(db.Model):
 
     # 👇 --- 새로 추가된 레시피 전수 기능 --- 👇
     has_recipe = db.Column(db.Boolean, default=False, nullable=False) # 레시피 전수 여부
-    recipe_text = db.Column(db.Text, nullable=True)                   # 작성된 레시피 내용
+    recipe_name = db.Column(db.String(255), nullable=True)            # 레시피 이름 (예: 가을 송이버섯 소금구이)
+    recipe_ingredients = db.Column(db.Text, nullable=True)            # 재료
+    recipe_steps = db.Column(db.Text, nullable=True)                  # 만드는 방법
+    recipe_tip = db.Column(db.Text, nullable=True)                    # 팁
     recipe_image = db.Column(db.String(255), nullable=True)           # 업로드된 레시피 사진 경로
 
     farmer = db.relationship('User', back_populates='experiences')

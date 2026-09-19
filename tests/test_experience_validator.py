@@ -97,6 +97,7 @@ def surplus_form(**kw):
         'is_surplus': 'true', 'surplus_terms_agreed': 'true',
         'list_price': '50000', 'surplus_qty_total': '500',
         'surplus_per_person': '5', 'surplus_unit': 'kg',
+        'surplus_reason': '과잉생산',
     }
     base.update(kw)
     return {k: v for k, v in base.items() if v is not None}
@@ -295,3 +296,68 @@ def test_increasing_blocked():
 def test_capacity_zero_rejected():
     value, err = resolve_max_participants('5', capacity=0)
     assert value is None and err is not None
+
+
+# ---- 할인 사유 (리본 문구) ----
+
+from services.experience_validator import SURPLUS_REASONS, SURPLUS_REASON_MAX_LEN
+
+
+@pytest.mark.parametrize('reason', SURPLUS_REASONS)
+def test_preset_reasons_accepted(reason):
+    data, err = parse_surplus_fields(surplus_form(surplus_reason=reason), cost=25000)
+    assert err is None and data['surplus_reason'] == reason
+
+
+def test_reason_required():
+    form = surplus_form()
+    form.pop('surplus_reason', None)
+    data, err = parse_surplus_fields(form, cost=25000)
+    assert data is None and "사유" in err
+
+
+def test_unknown_reason_rejected():
+    data, err = parse_surplus_fields(surplus_form(surplus_reason='세일'), cost=25000)
+    assert data is None and err is not None
+
+
+def test_etc_uses_free_text():
+    data, err = parse_surplus_fields(
+        surplus_form(surplus_reason='기타', surplus_reason_etc='잔여물량'), cost=25000)
+    assert err is None and data['surplus_reason'] == '잔여물량'
+
+
+def test_etc_without_text_rejected():
+    data, err = parse_surplus_fields(surplus_form(surplus_reason='기타'), cost=25000)
+    assert data is None and "기타" in err
+
+
+def test_etc_over_limit_rejected_not_truncated():
+    """★6자 초과는 잘라서 저장하지 않고 거부한다.★
+
+    잘라 두면 농장주는 모르는 채 어중간한 문구가 사용자에게 보이고
+    나중에 원인을 찾기 어렵다.
+    """
+    long_text = '가' * (SURPLUS_REASON_MAX_LEN + 1)
+    data, err = parse_surplus_fields(
+        surplus_form(surplus_reason='기타', surplus_reason_etc=long_text), cost=25000)
+    assert data is None
+    assert '6자 이내' in err and '7자' in err
+
+
+def test_etc_at_limit_allowed():
+    text = '가' * SURPLUS_REASON_MAX_LEN
+    data, err = parse_surplus_fields(
+        surplus_form(surplus_reason='기타', surplus_reason_etc=text), cost=25000)
+    assert err is None and data['surplus_reason'] == text
+
+
+def test_etc_whitespace_trimmed():
+    data, err = parse_surplus_fields(
+        surplus_form(surplus_reason='기타', surplus_reason_etc='  잔여  '), cost=25000)
+    assert err is None and data['surplus_reason'] == '잔여'
+
+
+def test_reason_cleared_when_not_surplus():
+    data, err = parse_surplus_fields({'surplus_reason': '과잉생산'}, cost=25000)
+    assert err is None and data['surplus_reason'] is None

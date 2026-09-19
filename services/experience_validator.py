@@ -17,6 +17,11 @@ SURPLUS_UNITS = ('kg', 'g', '박스', '구좌', '포기', '단')
 SURPLUS_MAX_QTY = 100000          # 총 수량 상한(오입력 방지)
 SURPLUS_MAX_PER_PERSON = 1000     # 1인당 수확량 상한
 
+# 할인 사유. 리본에 "사유 + 할인율"로 찍히므로 짧아야 한다.
+SURPLUS_REASONS = ('과잉생산', '못난이', '수확임박', '규격외')
+SURPLUS_REASON_ETC = '기타'
+SURPLUS_REASON_MAX_LEN = 6        # '기타' 자유 입력 상한. 리본 폭이 한계다.
+
 
 def parse_pet_fields(form):
     """반려견 동반 입력을 파싱·검증한다.
@@ -116,7 +121,7 @@ def parse_surplus_fields(form, cost):
     off = {
         'is_surplus': False, 'surplus_terms_agreed': False, 'list_price': None,
         'surplus_qty_total': None, 'surplus_per_person': None,
-        'surplus_unit': None, 'surplus_origin': None,
+        'surplus_unit': None, 'surplus_origin': None, 'surplus_reason': None,
     }
     if 'is_surplus' not in form:
         return off, None
@@ -160,6 +165,10 @@ def parse_surplus_fields(form, cost):
 
     origin = (form.get('surplus_origin') or '').strip() or None
 
+    reason, err = _parse_reason(form)
+    if err:
+        return None, err
+
     return {
         'is_surplus': True,
         'surplus_terms_agreed': True,
@@ -168,7 +177,34 @@ def parse_surplus_fields(form, cost):
         'surplus_per_person': per_person,
         'surplus_unit': unit,
         'surplus_origin': origin,
+        'surplus_reason': reason,
     }, None
+
+
+def _parse_reason(form):
+    """할인 사유를 고른다. 반환: (reason, error)
+
+    리본에 "사유 + 할인율"이 찍히므로 길면 잘린다. '기타'를 골랐을 때만
+    자유 입력을 받고 6자로 제한한다. 잘라서 저장하지 않고 거부하는 이유는,
+    잘라 두면 농장주는 모르는 채 사용자에게 어중간한 문구가 보이고
+    나중에 원인을 찾기 어렵기 때문이다.
+    """
+    choice = (form.get('surplus_reason') or '').strip()
+    if not choice:
+        return None, "할인 사유를 선택해 주세요."
+
+    if choice in SURPLUS_REASONS:
+        return choice, None
+
+    if choice != SURPLUS_REASON_ETC:
+        return None, "할인 사유가 올바르지 않습니다."
+
+    etc = (form.get('surplus_reason_etc') or '').strip()
+    if not etc:
+        return None, "기타 사유를 입력해 주세요."
+    if len(etc) > SURPLUS_REASON_MAX_LEN:
+        return None, f"기타 사유는 {SURPLUS_REASON_MAX_LEN}자 이내로 입력해주세요. (현재 {len(etc)}자)"
+    return etc, None
 
 
 def resolve_max_participants(requested_raw, capacity):
@@ -202,3 +238,18 @@ def resolve_max_participants(requested_raw, capacity):
             f"({requested}명은 재고를 넘습니다. 인원을 줄이거나 총 수량을 늘려주세요.)"
         )
     return requested, None
+
+
+def ribbon_text(experience):
+    """카드 리본 문구: "사유 할인율%". 과생산이 아니거나 값이 없으면 None.
+
+    할인율은 반올림한다. 리본 폭이 한계라 사유는 등록 때 6자로 제한해 뒀다.
+    """
+    if experience is None or not getattr(experience, 'is_surplus', False):
+        return None
+    reason = getattr(experience, 'surplus_reason', None)
+    rate = discount_rate(getattr(experience, 'list_price', None),
+                         getattr(experience, 'cost', None))
+    if not reason or rate is None:
+        return None
+    return f"{reason} {round(rate * 100)}%"

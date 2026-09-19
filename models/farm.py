@@ -20,7 +20,9 @@ class Farm(db.Model):
     is_organic = db.Column(db.Boolean, default=False)
     organic_cert_image = db.Column(db.String(255), nullable=True)
     organic_cert_type = db.Column(db.String(100), nullable=True)
-    
+    organic_cert_status = db.Column(db.String(20), nullable=True, default=None)  # None(미신청) / PENDING / APPROVED / REJECTED
+    organic_cert_reject_reason = db.Column(db.Text, nullable=True)
+
     status = db.Column(db.String(20), nullable=False, default='PENDING')  # PENDING, APPROVED, REJECTED
     reject_reason = db.Column(db.Text, nullable=True)
     

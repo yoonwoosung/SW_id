@@ -41,14 +41,18 @@ class Experience(db.Model):
     barrier_free = db.Column(db.Boolean, default=False, nullable=False)
 
     # --- 과생산(잉여) 수확 체험 ---
-    is_surplus = db.Column(db.Boolean, default=False, nullable=False)
-    surplus_terms_agreed = db.Column(db.Boolean, default=False, nullable=False)
-    list_price = db.Column(db.Integer, nullable=True)
-    surplus_qty_total = db.Column(db.Integer, nullable=True)
-    surplus_qty_taken = db.Column(db.Integer, default=0, nullable=False)
-    surplus_per_person = db.Column(db.Integer, nullable=True)
-    surplus_unit = db.Column(db.String(20), default='kg', nullable=True)
-    surplus_origin = db.Column(db.String(255), nullable=True)
+    # 별도 커머스가 아니라 체험의 한 종류다. 방문객이 직접 수확·운반하므로 물류비가 없다.
+    # 판매가는 기존 cost 를 그대로 쓴다(결제 흐름 미변경).
+    # 남은 수량은 컬럼으로 두지 않고 surplus_qty_total - surplus_qty_taken 으로 계산한다.
+    is_surplus = db.Column(db.Boolean, default=False, nullable=False)      # 과생산 체험 여부
+    surplus_terms_agreed = db.Column(db.Boolean, default=False, nullable=False)  # 20% 할인 약관 동의
+    list_price = db.Column(db.Integer, nullable=True)                     # 정가(1인). cost 가 할인가
+    surplus_qty_total = db.Column(db.Integer, nullable=True)              # 총 수량
+    surplus_qty_taken = db.Column(db.Integer, default=0, nullable=False)  # 예약된 누적 수량
+    surplus_per_person = db.Column(db.Integer, nullable=True)             # 1인당 수확량(단위는 surplus_unit)
+    surplus_unit = db.Column(db.String(20), default='kg', nullable=True)  # kg·박스·구좌
+    surplus_origin = db.Column(db.String(255), nullable=True)             # 원산지 표시(시도+시군구)
+    surplus_reason = db.Column(db.String(20), nullable=True)              # 할인 사유(리본 문구). 선택지 또는 기타 6자
 
     # 👇 --- 새로 추가된 레시피 전수 기능 --- 👇
     has_recipe = db.Column(db.Boolean, default=False, nullable=False) # 레시피 전수 여부

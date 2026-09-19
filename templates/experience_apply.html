@@ -90,8 +90,12 @@
                     <img src="{{ url_for('static', filename='icons/icon-calendar-schedule.svg') }}" class="fl-icon-sm" alt="">
                     {% if item.duration_start and item.end_date %}체험 가능 기간: {{ item.duration_start.strftime('%Y.%m.%d') }} ~ {{ item.end_date.strftime('%Y.%m.%d') }}{% elif item.end_date %}체험 마감일: {{ item.end_date.strftime('%Y.%m.%d') }}{% else %}체험 가능 기간: 미정{% endif %}
                 </p>
+                {# min 은 '체험 시작일'과 '오늘' 중 늦은 쪽이다. 기간이 이미 시작됐어도
+                   지난 날짜로는 갈 수 없고, 기간이 없어도(NULL) 오늘보다 앞은 막는다. #}
+                {% set _start = item.duration_start.strftime('%Y-%m-%d') if item.duration_start else None %}
+                {% set _min = _start if (_start and _start > today_str) else today_str %}
                 <input type="date" id="apply_date" name="apply_date" class="apply-date-input"
-                       {% if item.duration_start %}min="{{ item.duration_start.strftime('%Y-%m-%d') }}"{% endif %}
+                       min="{{ _min }}"
                        {% if item.end_date %}max="{{ item.end_date.strftime('%Y-%m-%d') }}"{% endif %} required>
             </div>
 
@@ -158,6 +162,10 @@
 <script>
 const COST_PER_PERSON = {{ item.cost }};
 const TIMETABLE_DATA = "{{ item.timetable_data or '' }}";
+// 서버 기준 오늘·현재 시각(분). 브라우저 시계를 쓰지 않는 이유는
+// 기기 시계가 틀리면 UI 는 통과했는데 서버 검증이 거부하기 때문이다.
+const TODAY_STR = "{{ today_str }}";
+const NOW_MINUTES = {{ now_minutes }};
 
 // 요일별 운영 시간 파싱
 const slotsByDay = {};
@@ -220,11 +228,21 @@ document.getElementById('apply_date').addEventListener('change', function() {
     grid.innerHTML = '';
     grid.style.display = 'grid';
 
+    // 오늘을 고른 경우에만 지난 시간대를 막는다. 내일 이후는 전부 열어 둔다.
+    // 정각도 막는다(10:00 정각이면 10:00 슬롯은 이미 시작한 것으로 본다).
+    const isToday = (val === TODAY_STR);
+    let availableCount = 0;
+
     ALL_TIMES.forEach(t => {
+        const parts = t.split(':');
+        const minutes = parseInt(parts[0], 10) * 60 + parseInt(parts[1], 10);
+        const isPast = isToday && minutes <= NOW_MINUTES;
+
         const btn = document.createElement('button');
         btn.type = 'button';
         btn.textContent = t;
-        if (availTimes.has(t)) {
+        if (availTimes.has(t) && !isPast) {
+            availableCount++;
             btn.className = 'time-btn available';
             btn.addEventListener('click', function() {
                 document.querySelectorAll('.time-btn.selected').forEach(b => b.classList.remove('selected'));
@@ -236,9 +254,19 @@ document.getElementById('apply_date').addEventListener('change', function() {
         } else {
             btn.className = 'time-btn unavailable';
             btn.disabled = true;
+            if (isPast) btn.title = '이미 지난 시간입니다';
         }
         grid.appendChild(btn);
     });
+
+    // 버튼이 전부 비활성이면 이유를 알려준다. 안 그러면 왜 안 되는지 알 수 없다.
+    if (availableCount === 0) {
+        document.getElementById('time-select-guide').innerHTML = isToday
+            ? '<img src="/static/icons/icon-time.svg" class="fl-icon-sm" alt=""> '
+              + '오늘은 예약 가능한 시간이 모두 지났습니다. <strong>다른 날짜를 선택해주세요.</strong>'
+            : '<img src="/static/icons/icon-time.svg" class="fl-icon-sm" alt=""> '
+              + `<strong>${dayName}요일</strong>은 운영하지 않습니다. 다른 날짜를 선택해주세요.`;
+    }
 
     // 이전 선택 초기화
     selectedTime = '';

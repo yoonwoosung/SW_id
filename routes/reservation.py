@@ -109,7 +109,12 @@ def experience_apply(item_id):
 
         return redirect(url_for('payment_page', app_id=new_application.id))
 
-    return render_template('experience_apply.html', item=item)
+    # 오늘 날짜·현재 시각을 서버 기준으로 넘긴다. 브라우저 시계가 틀린 기기에서
+    # "UI 는 통과했는데 서버가 거부"하는 일이 없게 서버 검증과 같은 값을 쓴다.
+    now = datetime.now()
+    return render_template('experience_apply.html', item=item,
+                           today_str=now.strftime('%Y-%m-%d'),
+                           now_minutes=now.hour * 60 + now.minute)
 
 
 def reservation_complete(app_id):

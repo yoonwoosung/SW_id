@@ -61,6 +61,7 @@ def add_farm():
     pdf_filename = _save_certificate()
     lat, lng = get_coords_from_address(address)
     
+    _is_organic = 'is_organic' in request.form
     new_farm = Farm(
         user_id=farmer_id,
         name=name or None,
@@ -71,8 +72,9 @@ def add_farm():
         lat=lat,
         lng=lng,
         status='PENDING',
-        is_organic='is_organic' in request.form,
-        organic_cert_type=request.form.get('organic_cert_type')
+        is_organic=_is_organic,
+        organic_cert_type=request.form.get('organic_cert_type'),
+        organic_cert_status='PENDING' if _is_organic else None,
     )
     
     db.session.add(new_farm)

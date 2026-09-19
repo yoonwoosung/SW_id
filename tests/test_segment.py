@@ -21,9 +21,22 @@ def test_other_gender_label_omitted():
 
 def test_auto_segments_has_three_with_keys():
     segs = auto_segments(FakeUser("20s", "male"))
-    assert [s["key"] for s in segs] == ["peers", "active", "esg"]
-    assert segs[0]["title"] == "20대 인기 체험"   # 연령대 반영
-    assert auto_segments(None)[0]["title"] == "요즘 인기 체험"  # 비로그인 폴백
+    assert [s["key"] for s in segs] == ["peers", "group", "esg"]
+
+
+def test_auto_segment_titles_state_their_criteria():
+    """제목은 '기준'을 드러내야 한다.
+
+    예전에는 '20대 인기 체험'처럼 나이대를 붙였는데, 실제로는 나이를 기준으로
+    고르지 않아 이름과 근거가 어긋났다(같은 체험이 세 섹션에 다 나온 원인의 일부).
+    이제 로그인 여부·나이와 무관하게 같은 제목을 준다.
+    """
+    logged_in = auto_segments(FakeUser("20s", "male"))
+    anonymous = auto_segments(None)
+    assert [s["title"] for s in logged_in] == [s["title"] for s in anonymous]
+    assert logged_in[0]["title"] == "가볍게 다녀오기"
+    assert logged_in[1]["title"] == "단체로 가기 좋은 코스"
+    assert logged_in[2]["title"] == "친환경 인증 농장"
 
 
 def test_segment_buttons_from_profile():

@@ -1,5 +1,9 @@
 /* static/css/style.css (최종 통합본 - 완벽 중복 제거 완료) */
 
+/* ── 버튼/링크 내부 아이콘 클릭 통과 ── */
+button svg, button i, button img,
+a svg, a i { pointer-events: none; }
+
 /* --- 4. 농장주 관련 페이지 스타일 (대시보드, 등록) 고유 영역 --- */
 .profile-card {
     text-align: center;
@@ -1020,6 +1024,99 @@
 }
 .hero-unified-btn:hover { filter: brightness(0.88); }
 
+/* 체험 더보기 필터 바 */
+.list-filter-bar {
+    background: #fff;
+    border-bottom: 1px solid #e8f0e8;
+    padding: 16px 0 12px;
+    margin-bottom: 20px;
+}
+.list-filter-form { width: 100%; }
+.list-filter-row {
+    display: flex;
+    align-items: flex-end;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 10px;
+}
+.list-filter-field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 1;
+    min-width: 110px;
+}
+.list-filter-label {
+    font-size: 11px;
+    color: #666;
+    font-weight: 600;
+    margin: 0;
+}
+.list-filter-input,
+.list-filter-select {
+    height: 38px;
+    border: 1px solid #d8e6d8;
+    border-radius: 8px;
+    padding: 0 10px;
+    font-size: 13px;
+    color: #333;
+    background: #f9fdf9;
+    outline: none;
+    transition: border-color 0.15s;
+    width: 100%;
+}
+.list-filter-input:focus,
+.list-filter-select:focus { border-color: var(--fl-green); background: #fff; }
+.list-filter-btn {
+    height: 38px;
+    padding: 0 18px;
+    background: var(--fl-green);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    white-space: nowrap;
+    flex-shrink: 0;
+    align-self: flex-end;
+}
+.list-filter-btn:hover { filter: brightness(0.9); }
+.list-filter-toggles {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+.list-filter-toggle {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 13px;
+    border: 1px solid #d8e6d8;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #555;
+    background: #f9fdf9;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+    user-select: none;
+}
+.list-filter-toggle input[type="checkbox"] { display: none; }
+.list-filter-toggle.active,
+.list-filter-toggle:hover {
+    background: #e8f5e8;
+    border-color: var(--fl-green);
+    color: var(--fl-green-dark, #2d6a2d);
+}
+
+@media (max-width: 600px) {
+    .list-filter-field { min-width: calc(50% - 10px); }
+    .list-filter-btn { width: 100%; justify-content: center; }
+}
 
 /* 흰 카드 섹션 */
 .section-card {
@@ -3914,7 +4011,7 @@ header.header-volunteer { border-bottom-color: #FF9800; }
     box-shadow: 0 2px 8px rgba(0,0,0,.15); transition: background .15s, opacity .15s;
 }
 .ae-nav-btn:hover { background: #fff; }
-.ae-nav-btn[style*="opacity: 0.3"], .ae-nav-btn.dim { opacity: .35; cursor: default; pointer-events: none; }
+.ae-nav-btn.dim { opacity: .35; cursor: default; pointer-events: none; }
 .ae-title-edit-btn {
     border: none; background: none; cursor: pointer;
     color: #aab3ac; font-size: .78rem; padding: 3px 5px;
@@ -4825,4 +4922,45 @@ header.header-volunteer { border-bottom-color: #FF9800; }
     .ae-topbar-back { min-height: auto; }
     .ae-nav-btn { width: 40px; height: 40px; }
     .ae-topbar { padding-left: 16px; padding-right: 16px; }
+}
+
+/* ============================================================================
+   [과생산] 할인 리본 — 카드 우측 상단 사선
+   .exp-card 에 overflow:hidden 이 걸려 있어 카드 밖으로는 못 나간다.
+   그래서 이미지 래퍼(.exp-card-img-wrap, position:relative)에 얹고
+   자체 클리핑 박스 안에서 회전시킨다. 기존 규칙은 건드리지 않는다.
+   기존 배지(.exp-card-badge-wrap)는 좌측 상단이라 겹치지 않는다.
+   ============================================================================ */
+.fl-ribbon {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 120px;
+    height: 120px;
+    overflow: hidden;          /* 회전한 띠가 카드 모서리를 넘지 않게 자른다 */
+    pointer-events: none;      /* 카드 전체 링크 클릭을 가리지 않게 */
+    z-index: 2;
+}
+.fl-ribbon__text {
+    position: absolute;
+    /* 45도로 눕힌 띠. 대각선 길이(120×√2≈170px)를 쓰되 양끝을 넉넉히 뺀다. */
+    width: 170px;
+    top: 26px;
+    right: -46px;
+    transform: rotate(45deg);
+    background: linear-gradient(135deg, #e74c3c, #c0392b);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 800;
+    line-height: 1.9;
+    text-align: center;
+    letter-spacing: -0.2px;
+    white-space: nowrap;       /* 길어도 줄바꿈 대신 한 줄 유지 */
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.25);
+}
+
+/* 상세 페이지의 큰 이미지 영역에도 같은 리본을 쓴다(조금 크게). */
+.fl-ribbon.detail-ribbon { width: 150px; height: 150px; }
+.fl-ribbon.detail-ribbon .fl-ribbon__text {
+    width: 212px; top: 34px; right: -56px; font-size: 13px;
 }

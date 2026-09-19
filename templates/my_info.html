@@ -89,20 +89,6 @@
 .mi-point-pos { color:var(--fl-green-700); font-weight:700; }
 .mi-point-neg { color:var(--fl-danger); font-weight:700; }
 
-/* ── 추억 앨범 그리드 ── */
-.mi-album-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
-.mi-album-item {
-  border-radius:var(--fl-radius); overflow:hidden;
-  aspect-ratio:1; position:relative; background:var(--fl-green-100);
-  display:flex; align-items:center; justify-content:center; color:var(--fl-green-700);
-}
-.mi-album-item img { width:100%; height:100%; object-fit:cover; display:block; }
-.mi-album-label {
-  position:absolute; bottom:0; left:0; right:0;
-  background:rgba(0,0,0,.45); color:var(--fl-surface); font-size:.75rem; font-weight:700;
-  padding:4px 6px; text-align:center;
-}
-
 /* ── 빈 상태 ── */
 .mi-empty { color:var(--fl-text-muted); padding:20px 4px; font-size:.83rem; }
 
@@ -114,6 +100,16 @@
 .mi-tl-time { font-weight:700; color:var(--fl-green-700); font-size:.83rem; min-width:40px; margin-top:2px; }
 .mi-tl-name { font-weight:700; font-size:.97rem; }
 .mi-tl-sub { font-size:.83rem; color:var(--fl-text-muted); margin-top:2px; }
+
+/* ── 아바타 변경 ── */
+.mi-avatar-wrap { position:relative; width:80px; height:80px; cursor:pointer; margin:0 auto var(--fl-s2); }
+.mi-avatar-wrap .fl-avatar { width:80px; height:80px; border-radius:50%; object-fit:cover; display:block; }
+.mi-avatar-overlay {
+  position:absolute; inset:0; border-radius:50%;
+  background:rgba(0,0,0,0.42); display:flex; align-items:center; justify-content:center;
+  opacity:0; transition:opacity .18s; color:#fff; font-size:.75rem; flex-direction:column; gap:3px;
+}
+.mi-avatar-wrap:hover .mi-avatar-overlay { opacity:1; }
 
 /* ── 사이드바 프로필 스탯 ── */
 .mi-side-stats { display:flex; gap:0; border-top:1px solid var(--fl-border); margin-top:10px; width:100%; }
@@ -182,12 +178,14 @@
       {# 프로필 카드 #}
       <div class="fl-card">
         <div class="fl-card-body fl-side-profile">
-          {% if user.profile_image and user.profile_image not in ['shd.png', 'default.png'] %}
-            <img class="fl-avatar" src="{{ url_for('static', filename='uploads/' + user.profile_image) }}" alt="{{ user.nickname }}"
-                 onerror="this.onerror=null;this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 80 80\'%3E%3Ccircle cx=\'40\' cy=\'40\' r=\'40\' fill=\'%23d8f3dc\'/%3E%3Ccircle cx=\'40\' cy=\'32\' r=\'14\' fill=\'%232d6a4f\'/%3E%3Cellipse cx=\'40\' cy=\'68\' rx=\'22\' ry=\'16\' fill=\'%232d6a4f\'/%3E%3C/svg%3E';">
-          {% else %}
-            <img class="fl-avatar" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 80 80'%3E%3Ccircle cx='40' cy='40' r='40' fill='%23d8f3dc'/%3E%3Ccircle cx='40' cy='32' r='14' fill='%232d6a4f'/%3E%3Cellipse cx='40' cy='68' rx='22' ry='16' fill='%232d6a4f'/%3E%3C/svg%3E" alt="{{ user.nickname }}">
-          {% endif %}
+          <div class="mi-avatar-wrap" id="mi-avatar-wrap" title="프로필 사진 변경">
+            <img class="fl-avatar" id="mi-avatar-img"
+              src="{% if user.profile_image and user.profile_image not in ['shd.png','default.png'] %}{{ url_for('static', filename='uploads/' + user.profile_image) }}{% else %}data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 80 80'%3E%3Ccircle cx='40' cy='40' r='40' fill='%23d8f3dc'/%3E%3Ccircle cx='40' cy='32' r='14' fill='%232d6a4f'/%3E%3Cellipse cx='40' cy='68' rx='22' ry='16' fill='%232d6a4f'/%3E%3C/svg%3E{% endif %}"
+              alt="{{ user.nickname }}"
+              onerror="this.onerror=null;this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 80 80\'%3E%3Ccircle cx=\'40\' cy=\'40\' r=\'40\' fill=\'%23d8f3dc\'/%3E%3Ccircle cx=\'40\' cy=\'32\' r=\'14\' fill=\'%232d6a4f\'/%3E%3Cellipse cx=\'40\' cy=\'68\' rx=\'22\' ry=\'16\' fill=\'%232d6a4f\'/%3E%3C/svg%3E';">
+            <div class="mi-avatar-overlay"><i class="fa-solid fa-camera"></i><span>변경</span></div>
+          </div>
+          <input type="file" id="mi-avatar-input" accept="image/*" style="display:none;">
           <strong>{{ user.nickname }}</strong>
           <div class="fl-muted fl-meta">일반 회원</div>
           <div class="mi-side-stats">
@@ -223,9 +221,6 @@
           <a href="#" data-panel="recent"><i class="fa-solid fa-clock-rotate-left"></i> 최근 본 것</a>
           <a href="#" data-panel="point"><i class="fa-solid fa-coins"></i> 포인트</a>
           <a href="#" data-panel="ai"><i class="fa-solid fa-route"></i> AI 여행 코스</a>
-          <div class="mi-nav-divider"></div>
-          <div class="mi-nav-cat">추억</div>
-          <a href="#" data-panel="album"><i class="fa-regular fa-images"></i> 추억 앨범</a>
         </div>
       </div>
 
@@ -290,7 +285,7 @@
 
         <section class="fl-card"><div class="fl-card-body">
           <div class="fl-section-head"><h2><i data-lucide="settings"></i> 계정</h2></div>
-          <div class="fl-info-row" style="cursor:pointer;">
+          <div id="mi-pw-row" class="fl-info-row" style="cursor:pointer;">
             <span class="lbl">비밀번호</span>
             <span class="val" style="color:var(--fl-text-muted);font-weight:400;">변경하기</span>
             <i data-lucide="chevron-right" style="color:var(--fl-text-muted);"></i>
@@ -451,36 +446,6 @@
         </div></section>
       </div>
 
-      {# ── 추억 앨범 ── #}
-      <div id="panel-album" class="mi-panel" style="display:none;flex-direction:column;gap:var(--fl-s4);">
-        <section class="fl-card"><div class="fl-card-body">
-          <div class="fl-section-head">
-            <h2><i data-lucide="images"></i> 추억 앨범</h2>
-            <a href="{{ url_for('album_create') }}" class="fl-btn fl-btn-primary fl-btn-sm">앨범 만들기</a>
-          </div>
-          {% set archive = [] %}
-          {% for app in applications %}
-            {% if app.experience.images %}
-              {% set _ = archive.append({'crop': app.experience.crop, 'img': app.experience.images.split(',')[0]}) %}
-            {% endif %}
-          {% endfor %}
-          {% if archive %}
-            <div class="mi-album-grid">
-              {% for item in archive[:9] %}
-              <div class="mi-album-item">
-                <img src="{{ url_for('static', filename='uploads/' + item.img) }}" alt="{{ item.crop }}">
-                <div class="mi-album-label">{{ item.crop }}</div>
-              </div>
-              {% endfor %}
-            </div>
-          {% else %}
-            <p class="mi-empty">농장 체험의 추억을 앨범으로 만들어보세요.<br>
-              <a href="{{ url_for('album_create') }}" style="color:var(--fl-green-700);font-weight:700;">앨범 만들기 →</a>
-            </p>
-          {% endif %}
-        </div></section>
-      </div>
-
     </main>
   </div>
 </div>
@@ -499,11 +464,64 @@
     </div>
   </div>
 </div>
+<!-- 비밀번호 변경 모달 -->
+<div id="mi-pw-modal" style="display:none;position:fixed;inset:0;z-index:1050;background:rgba(0,0,0,0.45);overflow-y:auto;">
+  <div style="max-width:420px;margin:120px auto;background:#fff;border-radius:16px;padding:28px 24px;position:relative;">
+    <button type="button" id="mi-pw-modal-close" style="position:absolute;top:16px;right:18px;background:none;border:none;font-size:1.4rem;color:#888;cursor:pointer;">&times;</button>
+    <h3 style="font-size:1.05rem;font-weight:800;color:#1b4332;margin:0 0 20px;">비밀번호 변경</h3>
+    <div style="display:flex;flex-direction:column;gap:14px;">
+      <div>
+        <label style="font-size:.82rem;font-weight:700;color:#444;display:block;margin-bottom:4px;">현재 비밀번호</label>
+        <input id="mi-pw-current" type="password" placeholder="현재 비밀번호 입력"
+          style="width:100%;padding:10px 12px;border:1px solid var(--fl-border);border-radius:8px;font-size:.9rem;box-sizing:border-box;">
+      </div>
+      <div>
+        <label style="font-size:.82rem;font-weight:700;color:#444;display:block;margin-bottom:4px;">새 비밀번호</label>
+        <input id="mi-pw-new" type="password" placeholder="새 비밀번호 (6자 이상)"
+          style="width:100%;padding:10px 12px;border:1px solid var(--fl-border);border-radius:8px;font-size:.9rem;box-sizing:border-box;">
+      </div>
+      <div>
+        <label style="font-size:.82rem;font-weight:700;color:#444;display:block;margin-bottom:4px;">새 비밀번호 확인</label>
+        <input id="mi-pw-confirm" type="password" placeholder="새 비밀번호 다시 입력"
+          style="width:100%;padding:10px 12px;border:1px solid var(--fl-border);border-radius:8px;font-size:.9rem;box-sizing:border-box;">
+      </div>
+      <p id="mi-pw-msg" style="font-size:.82rem;color:var(--fl-danger);margin:0;min-height:18px;"></p>
+      <button id="mi-pw-submit" class="fl-btn fl-btn-primary fl-btn-block" style="justify-content:center;">변경하기</button>
+    </div>
+  </div>
+</div>
 {% endblock %}
 
 {% block scripts %}
 <script>
 var AI_REC_URL = "{{ url_for('ai_recommend_page') }}";
+
+/* ── 프로필 사진 변경 ── */
+(function () {
+  var wrap  = document.getElementById('mi-avatar-wrap');
+  var input = document.getElementById('mi-avatar-input');
+  var img   = document.getElementById('mi-avatar-img');
+  if (!wrap || !input || !img) return;
+
+  wrap.addEventListener('click', function () { input.click(); });
+  input.addEventListener('change', function () {
+    if (!input.files || !input.files[0]) return;
+    var fd = new FormData();
+    fd.append('profile_pic', input.files[0]);
+    fetch('/upload_profile', {
+      method: 'POST',
+      headers: { 'X-Requested-With': 'XMLHttpRequest' },
+      body: fd
+    }).then(function (r) { return r.json(); }).then(function (res) {
+      if (res.ok) {
+        img.src = res.url + '?t=' + Date.now();
+      } else {
+        alert(res.msg || '업로드에 실패했습니다.');
+      }
+    }).catch(function () { alert('오류가 발생했습니다.'); });
+    input.value = '';
+  });
+})();
 
 function openCourseModal(expId, cropName) {
     var modal = document.getElementById('mi-course-modal');
@@ -699,6 +717,53 @@ document.getElementById('mi-course-modal').addEventListener('click', function(e)
       }).join('') : '<p class="mi-empty">포인트 내역이 없어요.</p>';
     }).catch(function () {});
   }
+
+  /* ── 비밀번호 변경 모달 ── */
+  (function () {
+    var modal   = document.getElementById('mi-pw-modal');
+    var msgEl   = document.getElementById('mi-pw-msg');
+
+    function openPwModal() {
+      document.getElementById('mi-pw-current').value = '';
+      document.getElementById('mi-pw-new').value = '';
+      document.getElementById('mi-pw-confirm').value = '';
+      msgEl.textContent = '';
+      modal.style.display = 'block';
+      document.body.style.overflow = 'hidden';
+    }
+    function closePwModal() {
+      modal.style.display = 'none';
+      document.body.style.overflow = '';
+    }
+
+    document.getElementById('mi-pw-row').addEventListener('click', openPwModal);
+    document.getElementById('mi-pw-modal-close').addEventListener('click', closePwModal);
+    modal.addEventListener('click', function (e) { if (e.target === modal) closePwModal(); });
+
+    document.getElementById('mi-pw-submit').addEventListener('click', function () {
+      var current = document.getElementById('mi-pw-current').value.trim();
+      var newPw   = document.getElementById('mi-pw-new').value;
+      var confirm = document.getElementById('mi-pw-confirm').value;
+      msgEl.style.color = 'var(--fl-danger)';
+      if (!current || !newPw || !confirm) { msgEl.textContent = '모든 칸을 입력해주세요.'; return; }
+      if (newPw.length < 6) { msgEl.textContent = '새 비밀번호는 6자 이상이어야 합니다.'; return; }
+      if (newPw !== confirm) { msgEl.textContent = '새 비밀번호가 일치하지 않습니다.'; return; }
+
+      fetch('/change_password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ current_password: current, new_password: newPw })
+      }).then(function (r) { return r.json(); }).then(function (res) {
+        if (res.ok) {
+          msgEl.style.color = 'var(--fl-green-700)';
+          msgEl.textContent = '비밀번호가 변경되었습니다.';
+          setTimeout(closePwModal, 1200);
+        } else {
+          msgEl.textContent = res.msg || '변경에 실패했습니다.';
+        }
+      }).catch(function () { msgEl.textContent = '오류가 발생했습니다. 다시 시도해주세요.'; });
+    });
+  })();
 
   /* ── URL 파라미터로 초기 패널 결정 ── */
   var initPanel = new URLSearchParams(location.search).get('panel') || 'info';

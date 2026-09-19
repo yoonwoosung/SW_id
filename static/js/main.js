@@ -8,29 +8,37 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (cardTrack && cardPrevBtn && cardNextBtn) {
         let isAnimating = false;
+        let animTimer = null;
+
+        function resetAnim() {
+            clearTimeout(animTimer);
+            isAnimating = false;
+        }
 
         cardNextBtn.addEventListener('click', function() {
             if (isAnimating) return;
             isAnimating = true;
+            clearTimeout(animTimer);
 
             cardTrack.style.transition = 'transform 0.4s ease-in-out';
             cardTrack.style.transform = 'translateX(calc(-50% - 12px))';
 
             cardTrack.addEventListener('transitionend', function handleNext() {
                 cardTrack.removeEventListener('transitionend', handleNext);
-
                 cardTrack.appendChild(cardTrack.firstElementChild);
                 cardTrack.style.transition = 'none';
                 cardTrack.style.transform = 'translateX(0)';
-                
                 void cardTrack.offsetWidth;
-                isAnimating = false;
+                resetAnim();
             });
+            // transitionend 미발화 시 600ms 후 강제 해제
+            animTimer = setTimeout(resetAnim, 600);
         });
 
         cardPrevBtn.addEventListener('click', function() {
             if (isAnimating) return;
             isAnimating = true;
+            clearTimeout(animTimer);
 
             cardTrack.insertBefore(cardTrack.lastElementChild, cardTrack.firstElementChild);
             cardTrack.style.transition = 'none';
@@ -43,8 +51,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
             cardTrack.addEventListener('transitionend', function handlePrev() {
                 cardTrack.removeEventListener('transitionend', handlePrev);
-                isAnimating = false;
+                resetAnim();
             });
+            animTimer = setTimeout(resetAnim, 600);
         });
     }
 

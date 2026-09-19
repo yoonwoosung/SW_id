@@ -11,13 +11,23 @@
         {# ===== 사이드바 ===== #}
         <aside class="fl-sidebar">
             <div class="fl-card"><div class="fl-card-body fl-side-profile">
-                {% if user.farm_image %}
-                <img class="fl-avatar" src="{{ url_for('static', filename='uploads/' + user.farm_image) }}" alt="{{ user.nickname }}">
-                {% elif user.profile_image %}
-                <img class="fl-avatar" src="{{ url_for('static', filename='uploads/' + user.profile_image) }}" alt="{{ user.nickname }}">
-                {% else %}
-                <img class="fl-avatar" src="{{ url_for('static', filename='images/no_image.svg') }}" alt="{{ user.nickname }}">
-                {% endif %}
+                <style>
+                .em-avatar-wrap { position:relative; width:80px; height:80px; cursor:pointer; margin:0 auto var(--fl-s2); }
+                .em-avatar-wrap .fl-avatar { width:80px; height:80px; border-radius:50%; object-fit:cover; display:block; }
+                .em-avatar-overlay {
+                  position:absolute; inset:0; border-radius:50%;
+                  background:rgba(0,0,0,0.42); display:flex; align-items:center; justify-content:center;
+                  opacity:0; transition:opacity .18s; color:#fff; font-size:.75rem; flex-direction:column; gap:3px;
+                }
+                .em-avatar-wrap:hover .em-avatar-overlay { opacity:1; }
+                </style>
+                <div class="em-avatar-wrap" id="em-avatar-wrap" title="프로필 사진 변경">
+                  <img class="fl-avatar" id="em-avatar-img"
+                    src="{% if user.profile_image %}{{ url_for('static', filename='uploads/' + user.profile_image) }}{% elif user.farm_image %}{{ url_for('static', filename='uploads/' + user.farm_image) }}{% else %}{{ url_for('static', filename='images/no_image.svg') }}{% endif %}"
+                    alt="{{ user.nickname }}">
+                  <div class="em-avatar-overlay"><i class="fa-solid fa-camera"></i><span>변경</span></div>
+                </div>
+                <input type="file" id="em-avatar-input" accept="image/*" style="display:none;">
                 <strong>{{ user.nickname }}</strong>
                 <div class="fl-muted fl-meta">{{ (user.farm_address or '지역 미등록').split(' ')[:2] | join(' ') }}</div>
             </div></div>
@@ -261,8 +271,18 @@
                     {% for farm in farms %}
                     <div class="ac-farm-card">
                         <div class="ac-farm-info">
-                            <div class="d-flex align-items-center mb-1">
-                                <strong class="text-dark mr-2" style="font-size: 1.1rem;">{{ farm.name or '기본 농장' }}</strong>
+                            <div class="d-flex align-items-center mb-1" style="gap:8px;">
+                                {# 이름 표시 / 인라인 편집 #}
+                                <span class="farm-name-view" data-farm-id="{{ farm.id }}" style="font-size:1.1rem;font-weight:700;color:#1a1a1a;">{{ farm.name or '기본 농장' }}</span>
+                                <button type="button" class="farm-name-edit-btn" data-farm-id="{{ farm.id }}" title="농장 이름 변경"
+                                  style="background:none;border:none;cursor:pointer;color:var(--fl-text-muted);padding:2px 4px;">
+                                  <i class="fa-solid fa-pen-to-square" style="font-size:.85rem;"></i>
+                                </button>
+                                <span class="farm-name-edit-area" data-farm-id="{{ farm.id }}" style="display:none;align-items:center;gap:6px;">
+                                  <input type="text" class="farm-name-input form-control form-control-sm" value="{{ farm.name or '' }}" placeholder="농장 이름" style="width:160px;">
+                                  <button type="button" class="farm-name-save fl-btn fl-btn-primary fl-btn-sm" data-farm-id="{{ farm.id }}">저장</button>
+                                  <button type="button" class="farm-name-cancel fl-btn fl-btn-outline fl-btn-sm" data-farm-id="{{ farm.id }}">취소</button>
+                                </span>
                                 {% if farm.status == 'APPROVED' %}
                                 <span class="fl-badge fl-badge--active"><img src="{{ url_for('static', filename='icons/icon-confirmed.svg') }}" width="16" height="16" style="vertical-align:-3px;margin-right:4px;"> 승인완료</span>
                                 {% elif farm.status == 'PENDING' %}
@@ -501,6 +521,79 @@
 
 {% block scripts %}
 <script>
+/* ── 농장 이름 인라인 편집 ── */
+document.querySelectorAll('.farm-name-edit-btn').forEach(function(btn) {
+  var id = btn.dataset.farmId;
+  var view = document.querySelector('.farm-name-view[data-farm-id="' + id + '"]');
+  var area = document.querySelector('.farm-name-edit-area[data-farm-id="' + id + '"]');
+  var input = area.querySelector('.farm-name-input');
+  var save  = area.querySelector('.farm-name-save');
+  var cancel = area.querySelector('.farm-name-cancel');
+
+  btn.addEventListener('click', function() {
+    input.value = view.textContent.trim() === '기본 농장' ? '' : view.textContent.trim();
+    view.style.display = 'none';
+    btn.style.display = 'none';
+    area.style.display = 'flex';
+    input.focus();
+  });
+
+  cancel.addEventListener('click', function() {
+    area.style.display = 'none';
+    view.style.display = '';
+    btn.style.display = '';
+  });
+
+  save.addEventListener('click', function() {
+    var name = input.value.trim();
+    if (!name) { input.focus(); return; }
+    save.disabled = true;
+    fetch('/farmer/farm/' + id + '/name', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: name })
+    }).then(function(r) { return r.json(); }).then(function(res) {
+      if (res.ok) {
+        view.textContent = name;
+        area.style.display = 'none';
+        view.style.display = '';
+        btn.style.display = '';
+      } else {
+        alert(res.msg || '저장에 실패했습니다.');
+      }
+    }).catch(function() { alert('오류가 발생했습니다.'); })
+      .finally(function() { save.disabled = false; });
+  });
+
+  input.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') save.click();
+    if (e.key === 'Escape') cancel.click();
+  });
+});
+
+/* ── 프로필 사진 변경 ── */
+(function () {
+  var wrap  = document.getElementById('em-avatar-wrap');
+  var input = document.getElementById('em-avatar-input');
+  var img   = document.getElementById('em-avatar-img');
+  if (!wrap || !input || !img) return;
+  wrap.addEventListener('click', function () { input.click(); });
+  input.addEventListener('change', function () {
+    if (!input.files || !input.files[0]) return;
+    var fd = new FormData();
+    fd.append('profile_pic', input.files[0]);
+    fetch('/upload_profile', {
+      method: 'POST',
+      headers: { 'X-Requested-With': 'XMLHttpRequest' },
+      body: fd
+    }).then(function (r) { return r.json(); }).then(function (res) {
+      if (res.ok) { img.src = res.url + '?t=' + Date.now(); }
+      else { alert(res.msg || '업로드에 실패했습니다.'); }
+    }).catch(function () { alert('오류가 발생했습니다.'); });
+    input.value = '';
+  });
+})();
+
 function execDaumPostcode() {
     new daum.Postcode({
         oncomplete: function(data) {

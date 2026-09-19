@@ -2954,8 +2954,8 @@
             }
         }
 
-        document.getElementById('bookPrevBtn').style.opacity = (currentSpreadIndex === 0) ? '0.3' : '1';
-        document.getElementById('bookNextBtn').style.opacity = (currentSpreadIndex === totalSpreads) ? '0.3' : '1';
+        document.getElementById('bookPrevBtn').classList.toggle('dim', currentSpreadIndex === 0);
+        document.getElementById('bookNextBtn').classList.toggle('dim', currentSpreadIndex === totalSpreads);
 
         renderEditorThumbs();
 

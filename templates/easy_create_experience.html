@@ -24,11 +24,6 @@
                 <div class="step-line" id="line-3"></div>
                 <div class="step-item">
                     <div class="step-dot" id="dot-4">4</div>
-                    <span class="step-dot-label">봉사자</span>
-                </div>
-                <div class="step-line" id="line-4"></div>
-                <div class="step-item">
-                    <div class="step-dot" id="dot-5">5</div>
                     <span class="step-dot-label">최종 확인</span>
                 </div>
             </div>
@@ -359,31 +354,8 @@
             </section>
         </div>
 
-        {# ===== 4단계: 봉사자 ===== #}
+        {# ===== 4단계: 최종 확인 ===== #}
         <div class="step-panel" id="step-4" style="display:none;">
-            <section class="fl-card">
-                <div class="fl-card-body">
-                    <p style="font-size:17px;color:#555;margin-bottom:var(--fl-s4);">봉사자 모집이 필요하지 않으면 0을 입력하고 다음 단계로 넘어가세요.</p>
-                    <div class="form-group">
-                        <label class="easy-form-label-lg" for="volunteer_needed">필요 봉사자 수</label>
-                        <div style="display:flex;align-items:center;gap:12px;">
-                            <input type="number" class="form-control" id="volunteer_needed" name="volunteer_needed" min="0"
-                                style="max-width:200px;"
-                                value="{{ form_data.get('volunteer_needed') or (item.volunteer_needed if item else 0) }}">
-                            <span style="font-size:18px;color:#555;">명 (0이면 모집 안 함)</span>
-                        </div>
-                    </div>
-                    <div class="form-group mb-0">
-                        <label class="easy-form-label-lg" for="volunteer_duties">봉사자 주요 업무</label>
-                        <textarea class="form-control" id="volunteer_duties" name="volunteer_duties" rows="4"
-                            placeholder="예) 잡초 제거, 수확 보조">{{ form_data.get('volunteer_duties') or (item.volunteer_duties if item else '') }}</textarea>
-                    </div>
-                </div>
-            </section>
-        </div>
-
-        {# ===== 5단계: 최종 확인 ===== #}
-        <div class="step-panel" id="step-5" style="display:none;">
             <section class="fl-card">
                 <div class="fl-card-body">
                     <h3 style="font-size:20px;font-weight:700;margin-bottom:var(--fl-s4);">입력하신 내용을 확인해 주세요.</h3>
@@ -410,14 +382,13 @@
                         {% if item %}이 내용으로 수정하기{% else %}등록하기{% endif %}
                     </button>
                     <button type="button" id="btn-prev-final" class="easy-back-button"
-                        style="display:block;width:100%;margin-top:14px;">← 이전 단계</button>
+                        style="display:block;width:100%;margin-top:14px;font-weight:700;">← 이전 단계</button>
                 </div>
             </section>
         </div>
 
         {# 하단 이전/다음 버튼 영역 #}
         <div class="step-nav-btns">
-            <button type="button" id="btn-prev" class="easy-nav-btn easy-back-button is-hidden">← 이전 단계</button>
             <button type="button" id="btn-next" class="easy-nav-btn easy-submit-button">다음 단계 →</button>
         </div>
 
@@ -626,14 +597,13 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // ===== 1. 단계 관리 =====
     let cur = 1;
-    const total = 5;
-    const LABELS = ['', '작물명과 진행 농장을 선택해 주세요.', '운영 기간과 시간을 입력해 주세요.', '상세 정보를 입력해 주세요.', '봉사자 정보를 입력해 주세요.', '내용을 확인하고 등록해 주세요.'];
+    const total = 4;
+    const LABELS = ['', '작물명과 진행 농장을 선택해 주세요.', '운영 기간과 시간을 입력해 주세요.', '상세 정보를 입력해 주세요.', '내용을 확인하고 등록해 주세요.'];
     const ENCOURAGE = [
         '',
         '첫 번째 단계예요! 천천히 입력해 주세요.',
-        '잘 하고 계세요! 3단계만 더 입력하면 등록이 완료돼요.',
+        '잘 하고 계세요! 2단계만 더 입력하면 등록이 완료돼요.',
         '절반을 넘었어요! 거의 다 왔습니다.',
-        '한 단계만 더예요! 봉사자 정보를 입력해 주세요.',
         '다 됐어요! 내용을 확인하고 등록해 주세요.'
     ];
 
@@ -653,14 +623,8 @@ document.addEventListener('DOMContentLoaded', function () {
         document.getElementById('step-label').textContent = n + '단계 / 전체 ' + total + '단계 — ' + LABELS[n];
         document.getElementById('step-encourage').textContent = ENCOURAGE[n];
         
-        const prevBtn = document.getElementById('btn-prev');
         const nextBtn = document.getElementById('btn-next');
-        
-        if (prevBtn) {
-            if (n === 1) prevBtn.classList.add('is-hidden');
-            else prevBtn.classList.remove('is-hidden');
-        }
-        
+
         if (nextBtn) {
             if (n === total) nextBtn.classList.add('is-hidden');
             else nextBtn.classList.remove('is-hidden');
@@ -733,10 +697,6 @@ document.addEventListener('DOMContentLoaded', function () {
     document.getElementById('btn-next').addEventListener('click', function () {
         if (!validateStep(cur)) return;
         if (cur < total) { cur++; showStep(cur); }
-    });
-
-    document.getElementById('btn-prev').addEventListener('click', function () {
-        if (cur > 1) { cur--; showStep(cur); }
     });
 
     document.getElementById('btn-prev-final').addEventListener('click', function () {

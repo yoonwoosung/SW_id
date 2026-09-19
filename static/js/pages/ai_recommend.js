@@ -13,10 +13,12 @@
     // segment 값은 URL 파라미터(?segment=...)로도 쓰이므로 키는 바꾸지 않는다.
     // 'peers' 는 화면에서 '가볍게 다녀오기 좋은 코스'로 표시된다(기준: 저렴·가까움).
     var SECTIONS = [
-        { key: 'nearby', rowId: 'sec-nearby', segment: null,    esg: false },
-        { key: 'light',  rowId: 'sec-peers',  segment: 'peers', esg: false },
-        { key: 'group',  rowId: 'sec-group',  segment: 'group', esg: false },
-        { key: 'esg',    rowId: 'sec-esg',    segment: 'esg',   esg: true }
+        { key: 'nearby',       rowId: 'sec-nearby',       segment: null,          esg: false },
+        { key: 'peers_age',    rowId: 'sec-peers-age',    segment: 'peers_age',   esg: false },
+        { key: 'peers_gender', rowId: 'sec-peers-gender', segment: 'peers_gender',esg: false },
+        { key: 'light',        rowId: 'sec-peers',        segment: 'peers',       esg: false },
+        { key: 'group',        rowId: 'sec-group',        segment: 'group',       esg: false },
+        { key: 'esg',          rowId: 'sec-esg',          segment: 'esg',         esg: true  }
     ];
 
     function esc(s) { var d = document.createElement('div'); d.textContent = (s == null ? '' : String(s)); return d.innerHTML; }

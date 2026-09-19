@@ -70,6 +70,9 @@ def personalized_recommendations():
         # 친환경 항목(E축)이 있고 ESG 등급 B 이상인 것만 남기고, 그 안에서 점수순.
         ranked = [item for item in ranked if eco_filter.passes_eco_section(item[0])]
         ranked.sort(key=lambda item: compute_esg(item[0])["score"], reverse=True)
+    elif segment in ('peers_age', 'peers_gender'):
+        # 나이 기반 / 성별 기반 단축버튼 섹션 — 동일한 peers 점수 기준 적용
+        ranked = segment_score.apply('peers', ranked)
     else:
         # peers('가볍게')·group('단체로')는 기준이 달라야 한다. 지금까지 분기가 없어
         # 기본 점수순 그대로였고, 그래서 세 섹션에 같은 체험이 나왔다.

@@ -43,10 +43,10 @@ def segment_buttons(user):
     gender = getattr(user, 'gender', None) if user is not None else None
     buttons = []
     if age:
-        buttons.append({'label': age + ' 놀러가기 좋은 곳', 'icon': '🌿', 'segment': 'peers'})
+        buttons.append({'label': age + ' 놀러가기 좋은 곳', 'icon': '', 'segment': 'peers_age'})
     if gender in _GENDER_BUTTON:
         word, icon = _GENDER_BUTTON[gender]
-        buttons.append({'label': word + '끼리 가기 좋은 곳', 'icon': icon, 'segment': 'peers'})
+        buttons.append({'label': word + '끼리 가기 좋은 곳', 'icon': '', 'segment': 'peers_gender'})
     for fallback in _FALLBACK_BUTTONS:      # 프로필 정보가 부족하면 기본 버튼으로 2개를 채운다.
         if len(buttons) >= 2:
             break

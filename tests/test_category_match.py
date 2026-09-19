@@ -14,7 +14,7 @@ class FakeExperience:
     def __init__(self, address_detail="", cost=0, has_parking=False,
                  pesticide_free=False, organic_certification_type=None,
                  activity_type=None, pet_allowed=False, pet_max_weight_kg=None,
-                 has_wifi=False):
+                 has_wifi=False, barrier_free=False):
         self.address_detail = address_detail
         self.cost = cost
         self.has_parking = has_parking
@@ -24,6 +24,7 @@ class FakeExperience:
         self.pet_allowed = pet_allowed
         self.pet_max_weight_kg = pet_max_weight_kg
         self.has_wifi = has_wifi
+        self.barrier_free = barrier_free
 
 
 def test_no_conditions_returns_zero():
@@ -109,3 +110,38 @@ def test_category_bonus_scales_by_constant():
     exp = FakeExperience(address_detail="충남 논산시", cost=25000, has_parking=True)
     conditions = {"region": ["chungnam"], "facility": ["parking"]}  # 2건 일치
     assert category_bonus(conditions, exp) == pytest.approx(2 * CATEGORY_MATCH_SCORE)
+
+
+# ======================================================================
+# 무장애·와이파이 — 죽어 있던 선택지를 실제 데이터와 연결
+# ======================================================================
+#
+# barrier_free 는 컬럼이 있고 ESG 점수·상세 배지에서 읽는데 필터만 안 봤다.
+# 메인 페이지의 ?cond_facility=barrier_free 링크 카드가 항상 0건이었다.
+# has_wifi 는 판정 분기가 있었지만 등록 폼에 입력이 없어 항상 False 였다.
+
+def test_barrier_free_is_judged():
+    assert compute_category_match(
+        {"facility": ["barrier_free"]}, FakeExperience(barrier_free=True)) == 1
+    assert compute_category_match(
+        {"facility": ["barrier_free"]}, FakeExperience(barrier_free=False)) == 0
+
+
+def test_wifi_is_judged():
+    assert compute_category_match(
+        {"facility": ["wifi"]}, FakeExperience(has_wifi=True)) == 1
+    assert compute_category_match(
+        {"facility": ["wifi"]}, FakeExperience(has_wifi=False)) == 0
+
+
+def test_facility_keeps_or_within_category():
+    """대분류 안은 OR — 주차만 있어도 '주차 또는 무장애'는 충족."""
+    exp = FakeExperience(has_parking=True, barrier_free=False)
+    assert compute_category_match({"facility": ["parking", "barrier_free"]}, exp) == 1
+
+
+def test_unjudgeable_facility_codes_still_false():
+    """화장실·수유실은 대응 컬럼이 없어 그대로 판정하지 않는다(화면에서 감춘다)."""
+    exp = FakeExperience(has_parking=True, barrier_free=True, has_wifi=True)
+    for code in ("restroom", "nursing_room"):
+        assert compute_category_match({"facility": [code]}, exp) == 0, code

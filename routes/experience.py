@@ -417,6 +417,8 @@ def farmer_register(item_id=None):
     if request.method == 'POST':
         is_organic = 'is_organic' in request.form
         has_parking = 'has_parking' in request.form
+        barrier_free = 'barrier_free' in request.form
+        has_wifi = 'has_wifi' in request.form
         pet_allowed, pet_max_weight_kg, pet_error = experience_validator.parse_pet_fields(request.form)
         if pet_error:
             flash(pet_error, "danger")
@@ -511,6 +513,8 @@ def farmer_register(item_id=None):
             item.volunteer_needed = volunteer_needed
             item.volunteer_duties = request.form.get('volunteer_duties')
             item.has_parking = has_parking
+            item.barrier_free = barrier_free
+            item.has_wifi = has_wifi
             item.pet_allowed = pet_allowed
             item.pet_max_weight_kg = pet_max_weight_kg
             for _field, _value in surplus.items():
@@ -544,6 +548,8 @@ def farmer_register(item_id=None):
                 farmer_id=session['user_id'],
                 volunteer_needed=volunteer_needed,
                 has_parking=has_parking,
+                barrier_free=barrier_free,
+                has_wifi=has_wifi,
                 pet_allowed=pet_allowed,
                 pet_max_weight_kg=pet_max_weight_kg,
                 **surplus,

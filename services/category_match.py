@@ -68,7 +68,10 @@ def _has_facility(selected, experience):
             return True
         if code == "organic" and getattr(experience, "organic_certification_type", None):
             return True
-        # restroom, barrier_free, nursing_room: Experience에 대응 데이터가 없어 판정하지 않는다.
+        if code == "barrier_free" and getattr(experience, "barrier_free", False):
+            return True
+        # restroom, nursing_room: Experience 에 대응 컬럼이 없어 판정할 수 없다.
+        # 화면에서도 감춘다(common/search_categories 의 hidden).
     return False
 
 

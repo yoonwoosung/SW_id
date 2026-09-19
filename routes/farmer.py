@@ -317,6 +317,8 @@ def easy_create_experience():
             excludes=request.form.get('excludes'),
             timetable_data=request.form.get('timetable_data'),
             has_parking='has_parking' in request.form,
+            barrier_free='barrier_free' in request.form,
+            has_wifi='has_wifi' in request.form,
             pet_allowed=pet_allowed,
             pet_max_weight_kg=pet_max_weight_kg,
             **surplus,
@@ -490,6 +492,8 @@ def easy_modify_experience(item_id):
         item.excludes = request.form.get('excludes')
         item.timetable_data = request.form.get('timetable_data')
         item.has_parking = 'has_parking' in request.form
+        item.barrier_free = 'barrier_free' in request.form
+        item.has_wifi = 'has_wifi' in request.form
         item.pet_allowed = pet_allowed
         item.pet_max_weight_kg = pet_max_weight_kg
         for _field, _value in surplus.items():

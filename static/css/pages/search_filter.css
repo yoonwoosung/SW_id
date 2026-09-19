@@ -133,15 +133,7 @@
    (390px 에서도 17px 뿐) 좁은 화면은 1열 + 탭바 스크롤을 유지한다.
    탭바 폭 132px 자체는 그대로 두고 열 수만 바꾼다. */
 @media (min-width: 720px) {
-    .fl-tabbar--vertical {
-        flex: 0 0 272px;
-        display: grid; grid-template-columns: repeat(2, 1fr);
-        gap: 2px 6px; align-content: start;
-        overflow-y: visible;      /* 2열이면 고정 높이 안에 들어가 스크롤이 필요 없다 */
-    }
-    /* 7행 × 탭 높이(글꼴 14.4px + padding 18px ≈ 36px) + gap 12px ≈ 264px.
-       글꼴에 따라 몇 px 달라지므로 여유를 두고 280px 로 잡는다. */
-    .fl-filter { height: 280px; }
+    .fl-filter { height: 380px; }
 }
 
 /* ---- 트렌드 키워드 ---- */

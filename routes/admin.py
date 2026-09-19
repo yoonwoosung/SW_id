@@ -36,14 +36,20 @@ def farm_approve(farm_id):
     farm.status = 'APPROVED'
     farm.reject_reason = None
     farm.updated_at = datetime.utcnow()
-    
+
     notif = Notification(
         user_id=farm.user_id,
         message=f"[{farm.name or farm.address}] 농장 입점 심사가 승인되었습니다. 이제 체험을 등록할 수 있습니다."
     )
     db.session.add(notif)
     db.session.commit()
-    flash("농장 입점이 성공적으로 승인되었습니다.", "success")
+    flash("농장 입점이 승인되었습니다.", "success")
+
+    # 친환경 신청 농장이면 바로 친환경 인증 심사 페이지로 이동
+    if farm.is_organic and farm.organic_cert_status == 'PENDING':
+        flash("친환경 인증 서류를 이어서 심사해 주세요.", "info")
+        return redirect(url_for('admin_organic_cert_detail', farm_id=farm.id))
+
     return redirect(url_for('admin_farm_audit_list', status='PENDING'))
 
 @admin_required

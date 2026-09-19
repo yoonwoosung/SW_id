@@ -135,7 +135,7 @@
                             <input type="number" class="form-control mb-2" name="list_price" id="list_price"
                                    min="1" step="1" placeholder="예) 50000" oninput="flUpdateSurplus()"
                                    value="{{ form_data.get('list_price') or (item.list_price if item and item.list_price else '') }}">
-                            <p id="surplus-rate" class="font-weight-bold mb-3">할인율 —</p>
+                            <small class="text-muted d-block mb-3">할인 없이 팔 때의 1인 가격입니다.</small>
 
                             <label for="surplus_qty_total" class="option-title d-block mb-2">총 수량</label>
                             <input type="number" class="form-control mb-2" name="surplus_qty_total" id="surplus_qty_total"
@@ -153,6 +153,9 @@
                                 <option value="{{ u }}" {% if item and item.surplus_unit == u %}selected{% endif %}>{{ u }}</option>
                                 {% endfor %}
                             </select>
+                            <div id="surplus-rate" class="alert alert-light border py-2 px-3 mb-2">
+                                정가와 총 수량을 입력하면 할인율과 최대 체험료가 표시됩니다.
+                            </div>
                             <p id="surplus-capacity" class="text-muted mb-3">—</p>
 
                             <label for="surplus_reason" class="option-title d-block mb-2">할인 사유 <span class="text-danger">*</span></label>
@@ -184,7 +187,7 @@
                                 <strong>현장 수확·수령만 가능합니다.</strong> 택배 발송은 제공하지 않습니다.
                             </div>
                             <div class="custom-option-card" onclick="toggleCheckbox('surplus_terms_agreed')">
-                                <span class="option-title" style="font-size:.95rem;">정가 대비 20% 이상 저렴하게 판매 (필수 동의)</span>
+                                <span class="option-title" style="font-size:.95rem;">자동 산출된 할인율만큼 저렴하게 판매 (필수 동의)</span>
                                 <input type="checkbox" class="custom-large-check" id="surplus_terms_agreed"
                                        name="surplus_terms_agreed" onclick="event.stopPropagation()"
                                        {% if item and item.surplus_terms_agreed %}checked{% endif %}>
@@ -314,6 +317,7 @@
                             <span style="font-size:18px;color:#555;">원</span>
                         </div>
                         <p class="easy-form-hint">예: 15000</p>
+                        <p id="price-surplus-hint" class="easy-form-hint" hidden></p>
                     </div>
                 </div>
             </section>
@@ -878,36 +882,98 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 });
 
-// --- 과생산: 할인율·정원 즉시 표시 ---
+// --- 과생산: 할인율·최대 체험료·정원 즉시 표시 ---
+// 구간표는 서버 상수를 그대로 주입받는다. 서버가 저장 전에 다시 검증한다.
+var FL_SURPLUS = {{ SURPLUS_TIERS_JSON|safe }};
+
+// services/experience_validator.auto_discount_percent 와 같은 규칙.
+function flSurplusPercent(total, unit) {
+    if (!(total > 0)) return null;
+    var amount = total, table = unit;
+    if (FL_SURPLUS.conversion[unit]) {          // g → kg 처럼 환산만 하는 단위
+        amount = total / FL_SURPLUS.conversion[unit][1];
+        table = FL_SURPLUS.conversion[unit][0];
+    }
+    var tiers = FL_SURPLUS.tiers[table];
+    if (!tiers) return FL_SURPLUS.default;      // 구간표가 없는 단위(포기·단)
+    for (var i = 0; i < tiers.length; i++) {
+        if (tiers[i][0] === null || amount < tiers[i][0]) return tiers[i][1];
+    }
+    return FL_SURPLUS.default;
+}
+
+function flSurplusMaxCost(listPrice, total, unit) {
+    var percent = flSurplusPercent(total, unit);
+    if (percent === null || !(listPrice > 0)) return null;
+    return Math.floor(listPrice * (100 - percent) / 100);
+}
+
+function flWon(n) { return n.toLocaleString('ko-KR') + '원'; }
+
 function flUpdateSurplus() {
     var lp = document.getElementById('list_price');
-    var priceEl = document.getElementById('price');
     var rateEl = document.getElementById('surplus-rate');
     if (!lp || !rateEl) return;
 
+    var on = !!document.getElementById('is_surplus').checked;
     var listPrice = parseInt(lp.value, 10);
-    var price = priceEl ? parseInt(priceEl.value, 10) : NaN;
-    if (listPrice > 0 && price >= 0 && price < listPrice) {
-        var rate = (listPrice - price) / listPrice * 100;
-        rateEl.textContent = '할인율 ' + rate.toFixed(1) + '%'
-            + (rate < 20 ? ' — 20% 이상이어야 합니다' : '');
-        rateEl.style.color = rate >= 20 ? '#2e7d32' : '#c62828';
-    } else {
-        rateEl.textContent = '할인율 —';
-        rateEl.style.color = '';
-    }
-
     var total = parseInt(document.getElementById('surplus_qty_total').value, 10);
     var per = parseInt(document.getElementById('surplus_per_person').value, 10);
     var unit = document.getElementById('surplus_unit').value;
+    var priceEl = document.getElementById('price');
+    var hintEl = document.getElementById('price-surplus-hint');
+
+    var percent = flSurplusPercent(total, unit);
+    var cap = flSurplusMaxCost(listPrice, total, unit);
+
+    // --- 할인율 · 최대 체험료 안내 ---
+    if (!on) {
+        rateEl.textContent = '정가와 총 수량을 입력하면 할인율과 최대 체험료가 표시됩니다.';
+        rateEl.className = 'alert alert-light border py-2 px-3 mb-2';
+    } else if (cap === null) {
+        rateEl.textContent = percent === null
+            ? '총 수량을 입력하면 할인율이 정해집니다.'
+            : '정가를 입력하면 최대 체험료가 계산됩니다. (현재 할인율 ' + percent + '%)';
+        rateEl.className = 'alert alert-light border py-2 px-3 mb-2';
+    } else {
+        var msg = '총 ' + total + unit + ' → 할인율 <strong>' + percent + '%</strong>'
+                + ' → 최대 체험료 <strong>' + flWon(cap) + '</strong>';
+        if (!FL_SURPLUS.tiers[unit] && !FL_SURPLUS.conversion[unit]) {
+            // 포기·단은 kg 환산 기준이 없어 기본 할인율을 준다. 이유를 알려야 한다.
+            msg += '<br><span class="text-muted">' + unit
+                 + ' 단위는 기본 할인율 ' + FL_SURPLUS.default + '%가 적용됩니다.</span>';
+        }
+        rateEl.innerHTML = msg;
+        rateEl.className = 'alert alert-success py-2 px-3 mb-2';
+    }
+
+    // --- 참가비: 비어 있을 때만 채운다 ---
+    // 이미 적어 둔 값을 말없이 덮어쓰면 농장주가 모르는 채 저장된다.
+    if (on && cap !== null && priceEl) {
+        if (!priceEl.value) priceEl.value = cap;
+        var price = parseInt(priceEl.value, 10);
+        hintEl.hidden = false;
+        if (price > cap) {
+            hintEl.innerHTML = '최대 <strong>' + flWon(cap)
+                + '</strong>까지 가능합니다. 지금 금액으로는 저장되지 않습니다.';
+            hintEl.style.color = '#c62828';
+        } else {
+            hintEl.innerHTML = '할인율 ' + percent + '% 적용 — 최대 ' + flWon(cap) + '까지 가능합니다.';
+            hintEl.style.color = '';
+        }
+    } else if (hintEl) {
+        hintEl.hidden = true;
+    }
+
+    // --- 수량으로 정해지는 정원 ---
     var capEl = document.getElementById('surplus-capacity');
     if (total > 0 && per > 0) {
-        var cap = Math.floor(total / per);
-        var rest = total - cap * per;
-        capEl.textContent = '최대 ' + cap + '명까지 받을 수 있습니다.'
+        var room = Math.floor(total / per);
+        var rest = total - room * per;
+        capEl.textContent = '최대 ' + room + '명까지 받을 수 있습니다.'
             + (rest > 0 ? ' (자투리 ' + rest + unit + '은 예약받지 않습니다)' : '');
         var maxEl = document.getElementById('max_participants');
-        if (maxEl && (!maxEl.value || parseInt(maxEl.value, 10) > cap)) maxEl.value = cap;
+        if (maxEl && (!maxEl.value || parseInt(maxEl.value, 10) > room)) maxEl.value = room;
     } else {
         capEl.textContent = '—';
     }

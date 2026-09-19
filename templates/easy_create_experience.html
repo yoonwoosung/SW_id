@@ -160,6 +160,25 @@
                             </select>
                             <p id="surplus-capacity" class="text-muted mb-3">—</p>
 
+                            <label for="surplus_reason" class="option-title d-block mb-2">할인 사유 <span class="text-danger">*</span></label>
+                            {% set _presets = ['과잉생산', '못난이', '수확임박', '규격외'] %}
+                            {% set _saved = form_data.get('surplus_reason') or (item.surplus_reason if item else None) %}
+                            {% set _is_etc = _saved and _saved not in _presets %}
+                            <select class="form-control mb-2" name="surplus_reason" id="surplus_reason"
+                                    onchange="document.getElementById('surplus-reason-etc-row').hidden = this.value !== '기타';">
+                                <option value="">-- 선택 --</option>
+                                {% for r in _presets + ['기타'] %}
+                                <option value="{{ r }}"
+                                    {% if (r == '기타' and _is_etc) or (r != '기타' and _saved == r) %}selected{% endif %}>{{ r }}</option>
+                                {% endfor %}
+                            </select>
+                            <div id="surplus-reason-etc-row" class="mb-3" {% if not _is_etc %}hidden{% endif %}>
+                                <input type="text" class="form-control" name="surplus_reason_etc" id="surplus_reason_etc"
+                                       maxlength="6" placeholder="예) 잔여물량"
+                                       value="{{ _saved if _is_etc else '' }}">
+                                <small class="text-muted">할인 리본에 표시되므로 6자 이내로 입력해주세요.</small>
+                            </div>
+
                             <label for="surplus_origin" class="option-title d-block mb-2">원산지</label>
                             <input type="text" class="form-control mb-1" name="surplus_origin" id="surplus_origin"
                                    placeholder="예) 충남 논산시"

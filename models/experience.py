@@ -55,6 +55,7 @@ class Experience(db.Model):
     surplus_per_person = db.Column(db.Integer, nullable=True)             # 1인당 수확량(단위는 surplus_unit)
     surplus_unit = db.Column(db.String(20), default='kg', nullable=True)  # kg·박스·구좌
     surplus_origin = db.Column(db.String(255), nullable=True)             # 원산지 표시(시도+시군구)
+    surplus_reason = db.Column(db.String(20), nullable=True)               # 할인 사유(리본 문구). 선택지 또는 기타 6자
 
     farmer = db.relationship('User', back_populates='experiences')
     farm = db.relationship('Farm', backref='experiences')

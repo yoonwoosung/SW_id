@@ -97,6 +97,31 @@
                         <p id="surplus-capacity" class="small text-muted mb-2">—</p>
 
                         <div class="form-group">
+                            <label for="surplus_reason" class="small mb-1">할인 사유 <span class="text-danger">*</span></label>
+                            <select class="form-control form-control-sm" name="surplus_reason" id="surplus_reason"
+                                    style="max-width:220px;"
+                                    onchange="document.getElementById('surplus-reason-etc-row').hidden = this.value !== '기타';">
+                                <option value="">-- 선택 --</option>
+                                {% set _presets = ['과잉생산', '못난이', '수확임박', '규격외'] %}
+                                {% set _saved = item.surplus_reason if item else None %}
+                                {% set _is_etc = _saved and _saved not in _presets %}
+                                {% for r in _presets + ['기타'] %}
+                                <option value="{{ r }}"
+                                    {% if (r == '기타' and _is_etc) or (r != '기타' and _saved == r) %}selected{% endif %}>{{ r }}</option>
+                                {% endfor %}
+                            </select>
+                            <div id="surplus-reason-etc-row" class="mt-2"
+                                 {% if not (item and item.surplus_reason and item.surplus_reason not in ['과잉생산','못난이','수확임박','규격외']) %}hidden{% endif %}>
+                                <input type="text" class="form-control form-control-sm" style="max-width:220px;"
+                                       name="surplus_reason_etc" id="surplus_reason_etc" maxlength="6"
+                                       placeholder="예) 잔여물량"
+                                       value="{{ item.surplus_reason if item and item.surplus_reason and item.surplus_reason not in ['과잉생산','못난이','수확임박','규격외'] else '' }}">
+                                <small class="form-text text-muted">할인 리본에 표시되므로 6자 이내로 입력해주세요.</small>
+                            </div>
+                            <small class="form-text text-muted">카드에 "{{ item.surplus_reason or '과잉생산' }} 30%" 형태로 표시됩니다.</small>
+                        </div>
+
+                        <div class="form-group">
                             <label for="surplus_origin" class="small mb-1">원산지</label>
                             <input type="text" class="form-control form-control-sm" name="surplus_origin"
                                    id="surplus_origin" placeholder="예) 충남 논산시"

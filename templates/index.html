@@ -126,6 +126,10 @@
                         <i data-lucide="sprout"></i>
                     </div>
                     {% endif %}
+                    {% set _ribbon = ribbon_text(item) %}
+                    {% if _ribbon %}
+                    <div class="fl-ribbon"><span class="fl-ribbon__text">{{ _ribbon }}</span></div>
+                    {% endif %}
                     <div class="exp-card-badge-wrap">
                         {% if remaining_spots == 0 %}
                         <span class="exp-badge badge-closed">마감임박</span>

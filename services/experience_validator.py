@@ -238,3 +238,18 @@ def resolve_max_participants(requested_raw, capacity):
             f"({requested}명은 재고를 넘습니다. 인원을 줄이거나 총 수량을 늘려주세요.)"
         )
     return requested, None
+
+
+def ribbon_text(experience):
+    """카드 리본 문구: "사유 할인율%". 과생산이 아니거나 값이 없으면 None.
+
+    할인율은 반올림한다. 리본 폭이 한계라 사유는 등록 때 6자로 제한해 뒀다.
+    """
+    if experience is None or not getattr(experience, 'is_surplus', False):
+        return None
+    reason = getattr(experience, 'surplus_reason', None)
+    rate = discount_rate(getattr(experience, 'list_price', None),
+                         getattr(experience, 'cost', None))
+    if not reason or rate is None:
+        return None
+    return f"{reason} {round(rate * 100)}%"

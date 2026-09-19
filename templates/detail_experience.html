@@ -149,6 +149,10 @@
             {% if item.images %}
             {% set imgs = item.images.split(',') %}
             <div class="ed-carousel-container" id="ed-carousel">
+                {% set _ribbon = ribbon_text(item) %}
+                {% if _ribbon %}
+                <div class="fl-ribbon detail-ribbon"><span class="fl-ribbon__text">{{ _ribbon }}</span></div>
+                {% endif %}
                 <!-- 슬라이드 트랙 -->
                 <div class="ed-carousel-track" id="ed-carousel-track">
                     {% for image in imgs %}
@@ -175,7 +179,11 @@
                 {% endif %}
             </div>
             {% else %}
-            <div class="detail-img-placeholder">
+            <div class="detail-img-placeholder" style="position:relative;overflow:hidden;">
+                {% set _ribbon = ribbon_text(item) %}
+                {% if _ribbon %}
+                <div class="fl-ribbon detail-ribbon"><span class="fl-ribbon__text">{{ _ribbon }}</span></div>
+                {% endif %}
                 <i data-lucide="camera" style="width:48px;height:48px;margin-bottom:10px;"></i>
                 <span>아직 등록된 사진이 없습니다.</span>
             </div>

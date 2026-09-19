@@ -4830,3 +4830,44 @@ header.header-volunteer { border-bottom-color: #FF9800; }
     .ae-nav-btn { width: 40px; height: 40px; }
     .ae-topbar { padding-left: 16px; padding-right: 16px; }
 }
+
+/* ============================================================================
+   [과생산] 할인 리본 — 카드 우측 상단 사선
+   .exp-card 에 overflow:hidden 이 걸려 있어 카드 밖으로는 못 나간다.
+   그래서 이미지 래퍼(.exp-card-img-wrap, position:relative)에 얹고
+   자체 클리핑 박스 안에서 회전시킨다. 기존 규칙은 건드리지 않는다.
+   기존 배지(.exp-card-badge-wrap)는 좌측 상단이라 겹치지 않는다.
+   ============================================================================ */
+.fl-ribbon {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 120px;
+    height: 120px;
+    overflow: hidden;          /* 회전한 띠가 카드 모서리를 넘지 않게 자른다 */
+    pointer-events: none;      /* 카드 전체 링크 클릭을 가리지 않게 */
+    z-index: 2;
+}
+.fl-ribbon__text {
+    position: absolute;
+    /* 45도로 눕힌 띠. 대각선 길이(120×√2≈170px)를 쓰되 양끝을 넉넉히 뺀다. */
+    width: 170px;
+    top: 26px;
+    right: -46px;
+    transform: rotate(45deg);
+    background: linear-gradient(135deg, #e74c3c, #c0392b);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 800;
+    line-height: 1.9;
+    text-align: center;
+    letter-spacing: -0.2px;
+    white-space: nowrap;       /* 길어도 줄바꿈 대신 한 줄 유지 */
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.25);
+}
+
+/* 상세 페이지의 큰 이미지 영역에도 같은 리본을 쓴다(조금 크게). */
+.fl-ribbon.detail-ribbon { width: 150px; height: 150px; }
+.fl-ribbon.detail-ribbon .fl-ribbon__text {
+    width: 212px; top: 34px; right: -56px; font-size: 13px;
+}

@@ -30,6 +30,10 @@ CATEGORY_GROUPS = [
 # "광주 북구" 같은 축약 표기는 놓치지만, 틀린 결과가 나오는 것보다 낫다고 봤다.
 # 나머지 6개는 같은 이름의 시군이 없어 '서울'처럼 짧게 둬도 안전하다
 # ("서울특별시 강남구"·"서울 강남구" 둘 다 매칭).
+# '광역시·특별시' 아코디언 그룹의 코드. 트리와 주소 키워드가 같은 값을 써야
+# 그룹의 '전체' 체크박스가 동작한다.
+METRO_GROUP_CODE = "metro"
+
 _METRO_REGIONS = [
     ("seoul",   "서울", ["서울"],          []),
     ("busan",   "부산", ["부산"],          []),
@@ -111,7 +115,7 @@ def _region_node():
         for prov_code, prov_label, _aliases, cities in _PROVINCES
     ]
     return {"code": "region", "label": "지역", "group": "travel", "children": [
-        {"code": "metro", "label": "광역시·특별시", "children": metro_children},
+        {"code": METRO_GROUP_CODE, "label": "광역시·특별시", "children": metro_children},
         *province_children,
     ]}
 
@@ -211,6 +215,11 @@ def _build_region_keywords():
         keywords[prov_code] = list(aliases)
         for city_code, city_label in cities:
             keywords[city_code] = [city_label.split("(")[0]]  # '광주(경기)' → '광주'
+    # '광역시·특별시' 그룹의 '전체' 체크박스는 그룹 코드(metro)를 보낸다.
+    # 키워드가 없으면 고르는 즉시 결과가 0건이 된다(그룹으로 묶으면서 생긴 구멍).
+    keywords[METRO_GROUP_CODE] = [
+        alias for _c, _l, aliases, _ci in _METRO_REGIONS for alias in aliases
+    ]
     return keywords
 
 

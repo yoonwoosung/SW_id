@@ -387,11 +387,13 @@
             </section>
         </div>
 
-        {# 하단 이전/다음 버튼 영역 #}
-        <div class="step-nav-btns">
-            <button type="button" id="btn-next" class="easy-nav-btn easy-submit-button" style="width:100%;">다음 단계 →</button>
-            <button type="button" id="btn-prev-nav" class="easy-nav-btn easy-back-button is-hidden" style="width:100%;">← 이전 단계</button>
-        </div>
+        {# 1~3단계 하단 버튼 영역 (4단계 버튼 UI와 동일, 약관 동의 없음) #}
+        <section class="fl-card step-nav-btns">
+            <div class="fl-card-body">
+                <button type="button" id="btn-next" class="easy-submit-button" style="width:100%;">다음 단계 →</button>
+                <button type="button" id="btn-prev-nav" class="easy-back-button is-hidden" style="display:block;width:100%;margin-top:14px;font-weight:700;">← 이전 단계</button>
+            </div>
+        </section>
 
     </form>
 </div>
@@ -516,30 +518,10 @@
 }
 
 .step-nav-btns {
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-    margin-top: 24px;
-    width: 100%;
+    margin-top: var(--fl-s3, 24px);
 }
 
-.easy-nav-btn {
-    flex: 1 1 0;
-    min-height: 56px;
-    height: 56px;
-    font-size: 18px;
-    font-weight: 700;
-    border-radius: 12px;
-    margin: 0;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    box-sizing: border-box;
-    cursor: pointer;
-    transition: all 0.15s ease;
-}
-
-.easy-nav-btn.is-hidden {
+.is-hidden {
     display: none !important;
 }
 

@@ -4,8 +4,7 @@ import uuid
 from datetime import datetime
 
 from models import db, Application, Experience, Payment
-from common.constants import (APPLICATION_STATUS_PENDING, APPLICATION_STATUS_PAID,
-                             APPLICATION_STATUS_CONFIRMED)
+from common.constants import APPLICATION_STATUS_PENDING, APPLICATION_STATUS_PAID
 from services import point_service, toss_service
 from services.toss_service import TossError
 
@@ -107,7 +106,7 @@ def prepare(user_id, application_id, use_point=0):
 
 
 def confirm(user_id, payment_key, order_id, client_amount):
-    """토스 결제 승인. 성공하면 예약을 '결제완료'로 전이한다.
+    """토스 결제 승인. 성공하면 예약을 '결제완료'(농장주 승인 대기)로 전이한다.
 
     반환: (status, data) — status: 'ok' | 'not_found' | 'forbidden'
           | 'already_done' | 'amount_mismatch' | 'toss_error'
@@ -159,7 +158,10 @@ def confirm(user_id, payment_key, order_id, client_amount):
     earned = 0
     # 승인은 됐는데 예약이 이미 다른 상태로 갔다면 상태는 건드리지 않는다(중복 적립 방지).
     if application is not None and application.status == APPLICATION_STATUS_PENDING:
-        application.status = APPLICATION_STATUS_CONFIRMED   # 결제 성공 = 예약 확정
+        # ★결제 성공은 '확정'이 아니라 '결제완료'(농장주 승인 대기)다.★
+        # 농장주가 수락하지 않았는데 예약이 확정되면 안 된다.
+        # 더미 결제 경로 pay() 는 원래부터 이 값으로 갔고, 토스 경로만 어긋나 있었다.
+        application.status = APPLICATION_STATUS_PAID
         db.session.commit()
         # 적립은 실제 결제한 금액 기준(포인트로 깎은 부분은 제외).
         earned = point_service.earn_points_for_payment(user_id, application.id, payment.amount)
@@ -173,7 +175,7 @@ def confirm(user_id, payment_key, order_id, client_amount):
         "used_points": payment.used_points,
         "amount": payment.amount,
         "method": payment.method,
-        "status": APPLICATION_STATUS_CONFIRMED,
+        "status": APPLICATION_STATUS_PAID,
         "earned_points": earned,
     }
 

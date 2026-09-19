@@ -100,10 +100,18 @@ _REGIONS = _METRO_REGIONS + _PROVINCES
 
 
 def _region_node():
-    return {"code": "region", "label": "지역", "group": "travel", "children": [
+    metro_children = [
+        {"code": prov_code, "label": prov_label}
+        for prov_code, prov_label, _aliases, _cities in _METRO_REGIONS
+    ]
+    province_children = [
         {"code": prov_code, "label": prov_label,
          "children": [{"code": c, "label": cl} for c, cl in cities]}
-        for prov_code, prov_label, _aliases, cities in _REGIONS
+        for prov_code, prov_label, _aliases, cities in _PROVINCES
+    ]
+    return {"code": "region", "label": "지역", "group": "travel", "children": [
+        {"code": "metro", "label": "광역시", "children": metro_children},
+        *province_children,
     ]}
 
 

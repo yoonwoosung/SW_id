@@ -24,6 +24,7 @@ from services.recommend_service import matches_specialty, score_components, calc
 from services.recommend_reason import recommendation_reason
 from services.review_service import analyze_review_with_clova
 from external.kakao_map import get_coords_from_address
+from common.constants import APPLICATION_STATUS_PAID
 from common.validators import allowed_file
 from services import experience_validator
 from services import farm_service
@@ -67,9 +68,11 @@ def farmer_easy_mode():
         Inquiry.experience_id.in_(experience_ids)
     ).order_by(Inquiry.timestamp.desc()).limit(5).all() if experience_ids else []
     
+    # 수락 대기 = 결제까지 끝나고 농장주 승인을 기다리는 건.
+    # 예전에는 '예정'(결제 전)을 봤는데, 그러면 돈을 낸 예약이 이 목록에 뜨지 않는다.
     pending_applications = Application.query.filter(
         Application.experience_id.in_(experience_ids),
-        Application.status == '예정'
+        Application.status == APPLICATION_STATUS_PAID
     ).order_by(Application.apply_date.asc(), Application.apply_time.asc()).all() if experience_ids else []
 
     # 농장 통계 기본값
@@ -587,6 +590,18 @@ def close_experience(item_id):
     return redirect(url_for('farmer_easy_mode', tab='operations'))
 
 
+def open_experience(item_id):
+    if 'user_id' not in session or session.get('role') != 'farmer':
+        return redirect(url_for('login_page'))
+    item = Experience.query.get_or_404(item_id)
+    if item.farmer_id != session.get('user_id'):
+        abort(403)
+    item.status = 'recruiting'
+    db.session.commit()
+    flash(f"'{item.crop}' 체험이 다시 공개되었습니다.", 'success')
+    return redirect(url_for('farmer_easy_mode', tab='operations'))
+
+
 # 👇 마이페이지에서 레시피 데이터를 가져오기 위한 API 👇
 def get_recipe_api(item_id):
     exp = Experience.query.get_or_404(item_id)
@@ -614,5 +629,6 @@ def register(app):
     app.add_url_rule('/easy_mode/reservations', 'easy_reservations', easy_reservations)
     app.add_url_rule('/easy_mode/communication', 'easy_communication', easy_communication)
     app.add_url_rule('/easy_mode/close_experience/<int:item_id>', 'close_experience', close_experience, methods=['POST'])
+    app.add_url_rule('/easy_mode/open_experience/<int:item_id>', 'open_experience', open_experience, methods=['POST'])
     # 마이페이지 레시피 요청 API 라우트 등록
     app.add_url_rule('/api/experiences/<int:item_id>/recipe', 'get_recipe_api', get_recipe_api)

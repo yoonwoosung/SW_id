@@ -13,10 +13,12 @@
     // segment 값은 URL 파라미터(?segment=...)로도 쓰이므로 키는 바꾸지 않는다.
     // 'peers' 는 화면에서 '가볍게 다녀오기 좋은 코스'로 표시된다(기준: 저렴·가까움).
     var SECTIONS = [
-        { key: 'nearby', rowId: 'sec-nearby', segment: null,    esg: false },
-        { key: 'light',  rowId: 'sec-peers',  segment: 'peers', esg: false },
-        { key: 'group',  rowId: 'sec-group',  segment: 'group', esg: false },
-        { key: 'esg',    rowId: 'sec-esg',    segment: 'esg',   esg: true }
+        { key: 'nearby',       rowId: 'sec-nearby',       segment: 'nearby',      esg: false },
+        { key: 'peers_age',    rowId: 'sec-peers-age',    segment: 'peers_age',   esg: false },
+        { key: 'peers_gender', rowId: 'sec-peers-gender', segment: 'peers_gender',esg: false },
+        { key: 'light',        rowId: 'sec-peers',        segment: 'peers',       esg: false },
+        { key: 'group',        rowId: 'sec-group',        segment: 'group',       esg: false },
+        { key: 'esg',          rowId: 'sec-esg',          segment: 'esg',         esg: true  }
     ];
 
     function esc(s) { var d = document.createElement('div'); d.textContent = (s == null ? '' : String(s)); return d.innerHTML; }
@@ -185,8 +187,8 @@
         var btns = (res.data && res.data.buttons) || [];
         if (!quickEl || !btns.length) return;
         quickEl.innerHTML = btns.map(function (b) {
-            return '<button type="button" class="fl-quickbtn" data-segment="' + esc(b.segment) + '" data-label="' + esc(b.label) + '" data-icon="' + esc(b.icon) + '">'
-                + '<span class="fl-quickbtn__icon">' + esc(b.icon) + '</span><span>' + esc(b.label) + '</span></button>';
+            return '<button type="button" class="fl-quickbtn" data-segment="' + esc(b.segment) + '" data-label="' + esc(b.label) + '">'
+                + '<span>' + esc(b.label) + '</span></button>';
         }).join('');
     }).catch(function () {});
 
@@ -197,8 +199,11 @@
         var seg = btn.dataset.segment;
         var target = SECTIONS.filter(function (s) { return (s.segment || '') === (seg || ''); })[0];
         if (!target) return;
-        // 제목은 그대로 두고 해당 섹션으로 스크롤만 한다(제목이 기준을 나타내므로).
-        $(target.rowId).closest('.fl-sec').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        // 해당 섹션으로 스크롤 이동 (헤더 높이 오프셋 보정)
+        var sec = $(target.rowId).closest('.fl-sec');
+        var offset = (document.querySelector('.fl-header') || document.querySelector('nav') || { offsetHeight: 70 }).offsetHeight + 12;
+        var top = sec.getBoundingClientRect().top + window.pageYOffset - offset;
+        window.scrollTo({ top: top, behavior: 'smooth' });
     });
 
     // ---- 트렌드 키워드(상세조건 안) ----
@@ -214,7 +219,7 @@
     function buildQuery(selected, segment) {
         var qs = new URLSearchParams();
         if (coords.lat != null && coords.lon != null) { qs.set('lat', coords.lat); qs.set('lon', coords.lon); }
-        if (segment) qs.set('segment', segment);
+        if (segment && segment !== 'nearby') qs.set('segment', segment);
         Object.keys(selected || {}).forEach(function (cat) {
             (selected[cat] || []).forEach(function (v) { qs.append('cond_' + cat, v); });
         });

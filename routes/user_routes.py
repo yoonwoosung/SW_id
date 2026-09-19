@@ -29,6 +29,7 @@ from common.validators import allowed_file
 from common.response import success_response
 from common.auth import api_login_required
 from services.trend_service import recent_viewed_experiences
+from services import point_service
 from services.point_service import get_point_summary
 from services import activity_service
 
@@ -164,7 +165,8 @@ def my_info():
         return redirect(url_for('my_info'))
 
     applications = Application.query.filter_by(user_id=user.id).order_by(Application.apply_date.desc()).all()
-    return render_template('my_info.html', user=user, applications=applications)
+    return render_template('my_info.html', user=user, applications=applications,
+                           refunded_app_ids=point_service.refunded_application_ids(user.id))
 
 
 def mypage():
@@ -180,7 +182,8 @@ def mypage():
             flash(f"🎉 '{crop}' 체험은 어떠셨나요? 소중한 후기를 남겨주세요.", "info")
 
     applications = Application.query.filter_by(user_id=user.id).order_by(Application.apply_date.desc()).all()
-    reservation_cards = activity_service.reservation_cards(applications)
+    reservation_cards = activity_service.reservation_cards(
+        applications, refunded_ids=point_service.refunded_application_ids(user_id))
     experienced_count = activity_service.experienced_count(applications)
 
     return render_template('mypage.html', user=user, applications=applications,

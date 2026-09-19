@@ -111,7 +111,11 @@ def test_prepare_rejects_already_paid(client):
 
 # ───────────────────────────── 승인(confirm) ─────────────────────────────
 
-def test_confirm_success_confirms_application(client, monkeypatch):
+def test_confirm_success_moves_to_await_accept(client, monkeypatch):
+    """★결제 성공은 '확정'이 아니라 '결제완료'(농장주 승인 대기)다.★
+
+    농장주가 수락하지 않았는데 예약이 확정되면 안 된다.
+    """
     u = _user("u@x.com"); row = _application(u)
     _login(client, "u@x.com")
     order = client.post('/api/payments/prepare', json={'application_id': row.id}).get_json()['data']
@@ -122,9 +126,10 @@ def test_confirm_success_confirms_application(client, monkeypatch):
     body = res.get_json()
 
     assert res.status_code == 200 and body['success'] is True
-    assert body['data']['status'] == APPLICATION_STATUS_CONFIRMED
+    assert body['data']['status'] == APPLICATION_STATUS_PAID
     assert body['data']['redirect'].endswith(f"/reservation/complete/{row.id}") or 'complete' in body['data']['redirect']
-    assert db.session.get(Application, row.id).status == APPLICATION_STATUS_CONFIRMED
+    assert db.session.get(Application, row.id).status == APPLICATION_STATUS_PAID
+    assert db.session.get(Application, row.id).status != APPLICATION_STATUS_CONFIRMED
     payment = Payment.query.filter_by(order_id=order['order_id']).one()
     assert payment.status == Payment.STATUS_DONE and payment.approved_at is not None
     # 토스에는 서버가 저장한 금액이 전달돼야 한다

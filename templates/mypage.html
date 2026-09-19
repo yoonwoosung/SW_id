@@ -10,6 +10,11 @@
 .mp-bdg { display:inline-block; font-size:.72rem; font-weight:800; border-radius:999px; padding:3px 10px; }
 .mp-bdg--pay_pending  { background:#fdeccf; color:#9a6a11; }
 .mp-bdg--await_accept { background:#fff3cd; color:#8a6d00; }
+.mp-res-note {
+  margin-top:6px; font-size:.78rem; line-height:1.45;
+  color:var(--fl-text-muted);
+}
+.mp-res-note--refund { color:var(--fl-green-700,#2e7d32); font-weight:600; }
 .mp-bdg--confirmed    { background:#dcebe1; color:var(--fl-green-700); }
 .mp-bdg--completed    { background:#e3edf7; color:#1565c0; }
 .mp-bdg--cancelled    { background:#eceff0; color:#7a827d; }
@@ -145,6 +150,11 @@
                 <div class="mp-res-meta"><img src="{{ url_for('static', filename='icons/icon-calendar-schedule.svg') }}" class="fl-icon-sm" alt=""> {{ r.date }} {{ r.time }} &nbsp;·&nbsp; <img src="{{ url_for('static', filename='icons/icon-participants.svg') }}" class="fl-icon-sm" alt=""> {{ r.participants }}명</div>
                 <div class="mp-res-meta"><img src="{{ url_for('static', filename='icons/icon-map-location.svg') }}" class="fl-icon-sm" alt=""> {{ r.location or '장소 미정' }}</div>
                 <div style="font-size:.72rem;color:var(--fl-text-muted);margin-top:3px;">예약번호 FLT-{{ '%06d' | format(r.app_id) }}</div>
+                {% if r.state == 'await_accept' %}
+                <div class="mp-res-note">결제가 끝났습니다. 농장주 승인을 기다리는 중입니다.</div>
+                {% elif r.state == 'cancelled' and r.refunded %}
+                <div class="mp-res-note mp-res-note--refund">농장주가 예약을 거절해 결제 금액이 포인트로 환급되었습니다.</div>
+                {% endif %}
               </div>
               <div class="mp-res-actions">
                 {% if r.state == 'pay_pending' %}
@@ -314,7 +324,7 @@
       el.innerHTML = logs.length ? logs.map(function (l) {
         var pos = l.amount >= 0;
         return '<div class="mp-point-row">'
-          + '<div style="flex:1;"><div style="font-size:.88rem;font-weight:600;">' + esc(l.reason) + '</div>'
+          + '<div style="flex:1;"><div style="font-size:.88rem;font-weight:600;">' + esc(l.reason_label || l.reason) + '</div>'
           + '<div style="font-size:.72rem;color:var(--fl-text-muted);">' + esc((l.created_at || '').slice(0, 10)) + '</div></div>'
           + '<div class="' + (pos ? 'mp-point-pos' : 'mp-point-neg') + '">'
           + (pos ? '+' : '') + Number(l.amount).toLocaleString() + 'P</div></div>';

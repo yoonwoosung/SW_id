@@ -80,16 +80,35 @@ REVIEW_SUMMARY_TOP_KEYWORDS = 3   # 작물별 긍정/개선 키워드 노출 상
 PROFANITY_FILTER_WORDS = ['씨발', '시발', '존나', '개같', '병신', 'ㅅㅂ', 'ㅄ', '좆']
 
 # --- 예약(Application) 상태값 ---
+#
+# 전이:  예정 ──결제 성공──▶ 결제완료 ──농장주 수락──▶ 확정 ──체험 종료──▶ (완료 판정)
+#          │                    └──농장주 거절──▶ 취소 (+ 결제액 포인트 환급)
+#          └──사용자 취소──▶ 취소
+#
+# ★'결제완료'가 곧 '농장주 승인 대기'다.★ 같은 뜻의 상태를 새로 만들지 말 것.
+# activity_service 가 이 값을 STATE_AWAIT_ACCEPT('수락 대기중')로 판정하고,
+# 사용자 화면(my_info·mypage)도 이미 그 라벨로 보여준다.
+# '완료'는 별도 컬럼 값이 아니라 확정 + 체험 종료로 판정한다(activity_service).
 APPLICATION_STATUS_PENDING = '예정'      # 신청됨(결제 전)
-APPLICATION_STATUS_PAID = '결제완료'     # 더미 결제 성공(농장주 수락 대기)
-APPLICATION_STATUS_CONFIRMED = '확정'    # 농장주 확정
-APPLICATION_STATUS_CANCELLED = '취소'    # 사용자 예약 취소(reservation.py에서 이미 쓰던 값)
+APPLICATION_STATUS_PAID = '결제완료'     # 결제 성공 — 농장주 수락 대기
+APPLICATION_STATUS_CONFIRMED = '확정'    # 농장주 수락
+APPLICATION_STATUS_CANCELLED = '취소'    # 사용자 취소 또는 농장주 거절
 
 # --- 포인트 ---
 POINT_EARN_RATE = 0.03           # 결제금액 대비 적립률(3%). 적립액은 정수 내림.
 POINT_REASON_PAYMENT = 'payment'      # 결제 적립
 POINT_REASON_USE = 'use'              # 결제 시 사용(차감)
 POINT_REASON_REFUND = 'refund'        # 결제 실패·취소로 차감분 원복
+POINT_REASON_REJECT_REFUND = 'reject_refund'   # 농장주 거절 → 실제 결제액을 포인트로 환급
+
+# 포인트 내역 화면에 보여줄 한글 라벨. API 응답에 실어 보내 템플릿이 그대로 쓴다.
+# 사유코드를 추가하면 여기에도 한 줄 추가할 것(없으면 코드가 그대로 노출된다).
+POINT_REASON_LABELS = {
+    POINT_REASON_PAYMENT: '결제 적립',
+    POINT_REASON_USE: '포인트 사용',
+    POINT_REASON_REFUND: '포인트 환불',
+    POINT_REASON_REJECT_REFUND: '예약 거절 환급',
+}
 
 # --- 과생산(잉여) 농산물 할인 구간 ---
 # 농장주가 정가와 총 과생산량만 입력하면 시스템이 할인율을 정한다.

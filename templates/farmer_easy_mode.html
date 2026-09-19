@@ -97,7 +97,8 @@
                             <form method="POST" action="{{ url_for('confirm_application', app_id=app.id) }}?easy_mode=true" style="margin:0;">
                                 <button type="submit" class="fl-btn em-btn-accept">수락</button>
                             </form>
-                            <form method="POST" action="{{ url_for('reject_application', app_id=app.id) }}" style="margin:0;">
+                            <form method="POST" action="{{ url_for('reject_application', app_id=app.id) }}" style="margin:0;"
+                                  onsubmit="return confirm('예약을 거절할까요?\n결제 금액은 신청자에게 포인트로 환급됩니다.');">
                                 <button type="submit" class="fl-btn em-btn-reject">거절</button>
                             </form>
                         </div>
@@ -141,9 +142,15 @@
 
                             <div class="em-listing-actions">
                                 <a href="{{ url_for('easy_modify_experience', item_id=listing.id) }}" class="fl-btn fl-btn-outline em-btn-edit">수정</a>
+                                {% if listing.status == 'recruiting' %}
                                 <form method="POST" action="{{ url_for('close_experience', item_id=listing.id) }}" style="margin:0;" onsubmit="return confirm('이 체험을 숨김 처리할까요?');">
                                     <button type="submit" class="fl-btn em-btn-delete">숨김</button>
                                 </form>
+                                {% else %}
+                                <form method="POST" action="{{ url_for('open_experience', item_id=listing.id) }}" style="margin:0;" onsubmit="return confirm('이 체험을 다시 공개할까요?');">
+                                    <button type="submit" class="fl-btn em-btn-delete">숨김 해제</button>
+                                </form>
+                                {% endif %}
                             </div>
                         </div>
 

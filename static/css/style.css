@@ -1130,7 +1130,7 @@ a svg, a i { pointer-events: none; }
 
 /* section-block과 section-card 병용 시 section-block의 padding: 44px 0 이 좌우를 덮어쓰는 문제 방지 */
 .section-block.section-card { padding: 24px; }
-.section-block + .section-block { border-top: 1px solid #f0f0f0; }
+.section-block + .section-block:not(.slider-card) { border-top: 1px solid #f0f0f0; }
 .section-header {
     display: flex;
     justify-content: space-between;

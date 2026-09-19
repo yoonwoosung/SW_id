@@ -495,7 +495,7 @@ def easy_modify_experience(item_id):
 
         db.session.commit()
         flash(f"'{item.crop}' 체험이 성공적으로 수정되었습니다.", "success")
-        return redirect(url_for('easy_modify_experience_list'))
+        return redirect(url_for('farmer_easy_mode', tab='operations'))
 
     return render_template('easy_create_experience.html', item=item, approved_farms=approved_farms, form_data={})
 

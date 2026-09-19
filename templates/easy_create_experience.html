@@ -409,8 +409,8 @@
                     <button type="submit" class="easy-submit-button" id="btn-final-submit" style="width:100%;">
                         {% if item %}이 내용으로 수정하기{% else %}등록하기{% endif %}
                     </button>
-                    <a href="{{ url_for('farmer_easy_mode', tab='operations') }}" class="easy-back-button"
-                        style="display:block;text-align:center;margin-top:14px;width:100%;text-decoration:none;">돌아가기</a>
+                    <button type="button" id="btn-prev-final" class="easy-back-button"
+                        style="display:block;width:100%;margin-top:14px;">← 이전 단계</button>
                 </div>
             </section>
         </div>
@@ -736,6 +736,10 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     document.getElementById('btn-prev').addEventListener('click', function () {
+        if (cur > 1) { cur--; showStep(cur); }
+    });
+
+    document.getElementById('btn-prev-final').addEventListener('click', function () {
         if (cur > 1) { cur--; showStep(cur); }
     });
 

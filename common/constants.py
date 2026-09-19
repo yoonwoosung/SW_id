@@ -55,6 +55,21 @@ PERSONALIZE_CROP_BOOST = 0.4  # 과거 신청한 작물과 같은 작물이면 �
 
 # --- 클릭 로그 기반 세그먼트 추천 (파트3) ---
 SEGMENT_TREND_BOOST = 0.5   # 같은 성별·나이대가 많이 누른 체험이면 가점(취향 신호 강함)
+
+# --- 세그먼트별 점수 가중치 ---
+# 세그먼트마다 기준을 다르게 주려고 기본 점수(calculate_score) 위에 더하는 보너스다.
+# 기본 점수는 건드리지 않는다.
+#
+# 쓸 수 있는 축은 실제 데이터 분포를 보고 골랐다(배포 10건 기준).
+#   cost 10,000~30,000(3배) · remaining 5~30(6배) · has_parking 4/10 → 변별력 있음
+#   barrier_free 0/10 · pet_allowed 거의 없음 → 넣어도 전부 0점이라 제외
+#
+# 'peers' 세그먼트 = 화면의 '가볍게 다녀오기 좋은 코스'
+SEGMENT_LIGHT_CHEAP_WEIGHT = 0.5    # 후보군 내 상대 저렴도
+SEGMENT_LIGHT_NEAR_WEIGHT = 0.3     # 가까울수록 가점
+# 'group' 세그먼트 = 화면의 '단체로 가기 좋은 코스'
+SEGMENT_GROUP_CAPACITY_WEIGHT = 0.5  # 후보군 내 상대 잔여석(절대 인원 기준)
+SEGMENT_GROUP_PARKING_WEIGHT = 0.2   # 주차 가능하면 가점
 TREND_TOP_LIMIT = 20        # 세그먼트에서 뽑을 인기 대상(체험) 최대 수
 TREND_KEYWORD_LIMIT = 8     # 검색창 하단 트렌드 키워드 최대 노출 수
 RECENT_VIEWS_LIMIT = 10     # '내 활동 - 최근 본 체험' 최대 노출 수

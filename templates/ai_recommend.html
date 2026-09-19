@@ -122,12 +122,22 @@
         <div class="fl-row" id="sec-nearby"></div>
     </section>
 
+    {# 키는 peers 를 그대로 둔다(?segment=peers 로 이미 쓰이고 저장된 링크도 있다).
+       제목만 실제 기준(저렴·가까움)을 드러내도록 바꿨다. #}
     <section class="fl-sec" data-section="peers">
         <div class="fl-sec__head">
-            <h2 class="fl-sec__title" id="peers-title"><img src="{{ url_for('static', filename='icons/icon-eco-friendly.svg') }}" class="fl-icon-sm" alt=""> 또래가 놀러가기 좋은 코스</h2>
-            <span class="fl-sec__sub">또래 인기순</span>
+            <h2 class="fl-sec__title" id="peers-title"><i data-lucide="footprints"></i> 가볍게 다녀오기 좋은 코스</h2>
+            <span class="fl-sec__sub">가격 부담이 적고 이동이 편한 체험을 모았어요</span>
         </div>
         <div class="fl-row" id="sec-peers"></div>
+    </section>
+
+    <section class="fl-sec" data-section="group">
+        <div class="fl-sec__head">
+            <h2 class="fl-sec__title"><i data-lucide="users"></i> 단체로 가기 좋은 코스</h2>
+            <span class="fl-sec__sub">인원 수용이 넉넉하고 주차가 편한 체험을 모았어요</span>
+        </div>
+        <div class="fl-row" id="sec-group"></div>
     </section>
 
     <section class="fl-sec" data-section="esg">

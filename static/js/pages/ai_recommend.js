@@ -10,9 +10,12 @@
     // ▲▲
 
     // 코스 섹션 정의: segment=null이면 종합 점수순, 'peers'/'esg'는 세그먼트 적용.
+    // segment 값은 URL 파라미터(?segment=...)로도 쓰이므로 키는 바꾸지 않는다.
+    // 'peers' 는 화면에서 '가볍게 다녀오기 좋은 코스'로 표시된다(기준: 저렴·가까움).
     var SECTIONS = [
-        { key: 'nearby', rowId: 'sec-nearby', segment: null,   esg: false },
-        { key: 'peers',  rowId: 'sec-peers',  segment: 'peers', esg: false },
+        { key: 'nearby', rowId: 'sec-nearby', segment: null,    esg: false },
+        { key: 'light',  rowId: 'sec-peers',  segment: 'peers', esg: false },
+        { key: 'group',  rowId: 'sec-group',  segment: 'group', esg: false },
         { key: 'esg',    rowId: 'sec-esg',    segment: 'esg',   esg: true }
     ];
 
@@ -172,7 +175,9 @@
         var label = (res.data && res.data.segment_label) || '';        // 예: "20대·남성"
         var age = label.split('·').filter(function (p) { return /대$/.test(p); })[0] || '';
         if (noteEl && label) noteEl.textContent = label + ' 회원님께 어울리는 코스를 준비했어요.';
-        if (age) { var pt = $('peers-title'); if (pt) pt.textContent = '🌿 ' + age + '가 놀러가기 좋은 코스'; }
+        // 섹션 제목은 '기준'을 드러내야 하므로 나이로 덮어쓰지 않는다.
+        // (예전에는 '20대가 놀러가기 좋은 코스'로 바꿨는데, 실제로는 나이를 기준으로
+        //  고르지 않아 이름과 근거가 어긋났다.)
     }).catch(function () {});
 
     // ---- 인적사항 단축 버튼 2개(백엔드 segment-buttons 응답으로 렌더, 문구 하드코딩 금지) ----
@@ -192,10 +197,7 @@
         var seg = btn.dataset.segment;
         var target = SECTIONS.filter(function (s) { return (s.segment || '') === (seg || ''); })[0];
         if (!target) return;
-        if (target.rowId === 'sec-peers') {
-            var pt = $('peers-title');
-            if (pt) pt.textContent = btn.dataset.icon + ' ' + btn.dataset.label;
-        }
+        // 제목은 그대로 두고 해당 섹션으로 스크롤만 한다(제목이 기준을 나타내므로).
         $(target.rowId).closest('.fl-sec').scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
 

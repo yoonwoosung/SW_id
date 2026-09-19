@@ -15,6 +15,7 @@ from services import segment_service
 from services.esg_service import compute_esg
 from services.thumbnail_service import experience_thumbnail_url, first_image_name
 from services import eco_filter
+from services import segment_score
 
 
 def _recruiting_experiences():
@@ -69,6 +70,11 @@ def personalized_recommendations():
         # 친환경 항목(E축)이 있고 ESG 등급 B 이상인 것만 남기고, 그 안에서 점수순.
         ranked = [item for item in ranked if eco_filter.passes_eco_section(item[0])]
         ranked.sort(key=lambda item: compute_esg(item[0])["score"], reverse=True)
+    else:
+        # peers('가볍게')·group('단체로')는 기준이 달라야 한다. 지금까지 분기가 없어
+        # 기본 점수순 그대로였고, 그래서 세 섹션에 같은 체험이 나왔다.
+        # 기본 점수는 그대로 두고 세그먼트 보너스를 더해 순서만 바꾼다.
+        ranked = segment_score.apply(segment, ranked)
 
     results = [{
         "id": exp.id, "crop": exp.crop, "address": exp.address_detail, "cost": exp.cost,

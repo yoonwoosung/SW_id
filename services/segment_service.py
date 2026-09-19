@@ -20,12 +20,10 @@ def user_segment_label(user):
 
 def auto_segments(user):
     """진입 즉시 보여줄 자동 추천 세그먼트 카드 3개. key는 추천 API의 segment 파라미터로 쓰인다."""
-    age = _AGE_LABEL.get(getattr(user, 'age_group', None)) if user is not None else None
-    peers_title = (age + ' 인기 체험') if age else '요즘 인기 체험'
     return [
-        {'key': 'peers', 'emoji': '🎯', 'title': peers_title, 'subtitle': '또래가 많이 봤어요'},
-        {'key': 'active', 'emoji': '👥', 'title': '가볍게 즐기는 코스', 'subtitle': '부담 없는 하루'},
-        {'key': 'esg', 'emoji': '🌱', 'title': 'ESG 친환경 코스', 'subtitle': '무농약·유기농'},
+        {'key': 'peers', 'emoji': '🎯', 'title': '가볍게 다녀오기', 'subtitle': '저렴하고 가까움'},
+        {'key': 'group', 'emoji': '👥', 'title': '단체로 가기 좋은 코스', 'subtitle': '자리 넉넉·주차 편함'},
+        {'key': 'esg', 'emoji': '🌱', 'title': '친환경 인증 농장', 'subtitle': '무농약·유기농'},
     ]
 
 

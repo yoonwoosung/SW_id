@@ -147,3 +147,80 @@ def test_missing_attributes_do_not_crash():
     ctx = segment_score.build_context([Bare()])
     assert segment_score.bonus('peers', Bare(), None, ctx) == 0.0
     assert segment_score.bonus('group', Bare(), None, ctx) == 0.0
+
+
+# ═══════════ 나이·성별 섹션: 클릭 로그 인기 기준 ═══════════
+#
+# 예전에는 peers_age·peers_gender 가 apply('peers') 를 재사용해
+# '가볍게'(저렴·근접)와 완전히 같은 순서가 나왔다.
+# 화면 부제는 "같은 나이대에서 인기"인데 계산은 가격이었다.
+
+from common.constants import SEGMENT_TREND_POPULARITY_WEIGHT
+
+
+@pytest.mark.parametrize('segment', ['peers_age', 'peers_gender'])
+def test_trend_segments_rank_by_click_count(segment):
+    """★많이 눌린 순으로 줄 세운다.★ 기본 점수가 같으면 클릭 수가 순서를 정한다."""
+    a, b, c = FakeExp(1), FakeExp(2), FakeExp(3)
+    ranked = ranked_of([(a, 10), (b, 10), (c, 10)])
+    out = segment_score.apply(segment, ranked, trend_counts={1: 3, 2: 10, 3: 7})
+    assert [item[0].id for item in out] == [2, 3, 1]
+
+
+@pytest.mark.parametrize('segment', ['peers_age', 'peers_gender'])
+def test_unclicked_experience_gets_no_bonus(segment):
+    """한 번도 안 눌린 체험은 가점 0 이라 뒤로 밀린다."""
+    ctx = segment_score.build_context([FakeExp(1)], trend_counts={1: 5})
+    assert segment_score.bonus(segment, FakeExp(99), None, ctx) == 0.0
+
+
+def test_top_clicked_gets_full_weight():
+    """최댓값으로 정규화한다 — 1등은 가중치를 다 받는다."""
+    ctx = segment_score.build_context([FakeExp(1)], trend_counts={1: 20, 2: 5})
+    assert segment_score.bonus('peers_age', FakeExp(1), None, ctx) == pytest.approx(
+        SEGMENT_TREND_POPULARITY_WEIGHT)
+    assert segment_score.bonus('peers_age', FakeExp(2), None, ctx) == pytest.approx(
+        SEGMENT_TREND_POPULARITY_WEIGHT * 0.25)
+
+
+def test_trend_segments_ignore_price_and_capacity():
+    """★'가볍게'(저렴)·'단체로'(잔여석) 기준을 쓰면 안 된다.★
+
+    싼 체험과 자리 많은 체험이 클릭 수와 어긋나게 배치해도
+    클릭 수 순서가 유지돼야 한다.
+    """
+    cheap_roomy = FakeExp(1, cost=5000, max_p=100, parking=True)   # 가격·정원 1등
+    pricey_tiny = FakeExp(2, cost=50000, max_p=2)                  # 가격·정원 꼴등
+    ranked = ranked_of([(cheap_roomy, 1), (pricey_tiny, 1)])
+    out = segment_score.apply('peers_age', ranked, trend_counts={2: 10, 1: 1})
+    assert [item[0].id for item in out] == [2, 1], "클릭 수가 기준이어야 한다"
+
+
+def test_no_click_logs_keeps_base_order():
+    """클릭 로그가 없으면 가점이 없어 기본 점수순 그대로다(폴백)."""
+    a, b = FakeExp(1), FakeExp(2)
+    ranked = [(a, 10, 0.9, []), (b, 10, 0.5, [])]
+    assert segment_score.apply('peers_age', ranked, trend_counts={}) == ranked
+    assert segment_score.apply('peers_age', ranked, trend_counts=None) == ranked
+
+
+def test_trend_counts_do_not_leak_into_other_segments():
+    """클릭 수는 나이·성별 섹션에서만 쓴다. peers·group 기준은 그대로."""
+    cheap = FakeExp(1, cost=5000)
+    pricey = FakeExp(2, cost=50000)
+    ranked = ranked_of([(cheap, 10), (pricey, 10)])
+    out = segment_score.apply('peers', ranked, trend_counts={2: 99})
+    assert [item[0].id for item in out] == [1, 2], "peers 는 싼 쪽이 먼저다"
+
+
+def test_nearby_is_untouched():
+    """nearby 는 보너스가 없어 기본 점수순 그대로."""
+    ranked = [(FakeExp(1), 10, 0.3, []), (FakeExp(2), 10, 0.9, [])]
+    assert segment_score.apply('nearby', ranked, trend_counts={1: 99}) == ranked
+
+
+def test_base_score_is_not_overwritten():
+    """기본 점수는 건드리지 않는다. 보너스는 정렬에만 쓴다."""
+    ranked = ranked_of([(FakeExp(1), 10), (FakeExp(2), 10)])
+    out = segment_score.apply('peers_age', ranked, trend_counts={2: 10})
+    assert all(item[2] == 1.0 for item in out)

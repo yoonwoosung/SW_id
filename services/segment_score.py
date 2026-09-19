@@ -14,6 +14,7 @@ from common.constants import (
     SEGMENT_LIGHT_NEAR_WEIGHT,
     SEGMENT_GROUP_CAPACITY_WEIGHT,
     SEGMENT_GROUP_PARKING_WEIGHT,
+    SEGMENT_TREND_POPULARITY_WEIGHT,
 )
 
 # 화면 섹션 ↔ 세그먼트 키. URL(?segment=peers)은 이미 쓰이고 있어 그대로 두고
@@ -21,6 +22,16 @@ from common.constants import (
 SEGMENT_LIGHT = 'peers'    # 화면: '가볍게 다녀오기 좋은 코스'
 SEGMENT_GROUP = 'group'    # 화면: '단체로 가기 좋은 코스'
 SEGMENT_ESG = 'esg'        # 화면: '친환경 인증 농장'
+
+# 단축버튼에서 들어오는 두 섹션. 클릭 로그 인기가 기준이다.
+#   peers_age    화면: '내 또래가 즐기는 코스'   (같은 나이대가 많이 누른 순)
+#   peers_gender 화면: '함께 가기 좋은 코스'     (같은 성별이 많이 누른 순)
+# 예전에는 둘 다 apply('peers') 를 불러 '가볍게'(저렴·근접)와 같은 순서가 나왔다.
+# 화면 부제와 실제 계산이 어긋나 있었다.
+SEGMENT_PEERS_AGE = 'peers_age'
+SEGMENT_PEERS_GENDER = 'peers_gender'
+_TREND_SEGMENTS = (SEGMENT_PEERS_AGE, SEGMENT_PEERS_GENDER)
+_SCORED_SEGMENTS = (SEGMENT_LIGHT, SEGMENT_GROUP) + _TREND_SEGMENTS
 
 # 거리 정규화 기준(km). calculate_score 의 거리 감쇠와 같은 값을 쓴다.
 NEAR_MAX_KM = 50
@@ -51,8 +62,11 @@ def _remaining(experience):
     return max(0, max_p - current)
 
 
-def build_context(experiences):
-    """후보군 전체를 훑어 상대 평가에 쓸 최소·최대를 구한다."""
+def build_context(experiences, trend_counts=None):
+    """후보군 전체를 훑어 상대 평가에 쓸 최소·최대를 구한다.
+
+    trend_counts 는 {체험id: 클릭수}. 나이·성별 섹션에서만 쓴다.
+    """
     costs = [e.cost for e in experiences if getattr(e, 'cost', None) is not None]
     rooms = [_remaining(e) for e in experiences]
     return {
@@ -60,6 +74,7 @@ def build_context(experiences):
         'cost_max': max(costs) if costs else None,
         'room_min': min(rooms) if rooms else None,
         'room_max': max(rooms) if rooms else None,
+        'trend_counts': trend_counts or {},
     }
 
 
@@ -69,6 +84,8 @@ def bonus(segment, experience, distance_km, context):
         return _light_bonus(experience, distance_km, context)
     if segment == SEGMENT_GROUP:
         return _group_bonus(experience, context)
+    if segment in _TREND_SEGMENTS:
+        return _trend_bonus(experience, context.get('trend_counts'))
     return 0.0
 
 
@@ -95,14 +112,33 @@ def _group_bonus(experience, context):
     return score
 
 
-def apply(segment, ranked):
+def _trend_bonus(experience, trend_counts):
+    """같은 나이대(또는 성별)가 누른 횟수를 상대값으로 환산한다.
+
+    personalize_service 의 SEGMENT_TREND_BOOST 는 '인기 집합에 들었는가'만 보는
+    평탄한 가점이라, 체험이 적어 전부 집합에 들어가면 모두 같은 점수를 받아
+    nearby 와 구분이 사라진다. 여기서는 횟수로 집합 ★안에서의 순서★를 만든다.
+
+    최댓값으로 나눠 정규화한다. 가장 많이 눌린 체험이 가중치를 다 받고,
+    한 번도 안 눌린 체험은 0 이라 뒤로 밀린다.
+    """
+    if not trend_counts:
+        return 0.0
+    count = trend_counts.get(getattr(experience, 'id', None), 0)
+    top = max(trend_counts.values())
+    if count <= 0 or top <= 0:
+        return 0.0
+    return SEGMENT_TREND_POPULARITY_WEIGHT * (count / top)
+
+
+def apply(segment, ranked, trend_counts=None):
     """ranked [(experience, distance, score, reasons), ...] 를 세그먼트 기준으로 다시 정렬한다.
 
     기본 점수를 덮어쓰지 않고 보너스를 더한 값으로 순서만 바꾼다.
     """
-    if segment not in (SEGMENT_LIGHT, SEGMENT_GROUP) or not ranked:
+    if segment not in _SCORED_SEGMENTS or not ranked:
         return ranked
-    context = build_context([item[0] for item in ranked])
+    context = build_context([item[0] for item in ranked], trend_counts)
     return sorted(
         ranked,
         key=lambda item: item[2] + bonus(segment, item[0], item[1], context),

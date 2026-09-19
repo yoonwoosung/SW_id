@@ -168,6 +168,10 @@
                         class="sort-pill {% if sort_by == 'deadline' or not sort_by %}active{% endif %}">모집 임박순</a>
                     <a href="{{ url_for('index', sort='reviews', region=request.args.get('region'), crop_query=request.args.get('crop_query')) }}"
                         class="sort-pill {% if sort_by == 'reviews' %}active{% endif %}">리뷰 많은순</a>
+                    {% if view != 'list' %}
+                    <a href="{{ url_for('index', sort='surplus', region=request.args.get('region'), crop_query=request.args.get('crop_query')) }}"
+                        class="sort-pill {% if sort_by == 'surplus' %}active{% endif %}">과생산</a>
+                    {% endif %}
                 </div>
             </div>
         </div>

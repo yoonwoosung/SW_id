@@ -38,8 +38,21 @@ def top_targets_for_segment(gender, age_group, target_type='experience', limit=T
 
 def trending_experience_ids(gender, age_group):
     """세그먼트 인기 체험 id 집합(정수). 추천 가점용."""
+    return set(trending_experience_counts(gender, age_group))
+
+
+def trending_experience_counts(gender, age_group):
+    """세그먼트 인기 체험 {id: 클릭수}. 집합만으로는 순서를 못 매긴다.
+
+    trending_ids 의 가점은 '집합에 들었는가'만 보는 평탄한 +0.5 라,
+    체험 수가 적어 전부 집합에 들어가면 모두 같은 가점을 받아 변별이 사라진다.
+    '같은 나이대에서 인기 있는 순'으로 줄 세우려면 횟수가 필요하다.
+
+    gender 나 age_group 에 None 을 주면 그 조건은 빼고 집계한다
+    (나이 섹션은 나이만, 성별 섹션은 성별만 본다).
+    """
     pairs = top_targets_for_segment(gender, age_group, target_type='experience')
-    return {int(tid) for tid, _ in pairs if str(tid).isdigit()}
+    return {int(tid): cnt for tid, cnt in pairs if str(tid).isdigit()}
 
 
 def recent_viewed_experiences(user_id, limit=RECENT_VIEWS_LIMIT):

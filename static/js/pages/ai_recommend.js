@@ -185,8 +185,8 @@
         var btns = (res.data && res.data.buttons) || [];
         if (!quickEl || !btns.length) return;
         quickEl.innerHTML = btns.map(function (b) {
-            return '<button type="button" class="fl-quickbtn" data-segment="' + esc(b.segment) + '" data-label="' + esc(b.label) + '" data-icon="' + esc(b.icon) + '">'
-                + '<span class="fl-quickbtn__icon">' + esc(b.icon) + '</span><span>' + esc(b.label) + '</span></button>';
+            return '<button type="button" class="fl-quickbtn" data-segment="' + esc(b.segment) + '" data-label="' + esc(b.label) + '">'
+                + '<span>' + esc(b.label) + '</span></button>';
         }).join('');
     }).catch(function () {});
 
@@ -197,8 +197,11 @@
         var seg = btn.dataset.segment;
         var target = SECTIONS.filter(function (s) { return (s.segment || '') === (seg || ''); })[0];
         if (!target) return;
-        // 제목은 그대로 두고 해당 섹션으로 스크롤만 한다(제목이 기준을 나타내므로).
-        $(target.rowId).closest('.fl-sec').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        // 해당 섹션으로 스크롤 이동 (헤더 높이 오프셋 보정)
+        var sec = $(target.rowId).closest('.fl-sec');
+        var offset = (document.querySelector('.fl-header') || document.querySelector('nav') || { offsetHeight: 70 }).offsetHeight + 12;
+        var top = sec.getBoundingClientRect().top + window.pageYOffset - offset;
+        window.scrollTo({ top: top, behavior: 'smooth' });
     });
 
     // ---- 트렌드 키워드(상세조건 안) ----

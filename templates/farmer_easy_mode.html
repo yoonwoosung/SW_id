@@ -148,7 +148,7 @@
                                 </form>
                                 {% else %}
                                 <form method="POST" action="{{ url_for('open_experience', item_id=listing.id) }}" style="margin:0;" onsubmit="return confirm('이 체험을 다시 공개할까요?');">
-                                    <button type="submit" class="fl-btn fl-btn-primary" style="font-size:13px;">숨김 해제</button>
+                                    <button type="submit" class="fl-btn em-btn-delete">숨김 해제</button>
                                 </form>
                                 {% endif %}
                             </div>

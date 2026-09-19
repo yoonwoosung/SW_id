@@ -271,8 +271,18 @@
                     {% for farm in farms %}
                     <div class="ac-farm-card">
                         <div class="ac-farm-info">
-                            <div class="d-flex align-items-center mb-1">
-                                <strong class="text-dark mr-2" style="font-size: 1.1rem;">{{ farm.name or '기본 농장' }}</strong>
+                            <div class="d-flex align-items-center mb-1" style="gap:8px;">
+                                {# 이름 표시 / 인라인 편집 #}
+                                <span class="farm-name-view" data-farm-id="{{ farm.id }}" style="font-size:1.1rem;font-weight:700;color:#1a1a1a;">{{ farm.name or '기본 농장' }}</span>
+                                <button type="button" class="farm-name-edit-btn" data-farm-id="{{ farm.id }}" title="농장 이름 변경"
+                                  style="background:none;border:none;cursor:pointer;color:var(--fl-text-muted);padding:2px 4px;">
+                                  <i class="fa-solid fa-pen-to-square" style="font-size:.85rem;"></i>
+                                </button>
+                                <span class="farm-name-edit-area" data-farm-id="{{ farm.id }}" style="display:none;align-items:center;gap:6px;">
+                                  <input type="text" class="farm-name-input form-control form-control-sm" value="{{ farm.name or '' }}" placeholder="농장 이름" style="width:160px;">
+                                  <button type="button" class="farm-name-save fl-btn fl-btn-primary fl-btn-sm" data-farm-id="{{ farm.id }}">저장</button>
+                                  <button type="button" class="farm-name-cancel fl-btn fl-btn-outline fl-btn-sm" data-farm-id="{{ farm.id }}">취소</button>
+                                </span>
                                 {% if farm.status == 'APPROVED' %}
                                 <span class="fl-badge fl-badge--active"><img src="{{ url_for('static', filename='icons/icon-confirmed.svg') }}" width="16" height="16" style="vertical-align:-3px;margin-right:4px;"> 승인완료</span>
                                 {% elif farm.status == 'PENDING' %}
@@ -511,6 +521,56 @@
 
 {% block scripts %}
 <script>
+/* ── 농장 이름 인라인 편집 ── */
+document.querySelectorAll('.farm-name-edit-btn').forEach(function(btn) {
+  var id = btn.dataset.farmId;
+  var view = document.querySelector('.farm-name-view[data-farm-id="' + id + '"]');
+  var area = document.querySelector('.farm-name-edit-area[data-farm-id="' + id + '"]');
+  var input = area.querySelector('.farm-name-input');
+  var save  = area.querySelector('.farm-name-save');
+  var cancel = area.querySelector('.farm-name-cancel');
+
+  btn.addEventListener('click', function() {
+    input.value = view.textContent.trim() === '기본 농장' ? '' : view.textContent.trim();
+    view.style.display = 'none';
+    btn.style.display = 'none';
+    area.style.display = 'flex';
+    input.focus();
+  });
+
+  cancel.addEventListener('click', function() {
+    area.style.display = 'none';
+    view.style.display = '';
+    btn.style.display = '';
+  });
+
+  save.addEventListener('click', function() {
+    var name = input.value.trim();
+    if (!name) { input.focus(); return; }
+    save.disabled = true;
+    fetch('/farmer/farm/' + id + '/name', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: name })
+    }).then(function(r) { return r.json(); }).then(function(res) {
+      if (res.ok) {
+        view.textContent = name;
+        area.style.display = 'none';
+        view.style.display = '';
+        btn.style.display = '';
+      } else {
+        alert(res.msg || '저장에 실패했습니다.');
+      }
+    }).catch(function() { alert('오류가 발생했습니다.'); })
+      .finally(function() { save.disabled = false; });
+  });
+
+  input.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') save.click();
+    if (e.key === 'Escape') cancel.click();
+  });
+});
+
 /* ── 프로필 사진 변경 ── */
 (function () {
   var wrap  = document.getElementById('em-avatar-wrap');

@@ -415,3 +415,68 @@ def test_every_reason_constant_has_a_label():
     """사유코드를 추가하고 라벨을 빠뜨리면 영어가 노출된다."""
     for code in ('payment', 'use', 'refund', POINT_REASON_REJECT_REFUND):
         assert code in POINT_REASON_LABELS
+
+
+# ═════════════════════ 화면 ═════════════════════
+
+def test_user_sees_waiting_for_approval_message(client):
+    """★사용자 '내 활동'에 '농장주 승인을 기다리는 중입니다'가 보인다.★"""
+    farmer = _user("f@x.com", 'farmer')
+    buyer = _user("u@x.com")
+    _application(buyer, _experience(farmer), APPLICATION_STATUS_PAID)
+
+    _login(client, "u@x.com")
+    for path in ('/my_info', '/mypage'):
+        html = client.get(path, follow_redirects=True).get_data(as_text=True)
+        assert '수락 대기중' in html, path
+        assert '농장주 승인을 기다리는 중입니다' in html, path
+
+
+def test_user_sees_refund_notice_after_reject(client):
+    """★거절당한 예약 카드에 환급 안내가 보인다.★"""
+    farmer = _user("f@x.com", 'farmer')
+    buyer = _user("u@x.com")
+    row = _application(buyer, _experience(farmer), APPLICATION_STATUS_PAID)
+    _paid_via_toss(buyer, row)
+
+    _login(client, "f@x.com")
+    _reject(client, row.id)
+
+    _login(client, "u@x.com")
+    for path in ('/my_info', '/mypage'):
+        html = client.get(path, follow_redirects=True).get_data(as_text=True)
+        assert '결제 금액이 포인트로 환급되었습니다' in html, path
+
+
+def test_self_cancelled_shows_no_refund_notice(client):
+    """사용자가 스스로 취소한 건에는 환급 안내가 뜨면 안 된다.
+
+    둘 다 status 는 '취소'라 환급 로그로 구분한다.
+    """
+    farmer = _user("f@x.com", 'farmer')
+    buyer = _user("u@x.com")
+    row = _application(buyer, _experience(farmer), APPLICATION_STATUS_PAID)
+
+    _login(client, "u@x.com")
+    client.post(f'/application/delete/{row.id}', follow_redirects=True)
+
+    for path in ('/my_info', '/mypage'):
+        html = client.get(path, follow_redirects=True).get_data(as_text=True)
+        assert '포인트로 환급되었습니다' not in html, path
+
+
+def test_farmer_easy_reservations_shows_accept_and_reject(client):
+    """농장주 예약 목록에서 결제 완료 건에만 수락·거절이 뜬다."""
+    farmer = _user("f@x.com", 'farmer')
+    buyer = _user("u@x.com")
+    exp = _experience(farmer)
+    paid = _application(buyer, exp, APPLICATION_STATUS_PAID)
+    unpaid = _application(buyer, exp, APPLICATION_STATUS_PENDING)
+
+    _login(client, "f@x.com")
+    html = client.get('/easy_mode/reservations').get_data(as_text=True)
+
+    assert f'/application/confirm/{paid.id}' in html
+    assert f'/application/reject/{paid.id}' in html
+    assert f'/application/confirm/{unpaid.id}' not in html
+    assert '수락 대기' in html

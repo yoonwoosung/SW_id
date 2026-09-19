@@ -22,6 +22,11 @@
 
 /* ── 예약 카드 ── */
 .mi-res-list { display:flex; flex-direction:column; gap:12px; }
+.mi-res-note {
+  margin-top:6px; font-size:.78rem; line-height:1.45;
+  color:var(--fl-text-muted);
+}
+.mi-res-note--refund { color:var(--fl-green-700,#2e7d32); font-weight:600; }
 .mi-res-card {
   display:flex; gap:14px; background:var(--fl-surface); border:1px solid var(--fl-border);
   border-radius:14px; padding:14px; align-items:center;
@@ -334,6 +339,11 @@
                 <div class="mi-res-meta"><img src="{{ url_for('static', filename='icons/icon-calendar-schedule.svg') }}" class="fl-icon-sm" alt=""> {{ app.apply_date.strftime('%Y.%m.%d') }} {{ app.apply_time or '' }} &nbsp;·&nbsp; <img src="{{ url_for('static', filename='icons/icon-participants.svg') }}" class="fl-icon-sm" alt=""> {{ app.participants_count }}명</div>
                 <div class="mi-res-meta"><img src="{{ url_for('static', filename='icons/icon-map-location.svg') }}" class="fl-icon-sm" alt=""> {{ app.experience.address_detail or app.experience.location or '' }}</div>
                 <div style="font-size:.72rem;color:var(--fl-text-muted);margin-top:3px;">예약번호 FLT-{{ '%06d' | format(app.id) }}</div>
+                {% if app.status == '결제완료' %}
+                <div class="mi-res-note">결제가 끝났습니다. 농장주 승인을 기다리는 중입니다.</div>
+                {% elif app.status == '취소' and app.id in (refunded_app_ids or []) %}
+                <div class="mi-res-note mi-res-note--refund">농장주가 예약을 거절해 결제 금액이 포인트로 환급되었습니다.</div>
+                {% endif %}
               </div>
               <div class="mi-res-actions">
                 {% if app.status == '예정' %}
@@ -721,7 +731,7 @@ document.getElementById('mi-course-modal').addEventListener('click', function(e)
       el.innerHTML = logs.length ? logs.map(function (l) {
         var pos = l.amount >= 0;
         return '<div class="mi-point-row">'
-          + '<div style="flex:1;"><div style="font-size:.88rem;font-weight:600;">' + esc(l.reason) + '</div>'
+          + '<div style="flex:1;"><div style="font-size:.88rem;font-weight:600;">' + esc(l.reason_label || l.reason) + '</div>'
           + '<div style="font-size:.72rem;color:var(--fl-text-muted);">' + esc((l.created_at || '').slice(0, 10)) + '</div></div>'
           + '<div class="' + (pos ? 'mi-point-pos' : 'mi-point-neg') + '">'
           + (pos ? '+' : '') + Number(l.amount).toLocaleString() + 'P</div></div>';

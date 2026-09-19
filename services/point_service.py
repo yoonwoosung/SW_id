@@ -28,6 +28,21 @@ def earn_points_for_payment(user_id, application_id, amount):
     return earned
 
 
+def refunded_application_ids(user_id):
+    """거절 환급을 받은 예약 id 집합.
+
+    '취소'된 예약이 사용자가 직접 취소한 것인지 농장주가 거절한 것인지는
+    Application 만 봐서는 알 수 없다(둘 다 '취소'로 간다).
+    환급 로그가 있으면 농장주 거절이므로 이것으로 판정한다.
+    """
+    rows = db.session.query(PointLog.application_id).filter(
+        PointLog.user_id == user_id,
+        PointLog.reason == POINT_REASON_REJECT_REFUND,
+        PointLog.application_id.isnot(None),
+    ).all()
+    return {row[0] for row in rows}
+
+
 def get_balance(user_id):
     """현재 포인트 잔액 = 내역 합계."""
     total = db.session.query(func.coalesce(func.sum(PointLog.amount), 0)).filter(

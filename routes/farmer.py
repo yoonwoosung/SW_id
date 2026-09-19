@@ -322,6 +322,7 @@ def easy_create_experience():
             pesticide_free=is_organic,
             organic_certification_type=cert_type,
             organic_certification_image=cert_filename,
+            organic_cert_status='PENDING' if (is_organic and cert_filename) else None,
             has_recipe=has_recipe,                 # 레시피 데이터 연결
             recipe_text=recipe_text,               # 레시피 글
             recipe_image=recipe_image_filename,    # 레시피 사진
@@ -432,6 +433,8 @@ def easy_modify_experience(item_id):
                 new_cert_filename = f"cert_{session['user_id']}_{uuid.uuid4().hex}.{ext}"
                 cert_file.save(os.path.join(current_app.config['UPLOAD_FOLDER'], new_cert_filename))
                 item.organic_certification_image = new_cert_filename
+                item.organic_cert_status = 'PENDING'
+                item.organic_cert_reject_reason = None
             elif not item.organic_certification_image:
                 flash("친환경 농법 사용 시 인증서 이미지를 등록해야 합니다.", "warning")
                 return render_template('easy_create_experience.html', item=item, approved_farms=approved_farms, form_data=request.form)
@@ -439,6 +442,8 @@ def easy_modify_experience(item_id):
             item.pesticide_free = False
             item.organic_certification_type = None
             item.organic_certification_image = None
+            item.organic_cert_status = None
+            item.organic_cert_reject_reason = None
 
         # 👇 레시피 수정 처리 로직 👇
         item.has_recipe = 'has_recipe' in request.form

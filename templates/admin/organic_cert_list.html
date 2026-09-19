@@ -23,35 +23,35 @@
         <table class="table table-hover mb-0 text-center">
             <thead class="bg-light">
                 <tr>
-                    <th>농장명</th>
+                    <th>체험명</th>
                     <th>농장주</th>
                     <th>인증 종류</th>
                     <th>인증 서류</th>
-                    <th>신청일</th>
+                    <th>등록일</th>
                     <th>상태 / 심사</th>
                 </tr>
             </thead>
             <tbody>
-                {% for farm in farms %}
+                {% for exp in experiences %}
                 <tr>
-                    <td class="font-weight-bold">{{ farm.name or '기본 농장' }}</td>
-                    <td>{{ farm.user.name or farm.user.nickname }}</td>
-                    <td>{{ farm.organic_cert_type or '종류 미입력' }}</td>
+                    <td class="font-weight-bold">{{ exp.crop }} 체험</td>
+                    <td>{{ exp.farmer.name or exp.farmer.nickname }}</td>
+                    <td>{{ exp.organic_certification_type or '종류 미입력' }}</td>
                     <td>
-                        {% if farm.organic_cert_image %}
+                        {% if exp.organic_certification_image %}
                         <span class="badge badge-success"><i class="fa-solid fa-image"></i> 이미지</span>
                         {% else %}
                         <span class="text-muted small">없음</span>
                         {% endif %}
                     </td>
-                    <td>{{ farm.created_at.strftime('%m/%d %H:%M') }}</td>
+                    <td>{{ exp.duration_start.strftime('%m/%d') if exp.duration_start else '-' }}</td>
                     <td>
-                        {% if farm.organic_cert_status == 'PENDING' %}
-                        <a href="{{ url_for('admin_organic_cert_detail', farm_id=farm.id) }}" class="btn btn-sm btn-success font-weight-bold px-3">
+                        {% if exp.organic_cert_status == 'PENDING' %}
+                        <a href="{{ url_for('admin_organic_cert_detail', exp_id=exp.id) }}" class="btn btn-sm btn-success font-weight-bold px-3">
                             심사하기 →
                         </a>
-                        {% elif farm.organic_cert_status == 'APPROVED' %}
-                        <span class="badge badge-success px-2 py-1">🌿 승인완료</span>
+                        {% elif exp.organic_cert_status == 'APPROVED' %}
+                        <span class="badge badge-success px-2 py-1">승인완료</span>
                         {% else %}
                         <span class="badge badge-danger px-2 py-1">반려됨</span>
                         {% endif %}

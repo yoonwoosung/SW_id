@@ -299,9 +299,6 @@
                                 {% if farm.certificate_pdf %}
                                 <span class="fl-badge fl-badge--success"><i class="fa-solid fa-file-pdf"></i> 확인 서류 첨부됨</span>
                                 {% endif %}
-                                {% if farm.is_organic %}
-                                <span class="fl-badge fl-badge--active"><img src="{{ url_for('static', filename='icons/icon-eco-friendly.svg') }}" width="16" height="16" style="vertical-align:-3px;margin-right:4px;"> 친환경{% if farm.organic_cert_type %} · {{ farm.organic_cert_type }}{% endif %}</span>
-                                {% endif %}
                             </div>
 
                             {% if farm.status == 'REJECTED' and farm.reject_reason %}
@@ -347,24 +344,6 @@
                                 <label class="easy-form-label-lg" for="farm-cert-input">농업인확인서 (PDF 필수) <span style="color:var(--fl-danger);">*</span></label>
                                 <input type="file" id="farm-cert-input" name="farmer_certificate_pdf" class="form-control-file" accept=".pdf" required>
                                 <small class="text-muted">국립농산물품질관리원에서 발급받은 농업인확인서 PDF를 제출해 주세요.</small>
-                            </div>
-
-                            <div class="form-group">
-                                <div class="farm-organic-check">
-                                    <input type="checkbox" id="farm-organic-chk" name="is_organic"
-                                           onchange="document.getElementById('farm-organic-area').style.display=this.checked?'block':'none'">
-                                    <label for="farm-organic-chk" class="easy-form-label-lg" style="margin:0;cursor:pointer;"><img src="{{ url_for('static', filename='icons/icon-eco-friendly.svg') }}" class="fl-icon-sm" style="margin-right:6px;"> 친환경 인증 농장</label>
-                                </div>
-                                <div id="farm-organic-area" style="display:none;margin-top:12px;padding:16px;background:#f0faf4;border-radius:10px;">
-                                    <div class="form-group">
-                                        <label class="easy-form-label-lg" for="farm-organic-type">인증 종류</label>
-                                        <input type="text" id="farm-organic-type" name="organic_cert_type" class="form-control" placeholder="예) 유기농, 무농약">
-                                    </div>
-                                    <div class="form-group mb-0">
-                                        <label class="easy-form-label-lg" for="farm-organic-img">친환경 인증서 이미지</label>
-                                        <input type="file" id="farm-organic-img" name="organic_cert_image" class="form-control-file" accept=".jpg,.jpeg,.png">
-                                    </div>
-                                </div>
                             </div>
 
                             <div class="d-flex gap-2 mt-3">

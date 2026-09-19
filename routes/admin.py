@@ -2,7 +2,7 @@
 from datetime import datetime
 from functools import wraps
 from flask import render_template, request, redirect, url_for, flash, session, jsonify
-from models import db, Farm, User, Notification
+from models import db, Farm, User, Notification, Experience
 
 def admin_required(f):
     @wraps(f)
@@ -17,7 +17,7 @@ def admin_required(f):
 def farm_audit_list():
     status_filter = request.args.get('status', 'PENDING')
     farms = Farm.query.filter_by(status=status_filter).order_by(Farm.created_at.desc()).all()
-    
+
     counts = {
         'PENDING': Farm.query.filter_by(status='PENDING').count(),
         'APPROVED': Farm.query.filter_by(status='APPROVED').count(),
@@ -44,12 +44,6 @@ def farm_approve(farm_id):
     db.session.add(notif)
     db.session.commit()
     flash("농장 입점이 승인되었습니다.", "success")
-
-    # 친환경 신청 농장이면 바로 친환경 인증 심사 페이지로 이동
-    if farm.is_organic and farm.organic_cert_status == 'PENDING':
-        flash("친환경 인증 서류를 이어서 심사해 주세요.", "info")
-        return redirect(url_for('admin_organic_cert_detail', farm_id=farm.id))
-
     return redirect(url_for('admin_farm_audit_list', status='PENDING'))
 
 @admin_required
@@ -59,11 +53,11 @@ def farm_reject(farm_id):
     if not reason:
         flash("반려 사유를 반드시 입력해야 합니다.", "danger")
         return redirect(url_for('admin_farm_audit_detail', farm_id=farm.id))
-        
+
     farm.status = 'REJECTED'
     farm.reject_reason = reason
     farm.updated_at = datetime.utcnow()
-    
+
     notif = Notification(
         user_id=farm.user_id,
         message=f"[{farm.name or farm.address}] 농장 심사가 반려되었습니다. 사유: {reason}"
@@ -73,31 +67,38 @@ def farm_reject(farm_id):
     flash("농장 심사가 반려 처리되었습니다.", "warning")
     return redirect(url_for('admin_farm_audit_list', status='PENDING'))
 
+
+# ── 친환경 인증 심사 (Experience 기반) ──────────────────────────────
+
 @admin_required
 def organic_cert_list():
-    farms = Farm.query.filter(
-        Farm.is_organic == True,
-        Farm.organic_cert_status != None
-    ).order_by(Farm.created_at.desc()).all()
-    counts = {
-        'PENDING': Farm.query.filter_by(is_organic=True, organic_cert_status='PENDING').count(),
-        'APPROVED': Farm.query.filter_by(is_organic=True, organic_cert_status='APPROVED').count(),
-        'REJECTED': Farm.query.filter_by(is_organic=True, organic_cert_status='REJECTED').count(),
-    }
     status_filter = request.args.get('status', 'PENDING')
-    farms = Farm.query.filter_by(is_organic=True, organic_cert_status=status_filter).order_by(Farm.created_at.desc()).all()
-    return render_template('admin/organic_cert_list.html', farms=farms, current_status=status_filter, counts=counts)
+    experiences = Experience.query.filter_by(
+        pesticide_free=True, organic_cert_status=status_filter
+    ).order_by(Experience.id.desc()).all()
+    counts = {
+        'PENDING':  Experience.query.filter_by(pesticide_free=True, organic_cert_status='PENDING').count(),
+        'APPROVED': Experience.query.filter_by(pesticide_free=True, organic_cert_status='APPROVED').count(),
+        'REJECTED': Experience.query.filter_by(pesticide_free=True, organic_cert_status='REJECTED').count(),
+    }
+    return render_template('admin/organic_cert_list.html',
+                           experiences=experiences, current_status=status_filter, counts=counts)
 
 
 @admin_required
-def organic_cert_approve(farm_id):
-    farm = Farm.query.get_or_404(farm_id)
-    farm.organic_cert_status = 'APPROVED'
-    farm.organic_cert_reject_reason = None
-    farm.updated_at = datetime.utcnow()
+def organic_cert_detail(exp_id):
+    exp = Experience.query.get_or_404(exp_id)
+    return render_template('admin/organic_cert_detail.html', exp=exp)
+
+
+@admin_required
+def organic_cert_approve(exp_id):
+    exp = Experience.query.get_or_404(exp_id)
+    exp.organic_cert_status = 'APPROVED'
+    exp.organic_cert_reject_reason = None
     notif = Notification(
-        user_id=farm.user_id,
-        message=f"[{farm.name or farm.address}] 농장의 친환경 인증이 승인되었습니다. 체험 목록에 친환경 표시가 노출됩니다."
+        user_id=exp.farmer_id,
+        message=f"[{exp.crop} 체험] 친환경 인증이 승인되었습니다. 체험 목록에 친환경 표시가 노출됩니다."
     )
     db.session.add(notif)
     db.session.commit()
@@ -106,29 +107,22 @@ def organic_cert_approve(farm_id):
 
 
 @admin_required
-def organic_cert_reject(farm_id):
-    farm = Farm.query.get_or_404(farm_id)
+def organic_cert_reject(exp_id):
+    exp = Experience.query.get_or_404(exp_id)
     reason = request.form.get('reject_reason', '').strip()
     if not reason:
         flash("반려 사유를 입력해야 합니다.", "danger")
-        return redirect(url_for('admin_organic_cert_detail', farm_id=farm_id))
-    farm.organic_cert_status = 'REJECTED'
-    farm.organic_cert_reject_reason = reason
-    farm.updated_at = datetime.utcnow()
+        return redirect(url_for('admin_organic_cert_detail', exp_id=exp_id))
+    exp.organic_cert_status = 'REJECTED'
+    exp.organic_cert_reject_reason = reason
     notif = Notification(
-        user_id=farm.user_id,
-        message=f"[{farm.name or farm.address}] 농장의 친환경 인증 심사가 반려되었습니다. 사유: {reason}"
+        user_id=exp.farmer_id,
+        message=f"[{exp.crop} 체험] 친환경 인증 심사가 반려되었습니다. 사유: {reason}"
     )
     db.session.add(notif)
     db.session.commit()
     flash("친환경 인증이 반려 처리되었습니다.", "warning")
     return redirect(url_for('admin_organic_cert_list', status='PENDING'))
-
-
-@admin_required
-def organic_cert_detail(farm_id):
-    farm = Farm.query.get_or_404(farm_id)
-    return render_template('admin/organic_cert_detail.html', farm=farm)
 
 
 def register(app):
@@ -137,6 +131,6 @@ def register(app):
     app.add_url_rule('/admin/farms/<int:farm_id>/approve', 'admin_farm_approve', farm_approve, methods=['POST'])
     app.add_url_rule('/admin/farms/<int:farm_id>/reject', 'admin_farm_reject', farm_reject, methods=['POST'])
     app.add_url_rule('/admin/organic-cert', 'admin_organic_cert_list', organic_cert_list)
-    app.add_url_rule('/admin/organic-cert/<int:farm_id>', 'admin_organic_cert_detail', organic_cert_detail)
-    app.add_url_rule('/admin/organic-cert/<int:farm_id>/approve', 'admin_organic_cert_approve', organic_cert_approve, methods=['POST'])
-    app.add_url_rule('/admin/organic-cert/<int:farm_id>/reject', 'admin_organic_cert_reject', organic_cert_reject, methods=['POST'])
+    app.add_url_rule('/admin/organic-cert/<int:exp_id>', 'admin_organic_cert_detail', organic_cert_detail)
+    app.add_url_rule('/admin/organic-cert/<int:exp_id>/approve', 'admin_organic_cert_approve', organic_cert_approve, methods=['POST'])
+    app.add_url_rule('/admin/organic-cert/<int:exp_id>/reject', 'admin_organic_cert_reject', organic_cert_reject, methods=['POST'])

@@ -34,6 +34,8 @@ class Experience(db.Model):
     has_parking = db.Column(db.Boolean, default=False, nullable=False)
     organic_certification_image = db.Column(db.String(255), nullable=True)
     organic_certification_type = db.Column(db.String(100), nullable=True)
+    organic_cert_status = db.Column(db.String(20), nullable=True, default=None)  # None / PENDING / APPROVED / REJECTED
+    organic_cert_reject_reason = db.Column(db.Text, nullable=True)
     activity_type = db.Column(db.String(50), nullable=True)
     pet_allowed = db.Column(db.Boolean, default=False, nullable=False)
     pet_max_weight_kg = db.Column(db.Integer, nullable=True)

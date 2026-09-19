@@ -198,10 +198,10 @@
                         <span class="exp-badge badge-closed">마감임박</span>
                         {% elif item.is_specialty %}
                         <span class="exp-badge badge-family">가족추천</span>
-                        {% elif item.pesticide_free and item.farm and item.farm.organic_cert_status == 'APPROVED' %}
-                        <span class="exp-badge badge-eco">🌿 친환경</span>
-                        {% elif item.pesticide_free %}
+                        {% elif item.pesticide_free and item.organic_cert_status == 'APPROVED' %}
                         <span class="exp-badge badge-eco">친환경</span>
+                        {% elif item.pesticide_free and item.organic_cert_status != 'APPROVED' %}
+                        <span class="exp-badge badge-open">예약가능</span>
                         {% else %}
                         <span class="exp-badge badge-open">예약가능</span>
                         {% endif %}

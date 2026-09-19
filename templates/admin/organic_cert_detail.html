@@ -12,58 +12,54 @@
     </div>
 
     <div class="row">
-        <!-- 좌측: 농장 정보 + 심사 버튼 -->
+        <!-- 좌측: 체험 정보 + 심사 버튼 -->
         <div class="col-lg-5 mb-4">
             <div class="card border-0 shadow-sm rounded-xl h-100 p-4 bg-white d-flex flex-column">
                 <h5 class="font-weight-bold text-dark border-bottom pb-3 mb-3">
-                    <i class="fa-solid fa-location-dot text-primary mr-2"></i>농장 정보
+                    <i class="fa-solid fa-seedling text-success mr-2"></i>체험 정보
                 </h5>
 
                 <div class="fl-table-wrap">
                 <table class="table table-bordered mb-4">
                     <tbody>
                         <tr>
-                            <th class="bg-light" style="width:35%;">농장명</th>
-                            <td class="font-weight-bold">{{ farm.name or '기본 농장' }}</td>
+                            <th class="bg-light" style="width:35%;">체험명</th>
+                            <td class="font-weight-bold">{{ exp.crop }} 체험</td>
                         </tr>
                         <tr>
                             <th class="bg-light">농장주</th>
-                            <td>{{ farm.user.name or farm.user.nickname }} ({{ farm.user.email }})</td>
+                            <td>{{ exp.farmer.name or exp.farmer.nickname }} ({{ exp.farmer.email }})</td>
                         </tr>
                         <tr>
                             <th class="bg-light">연락처</th>
-                            <td>{{ farm.user.phone or '없음' }}</td>
+                            <td>{{ exp.farmer.phone or '없음' }}</td>
                         </tr>
                         <tr>
-                            <th class="bg-light">농장 주소</th>
-                            <td>{{ farm.address }}<br><span class="text-primary">{{ farm.address_detail or '' }}</span></td>
+                            <th class="bg-light">체험 장소</th>
+                            <td>{{ exp.address_detail or exp.location }}</td>
                         </tr>
                         <tr class="table-success">
                             <th class="font-weight-bold text-success">인증 종류</th>
-                            <td class="font-weight-bold" style="font-size:1.05rem;">{{ farm.organic_cert_type or '종류 미입력' }}</td>
+                            <td class="font-weight-bold" style="font-size:1.05rem;">{{ exp.organic_certification_type or '종류 미입력' }}</td>
                         </tr>
                         <tr>
                             <th class="bg-light">현재 상태</th>
                             <td>
-                                {% if farm.organic_cert_status == 'PENDING' %}
+                                {% if exp.organic_cert_status == 'PENDING' %}
                                 <span class="badge badge-warning px-2 py-1">심사 대기</span>
-                                {% elif farm.organic_cert_status == 'APPROVED' %}
-                                <span class="badge badge-success px-2 py-1">🌿 승인완료</span>
+                                {% elif exp.organic_cert_status == 'APPROVED' %}
+                                <span class="badge badge-success px-2 py-1">승인완료</span>
                                 {% else %}
                                 <span class="badge badge-danger px-2 py-1">반려됨</span>
                                 {% endif %}
                             </td>
                         </tr>
-                        {% if farm.organic_cert_reject_reason %}
+                        {% if exp.organic_cert_reject_reason %}
                         <tr>
                             <th class="bg-light text-danger">반려 사유</th>
-                            <td class="text-danger">{{ farm.organic_cert_reject_reason }}</td>
+                            <td class="text-danger">{{ exp.organic_cert_reject_reason }}</td>
                         </tr>
                         {% endif %}
-                        <tr>
-                            <th class="bg-light">신청일</th>
-                            <td>{{ farm.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
-                        </tr>
                     </tbody>
                 </table>
                 </div>
@@ -71,10 +67,10 @@
                 <!-- 심사 처리 버튼 -->
                 <div class="border-top pt-3 mt-auto">
                     <h6 class="font-weight-bold text-dark mb-3">심사 결과 처리</h6>
-                    <p class="text-muted small mb-3">승인 시 해당 농장의 체험 목록에 <strong>🌿 친환경</strong> 표시가 노출됩니다.</p>
+                    <p class="text-muted small mb-3">승인 시 해당 체험 목록에 <strong>친환경</strong> 표시가 노출됩니다.</p>
                     <div class="d-flex gap-3">
-                        <form method="POST" action="{{ url_for('admin_organic_cert_approve', farm_id=farm.id) }}" class="flex-fill mr-2"
-                            onsubmit="return confirm('이 농장의 친환경 인증을 승인할까요?');">
+                        <form method="POST" action="{{ url_for('admin_organic_cert_approve', exp_id=exp.id) }}" class="flex-fill mr-2"
+                            onsubmit="return confirm('이 체험의 친환경 인증을 승인할까요?');">
                             <button type="submit" class="btn btn-success btn-block py-3 font-weight-bold" style="font-size:1.05rem;">
                                 <i class="fa-solid fa-check mr-1"></i> 인증 승인
                             </button>
@@ -95,16 +91,16 @@
                     <h5 class="font-weight-bold text-dark mb-0">
                         <i class="fa-solid fa-image text-success mr-2"></i>제출된 친환경 인증 서류
                     </h5>
-                    {% if farm.organic_cert_image %}
-                    <a href="{{ url_for('static', filename='uploads/' + farm.organic_cert_image) }}" target="_blank" class="btn btn-sm btn-outline-secondary">
+                    {% if exp.organic_certification_image %}
+                    <a href="{{ url_for('static', filename='uploads/' + exp.organic_certification_image) }}" target="_blank" class="btn btn-sm btn-outline-secondary">
                         <i class="fa-solid fa-arrow-up-right-from-square mr-1"></i> 새 창에서 열기
                     </a>
                     {% endif %}
                 </div>
 
                 <div class="flex-grow-1 border rounded-lg bg-light d-flex align-items-center justify-content-center" style="min-height:500px;">
-                    {% if farm.organic_cert_image %}
-                    <img src="{{ url_for('static', filename='uploads/' + farm.organic_cert_image) }}"
+                    {% if exp.organic_certification_image %}
+                    <img src="{{ url_for('static', filename='uploads/' + exp.organic_certification_image) }}"
                         alt="친환경 인증 서류"
                         style="max-width:100%; max-height:680px; object-fit:contain; border-radius:8px;">
                     {% else %}
@@ -123,7 +119,7 @@
 <div class="modal fade" id="rejectModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content rounded-xl border-0 shadow">
-            <form method="POST" action="{{ url_for('admin_organic_cert_reject', farm_id=farm.id) }}">
+            <form method="POST" action="{{ url_for('admin_organic_cert_reject', exp_id=exp.id) }}">
                 <div class="modal-header border-0 pb-0">
                     <h5 class="modal-title font-weight-bold text-danger">친환경 인증 반려</h5>
                     <button type="button" class="close" data-dismiss="modal">&times;</button>

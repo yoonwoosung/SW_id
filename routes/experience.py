@@ -500,6 +500,12 @@ def farmer_register(item_id=None):
             item.pesticide_free = is_organic
             item.organic_certification_image = cert_filename
             item.organic_certification_type = request.form.get('organic_certification_type')
+            if is_organic and cert_filename:
+                item.organic_cert_status = 'PENDING'
+                item.organic_cert_reject_reason = None
+            elif not is_organic:
+                item.organic_cert_status = None
+                item.organic_cert_reject_reason = None
             item.lat = lat
             item.lng = lng
             item.volunteer_needed = volunteer_needed
@@ -532,6 +538,7 @@ def farmer_register(item_id=None):
                 pesticide_free=is_organic,
                 organic_certification_image=cert_filename,
                 organic_certification_type=request.form.get('organic_certification_type'),
+                organic_cert_status='PENDING' if (is_organic and cert_filename) else None,
                 lat=lat,
                 lng=lng,
                 farmer_id=session['user_id'],

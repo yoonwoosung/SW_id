@@ -791,11 +791,7 @@ document.getElementById('mi-course-modal').addEventListener('click', function(e)
 
 // 💡 체험 상태가 '완료'인 카드들을 찾아서, API를 찔러보고 레시피가 있다면 버튼을 자동 생성!
 document.addEventListener('DOMContentLoaded', function () {
-    // ⚠️ 새 환경에 맞게 '.mi-res-card' 클래스 사용
-    // 🚨 당장 1초 만에 화면 UI 테스트를 해보고 싶으시다면 
-    // 아래 [data-state="완료"] 부분을 지우고 그냥 querySelectorAll('.mi-res-card') 로 변경해서 
-    // 확정/예정 상태 가리지 않고 무조건 뜨게 테스트해 보셔도 됩니다!
-    const completedCards = document.querySelectorAll('.mi-res-card[data-state="완료"]');
+    const completedCards = document.querySelectorAll('.mi-res-card[data-state="확정"]');
     
     completedCards.forEach(card => {
         const expId = card.getAttribute('data-exp-id');

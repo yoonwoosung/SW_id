@@ -2508,8 +2508,8 @@ a svg, a i { pointer-events: none; }
     display: flex;
     align-items: center;
     margin-bottom: 52px;
-    margin-left: 28px;
-    margin-right: 28px;
+    padding-left: 56px;
+    padding-right: 56px;
 }
 
 .card-slider-viewport {
@@ -2557,11 +2557,11 @@ a svg, a i { pointer-events: none; }
 }
 
 .card-slider-btn.prev {
-    left: -22px;
+    left: 6px;
 }
 
 .card-slider-btn.next {
-    right: -22px;
+    right: 6px;
 }
 
 .card-slider-btn:disabled {

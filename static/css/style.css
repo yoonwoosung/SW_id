@@ -1130,7 +1130,7 @@ a svg, a i { pointer-events: none; }
 
 /* section-block과 section-card 병용 시 section-block의 padding: 44px 0 이 좌우를 덮어쓰는 문제 방지 */
 .section-block.section-card { padding: 24px; }
-.section-block + .section-block { border-top: 1px solid #f0f0f0; }
+.section-block + .section-block:not(.slider-card) { border-top: 1px solid #f0f0f0; }
 .section-header {
     display: flex;
     justify-content: space-between;
@@ -1320,9 +1320,8 @@ a svg, a i { pointer-events: none; }
     align-items: flex-start;
     gap: 10px;
     padding: 10px 0;
-    border-bottom: 1px solid #f0f0f0;
 }
-.ai-timeline-item:last-child { border-bottom: none; }
+
 .ai-time { font-size: 0.76rem; font-weight: 700; color: #666; min-width: 40px; padding-top: 2px; }
 .ai-dot { width: 9px; height: 9px; background: var(--green-mid); border-radius: 50%; margin-top: 4px; flex-shrink: 0; }
 .ai-timeline-body { flex: 1; }
@@ -2508,8 +2507,8 @@ a svg, a i { pointer-events: none; }
     display: flex;
     align-items: center;
     margin-bottom: 52px;
-    margin-left: 28px;
-    margin-right: 28px;
+    padding-left: 56px;
+    padding-right: 56px;
 }
 
 .card-slider-viewport {
@@ -2520,14 +2519,21 @@ a svg, a i { pointer-events: none; }
 
 .card-slider-track {
     display: flex;
-    gap: 24px;
+    gap: 0;
     transition: transform 0.4s ease-in-out;
 }
 
 .slider-card {
-    flex: 0 0 calc(50% - 12px);
+    flex: 0 0 50%;
     box-sizing: border-box;
     padding: 24px;
+    background: transparent;
+    box-shadow: none;
+    border-radius: 0;
+}
+
+.slider-card + .slider-card {
+    border-left: 1px solid #f0f0f0;
 }
 
 .card-slider-btn {
@@ -2557,11 +2563,11 @@ a svg, a i { pointer-events: none; }
 }
 
 .card-slider-btn.prev {
-    left: -22px;
+    left: 6px;
 }
 
 .card-slider-btn.next {
-    right: -22px;
+    right: 6px;
 }
 
 .card-slider-btn:disabled {

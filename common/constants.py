@@ -70,6 +70,11 @@ SEGMENT_LIGHT_NEAR_WEIGHT = 0.3     # 가까울수록 가점
 # 'group' 세그먼트 = 화면의 '단체로 가기 좋은 코스'
 SEGMENT_GROUP_CAPACITY_WEIGHT = 0.5  # 후보군 내 상대 잔여석(절대 인원 기준)
 SEGMENT_GROUP_PARKING_WEIGHT = 0.2   # 주차 가능하면 가점
+# 'peers_age'·'peers_gender' = 화면의 '내 또래가 즐기는 코스'·'함께 가기 좋은 코스'
+# 부제가 "같은 나이대에서 인기"·"같은 성별 회원들이 자주 찾는"이므로
+# ★클릭 수가 주된 기준★이어야 한다. 가장 많이 눌린 체험이 이 가중치를 다 받고
+# 나머지는 비례해 줄어든다(SEGMENT_TREND_BOOST 의 평탄한 가점 위에 더해진다).
+SEGMENT_TREND_POPULARITY_WEIGHT = 0.6
 TREND_TOP_LIMIT = 20        # 세그먼트에서 뽑을 인기 대상(체험) 최대 수
 TREND_KEYWORD_LIMIT = 8     # 검색창 하단 트렌드 키워드 최대 노출 수
 RECENT_VIEWS_LIMIT = 10     # '내 활동 - 최근 본 체험' 최대 노출 수

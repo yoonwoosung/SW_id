@@ -20,8 +20,30 @@ CATEGORY_GROUPS = [
     {"code": "practical", "label": "실용 조건"},
 ]
 
-# 지역: 8도(+제주) → 시/군. 구 단위는 나누지 않는다. (code, 라벨, 도 별칭, [(시/군코드, 라벨)])
-_REGIONS = [
+# 광역시: 자치구는 나누지 않는다.
+# '북구'·'중구'·'동구'·'서구'가 부산·대구·인천·광주·울산에 모두 있어,
+# 주소 부분 문자열 매칭(services/category_match._has_region)에서 서로 섞인다.
+# 하위가 없으므로 프론트는 잎(체크박스 그리드)으로 그리고, 도 아코디언보다 위에 모인다.
+#
+# ★광주만 별칭이 '광주광역시' 다.★ 경기도 시군에 '광주(경기)'가 이미 있어
+# 키워드를 '광주'로 두면 "경기도 광주시" 주소가 광주광역시로 잡힌다.
+# "광주 북구" 같은 축약 표기는 놓치지만, 틀린 결과가 나오는 것보다 낫다고 봤다.
+# 나머지 6개는 같은 이름의 시군이 없어 '서울'처럼 짧게 둬도 안전하다
+# ("서울특별시 강남구"·"서울 강남구" 둘 다 매칭).
+_METRO_REGIONS = [
+    ("seoul",   "서울", ["서울"],          []),
+    ("busan",   "부산", ["부산"],          []),
+    ("daegu",   "대구", ["대구"],          []),
+    ("incheon", "인천", ["인천"],          []),
+    ("gwangju", "광주", ["광주광역시"],    []),
+    ("daejeon", "대전", ["대전"],          []),
+    ("ulsan",   "울산", ["울산"],          []),
+    ("sejong",  "세종", ["세종특별자치시"], []),
+]
+
+# 지역: 광역시 7 + 8도(+제주) → 시/군. 구 단위는 나누지 않는다.
+# (code, 라벨, 도 별칭, [(시/군코드, 라벨)])
+_PROVINCES = [
     ("gyeonggi", "경기", ["경기"], [
         ("suwon", "수원"), ("seongnam", "성남"), ("yongin", "용인"), ("bucheon", "부천"),
         ("ansan", "안산"), ("anyang", "안양"), ("namyangju", "남양주"), ("hwaseong", "화성"),
@@ -75,12 +97,22 @@ _REGIONS = [
         ("jeju_si", "제주시"), ("seogwipo", "서귀포")]),
 ]
 
+_REGIONS = _METRO_REGIONS + _PROVINCES
+
 
 def _region_node():
-    return {"code": "region", "label": "지역", "group": "travel", "children": [
+    metro_children = [
+        {"code": prov_code, "label": prov_label}
+        for prov_code, prov_label, _aliases, _cities in _METRO_REGIONS
+    ]
+    province_children = [
         {"code": prov_code, "label": prov_label,
          "children": [{"code": c, "label": cl} for c, cl in cities]}
-        for prov_code, prov_label, _aliases, cities in _REGIONS
+        for prov_code, prov_label, _aliases, cities in _PROVINCES
+    ]
+    return {"code": "region", "label": "지역", "group": "travel", "children": [
+        {"code": "metro", "label": "광역시·특별시", "children": metro_children},
+        *province_children,
     ]}
 
 

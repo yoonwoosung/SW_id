@@ -36,7 +36,15 @@
 .fl-chip--preset { animation: fl-chip-pop 0.55s ease-out forwards; }
 
 /* ---- 필터: 세로 탭(왼쪽) + 세부 패널(오른쪽) 2단 ---- */
-.fl-filter { display: flex; gap: 12px; align-items: flex-start; }
+/* ★두 열에 같은 높이를 준다.★
+   align-items:flex-start 였을 때는 행 높이를 왼쪽 탭바(13개 × 35px ≈ 483px)가 정하고
+   오른쪽 목록은 max-height:300px 에서 끝나 그 아래 183px 가 통째로 비었다.
+   그 빈칸만큼 하단 버튼이 아래로 밀려 페이지를 스크롤해야 보였다.
+   height 를 고정하면 두 열이 같은 높이를 쓰고 버튼이 목록 바로 아래 붙는다. */
+.fl-filter {
+    display: flex; gap: 12px; align-items: stretch;
+    height: min(48vh, 320px);
+}
 
 /* 세로 탭바 */
 .fl-tabbar--vertical {
@@ -47,6 +55,7 @@
        터치 대상이 커져 모바일에서는 오히려 낫다. */
     flex: 0 0 132px; display: flex; flex-direction: column; gap: 2px;
     border-right: 1px solid var(--fl-border); padding-right: 8px;
+    overflow-y: auto;   /* 1열일 때는 483px 라 고정 높이를 넘는다. 탭바 안에서만 스크롤. */
 }
 /* 라벨이 길어져도 줄바꿈 대신 가로로 흐르게 한다(향후 라벨 추가 대비). */
 .fl-tab__label { white-space: nowrap; }
@@ -66,11 +75,12 @@
 }
 
 /* ---- 세부항목: 같은 크기 체크박스 그리드 ---- */
-/* 세부 영역은 높이를 제한해 내부에서만 스크롤(페이지가 길어지지 않게) */
-.fl-panel-body { flex: 1 1 auto; min-width: 0; max-height: 300px; overflow-y: auto; padding-right: 4px; }
+/* 높이는 .fl-filter 가 정한다(두 열을 맞추기 위해). 여기서는 내부 스크롤만 담당.
+   min-height:0 이 없으면 flex 항목이 내용 높이 아래로 줄지 않아 컨테이너를 밀어낸다. */
+.fl-panel-body { flex: 1 1 auto; min-width: 0; min-height: 0; overflow-y: auto; padding-right: 4px; }
 .fl-catpanel[hidden] { display: none; }
 .fl-grid {
-    display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr));
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(112px, 1fr));
     gap: 6px; margin: 4px 0;
 }
 .fl-cell {
@@ -114,6 +124,17 @@
 .fl-btn--primary:disabled { opacity: 0.6; cursor: default; }
 .fl-btn--ghost { background: #f2f4f1; color: #55605a; }
 .fl-btn--ghost:hover { background: #e7ebe6; }
+
+/* ---- 탭바 2열(PC) ---- */
+/* 탭 13개를 2열 7행으로 접어 세로를 483px → 약 260px 로 줄인다.
+   하단 버튼 아래끝이 855px → 644px 가 되어 한 화면에 들어온다.
+   ★720px 미만에서는 적용하지 않는다.★ 2열이면 탭바가 272px 가 되는데
+   360px 화면에서는 오른쪽 목록에 남는 폭이 음수(-13px)라 아예 못 쓴다.
+   (390px 에서도 17px 뿐) 좁은 화면은 1열 + 탭바 스크롤을 유지한다.
+   탭바 폭 132px 자체는 그대로 두고 열 수만 바꾼다. */
+@media (min-width: 720px) {
+    .fl-filter { height: 380px; }
+}
 
 /* ---- 트렌드 키워드 ---- */
 .fl-trend { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }

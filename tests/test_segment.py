@@ -40,19 +40,41 @@ def test_auto_segment_titles_state_their_criteria():
 
 
 def test_segment_buttons_from_profile():
-    # 20대 남성 → 나이·성별 버튼 2개(둘 다 또래=peers 세그먼트).
+    """★두 버튼은 서로 다른 세그먼트로 간다.★
+
+    예전에는 둘 다 'peers' 라 같은 섹션·같은 결과였다.
+    나이 버튼은 나이대 인기, 성별 버튼은 성별 인기를 기준으로 삼는다.
+    """
     btns = segment_buttons(FakeUser("20s", "male"))
     assert len(btns) == 2
-    assert btns[0]["label"] == "20대 놀러가기 좋은 곳" and btns[0]["segment"] == "peers"
-    assert btns[1]["label"] == "남자끼리 가기 좋은 곳" and btns[1]["segment"] == "peers"
-    assert all(b.get("icon") for b in btns)   # 아이콘 포함
+    assert btns[0]["label"] == "20대 놀러가기 좋은 곳" and btns[0]["segment"] == "peers_age"
+    assert btns[1]["label"] == "남자끼리 가기 좋은 곳" and btns[1]["segment"] == "peers_gender"
+    assert btns[0]["segment"] != btns[1]["segment"]
 
 
 def test_segment_buttons_fallback_when_no_profile():
-    # 비로그인/무정보 → 기본 버튼(인기·친환경)으로 2개 채움.
+    """비로그인/무정보 → 기본 버튼 2개.
+
+    세그먼트 값은 실제 화면 섹션(nearby·esg)과 맞아야 한다.
+    'peers' 로 두면 '요즘 인기 있는 곳'을 눌렀는데 '가볍게 다녀오기' 섹션으로 간다.
+    """
     btns = segment_buttons(None)
     assert len(btns) == 2
-    assert [b["segment"] for b in btns] == ["peers", "esg"]
+    assert [b["segment"] for b in btns] == ["nearby", "esg"]
+    assert [b["label"] for b in btns] == ["요즘 인기 있는 곳", "친환경으로 즐기기"]
+
+
+def test_segment_buttons_map_to_real_sections():
+    """버튼의 segment 는 화면에 실제로 있는 섹션이어야 한다.
+
+    ai_recommend.js 의 SECTIONS 가 이 값으로 스크롤 대상을 찾는다.
+    없는 값이면 버튼을 눌러도 아무 일도 일어나지 않는다.
+    """
+    sections = {'nearby', 'peers_age', 'peers_gender', 'peers', 'group', 'esg'}
+    for user in (FakeUser("20s", "male"), FakeUser("30s", None),
+                 FakeUser(None, "female"), None):
+        for button in segment_buttons(user):
+            assert button["segment"] in sections, button
 
 
 def test_segment_buttons_partial_profile_filled_to_two():

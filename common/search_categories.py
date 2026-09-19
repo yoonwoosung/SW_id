@@ -5,11 +5,13 @@
 
 def _pet_conditions():
     # 반려견 몸무게 노드 하위 공통 조건(목줄·케이지 등) — 티어마다 새 리스트로 생성.
+    # ★hidden: Experience 에 대응 컬럼이 없어 고르면 결과가 항상 0건이다.★
+    # 컬럼(pet_leash_required 등)을 추가하면 hidden 만 지우면 살아난다.
     return [
-        {"code": "leash_required", "label": "목줄필수"},
-        {"code": "cage_required", "label": "케이지필요"},
-        {"code": "indoor_ok", "label": "실내동반"},
-        {"code": "outdoor_only", "label": "야외만"},
+        {"code": "leash_required", "label": "목줄필수", "hidden": True},
+        {"code": "cage_required", "label": "케이지필요", "hidden": True},
+        {"code": "indoor_ok", "label": "실내동반", "hidden": True},
+        {"code": "outdoor_only", "label": "야외만", "hidden": True},
     ]
 
 
@@ -148,7 +150,11 @@ SEARCH_CATEGORIES = [
         {"code": "harvest", "label": "수확"}, {"code": "food", "label": "먹거리"},
         {"code": "craft", "label": "공예"}, {"code": "animal", "label": "동물교감"},
         {"code": "nature", "label": "자연생태"}]},
-    {"code": "activity", "label": "액티비티", "group": "taste", "children": [
+    # ★hidden: activity_type 컬럼은 있으나 저장하는 코드가 어디에도 없다.★
+    # 등록 폼에 입력이 없어 모든 체험이 NULL 이고, 고르면 결과가 항상 0건이다.
+    # 등록 폼에 드롭다운을 추가하면 hidden 만 지우면 살아난다.
+    # (회원가입의 '관심 액티비티'는 이 트리 원본을 읽으므로 영향받지 않는다)
+    {"code": "activity", "label": "액티비티", "group": "taste", "hidden": True, "children": [
         {"code": "horse_riding", "label": "승마"}, {"code": "kayak", "label": "카약"},
         {"code": "fishing", "label": "낚시"}, {"code": "hiking", "label": "등산"},
         {"code": "cycling", "label": "자전거"}]},
@@ -164,19 +170,50 @@ SEARCH_CATEGORIES = [
         {"code": "course_under_30k", "label": "3만원 이하"}, {"code": "course_30_50k", "label": "3~5만원"},
         {"code": "course_50_100k", "label": "5~10만원"}, {"code": "course_over_100k", "label": "10만원 이상"}]},
     {"code": "transport", "label": "교통수단", "group": "practical", "children": [
-        {"code": "car", "label": "자가용"}, {"code": "public_transit", "label": "대중교통"},
-        {"code": "walk", "label": "도보"}, {"code": "bike", "label": "자전거"}]},
+        {"code": "car", "label": "자가용"},
+        # hidden: 자가용만 has_parking 과 연동된다. 나머지는 판정할 데이터가 없다.
+        {"code": "public_transit", "label": "대중교통", "hidden": True},
+        {"code": "walk", "label": "도보", "hidden": True},
+        {"code": "bike", "label": "자전거", "hidden": True}]},
     {"code": "duration_hours", "label": "소요시간", "group": "practical", "children": [
         {"code": "hours_2", "label": "2시간"}, {"code": "half_day", "label": "반나절"},
         {"code": "full_day", "label": "종일"}]},
     {"code": "facility", "label": "편의시설", "group": "practical", "children": [
-        {"code": "parking", "label": "주차"}, {"code": "restroom", "label": "화장실"},
+        {"code": "parking", "label": "주차"},
         {"code": "barrier_free", "label": "무장애"}, {"code": "wifi", "label": "와이파이"},
-        {"code": "nursing_room", "label": "수유실"},
-        {"code": "pesticide_free", "label": "무농약"}, {"code": "organic", "label": "유기농인증"}]},
+        {"code": "pesticide_free", "label": "무농약"}, {"code": "organic", "label": "유기농인증"},
+        # hidden: 대응 컬럼이 없어 고르면 결과가 항상 0건이다.
+        {"code": "restroom", "label": "화장실", "hidden": True},
+        {"code": "nursing_room", "label": "수유실", "hidden": True}]},
 ]
 
 CATEGORY_CODES = [category["code"] for category in SEARCH_CATEGORIES]
+
+
+def _visible(nodes):
+    """hidden 이 아닌 노드만 남긴 새 트리. 원본은 건드리지 않는다."""
+    result = []
+    for node in nodes:
+        if node.get("hidden"):
+            continue
+        copy = {k: v for k, v in node.items() if k != "children"}
+        if node.get("children"):
+            copy["children"] = _visible(node["children"])
+        result.append(copy)
+    return result
+
+
+def visible_categories():
+    """화면(검색 필터)에 그릴 조건 트리.
+
+    판정할 데이터가 없어 고르면 결과가 항상 0건인 선택지를 빼고 준다.
+    ★동작하지 않는 선택지를 보여주는 것이 더 나쁘다.★
+
+    원본 SEARCH_CATEGORIES 는 그대로 둔다 — 컬럼이나 등록 폼 입력이 생기면
+    hidden 한 줄만 지우면 되살아나고, 저장된 링크의 코드 검증(LEAF_CODES)과
+    회원가입 선택지(profile_options)도 원본을 계속 쓴다.
+    """
+    return _visible(SEARCH_CATEGORIES)
 
 
 def _iter_leaf_codes(nodes):

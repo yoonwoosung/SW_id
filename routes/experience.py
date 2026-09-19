@@ -27,7 +27,7 @@ from services.recommend_reason import recommendation_reason
 from services.review_service import analyze_review_with_clova
 from services.trend_service import record_click
 from services import policy_service
-from common.search_categories import SEARCH_CATEGORIES, CATEGORY_CODES, CATEGORY_GROUPS
+from common.search_categories import CATEGORY_CODES, CATEGORY_GROUPS, visible_categories
 from common.response import success_response
 from external.kakao_map import get_coords_from_address
 from common.validators import allowed_file
@@ -618,7 +618,8 @@ def get_experience_json(item_id):
 
 
 def search_categories():
-    return success_response({"categories": SEARCH_CATEGORIES, "groups": CATEGORY_GROUPS})
+    # 판정할 데이터가 없는 선택지는 빼고 준다(고르면 항상 0건이라 혼란만 준다).
+    return success_response({"categories": visible_categories(), "groups": CATEGORY_GROUPS})
 
 
 def register(app):

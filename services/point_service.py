@@ -3,7 +3,8 @@ from sqlalchemy import func
 
 from models import db, PointLog
 from common.constants import (POINT_EARN_RATE, POINT_REASON_PAYMENT,
-                             POINT_REASON_USE, POINT_REASON_REFUND)
+                             POINT_REASON_USE, POINT_REASON_REFUND,
+                             POINT_REASON_REJECT_REFUND, POINT_REASON_LABELS)
 
 
 def earn_points_for_payment(user_id, application_id, amount):
@@ -27,6 +28,21 @@ def earn_points_for_payment(user_id, application_id, amount):
     return earned
 
 
+def refunded_application_ids(user_id):
+    """거절 환급을 받은 예약 id 집합.
+
+    '취소'된 예약이 사용자가 직접 취소한 것인지 농장주가 거절한 것인지는
+    Application 만 봐서는 알 수 없다(둘 다 '취소'로 간다).
+    환급 로그가 있으면 농장주 거절이므로 이것으로 판정한다.
+    """
+    rows = db.session.query(PointLog.application_id).filter(
+        PointLog.user_id == user_id,
+        PointLog.reason == POINT_REASON_REJECT_REFUND,
+        PointLog.application_id.isnot(None),
+    ).all()
+    return {row[0] for row in rows}
+
+
 def get_balance(user_id):
     """현재 포인트 잔액 = 내역 합계."""
     total = db.session.query(func.coalesce(func.sum(PointLog.amount), 0)).filter(
@@ -47,6 +63,9 @@ def get_point_summary(user_id):
         "logs": [{
             "amount": log.amount,
             "reason": log.reason,
+            # 화면에는 한글 라벨을 쓴다. 매핑에 없는 코드는 코드를 그대로 두어
+            # 내역이 비거나 깨지지 않게 한다.
+            "reason_label": POINT_REASON_LABELS.get(log.reason, log.reason),
             "application_id": log.application_id,
             "created_at": log.created_at.isoformat(),
         } for log in logs],
@@ -96,8 +115,40 @@ def use_points(user_id, application_id, amount):
     return amount
 
 
+def refund_payment_as_points(user_id, application_id, amount):
+    """농장주 거절 시 ★실제 결제한 금액★만큼 포인트로 환급한다(양수 로그 1행).
+
+    토스 결제 취소 API 는 쓰지 않는다. 카드 취소는 연동·정산 확인이 필요해
+    이번 범위 밖이고, 포인트 환급이면 우리 DB 안에서 끝난다.
+
+    사유코드를 refund_points 의 'refund' 와 나눈 이유:
+    거절 한 건에서 '현금 결제분 환급'과 '사용 포인트 원복'이 둘 다 일어나는데,
+    멱등 검사가 (user, application, reason) 단위라 같은 코드를 쓰면
+    ★먼저 들어간 쪽이 뒤를 막아★ 환급이 절반만 되거나 원복이 누락된다.
+
+    같은 예약을 두 번 거절해도 두 번 적립되지 않는다(멱등).
+    """
+    if amount <= 0:
+        return 0
+    already = PointLog.query.filter_by(
+        user_id=user_id, application_id=application_id,
+        reason=POINT_REASON_REJECT_REFUND
+    ).first()
+    if already is not None:
+        return 0
+    db.session.add(PointLog(
+        user_id=user_id, amount=amount,
+        reason=POINT_REASON_REJECT_REFUND, application_id=application_id,
+    ))
+    db.session.commit()
+    return amount
+
+
 def refund_points(user_id, application_id, amount):
-    """결제 실패·취소 시 차감분을 되돌린다(양수 로그 1행).
+    """결제 실패·취소 시 ★결제에 썼던 포인트★를 되돌린다(양수 로그 1행).
+
+    거절 환급(refund_payment_as_points)과는 다른 건이다.
+    이쪽은 원래 갖고 있던 포인트를 돌려주는 것이고, 저쪽은 현금 결제분이다.
 
     같은 예약에 이미 원복 기록이 있으면 중복 원복하지 않는다(멱등).
     """

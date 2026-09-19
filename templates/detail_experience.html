@@ -44,10 +44,13 @@
 /* 👇 슬라이더(캐러셀) 스타일 👇 */
 .ed-carousel-container {
     position: relative;
-    width: 100%;
+    width: 100%; /* 어떤 화면이든(맥북/일반노트북) 가로 길이를 컨테이너에 100% 동적으로 꽉 채움 */
     overflow: hidden;
     border-radius: 12px;
-    aspect-ratio: 16 / 9; /* 이미지 비율 16:9 강제 고정 */
+    
+    /* 기존 16/9 보다 세로를 확 줄인 와이드 비율 (가로 2 : 세로 1) */
+    aspect-ratio: 2 / 1; 
+    
     background-color: #f8f9fa;
     box-shadow: 0 4px 12px rgba(0,0,0,0.05);
 }
@@ -55,7 +58,7 @@
     display: flex;
     width: 100%;
     height: 100%;
-    transition: transform 0.5s ease-in-out; /* 부드러운 슬라이딩 효과 */
+    transition: transform 0.5s ease-in-out;
 }
 .ed-carousel-slide {
     min-width: 100%;
@@ -65,11 +68,9 @@
     justify-content: center;
 }
 .ed-carousel-slide img {
-    width: 75%;             /* 11cm -> 8cm 느낌으로 가로 크기 축소 */
-    height: 80%;            /* 세로 높이도 알맞게 축소 */
-    object-fit: cover;      /* 지정된 75% 틀 안에서 찌그러지지 않게 꽉 채움 */
-    border-radius: 8px;     /* 사진 자체의 모서리도 부드럽게 둥글림 */
-    box-shadow: 0 4px 15px rgba(0,0,0,0.1); /* 사진 뒤에 살짝 그림자를 넣어 갤러리 액자 느낌 추가 */
+    width: 100%; 
+    height: 100%;
+    object-fit: cover; /* 비율이 달라도 찌그러지지 않고 예쁘게 잘라서 채워줌 */
 }
 
 /* 양옆 화살표 버튼 */

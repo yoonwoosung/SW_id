@@ -98,6 +98,11 @@
                     {% endif %}
                 </div>
 
+                {% if img_debug %}
+                <div class="alert alert-secondary small mb-2 px-3 py-2">
+                    <strong>디버그:</strong> DB값=[{{ img_debug.db_value }}] | 파일존재={{ img_debug.exists }} | 경로={{ img_debug.full_path }}
+                </div>
+                {% endif %}
                 <div class="flex-grow-1 border rounded-lg bg-light d-flex align-items-center justify-content-center" style="min-height:500px;">
                     {% if exp.organic_certification_image %}
                     <img src="{{ url_for('static', filename='uploads/' + exp.organic_certification_image) }}"

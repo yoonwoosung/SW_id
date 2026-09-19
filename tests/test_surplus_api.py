@@ -111,7 +111,7 @@ def test_card_fields(client):
     card = results(client.get('/api/experiences/surplus'))[0]
     assert card['list_price'] == 50000
     assert card['cost'] == 25000
-    assert card['discount_rate'] == 50.0
+    assert card['discount_rate'] == 50      # 리본·상세 배지와 같은 값(내림한 정수 %)
     assert card['qty_total'] == 500
     assert card['qty_left'] == 485          # 500 - 15
     assert card['per_person'] == 5

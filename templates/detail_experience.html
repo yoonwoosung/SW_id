@@ -201,7 +201,7 @@
                 {% if item.has_parking %}<span class="detail-badge badge-parking"><i data-lucide="square-parking"></i> 주차 가능</span>{% endif %}
                 {% if item.barrier_free %}<span class="detail-badge badge-family"><i data-lucide="accessibility"></i> 무장애</span>{% endif %}
                 {% if item.pet_allowed %}<span class="detail-badge badge-family"><i data-lucide="dog"></i> 반려견 동반{% if item.pet_max_weight_kg %} · {{ item.pet_max_weight_kg }}kg까지{% endif %}</span>{% endif %}
-                {% if item.is_surplus %}<span class="detail-badge" style="background:#fdecea;color:#c0392b;">🥕 과생산{% if item.list_price and item.cost %} · {{ ((item.list_price - item.cost) * 100 / item.list_price) | round(0, 'floor') | int }}% 할인{% endif %}</span>{% endif %}
+                {% if item.is_surplus %}{% set _pct = discount_percent(item) %}<span class="detail-badge" style="background:#fdecea;color:#c0392b;">🥕 과생산{% if _pct is not none %} · {{ _pct }}% 할인{% endif %}</span>{% endif %}
                 <span id="ed-esg-chip" class="detail-badge badge-esg" hidden></span>
             </div>
             <h1 class="detail-crop-title">{{ item.crop }} 수확 체험</h1>

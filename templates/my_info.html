@@ -845,7 +845,7 @@ document.getElementById('mi-course-modal').addEventListener('click', function(e)
 // 💡 레시피 자동 로드 로직
 document.addEventListener('DOMContentLoaded', function () {
     // ⚠️ 당장 버튼을 확인하고 싶다면 "완료" 대신 "확정"으로 임시 변경하세요!
-    const completedCards = document.querySelectorAll('.mi-res-card[data-state="완료"]');
+    const completedCards = document.querySelectorAll('.mi-res-card[data-state="확정"]');
     
     completedCards.forEach(card => {
         const expId = card.getAttribute('data-exp-id');

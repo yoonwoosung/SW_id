@@ -1,5 +1,9 @@
 /* static/css/style.css (최종 통합본 - 완벽 중복 제거 완료) */
 
+/* ── 버튼/링크 내부 아이콘 클릭 통과 ── */
+button svg, button i, button img,
+a svg, a i { pointer-events: none; }
+
 /* --- 4. 농장주 관련 페이지 스타일 (대시보드, 등록) 고유 영역 --- */
 .profile-card {
     text-align: center;
@@ -3914,7 +3918,7 @@ header.header-volunteer { border-bottom-color: #FF9800; }
     box-shadow: 0 2px 8px rgba(0,0,0,.15); transition: background .15s, opacity .15s;
 }
 .ae-nav-btn:hover { background: #fff; }
-.ae-nav-btn[style*="opacity: 0.3"], .ae-nav-btn.dim { opacity: .35; cursor: default; pointer-events: none; }
+.ae-nav-btn.dim { opacity: .35; cursor: default; pointer-events: none; }
 .ae-title-edit-btn {
     border: none; background: none; cursor: pointer;
     color: #aab3ac; font-size: .78rem; padding: 3px 5px;

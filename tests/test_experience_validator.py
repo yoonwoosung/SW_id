@@ -88,8 +88,9 @@ def test_weight_matches_search_tier(weight, tier_min):
 
 from services.experience_validator import (
     parse_surplus_fields, discount_rate, capacity_from_quantity,
-    suggest_origin, SURPLUS_MIN_DISCOUNT_RATE,
+    suggest_origin, auto_discount_percent, max_cost,
 )
+from common.constants import SURPLUS_DEFAULT_DISCOUNT_PERCENT
 
 
 def surplus_form(**kw):
@@ -103,7 +104,7 @@ def surplus_form(**kw):
     return {k: v for k, v in base.items() if v is not None}
 
 
-# ---- 할인율 ----
+# ---- 실제 할인율(리본에 쓰는 값) ----
 
 def test_discount_rate_basic():
     assert discount_rate(50000, 25000) == 0.5
@@ -116,25 +117,124 @@ def test_discount_rate_guards():
     assert discount_rate(10000, None) is None
 
 
-def test_exactly_20_percent_allowed():
-    """경계값: 정확히 20% 는 통과한다(이상 조건)."""
-    data, err = parse_surplus_fields(surplus_form(list_price='10000'), cost=8000)
+# ---- 자동 할인율(수량·단위로 정한다) ----
+
+@pytest.mark.parametrize('qty,expected', [
+    (1, 20), (99, 20),          # 100 미만
+    (100, 30), (299, 30),
+    (300, 40), (599, 40),
+    (600, 50), (999, 50),
+    (1000, 60), (99999, 60),    # 1000 이상
+])
+def test_kg_tier_boundaries(qty, expected):
+    """★구간 경계.★ '상한 미만'이라 100kg 은 2구간이지 1구간이 아니다."""
+    assert auto_discount_percent(qty, 'kg') == expected
+
+
+@pytest.mark.parametrize('qty,expected', [(9, 20), (10, 30), (59, 40), (100, 60)])
+def test_box_tier(qty, expected):
+    assert auto_discount_percent(qty, '박스') == expected
+
+
+@pytest.mark.parametrize('qty,expected', [(19, 20), (20, 30), (99, 40), (200, 60)])
+def test_slot_tier(qty, expected):
+    assert auto_discount_percent(qty, '구좌') == expected
+
+
+def test_gram_converts_to_kg_table():
+    """★g 은 1000으로 나눠 kg 표를 본다.★ 200g = 0.2kg 이므로 최저 구간."""
+    assert auto_discount_percent(200, 'g') == 20
+    assert auto_discount_percent(150_000, 'g') == 30      # 150kg
+    assert auto_discount_percent(1_000_000, 'g') == 60    # 1000kg
+
+
+def test_units_without_tier_table_get_default():
+    """포기·단은 kg 환산 계수가 작물마다 달라 기본 할인율을 준다.
+
+    근거 없는 환산 계수를 만드는 대신 최저 구간을 주면 최대 체험료가
+    가장 높아 농장주에게 불리하지 않다.
+    """
+    for unit in ('포기', '단'):
+        assert auto_discount_percent(99999, unit) == SURPLUS_DEFAULT_DISCOUNT_PERCENT
+
+
+def test_auto_discount_percent_guards():
+    assert auto_discount_percent(0, 'kg') is None
+    assert auto_discount_percent(None, 'kg') is None
+
+
+# ---- 최대 체험료(상한) ----
+
+def test_max_cost_matches_spec_example():
+    """★정가 50,000 / 500kg → 할인율 40% → 최대 30,000원.★"""
+    assert max_cost(50000, 500, 'kg') == 30000
+
+
+def test_max_cost_is_exact_integer():
+    """부동소수로 곱하면 50000 × 0.6 이 29999.999… 가 되어 1원이 샌다."""
+    assert max_cost(50000, 1000, 'kg') == 20000
+    assert max_cost(33333, 500, 'kg') == 19999      # 33333 × 60 // 100
+
+
+def test_max_cost_guards():
+    assert max_cost(50000, 0, 'kg') is None
+    assert max_cost(0, 500, 'kg') is None
+    assert max_cost(None, 500, 'kg') is None
+
+
+# ---- 상한 검증 ----
+
+def test_cost_equal_to_cap_allowed():
+    """경계값: 상한과 같으면 통과한다."""
+    data, err = parse_surplus_fields(surplus_form(), cost=30000)
     assert err is None and data['is_surplus'] is True
 
 
-def test_just_under_20_percent_rejected():
-    data, err = parse_surplus_fields(surplus_form(list_price='10000'), cost=8001)
-    assert data is None and "20%" in err
+def test_cost_below_cap_allowed():
+    """더 싸게 파는 건 언제나 허용한다."""
+    data, err = parse_surplus_fields(surplus_form(), cost=25000)
+    assert err is None
 
 
-def test_no_discount_rejected():
-    data, err = parse_surplus_fields(surplus_form(list_price='25000'), cost=25000)
-    assert data is None and err is not None
+def test_cost_above_cap_rejected():
+    """★상한 초과는 거부한다. 잘라서 저장하지 않는다.★"""
+    data, err = parse_surplus_fields(surplus_form(), cost=35000)
+    assert data is None
+    assert "30,000원" in err and "40%" in err
 
 
 def test_cost_above_list_price_rejected():
+    """상한이 정가보다 항상 낮으므로 정가 초과는 자동으로 걸린다."""
     data, err = parse_surplus_fields(surplus_form(list_price='20000'), cost=25000)
     assert data is None and err is not None
+
+
+def test_cost_missing_rejected():
+    data, err = parse_surplus_fields(surplus_form(), cost=None)
+    assert data is None and "체험비" in err
+
+
+def test_larger_quantity_lowers_the_cap():
+    """수량이 많을수록 할인율이 올라가 상한이 내려간다."""
+    ok, err = parse_surplus_fields(surplus_form(surplus_qty_total='500'), cost=30000)
+    assert err is None
+    bad, err = parse_surplus_fields(surplus_form(surplus_qty_total='1000'), cost=30000)
+    assert bad is None and err is not None     # 1000kg → 60% → 상한 20,000
+
+
+# ---- 이미 등록된 과생산 체험이 깨지지 않는지 ----
+
+@pytest.mark.parametrize('label,list_price,cost,qty,unit', [
+    ('파인애플(600kg)', 150000, 15000, '600', 'kg'),
+    ('만두(200g)', 30000, 20000, '200', 'g'),
+])
+def test_existing_rows_still_valid(label, list_price, cost, qty, unit):
+    """배포된 과생산 체험 2건이 새 규칙에서도 저장된다(수정 시 막히면 안 된다)."""
+    data, err = parse_surplus_fields(
+        surplus_form(list_price=str(list_price), surplus_qty_total=qty,
+                     surplus_per_person='1', surplus_unit=unit),
+        cost=cost)
+    assert err is None, f"{label}: {err}"
 
 
 # ---- 약관 ----
@@ -194,10 +294,16 @@ def test_missing_quantity_rejected():
 
 # ---- 단위 ----
 
-def test_valid_units():
-    for unit in ('kg', '박스', '구좌'):
-        data, err = parse_surplus_fields(surplus_form(surplus_unit=unit), cost=25000)
-        assert err is None and data['surplus_unit'] == unit
+@pytest.mark.parametrize('unit,qty', [
+    ('kg', '500'), ('g', '500'), ('박스', '20'), ('구좌', '30'), ('포기', '500'), ('단', '500'),
+])
+def test_valid_units(unit, qty):
+    """허용 단위 6개 모두 등록된다. 상한을 넘지 않게 체험비를 낮게 잡는다."""
+    data, err = parse_surplus_fields(
+        surplus_form(surplus_unit=unit, surplus_qty_total=qty, surplus_per_person='1'),
+        cost=10000)
+    assert err is None, err
+    assert data['surplus_unit'] == unit
 
 
 def test_unit_defaults_to_kg():

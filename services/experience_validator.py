@@ -6,13 +6,20 @@
 import math
 import re
 
+from common.constants import (
+    SURPLUS_DEFAULT_DISCOUNT_PERCENT,
+    SURPLUS_DISCOUNT_TIERS,
+    SURPLUS_UNIT_CONVERSION,
+)
+
 # 반려견 허용 몸무게 상한. 검색 필터의 최대 티어가 25kg(dog_large)이라
 # 그보다 넉넉히 잡되 오입력(300kg 등)은 거른다.
 PET_MAX_WEIGHT_KG = 100
 
 # --- 과생산(잉여) 수확 체험 ---
-# 약관: 정가 대비 이 비율 이상 싸게 판다. 미만이면 등록을 막는다.
-SURPLUS_MIN_DISCOUNT_RATE = 0.20
+# 할인율은 농장주가 정하지 않는다. 총 과생산량과 단위로 시스템이 구간표
+# (common/constants.SURPLUS_DISCOUNT_TIERS)에서 뽑고, 그 할인율로 계산한
+# '최대 체험료'를 상한으로 둔다. 농장주는 상한 이하로만 값을 정할 수 있다.
 SURPLUS_UNITS = ('kg', 'g', '박스', '구좌', '포기', '단')
 SURPLUS_MAX_QTY = 100000          # 총 수량 상한(오입력 방지)
 SURPLUS_MAX_PER_PERSON = 1000     # 1인당 수확량 상한
@@ -60,10 +67,56 @@ def parse_pet_fields(form):
 # ----------------------------------------------------------------------
 
 def discount_rate(list_price, cost):
-    """정가 대비 할인율(0~1). 정가가 없거나 0 이면 None."""
+    """정가 대비 ★실제★ 할인율(0~1). 정가가 없거나 0 이면 None.
+
+    자동 산출된 할인율(auto_discount_percent)이 아니라 실제로 매긴 체험비
+    기준이다. 농장주가 상한보다 더 싸게 팔면 이쪽이 더 커진다.
+    리본에는 이 값을 쓴다.
+    """
     if not list_price or list_price <= 0 or cost is None:
         return None
     return (list_price - cost) / list_price
+
+
+def _tier_quantity(qty_total, unit):
+    """구간표 조회에 쓸 (수량, 표 이름). 쓸 표가 없으면 (None, None).
+
+    g 처럼 환산만 하면 되는 단위는 kg 표로 넘긴다(200g → 0.2kg).
+    """
+    if unit in SURPLUS_UNIT_CONVERSION:
+        table, divisor = SURPLUS_UNIT_CONVERSION[unit]
+        return qty_total / divisor, table
+    if unit in SURPLUS_DISCOUNT_TIERS:
+        return qty_total, unit
+    return None, None
+
+
+def auto_discount_percent(qty_total, unit):
+    """총 과생산량과 단위로 정하는 할인율(정수 %). 수량이 없으면 None.
+
+    많이 남을수록 싸게 푼다. 구간표가 없는 단위(포기·단)는 기본값을 준다.
+    """
+    if not qty_total or qty_total <= 0:
+        return None
+    amount, table = _tier_quantity(qty_total, unit)
+    if table is None:
+        return SURPLUS_DEFAULT_DISCOUNT_PERCENT
+    for upper, percent in SURPLUS_DISCOUNT_TIERS[table]:
+        if upper is None or amount < upper:
+            return percent
+    return SURPLUS_DEFAULT_DISCOUNT_PERCENT
+
+
+def max_cost(list_price, qty_total, unit):
+    """받을 수 있는 최대 체험료(원). 정가 × (1 − 자동 할인율), 내림.
+
+    부동소수 곱을 피하려고 정수 퍼센트로 계산한다. 0.6 을 곱하면
+    50,000 × 0.6 이 29,999.999… 가 되어 상한이 1원 줄어든다.
+    """
+    percent = auto_discount_percent(qty_total, unit)
+    if percent is None or not list_price or list_price <= 0:
+        return None
+    return list_price * (100 - percent) // 100
 
 
 def capacity_from_quantity(qty_total, per_person):
@@ -128,24 +181,14 @@ def parse_surplus_fields(form, cost):
 
     # 약관 동의 없이는 과생산으로 올릴 수 없다.
     if 'surplus_terms_agreed' not in form:
-        return None, "과생산 농산물로 등록하려면 정가 대비 20% 이상 할인 약관에 동의해야 합니다."
+        return None, "과생산 농산물로 등록하려면 자동 산출된 할인율 약관에 동의해야 합니다."
 
     list_price, err = _parse_int(form.get('list_price'), "정가", minimum=1)
     if err:
         return None, err
 
-    if cost is None:
-        return None, "판매 가격을 먼저 입력해 주세요."
-    if cost >= list_price:
-        return None, "판매 가격이 정가보다 낮아야 합니다."
-
-    rate = discount_rate(list_price, cost)
-    if rate < SURPLUS_MIN_DISCOUNT_RATE:
-        return None, (
-            f"과생산 농산물은 정가 대비 {int(SURPLUS_MIN_DISCOUNT_RATE * 100)}% 이상 "
-            f"저렴해야 합니다. (현재 {rate * 100:.1f}%)"
-        )
-
+    # 할인율은 수량·단위에서 나온다. 상한을 알려면 둘을 먼저 읽어야 하므로
+    # 체험비 검증보다 앞에 둔다.
     qty_total, err = _parse_int(form.get('surplus_qty_total'), "총 수량",
                                 minimum=1, maximum=SURPLUS_MAX_QTY)
     if err:
@@ -162,6 +205,19 @@ def parse_surplus_fields(form, cost):
     unit = (form.get('surplus_unit') or 'kg').strip()
     if unit not in SURPLUS_UNITS:
         return None, "수량 단위가 올바르지 않습니다."
+
+    if cost is None:
+        return None, "체험비를 먼저 입력해 주세요."
+
+    # 상한 초과는 거부한다. 잘라서 저장하면 농장주가 정한 값과 다른 금액이
+    # 결제에 쓰이고, 왜 바뀌었는지 알 수 없다.
+    cap = max_cost(list_price, qty_total, unit)
+    if cap is not None and cost > cap:
+        percent = auto_discount_percent(qty_total, unit)
+        return None, (
+            f"총 {qty_total}{unit}은 할인율 {percent}% 구간이라 "
+            f"최대 {cap:,}원까지 가능합니다. (현재 {cost:,}원)"
+        )
 
     origin = (form.get('surplus_origin') or '').strip() or None
 

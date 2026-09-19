@@ -577,6 +577,18 @@ def close_experience(item_id):
     return redirect(url_for('farmer_easy_mode', tab='operations'))
 
 
+def open_experience(item_id):
+    if 'user_id' not in session or session.get('role') != 'farmer':
+        return redirect(url_for('login_page'))
+    item = Experience.query.get_or_404(item_id)
+    if item.farmer_id != session.get('user_id'):
+        abort(403)
+    item.status = 'recruiting'
+    db.session.commit()
+    flash(f"'{item.crop}' 체험이 다시 공개되었습니다.", 'success')
+    return redirect(url_for('farmer_easy_mode', tab='operations'))
+
+
 # 👇 마이페이지에서 레시피 데이터를 가져오기 위한 API 👇
 def get_recipe_api(item_id):
     exp = Experience.query.get_or_404(item_id)
@@ -600,5 +612,6 @@ def register(app):
     app.add_url_rule('/easy_mode/reservations', 'easy_reservations', easy_reservations)
     app.add_url_rule('/easy_mode/communication', 'easy_communication', easy_communication)
     app.add_url_rule('/easy_mode/close_experience/<int:item_id>', 'close_experience', close_experience, methods=['POST'])
+    app.add_url_rule('/easy_mode/open_experience/<int:item_id>', 'open_experience', open_experience, methods=['POST'])
     # 마이페이지 레시피 요청 API 라우트 등록
     app.add_url_rule('/api/experiences/<int:item_id>/recipe', 'get_recipe_api', get_recipe_api)

@@ -141,9 +141,15 @@
 
                             <div class="em-listing-actions">
                                 <a href="{{ url_for('easy_modify_experience', item_id=listing.id) }}" class="fl-btn fl-btn-outline em-btn-edit">수정</a>
+                                {% if listing.status == 'recruiting' %}
                                 <form method="POST" action="{{ url_for('close_experience', item_id=listing.id) }}" style="margin:0;" onsubmit="return confirm('이 체험을 숨김 처리할까요?');">
                                     <button type="submit" class="fl-btn em-btn-delete">숨김</button>
                                 </form>
+                                {% else %}
+                                <form method="POST" action="{{ url_for('open_experience', item_id=listing.id) }}" style="margin:0;" onsubmit="return confirm('이 체험을 다시 공개할까요?');">
+                                    <button type="submit" class="fl-btn fl-btn-primary" style="font-size:13px;">숨김 해제</button>
+                                </form>
+                                {% endif %}
                             </div>
                         </div>
 

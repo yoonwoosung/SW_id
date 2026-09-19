@@ -149,3 +149,269 @@ def test_cancelled_cannot_be_accepted(client):
     client.post(f'/application/confirm/{row.id}', follow_redirects=True)
 
     assert db.session.get(Application, row.id).status == APPLICATION_STATUS_CANCELLED
+
+
+# ═════════════════════ 거절 → 포인트 환급 ═════════════════════
+#
+# 토스 결제 취소 API 는 쓰지 않는다. 실제 결제한 금액을 포인트로 돌려준다.
+# 한 건의 거절에서 두 가지가 따로 일어난다:
+#   ① 환급 — 카드로 낸 금액(payment.amount)
+#   ② 원복 — 결제에 썼던 포인트(payment.used_points)
+
+from models import Payment, PointLog, Notification
+from common.constants import (POINT_REASON_REJECT_REFUND, POINT_REASON_REFUND,
+                              POINT_REASON_PAYMENT, POINT_REASON_LABELS)
+from services import point_service
+
+ORDER_TOTAL = COST * HEADCOUNT      # 40,000원
+
+
+def _paid_via_toss(buyer, row, used_points=0):
+    """토스로 승인까지 끝난 결제를 만든다(prepare→confirm 이 남기는 상태와 동일)."""
+    if used_points:
+        db.session.add(PointLog(user_id=buyer.id, amount=used_points,
+                                reason='grant'))                      # 보유 포인트 지급
+        db.session.add(PointLog(user_id=buyer.id, amount=-used_points,
+                                reason='use', application_id=row.id))  # 결제 시 차감
+    charged = ORDER_TOTAL - used_points
+    payment = Payment(order_id=f"farmlink-{row.id}-test", payment_key='pk',
+                      amount=charged, order_total=ORDER_TOTAL, used_points=used_points,
+                      status=Payment.STATUS_DONE,
+                      application_id=row.id, user_id=buyer.id)
+    db.session.add(payment)
+    db.session.commit()
+    return payment
+
+
+def _reject(client, row_id):
+    return client.post(f'/application/reject/{row_id}', follow_redirects=True)
+
+
+def test_reject_refunds_charged_amount_as_points(client):
+    """★현금으로 낸 금액이 포인트로 돌아온다.★"""
+    farmer = _user("f@x.com", 'farmer')
+    buyer = _user("u@x.com")
+    row = _application(buyer, _experience(farmer), APPLICATION_STATUS_PAID)
+    _paid_via_toss(buyer, row)
+
+    _login(client, "f@x.com")
+    _reject(client, row.id)
+
+    assert db.session.get(Application, row.id).status == APPLICATION_STATUS_CANCELLED
+    assert point_service.get_balance(buyer.id) == ORDER_TOTAL
+    log = PointLog.query.filter_by(application_id=row.id,
+                                   reason=POINT_REASON_REJECT_REFUND).one()
+    assert log.amount == ORDER_TOTAL
+
+
+def test_reject_refunds_cash_and_restores_used_points_separately(client):
+    """★환급(현금분)과 원복(쓴 포인트)은 다른 건이다. 둘 다 들어와야 한다.★
+
+    40,000원 주문 / 포인트 10,000P 사용 → 카드 30,000원.
+    거절하면 30,000P(환급) + 10,000P(원복) = 잔액 40,000P.
+    """
+    farmer = _user("f@x.com", 'farmer')
+    buyer = _user("u@x.com")
+    row = _application(buyer, _experience(farmer), APPLICATION_STATUS_PAID)
+    _paid_via_toss(buyer, row, used_points=10000)
+
+    _login(client, "f@x.com")
+    _reject(client, row.id)
+
+    refund = PointLog.query.filter_by(application_id=row.id,
+                                      reason=POINT_REASON_REJECT_REFUND).one()
+    restore = PointLog.query.filter_by(application_id=row.id,
+                                       reason=POINT_REASON_REFUND).one()
+    assert refund.amount == 30000, "카드로 낸 금액"
+    assert restore.amount == 10000, "결제에 썼던 포인트"
+    # 지급 10,000 − 사용 10,000 + 환급 30,000 + 원복 10,000
+    assert point_service.get_balance(buyer.id) == 40000
+
+
+def test_reject_twice_does_not_double_refund(client):
+    """★같은 예약을 두 번 거절해도 포인트가 두 번 들어가지 않는다.★"""
+    farmer = _user("f@x.com", 'farmer')
+    buyer = _user("u@x.com")
+    row = _application(buyer, _experience(farmer), APPLICATION_STATUS_PAID)
+    _paid_via_toss(buyer, row, used_points=10000)
+
+    _login(client, "f@x.com")
+    _reject(client, row.id)
+    balance_once = point_service.get_balance(buyer.id)
+    _reject(client, row.id)          # 두 번째 — 이미 '취소'라 막힌다
+    _reject(client, row.id)          # 세 번째
+
+    assert point_service.get_balance(buyer.id) == balance_once == 40000
+    assert PointLog.query.filter_by(application_id=row.id,
+                                    reason=POINT_REASON_REJECT_REFUND).count() == 1
+    assert PointLog.query.filter_by(application_id=row.id,
+                                    reason=POINT_REASON_REFUND).count() == 1
+
+
+def test_refund_is_idempotent_even_if_called_directly(client):
+    """상태 검사를 우회해 환급 함수를 직접 두 번 불러도 한 번만 적립된다."""
+    from routes.reservation import refund_rejected_application
+    farmer = _user("f@x.com", 'farmer')
+    buyer = _user("u@x.com")
+    row = _application(buyer, _experience(farmer), APPLICATION_STATUS_PAID)
+    _paid_via_toss(buyer, row, used_points=10000)
+
+    assert refund_rejected_application(row) == (30000, 10000)
+    assert refund_rejected_application(row) == (0, 0)      # 두 번째는 0
+    assert point_service.get_balance(buyer.id) == 40000
+
+
+def test_reject_without_payment_refunds_nothing(client):
+    """결제 전('예정') 거절은 환급할 돈이 없다. 오류 없이 취소만 된다."""
+    farmer = _user("f@x.com", 'farmer')
+    buyer = _user("u@x.com")
+    row = _application(buyer, _experience(farmer), APPLICATION_STATUS_PENDING)
+
+    _login(client, "f@x.com")
+    _reject(client, row.id)
+
+    assert db.session.get(Application, row.id).status == APPLICATION_STATUS_CANCELLED
+    assert point_service.get_balance(buyer.id) == 0
+
+
+def test_reject_keeps_payment_status_done(client):
+    """payment.status 는 'done' 그대로 둔다. 토스에서 실제 승인된 결제가 맞다."""
+    farmer = _user("f@x.com", 'farmer')
+    buyer = _user("u@x.com")
+    row = _application(buyer, _experience(farmer), APPLICATION_STATUS_PAID)
+    payment = _paid_via_toss(buyer, row)
+
+    _login(client, "f@x.com")
+    _reject(client, row.id)
+
+    assert db.session.get(Payment, payment.id).status == Payment.STATUS_DONE
+
+
+def test_reject_keeps_earned_points(client):
+    """적립(3%)은 회수하지 않는다. 거절은 사용자 잘못이 아니다."""
+    farmer = _user("f@x.com", 'farmer')
+    buyer = _user("u@x.com")
+    row = _application(buyer, _experience(farmer), APPLICATION_STATUS_PAID)
+    _paid_via_toss(buyer, row)
+    point_service.earn_points_for_payment(buyer.id, row.id, ORDER_TOTAL)   # 1,200P
+
+    _login(client, "f@x.com")
+    _reject(client, row.id)
+
+    assert PointLog.query.filter_by(application_id=row.id,
+                                    reason=POINT_REASON_PAYMENT).one().amount == 1200
+    assert point_service.get_balance(buyer.id) == ORDER_TOTAL + 1200
+
+
+def test_reject_notifies_user_about_refund(client):
+    """★사용자에게 '포인트로 환급되었습니다' 알림이 가야 한다.★"""
+    farmer = _user("f@x.com", 'farmer')
+    buyer = _user("u@x.com")
+    row = _application(buyer, _experience(farmer), APPLICATION_STATUS_PAID)
+    _paid_via_toss(buyer, row)
+
+    _login(client, "f@x.com")
+    _reject(client, row.id)
+
+    notif = Notification.query.filter_by(user_id=buyer.id).order_by(
+        Notification.id.desc()).first()
+    assert notif is not None
+    assert '거절' in notif.message and '포인트로 환급' in notif.message
+    assert '40,000P' in notif.message
+    assert notif.notif_type == 'reservation_rejected'
+
+
+def test_reject_restores_seats(client):
+    """거절하면 모집 인원이 돌아온다(기존 동작 유지)."""
+    farmer = _user("f@x.com", 'farmer')
+    buyer = _user("u@x.com")
+    exp = _experience(farmer)
+    row = _application(buyer, exp, APPLICATION_STATUS_PAID)
+    _paid_via_toss(buyer, row)
+
+    _login(client, "f@x.com")
+    _reject(client, row.id)
+
+    assert db.session.get(Experience, exp.id).current_participants == 0
+
+
+def test_reject_restores_surplus_quantity(client):
+    """과생산 체험은 차감했던 수량도 돌아온다(기존 동작 유지)."""
+    farmer = _user("f@x.com", 'farmer')
+    buyer = _user("u@x.com")
+    exp = _experience(farmer)
+    exp.is_surplus = True
+    exp.surplus_qty_total = 500
+    exp.surplus_per_person = 5
+    exp.surplus_qty_taken = 5 * HEADCOUNT      # 예약 때 차감된 만큼
+    db.session.commit()
+    row = _application(buyer, exp, APPLICATION_STATUS_PAID)
+    _paid_via_toss(buyer, row)
+
+    _login(client, "f@x.com")
+    _reject(client, row.id)
+
+    assert db.session.get(Experience, exp.id).surplus_qty_taken == 0
+
+
+def test_confirmed_reservation_is_not_refunded(client):
+    """이미 확정된 예약은 거절 대상이 아니다. 환급도 일어나지 않는다."""
+    farmer = _user("f@x.com", 'farmer')
+    buyer = _user("u@x.com")
+    row = _application(buyer, _experience(farmer), APPLICATION_STATUS_CONFIRMED)
+    _paid_via_toss(buyer, row)
+
+    _login(client, "f@x.com")
+    _reject(client, row.id)
+
+    assert db.session.get(Application, row.id).status == APPLICATION_STATUS_CONFIRMED
+    assert point_service.get_balance(buyer.id) == 0
+
+
+def test_other_farmer_cannot_reject(client):
+    owner = _user("f@x.com", 'farmer')
+    _user("f2@x.com", 'farmer')
+    buyer = _user("u@x.com")
+    row = _application(buyer, _experience(owner), APPLICATION_STATUS_PAID)
+    _paid_via_toss(buyer, row)
+
+    _login(client, "f2@x.com")
+    res = _reject(client, row.id)
+
+    assert res.status_code == 403
+    assert db.session.get(Application, row.id).status == APPLICATION_STATUS_PAID
+    assert point_service.get_balance(buyer.id) == 0
+
+
+# ───────────────────── 포인트 내역 한글 라벨 ─────────────────────
+
+def test_point_log_exposes_korean_label(client):
+    farmer = _user("f@x.com", 'farmer')
+    buyer = _user("u@x.com")
+    row = _application(buyer, _experience(farmer), APPLICATION_STATUS_PAID)
+    _paid_via_toss(buyer, row, used_points=10000)
+
+    _login(client, "f@x.com")
+    _reject(client, row.id)
+
+    labels = {l['reason']: l['reason_label']
+              for l in point_service.get_point_summary(buyer.id)['logs']}
+    assert labels[POINT_REASON_REJECT_REFUND] == '예약 거절 환급'
+    assert labels[POINT_REASON_REFUND] == '포인트 환불'
+    assert labels['use'] == '포인트 사용'
+
+
+def test_unknown_reason_falls_back_to_code(client):
+    """매핑에 없는 사유는 코드를 그대로 보여준다(내역이 비지 않게)."""
+    buyer = _user("u@x.com")
+    db.session.add(PointLog(user_id=buyer.id, amount=100, reason='mystery'))
+    db.session.commit()
+
+    log = point_service.get_point_summary(buyer.id)['logs'][0]
+    assert log['reason_label'] == 'mystery'
+
+
+def test_every_reason_constant_has_a_label():
+    """사유코드를 추가하고 라벨을 빠뜨리면 영어가 노출된다."""
+    for code in ('payment', 'use', 'refund', POINT_REASON_REJECT_REFUND):
+        assert code in POINT_REASON_LABELS

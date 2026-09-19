@@ -24,11 +24,13 @@ from services.recommend_service import matches_specialty, score_components, calc
 from services.recommend_reason import recommendation_reason
 from services.review_service import analyze_review_with_clova
 from services import reservation_validator
+from services import payment_service
+from services import point_service
 from services import surplus_service
 from external.kakao_map import get_coords_from_address
 from common.validators import allowed_file
 from common.constants import (APPLICATION_STATUS_PENDING, APPLICATION_STATUS_PAID,
-                              APPLICATION_STATUS_CONFIRMED)
+                              APPLICATION_STATUS_CONFIRMED, APPLICATION_STATUS_CANCELLED)
 
 
 def experience_apply(item_id):
@@ -153,6 +155,31 @@ def confirm_application(app_id):
     return redirect(url_for('farmer_easy_mode', tab='reservations'))
 
 
+def refund_rejected_application(application):
+    """농장주 거절 시 돈을 돌려준다. 반환: (환급 포인트, 원복 포인트).
+
+    ★토스 결제 취소 API 는 부르지 않는다.★ 대신 실제 결제한 금액만큼
+    포인트로 환급한다. 이때 두 건이 따로 일어난다 —
+
+      ① 환급: 카드로 실제 낸 금액(payment.amount) → 포인트로 지급
+      ② 원복: 결제에 썼던 포인트(payment.used_points) → 되돌림
+
+    ①과 ②는 사유코드가 다르다. 같은 코드를 쓰면 멱등 검사가 서로를 막아
+    한쪽만 처리된다(services/point_service 주석 참고).
+
+    둘 다 멱등이라 같은 예약을 두 번 거절해도 포인트가 두 번 들어가지 않는다.
+    더미 결제 경로는 Payment 가 없어 (0, 0) 이 나온다 — 청구된 돈이 없다.
+    """
+    payment = payment_service.done_payment_for(application.id)
+    if payment is None:
+        return 0, 0
+    refunded = point_service.refund_payment_as_points(
+        payment.user_id, application.id, payment.amount)
+    restored = point_service.refund_points(
+        payment.user_id, application.id, payment.used_points)
+    return refunded, restored
+
+
 def reject_application(app_id):
     if 'user_id' not in session or session.get('role') != 'farmer':
         abort(403)
@@ -160,14 +187,28 @@ def reject_application(app_id):
     experience = Experience.query.get_or_404(application.experience_id)
     if experience.farmer_id != session.get('user_id'):
         abort(403)
-    if application.status in ('예정', APPLICATION_STATUS_PENDING, APPLICATION_STATUS_PAID):
-        experience.current_participants = max(0, experience.current_participants - application.participants_count)
-        surplus_service.restore(experience, application.participants_count)
-        application.status = '취소'
-        db.session.commit()
-        flash(f"{application.applicant_name}님의 예약을 거절했습니다.", "success")
-    else:
+    if application.status not in (APPLICATION_STATUS_PENDING, APPLICATION_STATUS_PAID):
         flash("이미 처리된 예약입니다.", "warning")
+        return redirect(url_for('farmer_easy_mode', tab='reservations'))
+
+    experience.current_participants = max(0, experience.current_participants - application.participants_count)
+    surplus_service.restore(experience, application.participants_count)
+    application.status = APPLICATION_STATUS_CANCELLED
+    db.session.commit()
+
+    # 자리·수량을 먼저 돌려놓고 돈을 처리한다. 환급이 실패해도 좌석은 이미 풀렸다.
+    refunded, restored = refund_rejected_application(application)
+
+    message = f"'{experience.crop}' 체험 예약이 농장주 사정으로 거절되었습니다."
+    if refunded or restored:
+        message += f" 결제 금액이 포인트로 환급되었습니다. (+{refunded + restored:,}P)"
+    db.session.add(Notification(
+        user_id=application.user_id, message=message,
+        notif_type='reservation_rejected',
+    ))
+    db.session.commit()
+
+    flash(f"{application.applicant_name}님의 예약을 거절했습니다.", "success")
     return redirect(url_for('farmer_easy_mode', tab='reservations'))
 
 

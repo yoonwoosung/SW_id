@@ -99,6 +99,16 @@ POINT_EARN_RATE = 0.03           # 결제금액 대비 적립률(3%). 적립액�
 POINT_REASON_PAYMENT = 'payment'      # 결제 적립
 POINT_REASON_USE = 'use'              # 결제 시 사용(차감)
 POINT_REASON_REFUND = 'refund'        # 결제 실패·취소로 차감분 원복
+POINT_REASON_REJECT_REFUND = 'reject_refund'   # 농장주 거절 → 실제 결제액을 포인트로 환급
+
+# 포인트 내역 화면에 보여줄 한글 라벨. API 응답에 실어 보내 템플릿이 그대로 쓴다.
+# 사유코드를 추가하면 여기에도 한 줄 추가할 것(없으면 코드가 그대로 노출된다).
+POINT_REASON_LABELS = {
+    POINT_REASON_PAYMENT: '결제 적립',
+    POINT_REASON_USE: '포인트 사용',
+    POINT_REASON_REFUND: '포인트 환불',
+    POINT_REASON_REJECT_REFUND: '예약 거절 환급',
+}
 
 # --- 과생산(잉여) 농산물 할인 구간 ---
 # 농장주가 정가와 총 과생산량만 입력하면 시스템이 할인율을 정한다.

@@ -180,6 +180,20 @@ def confirm(user_id, payment_key, order_id, client_amount):
     }
 
 
+def done_payment_for(application_id):
+    """해당 예약에서 ★승인까지 끝난★ 결제 1건. 없으면 None.
+
+    재시도로 Payment 가 여러 건 남을 수 있지만 done 까지 간 것은 하나뿐이다
+    (confirm 이 이미 done 인 주문을 다시 승인하지 않는다).
+    더미 결제 pay() 경로는 Payment 를 만들지 않으므로 None 이 나온다 —
+    실제로 청구된 금액이 없으니 환급할 것도 없다.
+    """
+    return (Payment.query
+            .filter_by(application_id=application_id, status=Payment.STATUS_DONE)
+            .order_by(Payment.id.desc())
+            .first())
+
+
 def mark_failed(user_id, order_id, code, message):
     """결제창에서 실패·취소했을 때 Payment 만 실패로 남긴다. 예약 상태는 그대로 둔다."""
     payment = Payment.query.filter_by(order_id=order_id).first()

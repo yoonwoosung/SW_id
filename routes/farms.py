@@ -60,8 +60,16 @@ def add_farm():
         
     pdf_filename = _save_certificate()
     lat, lng = get_coords_from_address(address)
-    
+
     _is_organic = 'is_organic' in request.form
+    organic_img_name = None
+    if _is_organic:
+        org_file = request.files.get('organic_cert_image')
+        if org_file and org_file.filename and allowed_file(org_file.filename):
+            ext = org_file.filename.rsplit('.', 1)[1].lower()
+            organic_img_name = f"organic_{farmer_id}_{uuid.uuid4().hex}.{ext}"
+            org_file.save(os.path.join(current_app.config['UPLOAD_FOLDER'], organic_img_name))
+
     new_farm = Farm(
         user_id=farmer_id,
         name=name or None,
@@ -73,6 +81,7 @@ def add_farm():
         lng=lng,
         status='PENDING',
         is_organic=_is_organic,
+        organic_cert_image=organic_img_name,
         organic_cert_type=request.form.get('organic_cert_type'),
         organic_cert_status='PENDING' if _is_organic else None,
     )

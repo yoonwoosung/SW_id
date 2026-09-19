@@ -47,6 +47,11 @@ def index():
         region = request.args.get('region', type=str)
         crop_query = request.args.get('crop_query', type=str)
         view = request.args.get('view', type=str)
+        date_filter = request.args.get('date_filter', type=str)
+        people_count = request.args.get('people_count', type=str)
+        f_eco = request.args.get('eco', type=str)
+        f_parking = request.args.get('parking', type=str)
+        f_pet = request.args.get('pet', type=str)
         per_page = 12 if view == 'list' else 15
         selected_conditions = {code: request.args.getlist('cond_' + code) for code in CATEGORY_CODES}
 
@@ -54,9 +59,39 @@ def index():
         base_query = Experience.query.filter(Experience.status == 'recruiting', Experience.end_date >= today)
 
         if region:
-            base_query = base_query.filter(Experience.address_detail.like(f"%{region}%"))
+            base_query = base_query.filter(
+                or_(Experience.address_detail.like(f"%{region}%"),
+                    Experience.location.like(f"%{region}%"))
+            )
         if crop_query:
-            base_query = base_query.filter(Experience.crop.like(f"%{crop_query}%"))
+            base_query = base_query.filter(
+                or_(Experience.crop.like(f"%{crop_query}%"),
+                    Experience.address_detail.like(f"%{crop_query}%"),
+                    Experience.location.like(f"%{crop_query}%"))
+            )
+        if date_filter:
+            try:
+                target_date = datetime.strptime(date_filter, '%Y-%m-%d').date()
+                base_query = base_query.filter(
+                    or_(Experience.duration_start.is_(None), Experience.duration_start <= target_date),
+                    Experience.end_date >= target_date
+                )
+            except ValueError:
+                pass
+        if people_count and people_count != '5+':
+            try:
+                needed = int(people_count)
+                base_query = base_query.filter(
+                    (Experience.max_participants - Experience.current_participants) >= needed
+                )
+            except ValueError:
+                pass
+        if f_eco == '1':
+            base_query = base_query.filter(Experience.pesticide_free == True)
+        if f_parking == '1':
+            base_query = base_query.filter(Experience.has_parking == True)
+        if f_pet == '1':
+            base_query = base_query.filter(Experience.pet_allowed == True)
 
         items_on_page = []
         pagination = None
@@ -154,7 +189,12 @@ def index():
                                pagination=pagination,
                                featured=featured,
                                sort_by=sort_by,
-                               view=view)
+                               view=view,
+                               date_filter=date_filter,
+                               people_count=people_count,
+                               f_eco=f_eco,
+                               f_parking=f_parking,
+                               f_pet=f_pet)
 
 
 # ==========================================

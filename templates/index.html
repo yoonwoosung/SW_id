@@ -58,6 +58,7 @@
         <p class="hero-subtitle">수확 체험부터 주변 관광지까지 한 번에 추천</p>
         <div class="hero-search-box">
             <form method="GET" action="{{ url_for('index') }}" class="hero-unified-form">
+                <input type="hidden" name="view" value="list">
                 <input type="text" name="crop_query" class="hero-unified-text" placeholder="지역, 종류, 점포명 등"
                     value="{{ request.args.get('crop_query', '') }}">
                 <div class="hero-unified-divider"></div>
@@ -90,6 +91,66 @@
 </section>
 
 <div class="main-content-wrapper">
+
+    <!-- 체험 더보기 필터 바 (list 뷰에서만 표시) -->
+    {% if view == 'list' %}
+    <div class="list-filter-bar">
+        <form method="GET" action="{{ url_for('index') }}" class="list-filter-form" id="listFilterForm">
+            <input type="hidden" name="view" value="list">
+            <input type="hidden" name="sort" value="{{ sort_by }}">
+            <div class="list-filter-row">
+                <div class="list-filter-field">
+                    <label class="list-filter-label">검색어</label>
+                    <input type="text" name="crop_query" class="list-filter-input" placeholder="지역, 종류, 점포명 등"
+                        value="{{ request.args.get('crop_query', '') }}">
+                </div>
+                <div class="list-filter-field">
+                    <label class="list-filter-label">지역</label>
+                    <select name="region" class="list-filter-select">
+                        <option value="">전체</option>
+                        {% set regions = ["서울", "경기", "인천", "강원", "대전", "세종", "충북", "충남", "부산", "대구", "울산", "경북", "경남", "광주", "전북", "전남", "제주"] %}
+                        {% for r in regions %}
+                        <option value="{{ r }}" {% if request.args.get('region')==r %}selected{% endif %}>{{ r }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="list-filter-field">
+                    <label class="list-filter-label">날짜</label>
+                    <input type="date" name="date_filter" class="list-filter-input"
+                        value="{{ date_filter or '' }}">
+                </div>
+                <div class="list-filter-field">
+                    <label class="list-filter-label">인원</label>
+                    <select name="people_count" class="list-filter-select">
+                        <option value="">전체</option>
+                        <option value="1" {% if people_count=='1' %}selected{% endif %}>1명</option>
+                        <option value="2" {% if people_count=='2' %}selected{% endif %}>2명</option>
+                        <option value="3" {% if people_count=='3' %}selected{% endif %}>3명</option>
+                        <option value="4" {% if people_count=='4' %}selected{% endif %}>4명</option>
+                        <option value="5+" {% if people_count=='5+' %}selected{% endif %}>5명+</option>
+                    </select>
+                </div>
+                <button type="submit" class="list-filter-btn">
+                    <img src="{{ url_for('static', filename='icons/icon-search.svg') }}" class="fl-icon-sm" alt=""> 검색
+                </button>
+            </div>
+            <div class="list-filter-toggles">
+                <label class="list-filter-toggle {% if f_eco=='1' %}active{% endif %}">
+                    <input type="checkbox" name="eco" value="1" {% if f_eco=='1' %}checked{% endif %} onchange="this.form.submit()">
+                    🌿 친환경
+                </label>
+                <label class="list-filter-toggle {% if f_parking=='1' %}active{% endif %}">
+                    <input type="checkbox" name="parking" value="1" {% if f_parking=='1' %}checked{% endif %} onchange="this.form.submit()">
+                    🚗 주차 가능
+                </label>
+                <label class="list-filter-toggle {% if f_pet=='1' %}active{% endif %}">
+                    <input type="checkbox" name="pet" value="1" {% if f_pet=='1' %}checked{% endif %} onchange="this.form.submit()">
+                    🐾 반려동물 동반
+                </label>
+            </div>
+        </form>
+    </div>
+    {% endif %}
 
     <!-- 이번 주 제철 체험 -->
     <section class="section-block">
@@ -193,12 +254,12 @@
             <ul class="pagination justify-content-center">
                 <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
                     <a class="page-link"
-                        href="{{ url_for('index', page=pagination.prev_num, sort=sort_by, view='list', region=request.args.get('region'), crop_query=request.args.get('crop_query')) }}">&laquo;</a>
+                        href="{{ url_for('index', page=pagination.prev_num, sort=sort_by, view='list', region=request.args.get('region'), crop_query=request.args.get('crop_query'), date_filter=date_filter, people_count=people_count, eco=f_eco, parking=f_parking, pet=f_pet) }}">&laquo;</a>
                 </li>
                 {% for page_num in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
                 {% if page_num %}
                 <li class="page-item {% if page_num == pagination.page %}active{% endif %}"><a class="page-link"
-                        href="{{ url_for('index', page=page_num, sort=sort_by, view='list', region=request.args.get('region'), crop_query=request.args.get('crop_query')) }}">{{
+                        href="{{ url_for('index', page=page_num, sort=sort_by, view='list', region=request.args.get('region'), crop_query=request.args.get('crop_query'), date_filter=date_filter, people_count=people_count, eco=f_eco, parking=f_parking, pet=f_pet) }}">{{
                         page_num }}</a></li>
                 {% else %}
                 <li class="page-item disabled"><span class="page-link">...</span></li>
@@ -206,7 +267,7 @@
                 {% endfor %}
                 <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
                     <a class="page-link"
-                        href="{{ url_for('index', page=pagination.next_num, sort=sort_by, view='list', region=request.args.get('region'), crop_query=request.args.get('crop_query')) }}">&raquo;</a>
+                        href="{{ url_for('index', page=pagination.next_num, sort=sort_by, view='list', region=request.args.get('region'), crop_query=request.args.get('crop_query'), date_filter=date_filter, people_count=people_count, eco=f_eco, parking=f_parking, pet=f_pet) }}">&raquo;</a>
                 </li>
             </ul>
         </nav>

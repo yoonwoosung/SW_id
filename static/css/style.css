@@ -1024,6 +1024,99 @@ a svg, a i { pointer-events: none; }
 }
 .hero-unified-btn:hover { filter: brightness(0.88); }
 
+/* 체험 더보기 필터 바 */
+.list-filter-bar {
+    background: #fff;
+    border-bottom: 1px solid #e8f0e8;
+    padding: 16px 0 12px;
+    margin-bottom: 20px;
+}
+.list-filter-form { width: 100%; }
+.list-filter-row {
+    display: flex;
+    align-items: flex-end;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 10px;
+}
+.list-filter-field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 1;
+    min-width: 110px;
+}
+.list-filter-label {
+    font-size: 11px;
+    color: #666;
+    font-weight: 600;
+    margin: 0;
+}
+.list-filter-input,
+.list-filter-select {
+    height: 38px;
+    border: 1px solid #d8e6d8;
+    border-radius: 8px;
+    padding: 0 10px;
+    font-size: 13px;
+    color: #333;
+    background: #f9fdf9;
+    outline: none;
+    transition: border-color 0.15s;
+    width: 100%;
+}
+.list-filter-input:focus,
+.list-filter-select:focus { border-color: var(--fl-green); background: #fff; }
+.list-filter-btn {
+    height: 38px;
+    padding: 0 18px;
+    background: var(--fl-green);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    white-space: nowrap;
+    flex-shrink: 0;
+    align-self: flex-end;
+}
+.list-filter-btn:hover { filter: brightness(0.9); }
+.list-filter-toggles {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+.list-filter-toggle {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 13px;
+    border: 1px solid #d8e6d8;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #555;
+    background: #f9fdf9;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+    user-select: none;
+}
+.list-filter-toggle input[type="checkbox"] { display: none; }
+.list-filter-toggle.active,
+.list-filter-toggle:hover {
+    background: #e8f5e8;
+    border-color: var(--fl-green);
+    color: var(--fl-green-dark, #2d6a2d);
+}
+
+@media (max-width: 600px) {
+    .list-filter-field { min-width: calc(50% - 10px); }
+    .list-filter-btn { width: 100%; justify-content: center; }
+}
 
 /* 흰 카드 섹션 */
 .section-card {

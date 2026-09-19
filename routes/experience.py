@@ -52,6 +52,7 @@ def index():
         f_eco = request.args.get('eco', type=str)
         f_parking = request.args.get('parking', type=str)
         f_pet = request.args.get('pet', type=str)
+        f_surplus = request.args.get('surplus', type=str)
         per_page = 12 if view == 'list' else 15
         selected_conditions = {code: request.args.getlist('cond_' + code) for code in CATEGORY_CODES}
 
@@ -92,6 +93,8 @@ def index():
             base_query = base_query.filter(Experience.has_parking == True)
         if f_pet == '1':
             base_query = base_query.filter(Experience.pet_allowed == True)
+        if f_surplus == '1':
+            base_query = base_query.filter(Experience.is_surplus == True, Experience.surplus_terms_agreed == True)
 
         items_on_page = []
         pagination = None
@@ -194,7 +197,8 @@ def index():
                                people_count=people_count,
                                f_eco=f_eco,
                                f_parking=f_parking,
-                               f_pet=f_pet)
+                               f_pet=f_pet,
+                               f_surplus=f_surplus)
 
 
 # ==========================================

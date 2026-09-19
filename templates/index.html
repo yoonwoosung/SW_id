@@ -147,6 +147,10 @@
                     <input type="checkbox" name="pet" value="1" {% if f_pet=='1' %}checked{% endif %} onchange="this.form.submit()">
                     반려동물 동반
                 </label>
+                <label class="list-filter-toggle {% if f_surplus=='1' %}active{% endif %}">
+                    <input type="checkbox" name="surplus" value="1" {% if f_surplus=='1' %}checked{% endif %} onchange="this.form.submit()">
+                    과생산
+                </label>
             </div>
         </form>
     </div>
@@ -164,8 +168,6 @@
                         class="sort-pill {% if sort_by == 'deadline' or not sort_by %}active{% endif %}">모집 임박순</a>
                     <a href="{{ url_for('index', sort='reviews', region=request.args.get('region'), crop_query=request.args.get('crop_query')) }}"
                         class="sort-pill {% if sort_by == 'reviews' %}active{% endif %}">리뷰 많은순</a>
-                    <a href="{{ url_for('index', sort='surplus', region=request.args.get('region'), crop_query=request.args.get('crop_query')) }}"
-                        class="sort-pill {% if sort_by == 'surplus' %}active{% endif %}">과생산</a>
                 </div>
             </div>
         </div>
@@ -256,12 +258,12 @@
             <ul class="pagination justify-content-center">
                 <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
                     <a class="page-link"
-                        href="{{ url_for('index', page=pagination.prev_num, sort=sort_by, view='list', region=request.args.get('region'), crop_query=request.args.get('crop_query'), date_filter=date_filter, people_count=people_count, eco=f_eco, parking=f_parking, pet=f_pet) }}">&laquo;</a>
+                        href="{{ url_for('index', page=pagination.prev_num, sort=sort_by, view='list', region=request.args.get('region'), crop_query=request.args.get('crop_query'), date_filter=date_filter, people_count=people_count, eco=f_eco, parking=f_parking, pet=f_pet, surplus=f_surplus) }}">&laquo;</a>
                 </li>
                 {% for page_num in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
                 {% if page_num %}
                 <li class="page-item {% if page_num == pagination.page %}active{% endif %}"><a class="page-link"
-                        href="{{ url_for('index', page=page_num, sort=sort_by, view='list', region=request.args.get('region'), crop_query=request.args.get('crop_query'), date_filter=date_filter, people_count=people_count, eco=f_eco, parking=f_parking, pet=f_pet) }}">{{
+                        href="{{ url_for('index', page=page_num, sort=sort_by, view='list', region=request.args.get('region'), crop_query=request.args.get('crop_query'), date_filter=date_filter, people_count=people_count, eco=f_eco, parking=f_parking, pet=f_pet, surplus=f_surplus) }}">{{
                         page_num }}</a></li>
                 {% else %}
                 <li class="page-item disabled"><span class="page-link">...</span></li>
@@ -269,7 +271,7 @@
                 {% endfor %}
                 <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
                     <a class="page-link"
-                        href="{{ url_for('index', page=pagination.next_num, sort=sort_by, view='list', region=request.args.get('region'), crop_query=request.args.get('crop_query'), date_filter=date_filter, people_count=people_count, eco=f_eco, parking=f_parking, pet=f_pet) }}">&raquo;</a>
+                        href="{{ url_for('index', page=pagination.next_num, sort=sort_by, view='list', region=request.args.get('region'), crop_query=request.args.get('crop_query'), date_filter=date_filter, people_count=people_count, eco=f_eco, parking=f_parking, pet=f_pet, surplus=f_surplus) }}">&raquo;</a>
                 </li>
             </ul>
         </nav>

@@ -168,3 +168,78 @@ def test_pet_not_called_without_pet_condition(monkeypatch):
                         lambda *a, **kw: called.append(1) or [])
     assert rc._pet_places(Exp(), ['nature']) == ([], set())
     assert called == [], "고르지 않은 조건으로 호출을 태우지 않는다"
+
+
+# ---- 동반구성 (2026-09-20) ----
+
+def test_companion_keywords_limited_and_hinted():
+    """★유형당 2개까지.★ 힌트 없이 키워드만 믿으면 엉뚱한 게 섞인다."""
+    from common.constants import COURSE_COMPANION_KAKAO
+    assert set(COURSE_COMPANION_KAKAO) == {
+        'solo', 'couple', 'family_child', 'parents', 'friends', 'adults_only'}
+    for code, pairs in COURSE_COMPANION_KAKAO.items():
+        assert 1 <= len(pairs) <= 2, code
+        for keyword, hint in pairs:
+            assert keyword and hint, code
+
+
+def test_adults_only_uses_brewery_not_liquor():
+    """★'전통주'로 검색하면 고깃집이 걸린다.★ 양조장만 쓴다."""
+    from common.constants import COURSE_COMPANION_KAKAO
+    keywords = [kw for kw, _ in COURSE_COMPANION_KAKAO['adults_only']]
+    assert keywords == ['양조장']
+
+
+def test_duplicate_keywords_collapse():
+    """★겹치는 검색어는 한 번만 부른다.★ 6개를 다 골라도 검색어는 7개뿐이다."""
+    from common.constants import COURSE_COMPANION_KAKAO
+    all_keywords = [kw for pairs in COURSE_COMPANION_KAKAO.values() for kw, _ in pairs]
+    assert len(all_keywords) == 11
+    assert len(set(all_keywords)) == 7
+
+
+def test_search_many_dedupes_and_returns_per_query(monkeypatch):
+    monkeypatch.setenv('KAKAO_API_KEY', 'k')
+    calls = []
+
+    def fake_search(query, lat, lng, radius_m=None):
+        calls.append(query)
+        return [{'name': query + '장소', 'category': '여행 > 공원'}]
+
+    monkeypatch.setattr(kakao_place, 'search', fake_search)
+    result = kakao_place.search_many(['공원', '카페', '공원'], 36.8, 127.3)
+    assert sorted(calls) == ['공원', '카페'], "중복 검색어는 한 번만"
+    assert set(result) == {'공원', '카페'}
+
+
+def test_search_many_survives_partial_failure(monkeypatch):
+    """하나가 실패해도 나머지는 살아야 한다."""
+    monkeypatch.setenv('KAKAO_API_KEY', 'k')
+
+    def fake_search(query, lat, lng, radius_m=None):
+        if query == '카페':
+            raise RuntimeError('장애')
+        return [{'name': 'ok', 'category': '여행 > 공원'}]
+
+    monkeypatch.setattr(kakao_place, 'search', fake_search)
+    result = kakao_place.search_many(['공원', '카페'], 36.8, 127.3)
+    assert result['카페'] == []
+    assert result['공원']
+
+
+def test_search_many_empty_input():
+    assert kakao_place.search_many([], 36.8, 127.3) == {}
+    assert kakao_place.search_many(None, 36.8, 127.3) == {}
+
+
+def test_companion_not_called_without_condition(monkeypatch):
+    import routes.course as rc
+
+    class Exp:
+        lat, lng = 36.8, 127.3
+
+    called = []
+    monkeypatch.setattr(rc.kakao_place, 'search_many',
+                        lambda *a, **kw: called.append(1) or {})
+    assert rc._companion_places(Exp(), ['nature']) == ([], {})
+    assert called == [], "고르지 않은 조건으로 호출을 태우지 않는다"

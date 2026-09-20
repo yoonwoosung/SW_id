@@ -11,6 +11,7 @@
 # 호출량: 조건을 고를 때만 부르고 결과를 tour_cache(1시간)에 담는다.
 # 카카오 로컬은 일일 10만 건이라 여유롭지만, 코스마다 새로 부를 이유가 없다.
 import os
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import requests
 
@@ -87,3 +88,28 @@ def search_names(keyword, lat, lng, radius_m=MAX_RADIUS_M, category_hint=None):
             continue
         names.add("".join(str(place["name"]).split()))
     return names
+
+
+def search_many(queries, lat, lng, radius_m=MAX_RADIUS_M):
+    """여러 검색어를 ★한 번에·병렬로★ 조회한다. 반환: {검색어: [장소, ...]}
+
+    같은 검색어가 여러 조건에 겹쳐도 한 번만 부른다(호출부에서 중복을 제거해 넘긴다).
+    병렬로 돌려 체감 시간을 줄인다 — 7개를 순차로 부르면 왕복이 7번 쌓인다.
+    개별 실패는 빈 리스트가 되고 나머지에 영향을 주지 않는다.
+    """
+    unique = list(dict.fromkeys(q for q in (queries or []) if q))
+    if not unique:
+        return {}
+    if len(unique) == 1:
+        return {unique[0]: search(unique[0], lat, lng, radius_m)}
+
+    results = {}
+    with ThreadPoolExecutor(max_workers=min(8, len(unique))) as pool:
+        futures = {pool.submit(search, q, lat, lng, radius_m): q for q in unique}
+        for future in as_completed(futures):
+            query = futures[future]
+            try:
+                results[query] = future.result()
+            except Exception:
+                results[query] = []
+    return results

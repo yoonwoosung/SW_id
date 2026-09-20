@@ -342,7 +342,7 @@
 
 // 💡 체험 상태가 '완료'인 카드들을 찾아서, API를 찔러보고 레시피가 있다면 버튼을 자동 생성!
 document.addEventListener('DOMContentLoaded', function () {
-    const completedCards = document.querySelectorAll('.mp-res-card');
+    const completedCards = document.querySelectorAll('.mp-res-card[data-state="completed"]');
     
     completedCards.forEach(card => {
         const expId = card.getAttribute('data-exp-id');

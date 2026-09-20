@@ -27,7 +27,7 @@ from services.recommend_reason import recommendation_reason
 from services.review_service import analyze_review_with_clova
 from services.trend_service import record_click
 from services import policy_service
-from common.search_categories import CATEGORY_CODES, CATEGORY_GROUPS, visible_categories
+from common.search_categories import CATEGORY_CODES, CATEGORY_GROUPS, visible_categories, region_dropdown_groups
 from common.response import success_response
 from external.kakao_map import get_coords_from_address
 from common.validators import allowed_file
@@ -198,7 +198,8 @@ def index():
                                f_eco=f_eco,
                                f_parking=f_parking,
                                f_pet=f_pet,
-                               f_surplus=f_surplus)
+                               f_surplus=f_surplus,
+                               region_groups=region_dropdown_groups())
 
 
 # ==========================================

@@ -121,6 +121,28 @@ _PROVINCES = [
 _REGIONS = _METRO_REGIONS + _PROVINCES
 
 
+def region_dropdown_groups():
+    """체험 더보기 지역 <select> 용 그룹 데이터.
+    반환: [{"label": 그룹명, "options": [{"value": LIKE검색어, "label": 표시명}, ...]}]
+    광역시는 별도 aliases(주소 키워드)를 검색어로 씀(광주→광주광역시 등)."""
+    metro = {
+        "label": "광역시·특별시",
+        "options": [
+            {"value": aliases[0], "label": label}
+            for _code, label, aliases, _cities in _METRO_REGIONS
+        ]
+    }
+    provinces = [
+        {
+            "label": label,
+            "options": [{"value": aliases[0], "label": label}]
+            + [{"value": city_label, "label": city_label} for _cc, city_label in cities]
+        }
+        for _code, label, aliases, cities in _PROVINCES
+    ]
+    return [metro] + provinces
+
+
 def _region_node():
     metro_children = [
         {"code": prov_code, "label": prov_label}

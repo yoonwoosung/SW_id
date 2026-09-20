@@ -124,34 +124,31 @@
 
 /* 앨범 미니 커버 썸네일 */
 .album-card-thumb {
-    height: 220px;
-    background: #f1f5f9;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 16px;
     position: relative;
     overflow: hidden;
 }
 
 .mini-cover-preview {
-    width: 140px;
-    height: 180px;
-    border-radius: 6px;
+    width: 100%;
+    height: 100%;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     text-align: center;
     padding: 12px;
-    box-shadow: -4px 6px 14px rgba(0,0,0,0.22);
     position: relative;
     overflow: hidden;
     transition: transform 0.2s;
 }
 
+/* 모양별 썸네일 높이 */
+.album-card-thumb.shape-portrait  { height: 220px; }
+.album-card-thumb.shape-square    { height: 190px; }
+.album-card-thumb.shape-landscape { height: 160px; }
+
 .community-album-card:hover .mini-cover-preview {
-    transform: scale(1.04) rotate(-1deg);
+    transform: scale(1.04);
 }
 
 /* 겉표지 테마 색상 — album_create.html COVER_COLORS 기준으로 통일 */
@@ -534,7 +531,7 @@
             const pageH = shape === 'shape-landscape' ? 420 : shape === 'shape-square' ? 480 : 640;
 
             card.innerHTML = `
-                <div class="album-card-thumb">
+                <div class="album-card-thumb ${shape}">
                     <div class="mini-cover-preview ${album.cover_theme || 'cover-green'}" id="${thumbId}" data-page-w="${pageW}" data-page-h="${pageH}">
                         ${!hasElements ? `<i class="fa-solid fa-book-open"></i><span class="mini-title">${escapeHtml(album.title || '추억 앨범')}</span>` : ''}
                     </div>
@@ -553,7 +550,9 @@
             if (hasElements) {
                 const thumbCanvas = document.getElementById(thumbId);
                 if (thumbCanvas) {
-                    renderMiniCoverElements(thumbCanvas, coverPage.elements, 140, 180);
+                    const thumbH = shape === 'shape-landscape' ? 160 : shape === 'shape-square' ? 190 : 220;
+                    const thumbW = thumbCanvas.closest('.album-card-thumb').offsetWidth || 260;
+                    renderMiniCoverElements(thumbCanvas, coverPage.elements, thumbW, thumbH);
                 }
             }
         });
@@ -858,7 +857,8 @@
         const pageW = parseInt(thumbEl.dataset.pageW || 436);
         const pageH = parseInt(thumbEl.dataset.pageH || 640);
 
-        const scale = Math.min(thumbW / pageW, thumbH / pageH);
+        // Math.max → cover(꽉 채움), Math.min → contain(여백 있음)
+        const scale = Math.max(thumbW / pageW, thumbH / pageH);
 
         const inner = document.createElement('div');
         inner.style.cssText = `

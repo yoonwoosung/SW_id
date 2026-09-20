@@ -198,3 +198,78 @@ def test_segments_api_exposes_peer_availability(client):
     assert res.status_code == 200
     data = res.get_json()['data']
     assert data['peer_segments'] == {'age': False, 'gender': False}
+
+
+# ---- 조건 필터를 자르기 전에 건다 (2026-09-20) ----
+# 배포 서버 실측: 모집 21건 중 6건이 상위 15건 밖이라 조건 검사조차 못 받았다.
+# '울산 배'가 그중 하나였다 — 지역>울산을 골라야만 가점으로 끌려 올라왔다.
+
+def _many_experiences(n, parking_from):
+    """n건을 만들고 parking_from 번째부터 주차 있음으로 둔다."""
+    farmer = _user(f"farm{n}{parking_from}@x.com", role='farmer')
+    today = date.today()
+    made = []
+    for i in range(n):
+        exp = Experience(
+            crop=f"작물{i:02d}", location="충남", address_detail=f"충남 논산시 {i}길",
+            cost=10000 + i, status='recruiting', farmer_id=farmer.id,
+            duration_start=today, end_date=today + timedelta(days=30),
+            max_participants=10, current_participants=0,
+            lat=36.18 + i * 0.001, lng=127.09,
+            has_parking=(i >= parking_from),
+        )
+        db.session.add(exp)
+        made.append(exp)
+    db.session.commit()
+    return made
+
+
+def test_condition_filter_sees_every_experience(client):
+    """★자르기 전에 걸러야 한다.★ (배포 서버에서 재현한 버그)
+
+    조건 가점(0.3)은 거리 가중치(0.5)보다 작다. 그래서 조건에 맞아도 멀리
+    있으면 상위 15건에 못 들고, 예전에는 그 뒤에 필터가 돌아 ★아예 검사조차
+    되지 않았다★. 실측에서 모집 21건 중 6건이 이 사각지대였다.
+
+    여기서는 가까운 20건(조건 불충족)과 먼 1건(조건 충족)을 만든다.
+    자르기가 먼저면 먼 1건은 잘려 나가 "조건에 맞는 체험이 없습니다"가 된다.
+    """
+    farmer = _user("cut-farmer@x.com", role='farmer')
+    today = date.today()
+    near = []
+    for i in range(20):
+        near.append(Experience(
+            crop=f"근처{i:02d}", location="충남", address_detail=f"충남 논산시 {i}길",
+            cost=10000, status='recruiting', farmer_id=farmer.id,
+            duration_start=today, end_date=today + timedelta(days=30),
+            max_participants=10, current_participants=0,
+            lat=36.18 + i * 0.001, lng=127.09, has_parking=False))
+    far = Experience(
+        crop="먼곳", location="경기", address_detail="경기 이천시",
+        cost=10000, status='recruiting', farmer_id=farmer.id,
+        duration_start=today, end_date=today + timedelta(days=30),
+        max_participants=10, current_participants=0,
+        lat=37.00, lng=127.60, has_parking=True)          # 약 100km 떨어진 곳
+    db.session.add_all(near + [far])
+    db.session.commit()
+
+    res = client.get('/api/recommendations/personalized'
+                     '?lat=36.18&lon=127.09&cond_facility=parking')
+    ids = [r['id'] for r in res.get_json()['data']['results']]
+    assert ids == [far.id], f"조건에 맞는 유일한 체험이 누락됐다: {ids}"
+
+
+def test_result_count_still_capped(client):
+    """★기존 동작 유지.★ 한 번에 내려보내는 건수는 그대로다."""
+    from common.constants import RECOMMEND_LIMIT
+    _many_experiences(20, parking_from=0)
+    res = client.get('/api/recommendations/personalized')
+    assert len(res.get_json()['data']['results']) <= RECOMMEND_LIMIT
+
+
+def test_no_conditions_still_returns_results(client):
+    """조건을 안 걸면 예전처럼 점수순으로 나온다."""
+    _many_experiences(5, parking_from=0)
+    res = client.get('/api/recommendations/personalized')
+    assert res.status_code == 200
+    assert len(res.get_json()['data']['results']) == 5

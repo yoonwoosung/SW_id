@@ -6,6 +6,7 @@ from sqlalchemy.orm import joinedload
 
 from models import Experience, User
 from common.response import success_response, error_response
+from common.constants import RECOMMEND_LIMIT
 from common.search_categories import CATEGORY_CODES, LABEL_BY_CODE
 from services.recommend_service import rank_recommendations
 from services.personalize_service import rank_personalized
@@ -72,11 +73,20 @@ def personalized_recommendations():
             trend_counts = trending_experience_counts(user.gender, user.age_group)
     trending = set(trend_counts)
 
-    ranked = rank_personalized(_recruiting_experiences(), user, lat, lon, conditions, trending_ids=trending)
+    # ★조건 필터를 자르기 전에 건다.★ 예전에는 rank_personalized 가 상위 15건을
+    # 자른 뒤에 걸렀다. 그래서 16위 이하는 조건이 맞아도 검사조차 되지 않았다
+    # (실측: 모집 21건 중 6건이 사각지대. '울산 배'가 그중 하나였다).
+    #
+    # 조건에 맞으면 점수 가점을 받아 상위로 끌려 올라오긴 했는데, 가점이
+    # 순위를 뒤집기에 부족하면 누락됐다. ★조건을 몇 개 걸었는지에 따라 결과가
+    # 달라지는 불안정한 상태★였다 — 주차만 걸면 12건, 주차+자가용이면 13건.
+    experiences = [exp for exp in _recruiting_experiences()
+                   if eco_filter.passes_conditions(conditions, exp)]
 
-    # 조건은 지금까지 점수 가점이라 하나도 못 맞춘 체험도 뒤에 남았다.
-    # 사용자는 필터를 켰다고 생각하므로 제외로 바꾼다(섹션 구분 없이 모두 적용).
-    ranked = [item for item in ranked if eco_filter.passes_conditions(conditions, item[0])]
+    # limit 은 여기서 주지 않는다. 세그먼트 보너스까지 반영한 뒤 잘라야
+    # 섹션 기준이 순서에 실제로 반영된다(아래 RECOMMEND_LIMIT).
+    ranked = rank_personalized(experiences, user, lat, lon, conditions,
+                               trending_ids=trending, limit=None)
 
     if segment == 'esg':
         # '친환경 인증 농장' 섹션: 정렬만 하면 친환경이 아닌 체험도 남는다.
@@ -91,6 +101,11 @@ def personalized_recommendations():
         #   peers_age    같은 나이대 클릭 수      ← 이전에는 apply('peers') 였다
         #   peers_gender 같은 성별 클릭 수        ← 이전에는 apply('peers') 였다
         ranked = segment_score.apply(segment, ranked, trend_counts=trend_counts)
+
+    # ★자르는 것은 맨 마지막이다.★ 조건 필터와 세그먼트 보너스를 모두 거친
+    # 뒤에 자른다. 예전에는 자르기가 맨 앞이라 섹션 보너스로도 16위 이하를
+    # 끌어올릴 수 없었고, 6개 섹션이 전부 같은 15건 풀을 돌려 썼다(실측).
+    ranked = ranked[:RECOMMEND_LIMIT]
 
     results = [{
         "id": exp.id, "crop": exp.crop, "address": exp.address_detail, "cost": exp.cost,

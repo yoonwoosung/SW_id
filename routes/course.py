@@ -382,8 +382,17 @@ _FILTER_ROLE = {
     "transport": "이동시간과 교통비를 이 기준으로 계산합니다",
 }
 
+# ★코스 장소가 아니라 '체험 목록'을 거르는 조건.★ (_COURSE_ONLY 의 반대)
+# Experience 컬럼으로 실제 판정되지만 코스 장소에는 쓰이지 않는다. 이걸
+# 밝히지 않으면 "근처에 해당하는 장소 정보를 찾지 못했습니다"로 떠서,
+# 실제로는 반영되는데 안 되는 것처럼 보인다.
+_LIST_ONLY_ROLE = "체험 목록을 거릅니다 (코스 장소에는 반영되지 않습니다)"
+_LIST_ONLY_CODES = frozenset({"wifi", "pesticide_free", "organic", "pet_not_allowed"})
+
 
 def _filter_role(code):
+    if code in _LIST_ONLY_CODES:
+        return _LIST_ONLY_ROLE
     category = CATEGORY_OF_CODE.get(code)
     # 소요시간은 ★슬롯 수를 아는 선택지만★ 반영된다. 나머지는 반영 목록에
     # 넣으면 "반영했다"는 거짓말이 되므로 미반영으로 보낸다.

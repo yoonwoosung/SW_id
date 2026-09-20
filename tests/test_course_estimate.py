@@ -244,3 +244,69 @@ def test_hidden_duration_codes_are_not_claimed_as_applied():
     assert rc._filter_role('under_2h') is None
     assert rc._filter_role('duration_hours_other') is None
     assert rc._filter_role('half_day') is not None
+
+
+# ---- 조건 반영 표기 (2026-09-20) ----
+
+def test_transport_is_reported_as_applied():
+    """★"찾지 못했습니다"는 사실과 다르다.★
+
+    자가용·대중교통·택시는 이동시간·교통비 추정에 실제로 쓰인다.
+    """
+    import routes.course as rc
+    items = [{'type': 'attraction', 'name': 'A', 'match_score': 0.4}]
+    report = rc._condition_report(['car', 'public_transit', 'taxi'], {}, items)
+    assert report['ignored'] == []
+    roles = {a['label']: a.get('role') for a in report['applied']}
+    assert roles == {'자가용': rc._FILTER_ROLE['transport'],
+                     '대중교통': rc._FILTER_ROLE['transport'],
+                     '택시': rc._FILTER_ROLE['transport']}
+
+
+def test_list_only_conditions_say_so():
+    """체험 목록만 거르는 조건은 그렇다고 밝힌다.
+
+    와이파이·무농약·유기농인증·노펫존은 Experience 컬럼으로 실제 판정되지만
+    코스 장소에는 쓰이지 않는다. 밝히지 않으면 '반영 안 됨'으로 보인다.
+    """
+    import routes.course as rc
+    items = [{'type': 'attraction', 'name': 'A', 'match_score': 0.4}]
+    codes = ['wifi', 'pesticide_free', 'organic', 'pet_not_allowed']
+    report = rc._condition_report(codes, {}, items)
+    assert report['ignored'] == []
+    for entry in report['applied']:
+        assert entry['role'] == rc._LIST_ONLY_ROLE, entry
+
+
+def test_scored_conditions_keep_percent_not_role():
+    """★기존 동작 유지.★ 점수로 반영되는 조건은 비율 그대로 보여준다."""
+    import routes.course as rc
+    items = [{'type': 'attraction', 'name': 'A', 'match_score': 0.4}]
+    report = rc._condition_report(['nature'], {}, items)
+    entry = next(a for a in report['applied'] if a['code'] == 'nature')
+    assert entry['percent'] == 100.0
+    assert 'role' not in entry
+
+
+def test_no_visible_condition_is_silently_ignored():
+    """★전수 확인.★ 고른 조건이 조용히 무시되면 "조건이 안 먹는다"로만 보인다.
+
+    반영되지 않는 조건은 반드시 ★이유★를 달고 나와야 한다.
+    """
+    import routes.course as rc
+    from common.search_categories import visible_categories
+    from services import place_score
+
+    def leaves(nodes):
+        for node in nodes:
+            if node.get('children'):
+                yield from leaves(node['children'])
+            else:
+                yield node['code']
+
+    codes = list(leaves(visible_categories()))
+    report = rc._condition_report(codes, {}, [{'type': 'attraction', 'name': 'A'}])
+    reported = ({a['code'] for a in report['applied']}
+                | {i['code'] for i in report['ignored']})
+    assert set(codes) - reported == set()
+    assert all(i['reason'] for i in report['ignored'])

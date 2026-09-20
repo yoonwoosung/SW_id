@@ -60,10 +60,18 @@ def index():
         base_query = Experience.query.filter(Experience.status == 'recruiting', Experience.end_date >= today)
 
         if region:
-            base_query = base_query.filter(
-                or_(Experience.address_detail.like(f"%{region}%"),
-                    Experience.location.like(f"%{region}%"))
-            )
+            if region == '광역시':
+                # 광역시·특별시 전체: 서울특별시·세종특별자치시는 '광역시' 키워드에 안 걸려 별도 처리
+                _metro_kw = ['서울', '부산', '대구', '인천', '광주광역시', '대전', '울산', '세종']
+                base_query = base_query.filter(
+                    or_(*[Experience.address_detail.like(f"%{kw}%") for kw in _metro_kw],
+                        *[Experience.location.like(f"%{kw}%") for kw in _metro_kw])
+                )
+            else:
+                base_query = base_query.filter(
+                    or_(Experience.address_detail.like(f"%{region}%"),
+                        Experience.location.like(f"%{region}%"))
+                )
         if crop_query:
             base_query = base_query.filter(
                 or_(Experience.crop.like(f"%{crop_query}%"),

@@ -127,10 +127,9 @@ def region_dropdown_groups():
     광역시는 별도 aliases(주소 키워드)를 검색어로 씀(광주→광주광역시 등)."""
     metro = {
         "label": "광역시·특별시",
-        "options": [
-            {"value": aliases[0], "label": label}
-            for _code, label, aliases, _cities in _METRO_REGIONS
-        ]
+        "options": [{"value": "광역시", "label": "광역시·특별시"}]
+        + [{"value": aliases[0], "label": label}
+           for _code, label, aliases, _cities in _METRO_REGIONS]
     }
     provinces = [
         {

@@ -194,3 +194,16 @@ COURSE_SEASON_KEYWORDS = {
     "autumn_harvest":    ("가을", "단풍", "수확"),
     "winter_experience": ("겨울", "눈", "스키", "온천"),
 }
+
+# --- 관광지정보 표준데이터 CSV (external/tour_csv.py) ---
+# 충남 올담 API 가 9/18 부터 복구되지 않아 같은 성격의 공공데이터를 파일로 대신 쓴다.
+# 관광공사 API 를 ★대체하지 않는다★ — 코스 장소를 '보강'만 한다.
+TOUR_CSV_PATH = "data/tour_standard.csv"
+# 반경. 10km 로 잡으면 충남 체험 주변에 0~2건뿐이라 보강 효과가 거의 없다(실측).
+# 관광공사도 결과가 비면 MAX_SEARCH_RADIUS_M(20km)로 재시도하므로 기준을 맞춘다.
+TOUR_CSV_RADIUS_M = 20000
+# CSV 는 전부 '관광지'·'관광단지'라 관광공사의 관광지 코드에 대응한다.
+# 이 값으로 코스의 '관광' 슬롯에만 들어간다(맛집·카페 슬롯에 섞이면 안 된다).
+TOUR_CSV_CONTENT_TYPE = TOUR_CONTENT_TYPE_ATTRACTION
+# 화면 배지·출처 문구에 쓰는 출처 코드.
+TOUR_CSV_SOURCE = "standard"

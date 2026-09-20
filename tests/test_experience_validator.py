@@ -98,7 +98,7 @@ def surplus_form(**kw):
         'is_surplus': 'true', 'surplus_terms_agreed': 'true',
         'list_price': '50000', 'surplus_qty_total': '500',
         'surplus_per_person': '5', 'surplus_unit': 'kg',
-        'surplus_reason': '잉여',
+        'surplus_reason': '할인',
     }
     base.update(kw)
     return {k: v for k, v in base.items() if v is not None}
@@ -465,7 +465,7 @@ def test_etc_whitespace_trimmed():
 
 
 def test_reason_cleared_when_not_surplus():
-    data, err = parse_surplus_fields({'surplus_reason': '잉여'}, cost=25000)
+    data, err = parse_surplus_fields({'surplus_reason': '할인'}, cost=25000)
     assert err is None and data['surplus_reason'] is None
 
 
@@ -483,7 +483,7 @@ from services.experience_validator import (
 
 class FakeSurplus:
     def __init__(self, is_surplus=True, terms=True, list_price=50000,
-                 cost=25000, reason='잉여'):
+                 cost=25000, reason='할인'):
         self.is_surplus = is_surplus
         self.surplus_terms_agreed = terms
         self.list_price = list_price
@@ -509,7 +509,7 @@ def test_discount_percent_none_without_list_price():
 # ---- 리본 문구 4가지 ----
 
 def test_ribbon_with_reason_and_rate():
-    assert ribbon_text(FakeSurplus(list_price=30000, cost=20000)) == '잉여 33%'
+    assert ribbon_text(FakeSurplus(list_price=30000, cost=20000)) == '할인 33%'
 
 
 def test_ribbon_without_reason_uses_default_label():
@@ -518,21 +518,21 @@ def test_ribbon_without_reason_uses_default_label():
     '90%' 만 띄우면 무엇이 90% 인지 알 수 없어 기본 문구를 붙인다.
     """
     pineapple = FakeSurplus(list_price=150000, cost=15000, reason=None)
-    assert ribbon_text(pineapple) == '잉여 90%'
-    assert SURPLUS_RIBBON_DEFAULT_REASON == '잉여'
+    assert ribbon_text(pineapple) == '할인 90%'
+    assert SURPLUS_RIBBON_DEFAULT_REASON == '할인'
 
 
 def test_ribbon_without_list_price_shows_reason_only():
-    """정가가 없으면 할인율을 못 구한다. 그래도 잉여인 건 알려준다."""
-    assert ribbon_text(FakeSurplus(list_price=None)) == '잉여'
+    """정가가 없으면 할인율을 못 구한다. 그래도 할인인 건 알려준다."""
+    assert ribbon_text(FakeSurplus(list_price=None)) == '할인'
 
 
 def test_ribbon_without_reason_and_rate():
-    assert ribbon_text(FakeSurplus(list_price=None, reason=None)) == '잉여'
+    assert ribbon_text(FakeSurplus(list_price=None, reason=None)) == '할인'
 
 
 def test_ribbon_empty_reason_treated_as_missing():
-    assert ribbon_text(FakeSurplus(list_price=50000, cost=25000, reason='')) == '잉여 50%'
+    assert ribbon_text(FakeSurplus(list_price=50000, cost=25000, reason='')) == '할인 50%'
 
 
 # ---- 떠서는 안 되는 경우 ----

@@ -26,13 +26,13 @@
 """
 import os
 import sys
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 
 from werkzeug.security import generate_password_hash
 
 # app.py 가 import 시점에 .env 를 읽고 db.init_app(app) 까지 끝낸다.
 from app import app, db, User
-from models import Experience
+from models import Experience, Application, Review
 from models.farm import Farm
 
 # routes/auth.py 의 로그인 검증(check_password_hash)이 읽는 해시 방식.
@@ -86,6 +86,17 @@ EXPERIENCE = {
     'barrier_free': True,
     'pesticide_free': True,
     'notes': '공모전 심사용 시연 체험입니다.',
+    # 레시피 전수 — 완료된 예약의 '레시피 보기' 버튼을 확인할 수 있게 한다.
+    # ★손글씨 사진은 넣지 않는다.★ 없는 사진을 만들어 '농부님의 손글씨'라고
+    # 붙이면 거짓 표시가 된다. 사진 우선 표시는 농장주 화면에서 직접 올려 본다.
+    'has_recipe': True,
+    'recipe_name': '딸기 우유잼',
+    'recipe_ingredients': '딸기 500g\n설탕 200g\n레몬즙 1큰술',
+    'recipe_steps': '딸기를 씻어 꼭지를 떼고 반으로 자릅니다.\n'
+                    '설탕을 뿌려 30분간 재웁니다.\n'
+                    '중약불에서 저어가며 20분간 졸입니다.\n'
+                    '레몬즙을 넣고 5분 더 졸인 뒤 식힙니다.',
+    'recipe_tip': '딸기는 꼭지를 뗀 뒤에 씻으면 물이 배어 맛이 싱거워집니다.',
 }
 
 # 과생산(할인) 체험도 하나 둔다 — 심사위원이 할인 리본·수량 기능을 볼 수 있게.
@@ -109,6 +120,94 @@ SURPLUS_EXPERIENCE = {
     'surplus_reason': '작황호조',
     'notes': '공모전 심사용 과생산 할인 체험입니다.',
 }
+
+
+# 심사위원이 체험 상세에서 후기 목록을, 농장주 화면에서 AI 후기 요약을 볼 수
+# 있어야 한다. 후기가 0건이면 AI 요약 API 가 400 을 돌려준다(routes/farms.py).
+#
+# ★대표 계정 본인은 후기를 쓰지 않는다.★ 쓰면 "이미 작성하셨습니다"가 되어
+# 심사위원이 후기 작성 화면을 볼 수 없다. 완료된 예약만 만들어 둔다.
+REVIEWERS = [
+    ('review1@farmlink.com', '딸기러버', 5,
+     '아이랑 같이 갔는데 농장주님이 하나하나 알려주셔서 좋았어요. '
+     '딸기도 정말 달고 양도 넉넉했습니다. 주차장이 넓어서 편했어요.'),
+    ('review2@farmlink.com', '주말농부', 4,
+     '체험 자체는 만족스러웠습니다. 다만 화장실이 조금 멀어서 '
+     '아이 데리고 다니기에는 불편했어요. 딸기 맛은 최고였습니다.'),
+    ('review3@farmlink.com', '강아지랑여행', 5,
+     '반려견 동반이 가능해서 선택했는데 정말 잘한 것 같아요. '
+     '강아지도 뛰어놀고 저희도 딸기 따고 하루가 금방 갔습니다.'),
+    ('review4@farmlink.com', '조용한여행자', 3,
+     '주말이라 사람이 많아 조금 정신없었습니다. 체험 시간이 짧게 느껴졌어요. '
+     '딸기 품질은 좋았고 농장주님도 친절하셨습니다.'),
+]
+
+# 후기를 달 때 쓰는 완료 예약의 기준일(오늘로부터 며칠 전).
+REVIEW_DAYS_AGO = (14, 10, 7, 3)
+# 대표 계정 본인의 완료 예약 — '내 활동'에서 레시피 버튼을 확인하는 용도.
+MAIN_VISIT_DAYS_AGO = 5
+
+
+def _completed_application(user, exp, days_ago, dry_run):
+    """★지난 날짜로 완료된 예약★을 만든다. 없으면 후기를 쓸 수 없다.
+
+    apply_date 를 과거로 두면 is_experience_ended 가 참이 되어 can_review 가
+    자연스럽게 켜진다(services/activity_service). 상태도 '완료'로 둔다.
+    """
+    existing = (Application.query.filter_by(user_id=user.id, experience_id=exp.id).first()
+                if user.id and exp.id else None)
+    if existing:
+        return existing, False
+    row = Application(
+        user_id=user.id, experience_id=exp.id,
+        applicant_name=user.name or user.nickname,
+        phone_number='010-0000-0000',
+        participants_count=2,
+        apply_date=date.today() - timedelta(days=days_ago),
+        apply_time='10:00',
+        status='완료', can_review=True,
+    )
+    if not dry_run:
+        db.session.add(row)
+    return row, True
+
+
+def ensure_reviews(main_user, dry_run):
+    """심사용 체험에 후기를 달고, 대표 계정에는 완료된 예약을 하나 만든다."""
+    notes = []
+    exp = Experience.query.filter_by(farmer_id=main_user.id,
+                                     crop=EXPERIENCE['crop']).first()
+    if exp is None:
+        notes.append('체험을 찾지 못해 후기를 건너뛴다')
+        return notes
+
+    for (email, nickname, rating, content), days in zip(REVIEWERS, REVIEW_DAYS_AGO):
+        user = User.query.filter_by(email=email).first()
+        if user is None:
+            user = User(email=email, nickname=nickname, name=nickname,
+                        role='experiencer',
+                        password=generate_password_hash(os.urandom(16).hex(),
+                                                        method=HASH_METHOD))
+            if not dry_run:
+                db.session.add(user)
+                db.session.flush()
+            notes.append('후기 작성자 생성: %s' % nickname)
+        _completed_application(user, exp, days, dry_run)
+
+        if user.id and Review.query.filter_by(user_id=user.id,
+                                              experience_id=exp.id).first():
+            notes.append('후기 이미 있음: %s' % nickname)
+            continue
+        if not dry_run:
+            db.session.add(Review(user_id=user.id, experience_id=exp.id,
+                                  rating=rating, content=content,
+                                  timestamp=datetime.now() - timedelta(days=days)))
+        notes.append('후기 생성: %s (별점 %d)' % (nickname, rating))
+
+    _row, created = _completed_application(main_user, exp, MAIN_VISIT_DAYS_AGO, dry_run)
+    notes.append('대표 계정 완료 예약 %s (레시피 버튼 확인용, 후기는 직접 작성)'
+                 % ('생성' if created else '이미 있음'))
+    return notes
 
 
 def fail(message):
@@ -213,6 +312,10 @@ def main():
         for email in FARM_OWNER_EMAILS:
             farm_notes.append('--- %s ---' % email)
             farm_notes += ensure_farm_and_experience(users[email], dry_run)
+        if not dry_run:
+            db.session.flush()      # 체험 id 가 있어야 후기·예약을 붙일 수 있다
+        farm_notes.append('--- 후기·완료 예약 ---')
+        farm_notes += ensure_reviews(users[MAIN_EMAIL], dry_run)
 
         if dry_run:
             db.session.rollback()

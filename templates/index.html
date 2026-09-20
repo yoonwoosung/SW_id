@@ -193,11 +193,9 @@
                         <i data-lucide="sprout"></i>
                     </div>
                     {% endif %}
-                    {% if view != 'list' %}
                     {% set _ribbon = ribbon_text(item) %}
                     {% if _ribbon %}
                     <div class="fl-ribbon"><span class="fl-ribbon__text">{{ _ribbon }}</span></div>
-                    {% endif %}
                     {% endif %}
                     <div class="exp-card-badge-wrap">
                         {% if remaining_spots == 0 %}

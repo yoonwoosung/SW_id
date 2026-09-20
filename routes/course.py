@@ -1,11 +1,17 @@
 # routes/course.py — AI 추천 코스 라우트(체험 주변 장소를 시간순 코스로 구성). 얇게 유지, 로직은 services 호출.
+from flask import request
+
 from models import Experience
 from common.response import success_response, error_response
 from common.constants import COURSE_SEARCH_RADIUS_M, MAX_SEARCH_RADIUS_M, COURSE_SLOTS
+from common.search_categories import LEAF_CODES
 from external import tour_api
 from external import chungnam_api
+from external import barrier_free_api
+from external import pet_travel_api
 from services import course_builder
 from services import place_merge
+from services import place_score
 from services.course_reason import build_course_reason
 from services.thumbnail_service import experience_thumbnail_url
 
@@ -58,13 +64,65 @@ def _collect_places(experience):
     return places_by_type
 
 
+def _selected_codes():
+    """사용자가 고른 조건 코드를 ★고른 순서대로★ 읽는다.
+
+    cond_order 는 프론트가 클릭 순서를 그대로 이어 붙인 값이다.
+    쿼리스트링의 cond_* 만으로는 대분류별로 묶여 있어 순서를 알 수 없다.
+    cond_order 가 없으면(옛 링크·직접 호출) 조건을 무시하고 기존 거리순을 쓴다.
+    """
+    raw = request.args.getlist("cond_order")
+    codes, seen = [], set()
+    for chunk in raw:
+        for code in str(chunk).split(","):
+            code = code.strip()
+            # 트리에 없는 코드는 버린다(오타·조작 방지). 중복은 첫 순서만 남긴다.
+            if code and code in LEAF_CODES and code not in seen:
+                seen.add(code)
+                codes.append(code)
+    return codes
+
+
+def _build_scorer(experience, codes):
+    """조건 코드로 장소 점수 함수를 만든다. 못 만들면 None(기존 거리순).
+
+    전용 API 는 조건에 그 항목이 있을 때만 부른다 — 쓰지도 않을 호출로
+    일일 한도를 태우지 않기 위해서다. 실패하면 빈 리스트가 되고,
+    place_score 가 그 조건을 판정 불가로 빼 남은 조건끼리 가중치를 다시 나눈다.
+    """
+    if not codes:
+        return None
+
+    barrier_free, pet = [], []
+    try:
+        if place_score.COURSE_RULE_BARRIER_FREE in codes:
+            barrier_free = barrier_free_api.find_barrier_free_places(
+                experience.lat, experience.lng, COURSE_SEARCH_RADIUS_M)
+    except Exception:
+        barrier_free = []
+    try:
+        if any(code in place_score.COURSE_RULE_PET for code in codes):
+            pet = pet_travel_api.find_pet_facilities(
+                experience.lat, experience.lng, COURSE_SEARCH_RADIUS_M)
+    except Exception:
+        pet = []
+
+    try:
+        api_sets = place_score.build_api_sets(barrier_free, pet)
+        return place_score.build_scorer(codes, api_sets)
+    except Exception:
+        return None      # 점수 계산이 어떤 이유로든 실패하면 기존 코스 생성을 지킨다
+
+
 def experience_course(item_id):
     item = Experience.query.get(item_id)
     if item is None:
         return error_response("EXPERIENCE_NOT_FOUND", "체험을 찾을 수 없습니다.", 404)
 
+    codes = _selected_codes()
+    scorer = _build_scorer(item, codes)
     places_by_type = _collect_places(item)
-    items = course_builder.build_course(item, places_by_type)
+    items = course_builder.build_course(item, places_by_type, scorer=scorer)
     summary = course_builder.build_course_summary(item)
 
     has_places = any(it.get("type") != "experience" for it in items)

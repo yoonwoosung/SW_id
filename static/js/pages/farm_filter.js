@@ -93,16 +93,33 @@ window.FarmFilter = (function () {
             });
         }
 
+        // ★고른 '순서'를 기억한다.★ 체크박스 DOM 순서로는 알 수 없고,
+        // getSelected() 가 돌려주는 {대분류: [값]} 구조도 순서를 담지 못한다.
+        // 코스 장소 점수에서 1순위에 40% 를 주므로 순서가 결과를 좌우한다.
+        var clickOrder = [];
+        function remember(code, checked) {
+            var at = clickOrder.indexOf(code);
+            if (checked) { if (at === -1) clickOrder.push(code); }
+            else if (at !== -1) { clickOrder.splice(at, 1); }
+        }
+
         function getSelected() {
             var out = {};
-            effectiveChecked().forEach(function (cb) {
+            var checked = effectiveChecked();
+            checked.forEach(function (cb) {
                 (out[cb.dataset.cat] = out[cb.dataset.cat] || []).push(cb.value);
             });
+            // 지금 켜져 있는 것만, 고른 순서대로. 순서 기록에 없는 값(초기 상태 등)은 뒤에 붙인다.
+            var live = checked.map(function (cb) { return cb.value; });
+            var ordered = clickOrder.filter(function (c) { return live.indexOf(c) !== -1; });
+            live.forEach(function (c) { if (ordered.indexOf(c) === -1) ordered.push(c); });
+            out.__order = ordered;
             return out;
         }
 
         function reset() {
             root.querySelectorAll('input[type=checkbox]').forEach(function (cb) { cb.checked = false; cb.indeterminate = false; });
+            clickOrder = [];
             refresh();
         }
 
@@ -159,8 +176,11 @@ window.FarmFilter = (function () {
                     var cb = root.querySelector('input[data-cat="' + chip.dataset.cat + '"][value="' + chip.dataset.value + '"]');
                     if (cb) {
                         cb.checked = false;
+                        remember(cb.value, false);
                         if (cb.classList.contains('fl-parent')) {
-                            cb.closest('.fl-subgroup').querySelectorAll('input[type=checkbox]').forEach(function (d) { d.checked = false; d.indeterminate = false; });
+                            cb.closest('.fl-subgroup').querySelectorAll('input[type=checkbox]').forEach(function (d) {
+                                d.checked = false; d.indeterminate = false; remember(d.value, false);
+                            });
                         }
                         syncParents(); refresh();
                     }
@@ -171,9 +191,11 @@ window.FarmFilter = (function () {
             });
             root.addEventListener('change', function (e) {
                 if (!e.target.matches('input[type=checkbox]')) return;
+                remember(e.target.value, e.target.checked);
                 if (e.target.classList.contains('fl-parent')) {   // 중분류 '전체' 체크 → 하위 소분류 전체 선택/해제
                     e.target.closest('.fl-subgroup').querySelectorAll('input[type=checkbox]').forEach(function (cb) {
                         cb.checked = e.target.checked; cb.indeterminate = false;
+                        remember(cb.value, cb.checked);
                     });
                 }
                 syncParents();

@@ -139,3 +139,48 @@ SURPLUS_UNIT_CONVERSION = {
 # 최저 구간을 주면 최대 체험료가 가장 높아 농장주에게 불리하지 않고,
 # 기존 정책의 하한(20%)도 지켜진다. 화면에는 왜 20% 인지 안내를 함께 띄운다.
 SURPLUS_DEFAULT_DISCOUNT_PERCENT = 20
+
+# --- 여행 조건을 코스 장소 선정에 반영 (services/place_score.py) ---
+#
+# 사용자가 고른 '순서'가 곧 우선순위다. 1순위가 지배적이어야
+# "내가 고른 게 반영됐다"고 느껴진다. 균등 배분이면 순서를 정한 의미가 없다.
+# 5순위 이하는 남은 몫을 균등하게 나눠 가진다.
+COURSE_CONDITION_WEIGHTS = (0.40, 0.25, 0.15, 0.10)
+COURSE_CONDITION_TAIL_WEIGHT = 0.10      # 5순위 이하가 나눠 가질 총량
+
+# 조건 코드 → 관광공사 분류로 장소를 판정하는 규칙.
+# 값의 뜻: cat1/cat2 는 '접두사 일치', content_type 은 contenttypeid 일치.
+#   cat1  A01 자연 · A02 인문(문화/예술/역사) · A03 레포츠 · A04 쇼핑 · A05 음식
+# 관광공사가 실제로 돌려준 값으로 확인했다(A01 천안북면계곡 / A02 박문수묘 / A05 순대집).
+COURSE_PLACE_RULES = {
+    # 체험종류
+    "food":        {"content_type": 39},          # 먹거리 → 음식점
+    "nature":      {"cat1": "A01"},               # 자연생태
+    "craft":       {"cat1": "A02"},               # 공예 → 인문·문화
+    "harvest":     {"cat1": "A01"},               # 수확 → 자연
+    "animal":      {"cat2": "A0102"},             # 동물교감 → 동식물
+    # 분위기
+    "healing":     {"cat1": "A01"},
+    "active":      {"cat1": "A03"},
+    "tradition":   {"cat2": "A0201"},             # 역사관광지
+    "photo":       {"cat2": "A0202"},             # 휴양관광지
+    "educational": {"cat2": "A0206"},             # 문화시설
+    # 액티비티 (레포츠 하위)
+    "horse_riding": {"cat2": "A0303"},            # 육상 레포츠
+    "hiking":       {"cat2": "A0303"},
+    "cycling":      {"cat2": "A0303"},
+    "kayak":        {"cat2": "A0302"},            # 수상 레포츠
+    "fishing":      {"cat2": "A0302"},
+}
+
+# 전용 API 로 판정하는 조건. 해당 API 가 빈 결과면 가중치 0 으로 빠진다.
+COURSE_RULE_BARRIER_FREE = "barrier_free"
+COURSE_RULE_PET = frozenset({"pet_allowed", "dog_small", "dog_medium", "dog_large"})
+
+# 계절·제철은 분류 코드가 없어 장소 이름 키워드로 본다.
+COURSE_SEASON_KEYWORDS = {
+    "spring_strawberry": ("딸기", "봄"),
+    "summer_blueberry":  ("블루베리", "여름", "물놀이", "계곡"),
+    "autumn_harvest":    ("가을", "단풍", "수확"),
+    "winter_experience": ("겨울", "눈", "스키", "온천"),
+}

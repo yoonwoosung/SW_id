@@ -155,3 +155,10 @@ video {
   .fl-only-mobile  { display: initial; }
   .fl-from-tablet  { display: none; }
 }
+
+/* 공모전 심사용 역할 전환 메뉴(프로필 드롭다운 안). 허용 계정에만 보인다. */
+.role-switch__now {
+    display: block; padding: 6px 12px 4px;
+    font-size: 0.78rem; font-weight: 700; color: #2d6a4f;
+    background: #f1f8f3; border-radius: 6px; margin-bottom: 2px;
+}

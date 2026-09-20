@@ -24,6 +24,22 @@ TOUR_CACHE_MAX_ENTRIES = 500     # 캐시 파일 수 상한. 넘으면 오래된
 # 이 값을 안 보면 심사 전·반려된 인증까지 유기농으로 세게 된다.
 ORGANIC_APPROVED_STATUS = 'APPROVED'
 
+# --- 공모전 심사용 역할 전환 ---
+# 제출 폼에 계정을 하나만 적을 수 있어, 심사위원이 계정 하나로 체험자·농장주·
+# 관리자 화면을 모두 봐야 한다. 권한 판정이 전부 session['role'] 하나만 보므로
+# ★세션 값만 바꾸면 기존 게이트 38곳이 그대로 따라온다★(게이트 미변경).
+#
+# ★반드시 이 목록의 계정만 전환할 수 있어야 한다.★ 공모전 지정 비밀번호는
+# 제출 서류에 공개되므로, 아무나 전환할 수 있으면 농장 승인·반려까지 뚫린다.
+# 심사가 끝나면 이 목록을 비우고 비밀번호를 바꿀 것(docs/NEXT_STEPS.md).
+ROLE_SWITCH_ALLOWED_EMAILS = ('openapi@farmlink.com',)
+# 전환할 수 있는 역할과 화면 표기. 여기 없는 값은 거부한다.
+ROLE_SWITCH_ROLES = (
+    ('experiencer', '체험자'),
+    ('farmer', '농장주'),
+    ('admin', '관리자'),
+)
+
 CATEGORY_MATCH_SCORE = 0.3
 # 대분류별 가중치 override(비우면 전부 CATEGORY_MATCH_SCORE 동일). 예: {"region": 0.4}
 CATEGORY_WEIGHTS = {}

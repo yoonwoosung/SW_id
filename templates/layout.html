@@ -100,6 +100,21 @@
                     <hr style="margin:4px 0; border-top:1px solid #f0f0f0;">
                     {% endif %}
 
+                    {# 공모전 심사용 역할 전환. 허용된 계정에만 보인다(common/context.py). #}
+                    {% if can_switch_role() %}
+                    <div class="role-switch">
+                        <span class="role-switch__now">현재: {{ current_role_label() }}</span>
+                        {% for code, label in ROLE_SWITCH_ROLES %}
+                            {% if code != session.get('role') %}
+                        <a href="{{ url_for('switch_role', role=code) }}">
+                            <i data-lucide="repeat" class="mr-1"></i> {{ label }}로 보기
+                        </a>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                    <hr style="margin:4px 0; border-top:1px solid #f0f0f0;">
+                    {% endif %}
+
                     <!-- 공통: 로그아웃 -->
                     <a href="{{ url_for('logout') }}"><i data-lucide="log-out" class="mr-1"></i> 로그아웃</a>
                 </div>

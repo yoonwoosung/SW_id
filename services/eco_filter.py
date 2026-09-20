@@ -14,8 +14,11 @@ from services.esg_service import compute_esg
 #   duration_hours)는 Experience 에 대응 데이터가 없어 판정 자체가 불가능하다.★
 # 이들까지 AND 에 넣으면 사용자가 '가족(아이)' 하나만 켜도 결과가 항상 0건이 된다.
 # 그래서 필터 대상에서 뺀다. 지금도 가점을 받지 못하므로 동작이 달라지지 않는다.
+# ★activity 를 뺀 이유★: activity_type 컬럼은 있으나 저장하는 코드가 없어
+# 모든 체험이 NULL 이다. 여기 두면 저장된 ?cond_activity=kayak 링크로 들어온
+# 사용자에게 결과가 항상 0건이 된다. 화면에서도 감췄다(search_categories 의 hidden).
 JUDGEABLE_CATEGORIES = frozenset({
-    'region', 'budget_range', 'facility', 'activity', 'pet_dog', 'transport',
+    'region', 'budget_range', 'facility', 'pet_dog', 'transport',
 })
 
 

@@ -98,6 +98,16 @@
                         <label class="easy-form-label-lg">추가 옵션</label>
                         
                         <!-- 주차장 체크 행 -->
+                        <div class="custom-option-card" onclick="toggleCheckbox('barrier_free')">
+                            <span class="option-title">♿ 무장애 접근 가능 (휠체어·유모차)</span>
+                            <input type="checkbox" class="custom-large-check" id="barrier_free" name="barrier_free"
+                                {% if form_data.get('barrier_free') or (item and item.barrier_free) %}checked{% endif %} onclick="event.stopPropagation()">
+                        </div>
+                        <div class="custom-option-card" onclick="toggleCheckbox('has_wifi')">
+                            <span class="option-title">📶 와이파이 제공</span>
+                            <input type="checkbox" class="custom-large-check" id="has_wifi" name="has_wifi"
+                                {% if form_data.get('has_wifi') or (item and item.has_wifi) %}checked{% endif %} onclick="event.stopPropagation()">
+                        </div>
                         <div class="custom-option-card" onclick="toggleCheckbox('has_parking')">
                             <span class="option-title">🅿️ 주차장 제공</span>
                             <input type="checkbox" class="custom-large-check" id="has_parking" name="has_parking" 

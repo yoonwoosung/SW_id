@@ -27,7 +27,7 @@ from services.recommend_reason import recommendation_reason
 from services.review_service import analyze_review_with_clova
 from services.trend_service import record_click
 from services import policy_service
-from common.search_categories import SEARCH_CATEGORIES, CATEGORY_CODES, CATEGORY_GROUPS
+from common.search_categories import CATEGORY_CODES, CATEGORY_GROUPS, visible_categories
 from common.response import success_response
 from external.kakao_map import get_coords_from_address
 from common.validators import allowed_file
@@ -417,6 +417,8 @@ def farmer_register(item_id=None):
     if request.method == 'POST':
         is_organic = 'is_organic' in request.form
         has_parking = 'has_parking' in request.form
+        barrier_free = 'barrier_free' in request.form
+        has_wifi = 'has_wifi' in request.form
         pet_allowed, pet_max_weight_kg, pet_error = experience_validator.parse_pet_fields(request.form)
         if pet_error:
             flash(pet_error, "danger")
@@ -511,6 +513,8 @@ def farmer_register(item_id=None):
             item.volunteer_needed = volunteer_needed
             item.volunteer_duties = request.form.get('volunteer_duties')
             item.has_parking = has_parking
+            item.barrier_free = barrier_free
+            item.has_wifi = has_wifi
             item.pet_allowed = pet_allowed
             item.pet_max_weight_kg = pet_max_weight_kg
             for _field, _value in surplus.items():
@@ -544,6 +548,8 @@ def farmer_register(item_id=None):
                 farmer_id=session['user_id'],
                 volunteer_needed=volunteer_needed,
                 has_parking=has_parking,
+                barrier_free=barrier_free,
+                has_wifi=has_wifi,
                 pet_allowed=pet_allowed,
                 pet_max_weight_kg=pet_max_weight_kg,
                 **surplus,
@@ -612,7 +618,8 @@ def get_experience_json(item_id):
 
 
 def search_categories():
-    return success_response({"categories": SEARCH_CATEGORIES, "groups": CATEGORY_GROUPS})
+    # 판정할 데이터가 없는 선택지는 빼고 준다(고르면 항상 0건이라 혼란만 준다).
+    return success_response({"categories": visible_categories(), "groups": CATEGORY_GROUPS})
 
 
 def register(app):

@@ -1856,6 +1856,10 @@
             albums.forEach(function (album) {
                 var color = COVER_COLORS[album.coverTheme] || '#4CAF50';
                 var dateStr = album.updatedAt ? album.updatedAt.slice(0, 10) : '';
+
+                // 💡 뱃지 추가 로직
+                var publicBadge = album.isPublic ? '<span style="color:#2e7d32; font-size:0.75rem; font-weight:700; margin-left:6px;">(전체공유됨)</span>' : '';
+
                 html += '<div style="border:1px solid #eef1ee;border-radius:14px;overflow:hidden;background:#fff;'
                     + 'box-shadow:0 2px 8px rgba(0,0,0,.06);">'
                     + '<div style="height:120px;background:' + color + ';display:flex;align-items:center;justify-content:center;'
@@ -1863,8 +1867,7 @@
                     + '<i class="fa-solid fa-book-open" style="font-size:2rem;"></i>'
                     + '<span>' + esc(album.title || '제목 없음') + '</span>'
                     + '</div>'
-                var publicBadge = album.isPublic ? '<span style="color:#2e7d32; font-size:0.75rem; font-weight:700; margin-left:6px;">(전체공유됨)</span>' : '';
-                + '<div style="padding:12px 14px;">'
+                    + '<div style="padding:12px 14px;">'
                     + '<div style="font-weight:800;font-size:.95rem;color:#253027;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'
                     + esc(album.title || '제목 없음') + publicBadge + '</div>'
                     + '<div style="font-size:.78rem;color:#9aa39c;margin-bottom:12px;">' + dateStr + ' 수정</div>'
@@ -4823,11 +4826,14 @@
         var title = albumPagesData[0].title || '우리가족 농촌 여행 기록';
         var saveBtn = document.getElementById('btnSaveAlbum');
         var origText = saveBtn.innerHTML;
+
         saveBtn.disabled = true;
         saveBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> 저장 중...';
+
         var payload = { title: title, shape_theme: shapeTheme, cover_theme: coverTheme, paper_theme: paperTheme, inner_page_count: innerPageCount, pages_data: albumPagesData, is_public: isPublic, category: category };
         var url = savedAlbumId ? '/api/albums/' + savedAlbumId : '/api/albums';
         var method = savedAlbumId ? 'PUT' : 'POST';
+
         fetch(url, { method: method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
             .then(function (res) { return res.json(); })
             .then(function (data) {
@@ -4836,22 +4842,44 @@
                 if (data.success) {
                     if (data.album_id) {
                         savedAlbumId = data.album_id;
-                        // localStorage 앨범에 서버 ID 저장
-                        var albums = getAllAlbums();
-                        var idx = albums.findIndex(function (a) { return a.id === currentAlbumId; });
-                        if (idx >= 0) { albums[idx].serverId = data.album_id; saveAllAlbums(albums); }
                     }
 
-                    // 👇 공개 여부에 따라 화면 이동을 다르게 처리합니다.
-                    if (isPublic) {
-                        alert("추억 앨범이 저장되고 추억 광장에 공개되었습니다.");
-                        window.location.href = '/community'; // 추억 공유 페이지로 이동
+                    // 💡 로컬 스토리지 앨범 정보 최신화 (공개 여부, 서버 ID 등)
+                    var albums = getAllAlbums();
+                    var idx = albums.findIndex(function (a) { return a.id === currentAlbumId; });
+                    var now = new Date().toISOString();
+
+                    var albumData = {
+                        id: currentAlbumId,
+                        serverId: savedAlbumId, // 서버 삭제/업데이트를 위한 ID 보관
+                        title: title,
+                        shapeTheme: shapeTheme,
+                        coverTheme: coverTheme,
+                        paperTheme: paperTheme,
+                        innerPageCount: innerPageCount,
+                        pagesData: albumPagesData,
+                        isPublic: isPublic, // 공개 뱃지 렌더링용 변수
+                        updatedAt: now
+                    };
+
+                    if (idx >= 0) {
+                        albumData.createdAt = albums[idx].createdAt;
+                        albums[idx] = albumData;
                     } else {
-                        alert("내 앨범 보관함에 안전하게 저장되었습니다.");
-                        closeFinishModal(); // 1. 앨범 완성 모달 닫기
-                        showAlbumList();    // 2. 기본 추억 앨범 창(목록)으로 이동
+                        albumData.createdAt = now;
+                        albums.unshift(albumData);
                     }
+                    saveAllAlbums(albums);
 
+                    // 화면 이동 처리
+                    if (isPublic) {
+                        alert("추억 앨범이 저장되고 추억 광장에 공개되었습니다! 🌍");
+                        window.location.href = '/community';
+                    } else {
+                        alert("내 앨범 보관함에 안전하게 저장되었습니다! 💾");
+                        closeFinishModal();
+                        showAlbumList();
+                    }
                 } else {
                     alert("저장 실패: " + (data.message || data.error));
                 }

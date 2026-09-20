@@ -118,7 +118,9 @@ def create_farm_api():
 def update_farm_api(farm_id):
     name = (request.form.get('name') or '').strip()
     address = (request.form.get('address') or '').strip()
-    status, farm = farm_service.update_farm(session['user_id'], farm_id, name, address, _save_certificate())
+    raw_detail = request.form.get('address_detail')
+    address_detail = raw_detail.strip() if raw_detail is not None else None
+    status, farm = farm_service.update_farm(session['user_id'], farm_id, name, address, _save_certificate(), address_detail=address_detail)
     if status == 'not_found':
         return error_response("FARM_NOT_FOUND", "농장을 찾을 수 없습니다.", 404)
     if status == 'forbidden':

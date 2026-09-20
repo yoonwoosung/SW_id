@@ -35,7 +35,7 @@ def create_farm(user_id, name, address, certificate_pdf=None):
     return farm
 
 
-def update_farm(user_id, farm_id, name, address, certificate_pdf=None):
+def update_farm(user_id, farm_id, name, address, certificate_pdf=None, address_detail=None):
     """농장 수정. 주소가 바뀌면 증빙 PDF 재제출 필수.
     반환 status: 'ok' | 'not_found' | 'forbidden' | 'cert_required'."""
     status, farm = get_owned_farm(user_id, farm_id)
@@ -51,6 +51,8 @@ def update_farm(user_id, farm_id, name, address, certificate_pdf=None):
     if address_changed:
         farm.address = address
         farm.lat, farm.lng = _geocode(address)
+    if address_detail is not None:
+        farm.address_detail = address_detail
     if certificate_pdf:
         farm.certificate_pdf = certificate_pdf
     db.session.commit()

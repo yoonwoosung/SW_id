@@ -309,7 +309,7 @@
                                   <i class="fa-solid fa-pen-to-square" style="font-size:.78rem;"></i> 상세 주소 변경
                                 </button>
                                 <span class="farm-addr-edit-area" data-farm-id="{{ farm.id }}" style="display:none;align-items:center;gap:6px;flex-wrap:wrap;margin-top:4px;">
-                                  <input type="text" class="farm-addr-input form-control form-control-sm" value="{{ farm.address }}" placeholder="새 주소" style="width:240px;">
+                                  <input type="text" class="farm-addr-input form-control form-control-sm" value="{{ farm.address_detail or '' }}" placeholder="상세 주소 (동·호수, 번지 등)" style="width:240px;">
                                   <button type="button" class="farm-addr-save fl-btn fl-btn-primary fl-btn-sm" data-farm-id="{{ farm.id }}">저장</button>
                                   <button type="button" class="farm-addr-cancel fl-btn fl-btn-outline fl-btn-sm" data-farm-id="{{ farm.id }}">취소</button>
                                 </span>
@@ -594,17 +594,17 @@ document.querySelectorAll('.farm-addr-edit-btn').forEach(function(btn) {
   });
 
   save.addEventListener('click', function() {
-    var addr = input.value.trim();
-    if (!addr) { input.focus(); return; }
+    var detail = input.value.trim();
     save.disabled = true;
     var fd = new FormData();
     fd.append('name', document.querySelector('.farm-name-view[data-farm-id="' + id + '"]').textContent.trim());
-    fd.append('address', addr);
+    fd.append('address_detail', detail);
     fetch('/api/farms/' + id, { method: 'PUT', body: fd })
       .then(function(r) { return r.json(); })
       .then(function(res) {
         if (res.success) {
-          view.innerHTML = addr;
+          var detailSpan = view.querySelector('span');
+          if (detailSpan) detailSpan.textContent = detail;
           area.style.display = 'none';
           view.style.display = '';
           btn.style.display = '';

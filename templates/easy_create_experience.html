@@ -229,7 +229,7 @@
 
                         <div id="recipe-fields-easy"
                             style="display: {% if form_data.get('has_recipe') or (item and item.has_recipe) %}block{% else %}none{% endif %}; margin-top:16px; padding:20px; background:#f4faec; border-radius:12px; border:1px solid #c8e6c9;">
-                            <p class="text-muted small mb-3">체험을 완료한 손님에게만 특별한 레시피가 제공됩니다. <br><b>모든 칸을 채울 필요 없이, 빈칸이나 사진 중 하나만 등록해도 됩니다!</b></p>
+                            <p class="text-muted small mb-3">체험을 완료한 손님에게만 특별한 레시피가 제공됩니다. <br><b>모든 칸을 채울 필요 없이, 글로 직접 적으시거나 손글씨 레시피 사진만 한 장 올리셔도 됩니다!</b></p>
                             
                             <div class="form-group">
                                 <label class="easy-form-label-lg" style="font-size:1rem;" for="recipe_name">요리 이름 (선택)</label>
@@ -253,7 +253,7 @@
                             </div>
 
                             <div class="form-group mb-0">
-                                <label class="easy-form-label-lg" style="font-size:1rem;" for="recipe_image">요리 완성 사진 또는 손글씨 사진 (선택)</label>
+                                <label class="easy-form-label-lg" style="font-size:1rem;" for="recipe_image">손글씨 레시피 사진 (선택)</label>
                                 <input type="file" class="form-control-file" id="recipe_image" name="recipe_image" accept="image/*">
                                 {% if item and item.recipe_image %}
                                 <small class="form-text text-muted" id="existing_recipe_img">현재 파일: {{ item.recipe_image }}</small>

@@ -174,7 +174,7 @@
                 </label>
                 <label class="list-filter-toggle {% if f_surplus=='1' %}active{% endif %}">
                     <input type="checkbox" name="surplus" value="1" {% if f_surplus=='1' %}checked{% endif %} onchange="this.form.submit()">
-                    과생산
+                    잉여 농산물
                 </label>
             </div>
         </form>
@@ -196,7 +196,7 @@
                         class="sort-pill {% if sort_by == 'reviews' %}active{% endif %}">리뷰 많은순</a>
                     {% if view != 'list' %}
                     <a href="{{ url_for('index', sort='surplus', region=request.args.get('region'), crop_query=request.args.get('crop_query'), date_filter=request.args.get('date_filter'), people_count=request.args.get('people_count'), eco=request.args.get('eco'), parking=request.args.get('parking'), pet=request.args.get('pet'), view=view) }}"
-                        class="sort-pill {% if sort_by == 'surplus' %}active{% endif %}">과생산</a>
+                        class="sort-pill {% if sort_by == 'surplus' %}active{% endif %}">잉여 농산물</a>
                     {% endif %}
                 </div>
             </div>
@@ -372,7 +372,7 @@
                 <!-- 과생산 수확 체험: 별도 섹션. 기존 추천 알고리즘은 건드리지 않는다 -->
                 <section class="section-block mb-0 section-card slider-card" id="surplus-sec" hidden>
                     <div class="section-header">
-                        <h2 class="section-title">🥕 과생산 농산물 수확 체험</h2>
+                        <h2 class="section-title">🥕 잉여 농산물 수확 체험</h2>
                         <span class="more-link" style="cursor:default;">직접 수확해 가는 만큼 저렴합니다</span>
                     </div>
                     <div id="surplus-row" class="fl-scroll-x" style="display:flex;gap:12px;"></div>

@@ -57,8 +57,8 @@
                         <input class="form-check-input" type="checkbox" name="is_surplus" value="true" id="is_surplus"
                                {% if item and item.is_surplus %}checked{% endif %}
                                onchange="document.getElementById('surplus-box').hidden = !this.checked; flUpdateSurplus();">
-                        <label class="form-check-label" for="is_surplus"><strong>과생산 농산물 수확 체험</strong></label>
-                        <small class="form-text text-muted">과잉생산된 농산물을 방문객이 직접 수확해 가는 체험입니다.</small>
+                        <label class="form-check-label" for="is_surplus"><strong>잉여 농산물 수확 체험</strong></label>
+                        <small class="form-text text-muted">잉여 농산물을 방문객이 직접 수확해 가는 체험입니다.</small>
                     </div>
 
                     <div id="surplus-box" class="mt-3 p-3 border rounded w-100"
@@ -144,7 +144,7 @@
                             <input class="form-check-input" type="checkbox" name="surplus_terms_agreed" value="true"
                                    id="surplus_terms_agreed" {% if item and item.surplus_terms_agreed %}checked{% endif %}>
                             <label class="form-check-label small" for="surplus_terms_agreed">
-                                총 과생산량에 따라 <strong>자동 산출된 할인율</strong>만큼 저렴하게
+                                총 잉여 농산물량에 따라 <strong>자동 산출된 할인율</strong>만큼 저렴하게
                                 판매하는 것에 동의합니다. (필수)
                             </label>
                         </div>

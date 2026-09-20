@@ -133,7 +133,7 @@
 
                         <!-- 과생산 체크 행 -->
                         <div class="custom-option-card" onclick="toggleCheckbox('is_surplus')">
-                            <span class="option-title">🥕 과생산 농산물 수확 체험</span>
+                            <span class="option-title">🥕 잉여 농산물 수확 체험</span>
                             <input type="checkbox" class="custom-large-check" id="is_surplus" name="is_surplus"
                                 {% if form_data.get('is_surplus') or (item and item.is_surplus) %}checked{% endif %}
                                 onclick="event.stopPropagation()"

@@ -2,6 +2,7 @@
 # 장소 선정·순서는 여기서 규칙으로 정한다(LLM이 장소를 지어내지 않게 함).
 from common.constants import COURSE_SLOTS, COURSE_TRANSPORT_ESTIMATE, COURSE_MEAL_ESTIMATE
 from services.distance import haversine  # 거리 계산은 기존 함수 재사용
+from services import course_estimate
 
 
 def estimate_course_cost_per_person(experience):
@@ -46,7 +47,7 @@ def build_course_summary(experience, estimate=None):
     return summary
 
 
-def build_course(experience, places_by_type, scorer=None):
+def build_course(experience, places_by_type, scorer=None, budget_left=None):
     """체험 좌표를 기준으로 시간순 코스 항목 리스트를 만든다.
 
     places_by_type: {슬롯 type: [place, ...]} — 각 place는 name·lat·lng를 가진다.
@@ -57,6 +58,10 @@ def build_course(experience, places_by_type, scorer=None):
       ★주면 슬롯 안에서 '점수 높은 순 → 가까운 순'으로 고른다.★
       ★없으면(조건 미선택·판정 불가) 예전 그대로 거리순이다.★
       슬롯 구조(09:00 체험 → 12:30 맛집 → 15:00 관광 → 17:00 카페)는 바뀌지 않는다.
+
+    budget_left: 장소에 쓸 수 있는 남은 예산(원, 1인). 주면 예산을 넘는 장소를
+      건너뛰고 싼 쪽을 고른다. ★예산 때문에 슬롯이 비지 않게★, 후보가 전부
+      예산을 넘으면 그중 가장 싼 것을 넣고 초과를 기록한다(호출부가 안내한다).
     """
     origin_lat, origin_lng = experience.lat, experience.lng
     used_names = set()
@@ -70,9 +75,12 @@ def build_course(experience, places_by_type, scorer=None):
             continue
         candidates = _sorted_by_distance(origin_lat, origin_lng, places_by_type.get(slot["type"], []))
         candidates = _apply_scorer(candidates, scorer)
-        picked = _first_unused(candidates, used_names)
+        picked = _pick(candidates, used_names, budget_left)
         if picked is None:
             continue
+        if budget_left is not None:
+            budget_left = max(0, budget_left - course_estimate.place_price(
+                dict(picked, type=slot["type"])))
         used_names.add(picked["name"])
         item = {
             "time": slot["time"],
@@ -83,6 +91,8 @@ def build_course(experience, places_by_type, scorer=None):
             "distance_km": picked["distance_km"],
             "lat": _to_float(picked.get("lat")),
             "lng": _to_float(picked.get("lng")),
+            # 장소 단가·조건 판정에 쓴다(관광공사 cat3 코드). 화면에는 안 보인다.
+            "category": picked.get("category"),
             # 출처를 화면까지 넘긴다. 충남 데이터면 '충남도 제공'을 표시한다.
             "source": picked.get("source"),
         }
@@ -131,6 +141,24 @@ def _first_unused(candidates, used_names):
         if candidate["name"] not in used_names:
             return candidate
     return None
+
+
+def _pick(candidates, used_names, budget_left):
+    """슬롯에 넣을 장소 하나. 예산이 주어지면 그 안에 드는 것을 먼저 고른다.
+
+    ★예산 때문에 슬롯이 비면 안 된다.★ 전부 예산을 넘으면 그중 가장 싼 것을
+    넣는다. 빈 코스보다 '예산을 조금 넘는 코스 + 안내'가 낫다.
+    """
+    unused = [c for c in candidates if c["name"] not in used_names]
+    if not unused:
+        return None
+    if budget_left is None:
+        return unused[0]
+
+    affordable = [c for c in unused if course_estimate.place_price(c) <= budget_left]
+    if affordable:
+        return affordable[0]          # 점수·거리 순서는 이미 정렬돼 있다
+    return min(unused, key=course_estimate.place_price)
 
 
 def _to_float(value):

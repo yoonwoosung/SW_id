@@ -5,7 +5,8 @@ from models import Experience
 from common.response import success_response, error_response
 from common.constants import (COURSE_SEARCH_RADIUS_M, MAX_SEARCH_RADIUS_M, COURSE_SLOTS,
                               TOUR_CSV_RADIUS_M)
-from common.search_categories import ALL_CODES, CATEGORY_OF_CODE, LABEL_BY_CODE
+from common.search_categories import (ALL_CODES, BUDGET_RANGES, CATEGORY_OF_CODE,
+                                      LABEL_BY_CODE)
 from services.eco_filter import JUDGEABLE_CATEGORIES
 from external import tour_api
 from external import chungnam_api
@@ -273,7 +274,30 @@ _IGNORED_REASON = {
 _COURSE_ONLY = {"activity", "experience_type", "mood", "season"}
 
 
-def _condition_report(codes, api_sets, items):
+def _budget_for_places(codes, experience):
+    """고른 예산대에서 ★장소에 쓸 수 있는 금액★(1인). 안 골랐으면 None.
+
+    예산대는 코스 총비용 기준이므로 체험비와 교통비 추정을 먼저 뺀다.
+    여러 구간을 골랐으면 가장 넉넉한 쪽을 쓴다(대분류 안은 OR 이다).
+    빼고 나면 음수가 될 수 있다 — 그때는 0 으로 두고, 그래도 가장 싼 장소는
+    넣는다(빈 코스보다 낫다).
+    """
+    ranges = [BUDGET_RANGES[c] for c in (codes or []) if c in BUDGET_RANGES]
+    if not ranges:
+        return None
+    # high 가 None(상한 없음)이면 사실상 제한이 없다.
+    if any(high is None for _low, high in ranges):
+        return None
+    ceiling = max(high for _low, high in ranges)
+
+    spent = int(getattr(experience, "cost", 0) or 0)
+    # 교통비는 코스를 만들기 전이라 정확히 모른다. 대중교통 3구간으로 잡는다
+    # (슬롯이 4개라 이동이 3번이다). 실제 값은 코스 완성 뒤 다시 계산된다.
+    spent += course_estimate.travel_cost(0, 3, course_estimate.COURSE_DEFAULT_TRANSPORT)
+    return max(0, ceiling - spent)
+
+
+def _condition_report(codes, api_sets, items, budget_over=False):
     """반영된 조건·반영되지 않은 조건·폴백 여부를 화면에 설명할 형태로 만든다."""
     weights = place_score.applied_weights(codes, api_sets)
 
@@ -285,9 +309,18 @@ def _condition_report(codes, api_sets, items):
         "course_only": CATEGORY_OF_CODE.get(code) in _COURSE_ONLY,
     } for code in codes if code in weights]
 
+    # ★예산대는 점수가 아니라 '필터'다.★ 가중치를 주면 아무것도 맞히지 못하면서
+    # 다른 조건의 몫만 줄인다. 대신 장소 단가로 후보를 걸러 코스를 바꾼다.
+    # 반영은 되므로 목록에는 넣되 비율 대신 역할을 적는다.
+    for code in codes:
+        if code in BUDGET_RANGES:
+            applied.append({"code": code, "label": LABEL_BY_CODE.get(code, code),
+                            "percent": None, "course_only": False,
+                            "role": "예산 안에 드는 장소를 고릅니다"})
+
     ignored = []
     for code in codes:
-        if code in weights:
+        if code in weights or code in BUDGET_RANGES:
             continue
         category = CATEGORY_OF_CODE.get(code)
         reason = _IGNORED_REASON.get(category)
@@ -307,6 +340,8 @@ def _condition_report(codes, api_sets, items):
         "applied": applied,
         "ignored": ignored,
         "fell_back": bool(applied) and not matched_any,
+        # 예산 안에 드는 장소가 없어 넘겼을 때 화면이 안내한다.
+        "budget_over": bool(budget_over),
     }
 
 
@@ -344,9 +379,16 @@ def experience_course(item_id):
         facility_names = {}
     scorer, _last_api_sets = _build_scorer(
         item, codes, activity_names, pet_names, facility_names)
-    items = course_builder.build_course(item, places_by_type, scorer=scorer)
+    budget_left = _budget_for_places(codes, item)
+    items = course_builder.build_course(item, places_by_type, scorer=scorer,
+                                        budget_left=budget_left)
+    budget_over = False
+    if budget_left is not None:
+        spent = sum(course_estimate.place_price(i) for i in items)
+        budget_over = spent > budget_left
+
     try:
-        conditions = _condition_report(codes, _last_api_sets, items)
+        conditions = _condition_report(codes, _last_api_sets, items, budget_over)
     except Exception:
         conditions = None      # 설명 생성 실패가 코스를 막지 않는다
     # 시간·비용 추정이 실패해도 코스는 그대로 나와야 한다.

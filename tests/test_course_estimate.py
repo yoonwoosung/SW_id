@@ -139,3 +139,48 @@ def test_transport_changes_time_not_stay():
 def test_empty_items_does_not_crash():
     result = estimate([], 0, 'car')
     assert result['total_minutes'] == 0 and result['legs'] == []
+
+
+# ---- 장소 종류별 단가 (2026-09-20) ----
+
+def test_free_places_cost_nothing():
+    """★공원·계곡·전망대는 0원이다.★
+
+    예전에는 슬롯 고정값이라 공원이든 유원지든 똑같이 5,000원이었다.
+    """
+    from services.course_estimate import place_price
+    assert place_price({'category': 'A01010900', 'type': 'attraction'}) == 0   # 계곡
+    assert place_price({'category': 'A02050600', 'type': 'attraction'}) == 0   # 전망대
+
+
+def test_price_scales_with_place_kind():
+    from services.course_estimate import place_price
+    nature = place_price({'category': 'A0101', 'type': 'attraction'})
+    history = place_price({'category': 'A0201', 'type': 'attraction'})
+    hands_on = place_price({'category': 'A02030100', 'type': 'attraction'})
+    assert nature < history < hands_on
+
+
+def test_cafe_slot_overrides_category():
+    """★관광공사에 카페 분류가 없어 카페도 음식점(A05)으로 온다.★
+
+    cat 으로만 매기면 카페가 식사값(12,000원)이 된다.
+    """
+    from services.course_estimate import place_price
+    from common.constants import COURSE_PRICE_SLOT_FIRST
+    assert place_price({'category': 'A05020100', 'type': 'cafe'}) == COURSE_PRICE_SLOT_FIRST['cafe']
+    assert place_price({'category': 'A05020100', 'type': 'restaurant'}) == 12000
+
+
+def test_experience_priced_separately():
+    """체험비는 Experience.cost 로 따로 더한다(중복 계산 방지)."""
+    from services.course_estimate import place_price
+    assert place_price({'category': 'A01', 'type': 'experience'}) == 0
+
+
+def test_unknown_category_falls_back():
+    """CSV 는 '관광지' 한글, 카카오는 자체 분류라 cat 코드가 없다."""
+    from services.course_estimate import place_price
+    from common.constants import COURSE_PRICE_BY_SLOT, COURSE_PRICE_DEFAULT
+    assert place_price({'category': '관광지', 'type': 'attraction'}) == COURSE_PRICE_BY_SLOT['attraction']
+    assert place_price({'category': None, 'type': None}) == COURSE_PRICE_DEFAULT

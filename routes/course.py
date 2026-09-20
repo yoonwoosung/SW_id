@@ -13,6 +13,7 @@ from external import chungnam_api
 from external import tour_csv
 from external import kakao_place
 from common.constants import (COURSE_ACTIVITY_KAKAO, COURSE_COMPANION_KAKAO,
+                              COURSE_COMPANION_CAFE_HINT,
                               COURSE_DURATION_SLOTS,
                               COURSE_SCHEDULE_RADIUS_M, COURSE_ROWS_PER_RADIUS,
                               COURSE_MAX_ROWS, NEARBY_RESULT_LIMIT,
@@ -203,15 +204,18 @@ def _activity_places(experience, codes):
 
 
 def _companion_places(experience, codes):
-    """동반구성에 맞는 장소를 찾는다. 반환: (장소 리스트, {코드: 이름집합})
+    """동반구성에 맞는 장소를 찾는다. 반환: ({슬롯: 장소 리스트}, {코드: 이름집합})
 
     ★호출을 줄인다.★ 유형당 키워드가 2개이고, 유형 사이에 겹치는 검색어
     (공원·카페)는 한 번만 부른다. 7개를 다 골라도 검색어는 7개뿐이다.
     병렬로 돌려 체감 시간도 줄인다(실측 7종 0.14초).
 
-    결과는 대부분 카페·공원·문화재라 ★관광 슬롯★ 후보로 더한다.
-    카페 키워드로 나온 곳은 맛집·카페 슬롯에도 맞지만, 슬롯을 늘리면
-    관광 자리가 카페로 채워질 수 있어 관광 슬롯만 보강한다.
+    ★카페로 나온 곳은 카페 슬롯으로 보낸다.★ 예전에는 전부 관광 슬롯에
+    넣었다 — 카페 슬롯이 아무 음식점이나 받던 때라 관광 자리가 카페로
+    채워질까 봐 막아 둔 것이었다. 이제 카페 슬롯이 카페만 받으므로
+    (_cafes_only) 제자리로 보낼 수 있고, 그래야 동반유형이 17:00 을 바꾼다.
+
+    나머지(공원·문화재·전망대·박물관 등)는 그대로 관광 슬롯이다.
     """
     wanted = [code for code in (codes or []) if code in COURSE_COMPANION_KAKAO]
     if not wanted:
@@ -234,14 +238,24 @@ def _companion_places(experience, codes):
         places += matched
 
     # 같은 장소가 여러 유형에 걸릴 수 있다(카페는 혼자·친구 모두). 한 번만 넣는다.
-    seen, unique = set(), []
+    seen, by_slot = set(), {"attraction": [], "cafe": []}
     for place in places:
         key = "".join(str(place.get("name") or "").split())
-        if key and key not in seen:
-            seen.add(key)
-            unique.append(dict(place, content_type_id=TOUR_CONTENT_TYPE_ATTRACTION,
-                               source=KAKAO_SOURCE))
-    return unique, names
+        if not key or key in seen:
+            continue
+        seen.add(key)
+        is_cafe = COURSE_COMPANION_CAFE_HINT in (place.get("category") or "")
+        extra = {"source": KAKAO_SOURCE}
+        if is_cafe:
+            # 카페 슬롯이 분류 코드로 후보를 거르므로(_cafes_only) 카카오 결과에도
+            # 같은 코드를 달아 준다. 안 달면 제 슬롯에 넣자마자 다시 걸러진다.
+            extra.update(content_type_id=TOUR_CONTENT_TYPE_RESTAURANT,
+                         category=TOUR_CAT_CAFE)
+        else:
+            # 관광 슬롯으로 가는 곳은 카카오 분류 문자열을 그대로 둔다(정보 보존).
+            extra.update(content_type_id=TOUR_CONTENT_TYPE_ATTRACTION)
+        by_slot["cafe" if is_cafe else "attraction"].append(dict(place, **extra))
+    return by_slot, names
 
 
 def _pet_places(experience, codes):
@@ -518,13 +532,15 @@ def experience_course(item_id):
                 places_by_type.get("attraction") or [], activity_places)
         except Exception:
             pass      # 보강 실패는 코스 생성을 막지 않는다
-    # 동반구성 장소(카페·공원·문화재 등)는 관광 슬롯에 더한다.
-    if companion_places:
+    # 동반구성 장소는 종류에 맞는 슬롯에 더한다(카페는 카페, 나머지는 관광).
+    for slot, found in (companion_places or {}).items():
+        if not found:
+            continue
         try:
-            places_by_type["attraction"] = place_merge.merge(
-                places_by_type.get("attraction") or [], companion_places)
+            places_by_type[slot] = place_merge.merge(
+                places_by_type.get(slot) or [], found)
         except Exception:
-            pass
+            pass      # 보강 실패는 코스 생성을 막지 않는다
     # 반려견 동반 장소는 대부분 음식점·카페라 그 두 슬롯에 더한다.
     if pet_places:
         for slot in ("restaurant", "cafe"):

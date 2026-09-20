@@ -372,3 +372,47 @@ def test_cafe_slot_handles_empty_and_missing_category():
     assert rc._cafes_only(None) == []
     no_cat = [{'name': '카카오카페', 'lat': 37.3, 'lng': 126.8}]
     assert rc._cafes_only(no_cat) == no_cat      # 분류가 없으면 거르지 않는다
+
+
+# ---- 동반구성 카페를 카페 슬롯으로 (2026-09-20) ----
+
+class _Exp:
+    lat, lng = 37.3261, 126.8
+
+
+def test_companion_cafes_go_to_the_cafe_slot(monkeypatch):
+    """★동반유형이 17:00 을 바꾸게 한다.★
+
+    예전에는 카페까지 전부 관광 슬롯에 넣었다 — 카페 슬롯이 아무 음식점이나
+    받던 때라 관광 자리가 카페로 채워질까 봐 막아 둔 것이었다.
+    """
+    import routes.course as rc
+    from common.constants import TOUR_CAT_CAFE, TOUR_CONTENT_TYPE_RESTAURANT
+
+    def fake_search_many(queries, lat, lng, radius):
+        return {
+            '카페': [{'name': '데미안', 'category': '음식점 > 카페 > 커피전문점',
+                     'lat': 37.33, 'lng': 126.81}],
+            '박물관': [{'name': '안산시립박물관', 'category': '문화,예술 > 박물관',
+                       'lat': 37.34, 'lng': 126.82}],
+        }
+    monkeypatch.setattr(rc.kakao_place, 'search_many', fake_search_many)
+
+    by_slot, names = rc._companion_places(_Exp(), ['solo'])
+    assert [p['name'] for p in by_slot['cafe']] == ['데미안']
+    assert [p['name'] for p in by_slot['attraction']] == ['안산시립박물관']
+    # 카페 슬롯이 분류 코드로 거르므로 같은 코드를 달아 줘야 살아남는다.
+    assert by_slot['cafe'][0]['category'] == TOUR_CAT_CAFE
+    assert by_slot['cafe'][0]['content_type_id'] == TOUR_CONTENT_TYPE_RESTAURANT
+    assert rc._cafes_only(by_slot['cafe']) == by_slot['cafe']
+    # 관광 슬롯으로 가는 곳은 카카오 분류를 그대로 둔다.
+    assert by_slot['attraction'][0]['category'] == '문화,예술 > 박물관'
+    assert '데미안' in names['solo']
+
+
+def test_companion_places_empty_when_not_selected():
+    """★기존 동작 유지.★ 안 고르면 카카오를 부르지 않는다."""
+    import routes.course as rc
+    by_slot, names = rc._companion_places(_Exp(), ['healing'])
+    assert by_slot == [] or by_slot == {} or not any(by_slot.values())
+    assert names == {}

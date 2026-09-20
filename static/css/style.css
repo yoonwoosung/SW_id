@@ -4492,21 +4492,30 @@ header.header-volunteer { border-bottom-color: #FF9800; }
 
 .elem-resize-handle {
     position: absolute;
-    bottom: -10px;
-    right: -10px;
-    width: 22px;
-    height: 22px;
+    width: 18px;
+    height: 18px;
     background: #2196F3;
     color: #ffffff;
     border: none;
     border-radius: 50%;
-    font-size: 10px;
-    cursor: se-resize;
+    font-size: 9px;
     display: none;
     align-items: center;
     justify-content: center;
     z-index: 20;
     box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+.elem-resize-handle.dir-s {
+    bottom: -9px; left: 50%; transform: translateX(-50%); cursor: s-resize;
+}
+.elem-resize-handle.dir-n {
+    top: -9px; left: 50%; transform: translateX(-50%); cursor: n-resize;
+}
+.elem-resize-handle.dir-e {
+    right: -9px; top: 50%; transform: translateY(-50%); cursor: e-resize;
+}
+.elem-resize-handle.dir-w {
+    left: -9px; top: 50%; transform: translateY(-50%); cursor: w-resize;
 }
 
 .free-drag-element:hover .elem-resize-handle {

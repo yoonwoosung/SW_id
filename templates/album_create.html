@@ -1974,7 +1974,26 @@
         var album = albums.find(function (a) { return a.id === id; });
         if (!album) { alert('앨범을 찾을 수 없어요.'); return; }
 
-        currentAlbumId = id;
+        // 서버에만 있고 로컬에 pagesData 없는 경우(로그아웃 후 재로그인) → 서버에서 전체 데이터 로드
+        if (!album.pagesData && album.serverId) {
+            fetch('/api/albums/' + album.serverId)
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    if (data.success && data.album) {
+                        album.pagesData = data.album.pages_data || [];
+                        var idx = albums.findIndex(function(a) { return a.id === id; });
+                        if (idx >= 0) { albums[idx].pagesData = album.pagesData; saveAllAlbums(albums); }
+                        _doLoadAlbum(album);
+                    } else { alert('앨범 데이터를 불러올 수 없어요.'); }
+                })
+                .catch(function() { alert('서버 연결 오류가 발생했습니다.'); });
+            return;
+        }
+        _doLoadAlbum(album);
+    }
+
+    function _doLoadAlbum(album) {
+        currentAlbumId = album.id;
         shapeTheme = album.shapeTheme || 'shape-portrait';
         coverTheme = album.coverTheme || 'cover-green';
         paperTheme = album.paperTheme || 'paper-white';
@@ -1982,14 +2001,20 @@
         currentSpreadIndex = 0;
         albumPagesData = album.pagesData || Array.from({ length: 12 }, function () { return { title: '', elements: [], template: 'free' }; });
 
+        // coverPhotoLayout 복원 (저장된 coverLayout 값이 없으면 'none' 기본값)
+        coverPhotoLayout = (albumPagesData[0] && albumPagesData[0].coverLayout) || 'none';
+
         // 사이드바 셀렉트 동기화
         var s = document.getElementById('shapeThemeSelect');
         var c = document.getElementById('coverThemeSelect');
         var p = document.getElementById('paperThemeSelect');
+        var cl = document.getElementById('coverLayoutSelect');
         if (s) s.value = shapeTheme;
         if (c) c.value = coverTheme;
         if (p) p.value = paperTheme;
+        if (cl) cl.value = coverPhotoLayout;
 
+        applyCoverLayoutDims();
         updateTitleDisplay();
         startAlbumEditor();
     }
@@ -2153,17 +2178,42 @@
         initShapeContextBar();
         if (window.lucide) lucide.createIcons();
         window.addEventListener('resize', renderBookView);
-        // 서버 앨범 목록과 동기화: 다른 계정의 앨범이 같은 PC의 localStorage에 남아있을 경우 제거
+        // 서버 앨범 목록과 동기화: 타 계정 앨범 제거 + 로그아웃 후 사라진 앨범 복원
         fetch('/api/albums')
             .then(function(r) { return r.json(); })
             .then(function(data) {
                 if (!data.success) return;
-                var serverIds = new Set(data.albums.map(function(a) { return String(a.id); }));
+                var serverAlbums = data.albums;
+                var serverIds = new Set(serverAlbums.map(function(a) { return String(a.id); }));
                 var local = getAllAlbums();
+
+                // 1. 다른 계정 앨범 제거 (serverId가 있는데 서버에 없는 경우)
                 var filtered = local.filter(function(a) {
                     return !a.serverId || serverIds.has(String(a.serverId));
                 });
-                if (filtered.length !== local.length) {
+
+                // 2. 서버에 있지만 로컬에 없는 앨범 스텁 추가 (로그아웃 후 재로그인 복원)
+                serverAlbums.forEach(function(sa) {
+                    var exists = filtered.find(function(a) { return String(a.serverId) === String(sa.id); });
+                    if (!exists) {
+                        filtered.unshift({
+                            id: 'sv_' + sa.id,
+                            serverId: sa.id,
+                            title: sa.title,
+                            shapeTheme: sa.shape_theme || 'shape-portrait',
+                            coverTheme: sa.cover_theme || 'cover-green',
+                            paperTheme: sa.paper_theme || 'paper-white',
+                            innerPageCount: sa.inner_page_count || 2,
+                            pagesData: null,  // 편집 시 서버에서 로드
+                            isPublic: sa.is_public || false,
+                            createdAt: sa.created_at,
+                            updatedAt: sa.updated_at
+                        });
+                    }
+                });
+
+                var changed = filtered.length !== local.length;
+                if (changed) {
                     saveAllAlbums(filtered);
                     renderAlbumList();
                 }
@@ -3124,7 +3174,7 @@
         renderSingleElement(canvas, elemData, targetPageIdx);
     }
 
-    function startResizeElement(e, elemId, pageIdx) {
+    function startResizeElement(e, elemId, pageIdx, dir) {
         e.preventDefault();
         e.stopPropagation();
 
@@ -3135,19 +3185,35 @@
         const startY = e.clientY;
         const startWidth = wrapper.offsetWidth;
         const startHeight = wrapper.offsetHeight;
+        const startTop = wrapper.offsetTop;
+        const startLeft = wrapper.offsetLeft;
 
         const targetData = albumPagesData[pageIdx].elements.find(el => el.id === elemId);
 
         function doResize(moveEvent) {
-            const newWidth = Math.max(60, startWidth + (moveEvent.clientX - startX));
-            const newHeight = Math.max(40, startHeight + (moveEvent.clientY - startY));
+            const dx = moveEvent.clientX - startX;
+            const dy = moveEvent.clientY - startY;
 
-            wrapper.style.width = newWidth + 'px';
-            wrapper.style.height = newHeight + 'px';
-
-            if (targetData) {
-                targetData.width = newWidth;
-                targetData.height = newHeight;
+            if (dir === 's') {
+                const h = Math.max(40, startHeight + dy);
+                wrapper.style.height = h + 'px';
+                if (targetData) targetData.height = h;
+            } else if (dir === 'n') {
+                const h = Math.max(40, startHeight - dy);
+                const t = startTop + (startHeight - h);
+                wrapper.style.height = h + 'px';
+                wrapper.style.top = t + 'px';
+                if (targetData) { targetData.height = h; targetData.top = t; }
+            } else if (dir === 'e') {
+                const w = Math.max(60, startWidth + dx);
+                wrapper.style.width = w + 'px';
+                if (targetData) targetData.width = w;
+            } else if (dir === 'w') {
+                const w = Math.max(60, startWidth - dx);
+                const l = startLeft + (startWidth - w);
+                wrapper.style.width = w + 'px';
+                wrapper.style.left = l + 'px';
+                if (targetData) { targetData.width = w; targetData.left = l; }
             }
         }
 
@@ -3193,9 +3259,10 @@
                              ondrop="handleSlotDrop(event, '${data.id}', ${pageIdx})">
                         <button type="button" class="slot-clear-btn" onclick="clearSlotImage('${data.id}', ${pageIdx})" title="사진 삭제">&times;</button>
                     </div>
-                    <button type="button" class="elem-resize-handle" onmousedown="startResizeElement(event, '${data.id}', ${pageIdx})" title="크기 조절">
-                        <i class="fa-solid fa-up-right-and-down-left-from-center"></i>
-                    </button>
+                    <button type="button" class="elem-resize-handle dir-n" onmousedown="startResizeElement(event,'${data.id}',${pageIdx},'n')" title="위 크기 조절"><i class="fa-solid fa-chevron-up"></i></button>
+                    <button type="button" class="elem-resize-handle dir-s" onmousedown="startResizeElement(event,'${data.id}',${pageIdx},'s')" title="아래 크기 조절"><i class="fa-solid fa-chevron-down"></i></button>
+                    <button type="button" class="elem-resize-handle dir-e" onmousedown="startResizeElement(event,'${data.id}',${pageIdx},'e')" title="오른쪽 크기 조절"><i class="fa-solid fa-chevron-right"></i></button>
+                    <button type="button" class="elem-resize-handle dir-w" onmousedown="startResizeElement(event,'${data.id}',${pageIdx},'w')" title="왼쪽 크기 조절"><i class="fa-solid fa-chevron-left"></i></button>
                 `;
             } else {
                 wrapper.innerHTML = `
@@ -3206,9 +3273,10 @@
                         <i class="fa-solid fa-camera mb-1" style="pointer-events:none;"></i>
                         <span style="pointer-events:none;">${data.label || '사진 추가'}</span>
                     </div>
-                    <button type="button" class="elem-resize-handle" onmousedown="startResizeElement(event, '${data.id}', ${pageIdx})" title="크기 조절">
-                        <i class="fa-solid fa-up-right-and-down-left-from-center"></i>
-                    </button>
+                    <button type="button" class="elem-resize-handle dir-n" onmousedown="startResizeElement(event,'${data.id}',${pageIdx},'n')" title="위 크기 조절"><i class="fa-solid fa-chevron-up"></i></button>
+                    <button type="button" class="elem-resize-handle dir-s" onmousedown="startResizeElement(event,'${data.id}',${pageIdx},'s')" title="아래 크기 조절"><i class="fa-solid fa-chevron-down"></i></button>
+                    <button type="button" class="elem-resize-handle dir-e" onmousedown="startResizeElement(event,'${data.id}',${pageIdx},'e')" title="오른쪽 크기 조절"><i class="fa-solid fa-chevron-right"></i></button>
+                    <button type="button" class="elem-resize-handle dir-w" onmousedown="startResizeElement(event,'${data.id}',${pageIdx},'w')" title="왼쪽 크기 조절"><i class="fa-solid fa-chevron-left"></i></button>
                 `;
             }
             makeDraggable(wrapper, pageIdx, data.id);
@@ -3224,9 +3292,10 @@
                     <i class="fa-solid fa-rotate-right"></i>
                 </button>
                 <img src="${data.src}" class="w-100 h-100 rounded shadow-sm" style="pointer-events:none; object-fit:cover; ${imgClipStyle}">
-                <button type="button" class="elem-resize-handle" onmousedown="startResizeElement(event, '${data.id}', ${pageIdx})" title="크기 조절">
-                    <i class="fa-solid fa-up-right-and-down-left-from-center"></i>
-                </button>
+                <button type="button" class="elem-resize-handle dir-n" onmousedown="startResizeElement(event,'${data.id}',${pageIdx},'n')" title="위 크기 조절"><i class="fa-solid fa-chevron-up"></i></button>
+                <button type="button" class="elem-resize-handle dir-s" onmousedown="startResizeElement(event,'${data.id}',${pageIdx},'s')" title="아래 크기 조절"><i class="fa-solid fa-chevron-down"></i></button>
+                <button type="button" class="elem-resize-handle dir-e" onmousedown="startResizeElement(event,'${data.id}',${pageIdx},'e')" title="오른쪽 크기 조절"><i class="fa-solid fa-chevron-right"></i></button>
+                <button type="button" class="elem-resize-handle dir-w" onmousedown="startResizeElement(event,'${data.id}',${pageIdx},'w')" title="왼쪽 크기 조절"><i class="fa-solid fa-chevron-left"></i></button>
                 <button type="button" class="elem-delete-btn" onclick="deleteElement('${data.id}', ${pageIdx})">&times;</button>
             `;
             makeDraggable(wrapper, pageIdx, data.id);
@@ -3246,9 +3315,10 @@
                      style="${txtInlineStyle}"
                      ondblclick="enableTextEdit(this)"
                      onblur="disableTextEdit(this, '${data.id}', ${pageIdx})">${displayText}</div>
-                <button type="button" class="elem-resize-handle" onmousedown="startResizeElement(event, '${data.id}', ${pageIdx})" title="크기 조절">
-                    <i class="fa-solid fa-up-right-and-down-left-from-center"></i>
-                </button>
+                <button type="button" class="elem-resize-handle dir-n" onmousedown="startResizeElement(event,'${data.id}',${pageIdx},'n')" title="위 크기 조절"><i class="fa-solid fa-chevron-up"></i></button>
+                <button type="button" class="elem-resize-handle dir-s" onmousedown="startResizeElement(event,'${data.id}',${pageIdx},'s')" title="아래 크기 조절"><i class="fa-solid fa-chevron-down"></i></button>
+                <button type="button" class="elem-resize-handle dir-e" onmousedown="startResizeElement(event,'${data.id}',${pageIdx},'e')" title="오른쪽 크기 조절"><i class="fa-solid fa-chevron-right"></i></button>
+                <button type="button" class="elem-resize-handle dir-w" onmousedown="startResizeElement(event,'${data.id}',${pageIdx},'w')" title="왼쪽 크기 조절"><i class="fa-solid fa-chevron-left"></i></button>
                 <button type="button" class="elem-delete-btn" onclick="deleteElement('${data.id}', ${pageIdx})">&times;</button>
             `;
             makeDraggable(wrapper, pageIdx, data.id);

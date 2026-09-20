@@ -43,9 +43,8 @@ def update_farm(user_id, farm_id, name, address, certificate_pdf=None):
         return status, None
 
     address_changed = bool(address) and address != farm.address
-    # TODO: 주소 변경 시 증빙 재제출 의무화 — 현재 임시 해제 중, 작업 후 복구 필요
-    # if address_changed and not certificate_pdf:
-    #     return 'cert_required', None
+    if address_changed and not certificate_pdf:
+        return 'cert_required', None
 
     if name:
         farm.name = name

@@ -10,7 +10,7 @@ from services import tour_cache
 TOUR_API_URL = "https://apis.data.go.kr/B551011/KorService2/locationBasedList2"
 
 
-def find_nearby_places(lat, lng, radius_m, content_type_id=None):
+def find_nearby_places(lat, lng, radius_m, content_type_id=None, rows=None):
     """좌표+반경 주변의 관광지/음식점 등을 반환한다. content_type_id로 종류를 지정한다.
     실패 시(키 없음·네트워크·파싱 오류) 예외를 던지지 않고 빈 리스트를 반환한다.
 
@@ -18,7 +18,9 @@ def find_nearby_places(lat, lng, radius_m, content_type_id=None):
     반올림해 키를 만들므로 인접 농장끼리 조회를 나눠 쓴다. 캐시가 깨져도
     tour_cache 가 예외를 삼키고 None 을 주므로 평소대로 API 를 호출한다.
     """
-    cache_key = tour_cache.make_key(lat, lng, radius_m, content_type_id)
+    # 조회 건수가 다르면 결과도 달라지므로 캐시 키에 함께 넣는다.
+    rows = int(rows or NEARBY_RESULT_LIMIT)
+    cache_key = tour_cache.make_key(lat, lng, f"{radius_m}:{rows}", content_type_id)
     cached = tour_cache.get(cache_key)
     if cached is not None:
         return cached
@@ -29,7 +31,7 @@ def find_nearby_places(lat, lng, radius_m, content_type_id=None):
         "MobileOS": "ETC",
         "MobileApp": "FarmLink",
         "_type": "json",
-        "numOfRows": NEARBY_RESULT_LIMIT,
+        "numOfRows": rows,
         "mapX": lng,
         "mapY": lat,
         "radius": radius_m,

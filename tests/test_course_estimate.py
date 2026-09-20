@@ -184,3 +184,34 @@ def test_unknown_category_falls_back():
     from common.constants import COURSE_PRICE_BY_SLOT, COURSE_PRICE_DEFAULT
     assert place_price({'category': '관광지', 'type': 'attraction'}) == COURSE_PRICE_BY_SLOT['attraction']
     assert place_price({'category': None, 'type': None}) == COURSE_PRICE_DEFAULT
+
+
+# ---- 일정 → 탐색 반경 (2026-09-20) ----
+
+def test_schedule_widens_search_radius():
+    import routes.course as rc
+    from common.constants import COURSE_SEARCH_RADIUS_M
+    assert rc._search_radius([]) == COURSE_SEARCH_RADIUS_M
+    assert rc._search_radius(['day_trip']) == 20000
+    assert rc._search_radius(['one_night']) == 40000
+    assert rc._search_radius(['two_night']) == 60000
+
+
+def test_schedule_picks_widest_when_multiple():
+    """대분류 안은 OR — 여러 개면 가장 넓게 본다."""
+    import routes.course as rc
+    assert rc._search_radius(['day_trip', 'two_night']) == 60000
+
+
+def test_rows_scale_with_radius():
+    """★반경만 넓히면 소용이 없다.★
+
+    관광공사는 거리순으로 numOfRows 만큼 주므로, 건수를 고정하면
+    반경을 60km 로 해도 '가장 가까운 30건'이 그대로 온다(실측 확인).
+    """
+    import routes.course as rc
+    from common.constants import COURSE_MAX_ROWS
+    assert rc._rows_for(10000) == 30
+    assert rc._rows_for(20000) == 60
+    assert rc._rows_for(40000) > rc._rows_for(20000)
+    assert rc._rows_for(200000) <= COURSE_MAX_ROWS

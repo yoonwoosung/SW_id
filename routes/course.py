@@ -13,6 +13,8 @@ from external import chungnam_api
 from external import tour_csv
 from external import kakao_place
 from common.constants import (COURSE_ACTIVITY_KAKAO, COURSE_COMPANION_KAKAO,
+                              COURSE_SCHEDULE_RADIUS_M, COURSE_ROWS_PER_RADIUS,
+                              COURSE_MAX_ROWS, NEARBY_RESULT_LIMIT,
                               COURSE_FACILITY_NEARBY, COURSE_PARTY_RULES,
                               COURSE_PET_KAKAO, TOUR_CONTENT_TYPE_ATTRACTION,
                               TOUR_CONTENT_TYPE_RESTAURANT)
@@ -30,7 +32,28 @@ from services.course_reason import build_course_reason
 from services.thumbnail_service import experience_thumbnail_url
 
 
-def _fetch_places(experience, content_type, add_chungnam=False):
+def _rows_for(radius_m):
+    """반경에 맞춘 조회 건수.
+
+    ★반경만 넓히면 결과가 그대로다.★ 관광공사는 거리순으로 numOfRows 만큼 주므로
+    건수를 고정하면 반경을 늘려도 '가장 가까운 30건'이 똑같이 온다(실측).
+    """
+    scale = max(1, int(radius_m) // COURSE_SEARCH_RADIUS_M)
+    return min(COURSE_MAX_ROWS, NEARBY_RESULT_LIMIT * min(scale, COURSE_ROWS_PER_RADIUS))
+
+
+def _search_radius(codes):
+    """고른 일정에 맞는 탐색 반경(m). 안 골랐으면 기본값.
+
+    여러 개를 골랐으면 ★가장 넓은 쪽★을 쓴다 — 대분류 안은 OR 이라
+    "당일 또는 1박2일"이면 1박2일 기준으로 후보를 넓게 본다.
+    """
+    picked = [COURSE_SCHEDULE_RADIUS_M[c] for c in (codes or [])
+              if c in COURSE_SCHEDULE_RADIUS_M]
+    return max(picked) if picked else COURSE_SEARCH_RADIUS_M
+
+
+def _fetch_places(experience, content_type, add_chungnam=False, radius_m=None):
     """관광공사에서 주변 장소를 가져오고, 공공데이터로 보강한다.
 
     관광공사 호출은 그대로 유지한다(대회 필수 요건이라 호출 기록이 남아야 한다).
@@ -41,17 +64,22 @@ def _fetch_places(experience, content_type, add_chungnam=False):
       1. 관광지정보 표준데이터 CSV — ★전국★. 관광 슬롯(관광지)에만 더한다.
       2. 충남 올담 API — 충남 체험에만. 서버 점검 중이라 지금은 늘 빈 리스트다.
     """
-    # 기본 반경으로 조회하고, 비면 최대 반경으로 한 번 더 시도(시골 농장 대응).
-    places = tour_api.find_nearby_places(experience.lat, experience.lng, COURSE_SEARCH_RADIUS_M, content_type)
+    # 기본(또는 일정이 요구한) 반경으로 조회하고, 비면 더 넓혀 한 번 더 시도(시골 농장 대응).
+    radius_m = radius_m or COURSE_SEARCH_RADIUS_M
+    rows = _rows_for(radius_m)
+    places = tour_api.find_nearby_places(
+        experience.lat, experience.lng, radius_m, content_type, rows)
     if not places:
-        places = tour_api.find_nearby_places(experience.lat, experience.lng, MAX_SEARCH_RADIUS_M, content_type)
+        wider = max(radius_m, MAX_SEARCH_RADIUS_M)
+        places = tour_api.find_nearby_places(
+            experience.lat, experience.lng, wider, content_type, _rows_for(wider))
 
     # CSV 보강: 전국 데이터라 지역을 가리지 않는다. 충남으로 묶으면 오히려
     # 커버리지가 가장 낮은 지역만 쓰게 된다(충남 43건 vs 전남 205건).
     # CSV 는 전부 관광지라 content_type 이 다르면 알아서 빈 리스트를 준다.
     try:
         from_csv = tour_csv.find_nearby_places(
-            experience.lat, experience.lng, TOUR_CSV_RADIUS_M, content_type)
+            experience.lat, experience.lng, max(radius_m or 0, TOUR_CSV_RADIUS_M), content_type)
         if from_csv:
             places = place_merge.merge(places, from_csv)
     except Exception:
@@ -65,7 +93,7 @@ def _fetch_places(experience, content_type, add_chungnam=False):
     # 이 보호가 없으면 충남 쪽 버그 하나가 코스 생성 전체를 500 으로 만든다.
     try:
         chungnam = chungnam_api.find_nearby_places(
-            experience.lat, experience.lng, COURSE_SEARCH_RADIUS_M, content_type)
+            experience.lat, experience.lng, radius_m, content_type)
     except Exception:
         return places
     if not chungnam:
@@ -77,7 +105,7 @@ def _fetch_places(experience, content_type, add_chungnam=False):
         return places
 
 
-def _collect_places(experience):
+def _collect_places(experience, radius_m=None):
     # 슬롯에 필요한 contentType별로 주변 장소를 수집(중복 조회 방지). 외부 실패 시 빈 리스트.
     places_by_content = {}
     places_by_type = {}
@@ -88,7 +116,8 @@ def _collect_places(experience):
         if content_type is None:
             continue
         if content_type not in places_by_content:
-            places_by_content[content_type] = _fetch_places(experience, content_type, add_chungnam)
+            places_by_content[content_type] = _fetch_places(
+                experience, content_type, add_chungnam, radius_m)
         places_by_type[slot["type"]] = places_by_content[content_type]
     return places_by_type
 
@@ -319,11 +348,21 @@ _IGNORED_CODE_REASON = {
     "party_2": "제한 없이 모든 장소가 대상입니다",
 }
 _IGNORED_REASON = {
-    "budget_range": "체험 목록에만 적용됩니다",
     "companion_type": "아직 코스 장소에 반영되지 않습니다",
-    "schedule": "아직 반영되지 않습니다",
     "duration_hours": "아직 반영되지 않습니다",
 }
+
+# ★점수가 아니라 '필터'로 반영되는 조건.★ 가중치를 주면 아무것도 맞히지
+# 못하면서 다른 조건의 몫만 줄인다. 대신 후보를 거르거나 넓혀 코스를 바꾼다.
+# 반영은 되므로 목록에 넣되 비율 대신 역할을 적는다.
+_FILTER_ROLE = {
+    "budget_range": "예산 안에 드는 장소를 고릅니다",
+    "schedule": "더 먼 곳까지 후보로 봅니다",
+}
+
+
+def _filter_role(code):
+    return _FILTER_ROLE.get(CATEGORY_OF_CODE.get(code))
 # 코스 장소에만 반영되고 ★체험 목록은 거르지 못하는★ 대분류.
 # (activity_type 컬럼을 저장하는 코드가 없어 체험은 전부 NULL 이다)
 _COURSE_ONLY = {"activity", "experience_type", "mood", "season"}
@@ -364,18 +403,15 @@ def _condition_report(codes, api_sets, items, budget_over=False):
         "course_only": CATEGORY_OF_CODE.get(code) in _COURSE_ONLY,
     } for code in codes if code in weights]
 
-    # ★예산대는 점수가 아니라 '필터'다.★ 가중치를 주면 아무것도 맞히지 못하면서
-    # 다른 조건의 몫만 줄인다. 대신 장소 단가로 후보를 걸러 코스를 바꾼다.
-    # 반영은 되므로 목록에는 넣되 비율 대신 역할을 적는다.
     for code in codes:
-        if code in BUDGET_RANGES:
+        role = _filter_role(code)
+        if role and code not in weights:
             applied.append({"code": code, "label": LABEL_BY_CODE.get(code, code),
-                            "percent": None, "course_only": False,
-                            "role": "예산 안에 드는 장소를 고릅니다"})
+                            "percent": None, "course_only": False, "role": role})
 
     ignored = []
     for code in codes:
-        if code in weights or code in BUDGET_RANGES:
+        if code in weights or _filter_role(code):
             continue
         category = CATEGORY_OF_CODE.get(code)
         reason = _IGNORED_CODE_REASON.get(code) or _IGNORED_REASON.get(category)
@@ -410,7 +446,8 @@ def experience_course(item_id):
     pet_places, pet_names = _pet_places(item, codes)
     companion_places, companion_names = _companion_places(item, codes)
     transport = course_estimate.normalize_transport(codes)
-    places_by_type = _collect_places(item)
+    radius_m = _search_radius(codes)
+    places_by_type = _collect_places(item, radius_m)
 
     # 액티비티 장소는 관광 슬롯 후보에 더한다(맛집·카페에 승마장이 섞이면 안 된다).
     if activity_places:

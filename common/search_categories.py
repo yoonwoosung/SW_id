@@ -174,12 +174,13 @@ SEARCH_CATEGORIES = [
             {"code": "dog_large", "label": "대형(15kg 이상)"},
             {"code": "pet_not_allowed", "label": "노펫존"}]},
     ]},
-    # hidden: 하위가 전부 판정 불가라 탭을 열면 빈 화면이 된다. 대분류째 감춘다.
-    {"code": "schedule", "label": "일정", "group": "travel", "hidden": True, "children": [
-        # hidden: 체험·장소 어느 쪽에도 숙박 일수 데이터가 없다.
-        {"code": "day_trip", "label": "당일", "hidden": True},
-        {"code": "one_night", "label": "1박 2일", "hidden": True},
-        {"code": "two_night", "label": "2박 3일", "hidden": True},
+    # 2026-09-20: 탐색 반경으로 반영해 감춤을 풀었다(당일 20km · 1박 40km · 2박 60km).
+    # 숙박 장소를 붙이지는 않는다 — '얼마나 멀리까지 후보로 볼 것인가'로 해석한다.
+    {"code": "schedule", "label": "일정", "group": "travel", "children": [
+        {"code": "day_trip", "label": "당일"},
+        {"code": "one_night", "label": "1박 2일"},
+        {"code": "two_night", "label": "2박 3일"},
+        # hidden: 셋 중 하나를 반드시 쓰므로 '기타'가 성립하지 않는다.
         dict(_other_node("schedule"), hidden=True)]},
     {"code": "experience_type", "label": "체험종류", "group": "taste", "children": [
         {"code": "harvest", "label": "수확"}, {"code": "food", "label": "먹거리"},

@@ -151,6 +151,9 @@
                                     <button type="submit" class="fl-btn em-btn-delete">숨김 해제</button>
                                 </form>
                                 {% endif %}
+                                <form method="POST" action="{{ url_for('delete_experience', item_id=listing.id) }}" style="margin:0;" onsubmit="return confirm('체험을 삭제하면 되돌릴 수 없습니다. 삭제할까요?');">
+                                    <button type="submit" class="fl-btn em-btn-delete" style="background:var(--fl-danger,#e53935);color:#fff;border-color:var(--fl-danger,#e53935);">삭제</button>
+                                </form>
                             </div>
                         </div>
 
@@ -302,8 +305,8 @@
                             <p class="ac-farm-address mb-1">
                                 <span class="farm-addr-view" data-farm-id="{{ farm.id }}">{{ farm.address }} <span class="text-muted font-weight-normal">{{ farm.address_detail or '' }}</span></span>
                                 <button type="button" class="farm-addr-edit-btn" data-farm-id="{{ farm.id }}" title="주소 변경"
-                                  style="background:none;border:none;cursor:pointer;color:var(--fl-text-muted);padding:2px 4px;margin-left:4px;">
-                                  <i class="fa-solid fa-pen-to-square" style="font-size:.85rem;"></i>
+                                  style="background:none;border:none;cursor:pointer;color:var(--fl-text-muted);padding:2px 6px;margin-left:6px;font-size:.78rem;display:inline-flex;align-items:center;gap:3px;">
+                                  <i class="fa-solid fa-pen-to-square" style="font-size:.78rem;"></i> 상세 주소 변경
                                 </button>
                                 <span class="farm-addr-edit-area" data-farm-id="{{ farm.id }}" style="display:none;align-items:center;gap:6px;flex-wrap:wrap;margin-top:4px;">
                                   <input type="text" class="farm-addr-input form-control form-control-sm" value="{{ farm.address }}" placeholder="새 주소" style="width:240px;">

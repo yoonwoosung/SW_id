@@ -429,7 +429,8 @@
         else { summaryEl.hidden = true; }
 
         // 추천 일정 타임라인
-        document.getElementById('ci-timeline').innerHTML = buildModalTimeline(items, sm);
+        document.getElementById('ci-timeline').innerHTML =
+            buildConditionBox(course && course.conditions) + buildModalTimeline(items, sm);
 
         // ESG + 편의 태그
         var amenityEl = document.getElementById('ci-amenity');
@@ -480,6 +481,36 @@
     }
 
     var TL_ICON = { experience: 'sprout', restaurant: 'utensils', attraction: 'landmark', cafe: 'coffee' };
+
+    // ★반영된 조건과 비율을 보여준다.★ 지금까지는 조건이 반영돼도 사용자가 알 수 없었고,
+    // 반영되지 않은 조건은 조용히 무시돼 "걸었는데 안 바뀐다"로만 보였다.
+    function buildConditionBox(cond) {
+        if (!cond) return '';
+        var applied = cond.applied || [], ignored = cond.ignored || [];
+        if (!applied.length && !ignored.length) return '';
+
+        var html = '<div class="ci-cond">';
+        if (applied.length) {
+            html += '<div class="ci-cond__row"><span class="ci-cond__tag">반영됨</span>'
+                + applied.map(function (a) {
+                    return '<span class="ci-cond__item">' + esc(a.label)
+                        + ' <b>' + a.percent + '%</b>'
+                        + (a.course_only ? '<em title="체험 목록은 거르지 않습니다">코스만</em>' : '')
+                        + '</span>';
+                }).join('') + '</div>';
+        }
+        if (cond.fell_back) {
+            html += '<p class="ci-cond__warn">조건에 맞는 장소가 근처에 없어 가까운 순으로 구성했습니다.</p>';
+        }
+        if (ignored.length) {
+            html += '<details class="ci-cond__more"><summary>반영되지 않은 조건 '
+                + ignored.length + '개</summary><ul>'
+                + ignored.map(function (g) {
+                    return '<li><span>' + esc(g.label) + '</span><em>' + esc(g.reason) + '</em></li>';
+                }).join('') + '</ul></details>';
+        }
+        return html + '</div>';
+    }
 
     function buildModalTimeline(items, sm) {
         if (!items || !items.length) return '<p class="fl-empty">코스 정보를 불러올 수 없어요.</p>';

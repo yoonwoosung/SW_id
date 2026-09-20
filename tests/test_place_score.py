@@ -241,3 +241,28 @@ def test_region_scores_alongside_other_conditions():
     scorer = build_scorer(['chungnam', 'nature'])
     assert scorer(CHEONAN_PLACE) == pytest.approx(1.0)      # 충남 + 자연 둘 다
     assert scorer(NAJU_PLACE) == pytest.approx(0.0)
+
+
+# ---- 반영 비율 (화면 표시용) ----
+
+def test_applied_weights_match_actual_scoring():
+    """★화면에 보이는 %와 실제 계산이 같아야 한다.★"""
+    from services.place_score import applied_weights
+    codes = ['healing', 'tradition']
+    shown = applied_weights(codes)
+    actual = ordered_weights(codes)
+    for code, percent in shown.items():
+        assert percent == pytest.approx(round(actual[code] * 100, 1))
+    assert sum(shown.values()) == pytest.approx(100.0)
+
+
+def test_applied_weights_drop_unjudgeable():
+    """판정 불가 조건은 빠지고 남은 것끼리 다시 나눈다."""
+    from services.place_score import applied_weights
+    assert applied_weights(['course_under_30k', 'healing']) == {'healing': 100.0}
+    assert applied_weights(['course_under_30k']) == {}
+
+
+def test_usable_codes_preserve_order():
+    from services.place_score import usable_codes
+    assert usable_codes(['course_under_30k', 'healing', 'tradition']) == ['healing', 'tradition']

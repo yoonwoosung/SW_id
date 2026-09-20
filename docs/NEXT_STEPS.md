@@ -2,6 +2,24 @@
 
 마감(2026-09-21) 이후에 이어서 할 것들. 각 항목은 "왜 지금 안 했는지"를 함께 적는다.
 
+## 0. ★심사 종료 직후 — 공모전 심사 계정 정리★ (최우선)
+
+공모전 지정 비밀번호(`2026openapi!`)는 ★제출 서류에 공개되는 값★이다.
+그 계정이 역할 전환으로 관리자가 될 수 있으므로, 서류를 보는 누구나
+농장 승인·반려와 유기농 인증 심사를 조작할 수 있는 상태다.
+
+심사가 끝나면 아래 중 하나는 반드시 한다.
+
+  ㄱ. `common/constants.ROLE_SWITCH_ALLOWED_EMAILS = ()` 로 비운다
+      → 전환 기능이 통째로 꺼진다. 가장 확실하다.
+  ㄴ. 비밀번호를 바꾼다
+      OPENAPI_PASSWORD='새비밀번호' python3 seed_openapi.py
+  ㄷ. 세 계정을 지운다 (openapi@ / openapi.farmer@ / openapi.admin@)
+
+왜 지금 안 하나: 심사 기간에는 심사위원이 써야 한다.
+
+관련: `seed_openapi.py`, `routes/auth.switch_role`, `tests/test_role_switch.py`
+
 ## 1. CSV 장소로 편의시설 조건 판정
 
 `data/tour_standard.csv`(관광지정보 표준데이터, 전국 840건)에는

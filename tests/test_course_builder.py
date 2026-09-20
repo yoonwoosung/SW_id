@@ -158,3 +158,37 @@ def test_no_duplicate_places_across_slots():
     items = build_course(_Exp(), _places_by_type(), scorer=build_scorer(['food']))
     names = [i['name'] for i in items]
     assert len(names) == len(set(names))
+
+
+# ───────────────────── 소요시간 → 슬롯 수 ─────────────────────
+
+def test_max_slots_truncates_from_the_back():
+    """★뒤에서부터 잘라낸다.★ 앞 슬롯의 시각·종류는 그대로 남는다."""
+    full = build_course(_Exp(), _places_by_type())
+    cut = build_course(_Exp(), _places_by_type(), max_slots=3)
+    assert len(cut) == 3
+    assert [(i['time'], i['type']) for i in cut] == [(i['time'], i['type']) for i in full[:3]]
+
+
+def test_max_slots_one_leaves_experience_only():
+    """'2~4시간'은 체험 하나만 남는다 — 장소를 못 가져온 것과 구분돼야 한다."""
+    items = build_course(_Exp(), _places_by_type(), max_slots=1)
+    assert [i['type'] for i in items] == ['experience']
+
+
+def test_max_slots_none_is_unchanged():
+    """★기존 동작 유지.★ 안 주면 예전 그대로 전부 만든다."""
+    assert build_course(_Exp(), _places_by_type(), max_slots=None) == \
+           build_course(_Exp(), _places_by_type())
+
+
+def test_max_slots_zero_or_negative_still_keeps_experience():
+    """이상한 값이 와도 빈 코스가 되면 안 된다(체험은 남는다)."""
+    for bad in (0, -3):
+        items = build_course(_Exp(), _places_by_type(), max_slots=bad)
+        assert [i['type'] for i in items] == ['experience'], bad
+
+
+def test_max_slots_larger_than_slots_is_harmless():
+    assert build_course(_Exp(), _places_by_type(), max_slots=99) == \
+           build_course(_Exp(), _places_by_type())

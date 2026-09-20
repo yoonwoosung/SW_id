@@ -215,3 +215,32 @@ def test_rows_scale_with_radius():
     assert rc._rows_for(20000) == 60
     assert rc._rows_for(40000) > rc._rows_for(20000)
     assert rc._rows_for(200000) <= COURSE_MAX_ROWS
+
+
+# ---- 소요시간 → 슬롯 수 (2026-09-20) ----
+
+def test_duration_sets_slot_count():
+    import routes.course as rc
+    from common.constants import COURSE_SLOTS
+    assert rc._max_slots([]) is None                 # 안 고르면 기존 그대로 전부
+    assert rc._max_slots(['hours_2']) == 1           # 체험만
+    assert rc._max_slots(['half_day']) == 3
+    assert rc._max_slots(['full_day']) == len(COURSE_SLOTS)
+
+
+def test_duration_picks_longest_when_multiple():
+    """대분류 안은 OR — 여러 개면 가장 긴 쪽으로 넉넉히 만든다."""
+    import routes.course as rc
+    assert rc._max_slots(['hours_2', 'full_day']) == rc._max_slots(['full_day'])
+
+
+def test_hidden_duration_codes_are_not_claimed_as_applied():
+    """★슬롯 수를 못 정하는 선택지를 '반영했다'고 하면 거짓말이다.★
+
+    '1시간 이내'·'기타'는 화면에서 감췄지만 직접 호출은 막을 수 없다.
+    """
+    import routes.course as rc
+    assert rc._max_slots(['under_2h']) is None
+    assert rc._filter_role('under_2h') is None
+    assert rc._filter_role('duration_hours_other') is None
+    assert rc._filter_role('half_day') is not None

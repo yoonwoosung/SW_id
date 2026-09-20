@@ -20,7 +20,8 @@ from services.eco_filter import JUDGEABLE_CATEGORIES
 # 대분류째 감춘 것
 # 액티비티는 2026-09-20 에 카카오 판정이 붙어 감춤을 풀었다.
 # 일정은 2026-09-20 에 탐색 반경으로 반영해 감춤을 풀었다.
-HIDDEN_CATEGORIES = {'duration_hours'}
+# 소요시간도 2026-09-20 에 코스 슬롯 수로 반영해 감춤을 풀었다.
+HIDDEN_CATEGORIES = set()
 
 # 개별로 감춘 잎
 HIDDEN_LEAF_CODES = {
@@ -31,6 +32,9 @@ HIDDEN_LEAF_CODES = {
     'facility_other',
     # 일정 — 셋 중 하나를 반드시 쓰므로 '기타'가 성립하지 않는다
     'schedule_other',
+    # 소요시간 — 슬롯 수로 반영한다. '1시간 이내'는 체험 하나도 못 넣는 길이라
+    # 코스가 성립하지 않고, '기타'는 슬롯 수를 정할 수 없어 둘 다 감춘다.
+    'under_2h', 'duration_hours_other',
 }
 
 VISIBLE_FACILITY = {'parking', 'barrier_free', 'wifi', 'pesticide_free', 'organic',

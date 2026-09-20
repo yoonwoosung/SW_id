@@ -340,8 +340,11 @@
         {% if applications %}
           <div class="mi-res-list" style="padding:0 20px 16px;">
             {% for app in applications %}
-            <!-- 💡 레시피 조회를 위해 data-state, data-exp-id 추가 -->
-            <div class="mi-res-card" data-state="{{ app.status }}" data-exp-id="{{ app.experience.id }}">
+            {# 레시피 조회를 위해 data-state, data-exp-id 를 둔다.
+               ★원본 status 가 아니라 계산된 상태를 쓴다.★ status 만 보면 체험이
+               끝났는데도 '확정'으로 남아 있어 완료 예약을 못 찾는다.
+               mypage.html 과 같은 값(completed 등)을 쓴다. #}
+            <div class="mi-res-card" data-state="{{ reservation_states[app.id] }}" data-exp-id="{{ app.experience.id }}">
               {% if app.experience.images %}
                 <img class="mi-res-thumb" src="{{ url_for('static', filename='uploads/' + app.experience.images.split(',')[0]) }}" alt="{{ app.experience.crop }}">
               {% else %}
@@ -533,6 +536,15 @@
               <img id="r_handwritten_img" src="" style="max-width:100%; height:auto; border-radius:10px; display:inline-block;">
           </div>
 
+          {# 사진과 글이 둘 다 있으면 사진을 먼저 보여주고 글은 접어 둔다.
+             ★숨기지 않고 접는다.★ 완전히 숨기면 PDF 저장(화면을 그대로 캡처한다)
+             에서도 재료·순서가 사라져, 손글씨가 흐릴 때 대안이 없어진다. #}
+          <button type="button" id="r_text_toggle" class="recipe-text-toggle" style="display:none;"
+                  aria-expanded="false" aria-controls="r_text_group">
+              <i class="fa-solid fa-chevron-down"></i> <span>글로 된 레시피 보기</span>
+          </button>
+
+          <div id="r_text_group">
           <!-- 재료 & Tip 영역 (가로 배치) -->
           <div style="display:flex; gap:20px; margin-bottom:28px;">
               <div id="r_ing_box" style="flex:1; background:#fff; padding:22px; border-radius:14px; box-shadow:0 2px 8px rgba(0,0,0,0.03); display:none;">
@@ -553,6 +565,7 @@
                   <!-- JS에서 동적 생성 -->
               </div>
           </div>
+          </div><!-- /#r_text_group -->
 
           <!-- 하단 마무리 멘트 (나눔손글씨 바른히피 적용) -->
           <div style="background:#e8f5e9; padding:24px 28px; border-radius:14px; display:flex; justify-content:space-between; align-items:center;">
@@ -858,7 +871,10 @@ document.getElementById('mi-course-modal').addEventListener('click', function(e)
 })();
 
 document.addEventListener('DOMContentLoaded', function () {
-    const completedCards = document.querySelectorAll('.mi-res-card[data-state="확정"]');
+    // ★체험이 끝난 예약에 레시피 버튼을 붙인다.★
+    // 예전에는 '확정'(체험 전)을 찾아서, 체험 전에는 보이고 완료되면 사라졌다.
+    // data-state 는 이제 계산된 상태다(services/activity_service.STATE_COMPLETED).
+    const completedCards = document.querySelectorAll('.mi-res-card[data-state="completed"]');
     
     completedCards.forEach(card => {
         const expId = card.getAttribute('data-exp-id');
@@ -951,8 +967,44 @@ function openRecipeModal(data) {
         stepsBox.style.display = 'none';
     }
 
+    // ★사진이 있으면 글은 접어 둔다.★ 첫 화면은 사진만 보인다.
+    // 사진만 있으면 펼침 버튼도 안 나오고, 글만 있으면 예전처럼 그대로 펼쳐진다.
+    const textGroup = document.getElementById('r_text_group');
+    const textToggle = document.getElementById('r_text_toggle');
+    const hasPhoto = !!(data.recipe_image || '').trim();
+    const hasText = !!((data.recipe_ingredients || '').trim()
+                    || (data.recipe_steps || '').trim()
+                    || (data.recipe_tip || '').trim());
+    if (hasPhoto && hasText) {
+        setRecipeTextOpen(false);
+        textToggle.style.display = 'flex';
+    } else {
+        textGroup.style.display = 'block';
+        textToggle.style.display = 'none';
+        textToggle.setAttribute('aria-expanded', 'true');
+    }
+
     document.getElementById('recipeModalOverlay').style.display = 'flex';
 }
+
+function setRecipeTextOpen(open) {
+    const group = document.getElementById('r_text_group');
+    const toggle = document.getElementById('r_text_toggle');
+    group.style.display = open ? 'block' : 'none';
+    toggle.setAttribute('aria-expanded', String(open));
+    toggle.querySelector('span').textContent = open ? '글로 된 레시피 접기' : '글로 된 레시피 보기';
+    toggle.querySelector('i').className = open
+        ? 'fa-solid fa-chevron-up' : 'fa-solid fa-chevron-down';
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+    const toggle = document.getElementById('r_text_toggle');
+    if (!toggle) return;
+    // 펼친 상태 그대로 PDF 에 담긴다 — 사진만 원하면 접은 채로 내려받으면 된다.
+    toggle.addEventListener('click', function () {
+        setRecipeTextOpen(this.getAttribute('aria-expanded') !== 'true');
+    });
+});
 
 function downloadRecipePDF() {
     const printArea = document.getElementById('recipePrintArea');

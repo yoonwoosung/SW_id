@@ -155,3 +155,22 @@ video {
   .fl-only-mobile  { display: initial; }
   .fl-from-tablet  { display: none; }
 }
+
+/* 공모전 심사용 역할 전환 메뉴(프로필 드롭다운 안). 허용 계정에만 보인다. */
+.role-switch__now {
+    display: block; padding: 6px 12px 4px;
+    font-size: 0.78rem; font-weight: 700; color: #2d6a4f;
+    background: #f1f8f3; border-radius: 6px; margin-bottom: 2px;
+}
+
+/* 레시피 모달 — 사진과 글이 둘 다 있을 때 글을 접어 두는 버튼.
+   숨기지 않고 접는 이유: PDF 저장이 화면을 그대로 캡처하므로,
+   완전히 숨기면 재료·순서가 PDF 에서도 사라진다. */
+.recipe-text-toggle {
+    display: flex; align-items: center; gap: 8px;
+    width: 100%; margin-bottom: 20px; padding: 14px 18px;
+    background: #fff; border: 1px dashed var(--fl-green-700, #4CAF50);
+    border-radius: 12px; cursor: pointer;
+    font-size: 0.95rem; font-weight: 700; color: #2e3b32;
+}
+.recipe-text-toggle:hover { background: #f4faec; }

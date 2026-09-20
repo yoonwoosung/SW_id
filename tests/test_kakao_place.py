@@ -103,3 +103,68 @@ def test_activity_matches_place_by_name():
     sets = build_api_sets(activity_names={'horse_riding': {'화랑승마목장'}})
     assert matches({'name': '화랑승마목장', 'category': ''}, 'horse_riding', sets) is True
     assert matches({'name': '박문수묘', 'category': 'A02'}, 'horse_riding', sets) is False
+
+
+# ---- 반려견 · 편의시설 (2026-09-20) ----
+
+def test_pet_keyword_and_hint_defined():
+    from common.constants import COURSE_PET_KAKAO
+    keyword, hint = COURSE_PET_KAKAO
+    assert keyword and hint
+
+
+def test_pet_codes_judgeable_only_with_results():
+    from services.place_score import judgeable, build_api_sets
+    assert judgeable('dog_medium') is False
+    sets = build_api_sets(pet_places=[{'name': '도어커피'}])
+    assert judgeable('dog_medium', sets) is True
+
+
+def test_facility_nearby_rule_defined():
+    """★주차장은 후보로 넣지 않고 판정에만 쓴다.★
+
+    주차장이 코스 항목이 되면 이상하다. 좌표 근접(기본 200m)으로만 본다.
+    화장실은 '공중화장실' 검색 결과에 세차장·공원이 섞여 부정확해 넣지 않았다.
+    """
+    from common.constants import COURSE_FACILITY_NEARBY
+    assert set(COURSE_FACILITY_NEARBY) == {'parking'}
+    keyword, hint, radius_m = COURSE_FACILITY_NEARBY['parking']
+    assert keyword and hint and 0 < radius_m <= 1000
+
+
+def test_facility_names_feed_api_sets():
+    from services.place_score import build_api_sets, judgeable, matches
+    sets = build_api_sets(facility_names={'parking': {'청화집'}})
+    assert judgeable('parking', sets) is True
+    assert matches({'name': '청화집', 'category': ''}, 'parking', sets) is True
+    assert matches({'name': '맘앤쉐프', 'category': ''}, 'parking', sets) is False
+
+
+def test_official_pet_api_takes_priority(monkeypatch):
+    """★반려동물 API 가 살아나면 그쪽을 우선한다.★ 그때는 카카오를 부르지 않는다."""
+    import routes.course as rc
+
+    class Exp:
+        lat, lng = 36.8, 127.3
+
+    monkeypatch.setattr(rc.pet_travel_api, 'find_pet_facilities',
+                        lambda *a, **kw: [{'name': '공식 애견카페'}])
+    called = []
+    monkeypatch.setattr(rc.kakao_place, 'search',
+                        lambda *a, **kw: called.append(1) or [])
+    places, names = rc._pet_places(Exp(), ['dog_medium'])
+    assert names == {'공식애견카페'}
+    assert called == [], "공식 API 결과가 있으면 카카오를 부르지 않는다"
+
+
+def test_pet_not_called_without_pet_condition(monkeypatch):
+    import routes.course as rc
+
+    class Exp:
+        lat, lng = 36.8, 127.3
+
+    called = []
+    monkeypatch.setattr(rc.pet_travel_api, 'find_pet_facilities',
+                        lambda *a, **kw: called.append(1) or [])
+    assert rc._pet_places(Exp(), ['nature']) == ([], set())
+    assert called == [], "고르지 않은 조건으로 호출을 태우지 않는다"

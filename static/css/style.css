@@ -995,7 +995,7 @@ a svg, a i { pointer-events: none; }
     outline: none;
     font-size: 0.88rem;
     color: #444;
-    padding: 0 10px;
+    padding: 0 10px 0 2px;
     height: 100%;
     background: transparent;
     cursor: pointer;
@@ -5040,3 +5040,52 @@ header.header-volunteer { border-bottom-color: #FF9800; }
 }
 .ci-cost-detail li:last-child { border-bottom: none; }
 .ci-cost-detail em { font-style: normal; font-size: 0.7rem; color: #9aa39c; }
+
+/* ============================================================================
+   [조건 반영] 코스 모달에서 '무엇이 얼마나 반영됐는지' 보여준다.
+   반영된 조건은 펼친 채로, 반영되지 않은 조건은 접어 둔다.
+   ============================================================================ */
+.ci-cond {
+    background: #f7faf7;
+    border: 1px solid #e3ebe3;
+    border-radius: 10px;
+    padding: 10px 12px;
+    margin-bottom: 14px;
+}
+.ci-cond__row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.ci-cond__tag {
+    font-size: 0.68rem; font-weight: 800; color: #fff;
+    background: var(--fl-green-700, #3a7d44);
+    border-radius: 4px; padding: 2px 7px; flex-shrink: 0;
+}
+.ci-cond__item {
+    font-size: 0.8rem; color: #37413a;
+    background: #fff; border: 1px solid #dfe7df;
+    border-radius: 999px; padding: 3px 10px;
+}
+.ci-cond__item b { color: var(--fl-green-700, #3a7d44); font-weight: 800; }
+.ci-cond__item em {
+    font-style: normal; font-size: 0.66rem; color: #8a938c;
+    margin-left: 5px; border-left: 1px solid #e3ebe3; padding-left: 5px;
+}
+.ci-cond__warn {
+    margin: 8px 0 0; font-size: 0.76rem; color: #b06b00;
+    background: #fff8ec; border-radius: 6px; padding: 6px 9px;
+}
+.ci-cond__more { margin-top: 8px; }
+.ci-cond__more > summary {
+    cursor: pointer; font-size: 0.76rem; color: #6a746d; list-style: none;
+}
+.ci-cond__more > summary::-webkit-details-marker { display: none; }
+.ci-cond__more > summary::before { content: "▸ "; }
+.ci-cond__more[open] > summary::before { content: "▾ "; }
+.ci-cond__more ul { margin: 6px 0 0; padding: 0; list-style: none; }
+.ci-cond__more li {
+    display: flex; justify-content: space-between; gap: 10px;
+    font-size: 0.76rem; color: #55605a; padding: 3px 0;
+}
+.ci-cond__more li em { font-style: normal; color: #9aa39c; text-align: right; }
+@media (max-width: 480px) {
+    .ci-cond__more li { flex-direction: column; gap: 1px; }
+    .ci-cond__more li em { text-align: left; }
+}

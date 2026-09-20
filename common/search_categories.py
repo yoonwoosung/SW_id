@@ -292,6 +292,19 @@ def _iter_node_codes(nodes):
 ALL_CODES = set(_iter_node_codes(SEARCH_CATEGORIES))
 
 
+def _build_category_of_code():
+    # 어떤 선택지가 어느 대분류에 속하는지.
+    # 화면에 '왜 반영되지 않았는지'를 설명할 때 쓴다.
+    mapping = {}
+    for category in SEARCH_CATEGORIES:
+        for code in _iter_node_codes(category.get("children") or []):
+            mapping[code] = category["code"]
+    return mapping
+
+
+CATEGORY_OF_CODE = _build_category_of_code()
+
+
 def _iter_all_nodes(nodes):
     for node in nodes:
         yield node

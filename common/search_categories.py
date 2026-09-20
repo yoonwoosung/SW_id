@@ -193,8 +193,11 @@ SEARCH_CATEGORIES = [
         {"code": "bike", "label": "자전거"},
         _other_node("transport")]},
     {"code": "duration_hours", "label": "소요시간", "group": "practical", "children": [
-        {"code": "hours_2", "label": "2시간"}, {"code": "half_day", "label": "반나절"},
-        {"code": "full_day", "label": "종일"}]},
+        {"code": "under_2h",  "label": "2시간 미만"},
+        {"code": "hours_2",   "label": "2~4시간"},
+        {"code": "half_day",  "label": "반나절 (4~6시간)"},
+        {"code": "full_day",  "label": "종일 (6시간 이상)"},
+        _other_node("duration_hours")]},
     {"code": "facility", "label": "편의시설", "group": "practical", "children": [
         {"code": "parking", "label": "주차"},
         {"code": "barrier_free", "label": "무장애"}, {"code": "wifi", "label": "와이파이"},

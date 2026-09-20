@@ -134,8 +134,6 @@ def _region_node():
     return {"code": "region", "label": "지역", "group": "travel", "children": [
         {"code": METRO_GROUP_CODE, "label": "광역시·특별시", "children": metro_children},
         *province_children,
-        # 주소는 있는데 위 시도·시군 어디에도 걸리지 않는 체험.
-        _other_node("region"),
     ]}
 
 
@@ -152,8 +150,6 @@ SEARCH_CATEGORIES = [
             {"code": "dog_large", "label": "대형(15kg 이상)", "children": _pet_conditions()},
         ]},
         {"code": "pet_not_allowed", "label": "동반불가"},
-        # 동반가능인데 허용 몸무게가 소형 기준(5kg)에 못 미치는 경우(1~4kg).
-        _other_node("pet_dog"),
     ]},
     {"code": "party", "label": "인원", "group": "travel", "children": [
         {"code": "headcount", "label": "인원수", "children": [

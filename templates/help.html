@@ -39,6 +39,7 @@
         background-color: #f8f9fa;
         padding: 1rem;
         border-radius: 8px;
+        position: relative;
     }
     .help-image {
         max-width: 100%;
@@ -56,18 +57,23 @@
         box-shadow: 0 2px 8px rgba(0,0,0,0.05);
     }
     
-    /* 이미지 그리드 (여러 장 나열 시) */
-    .img-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-        gap: 1.5rem;
-        margin: 1.5rem 0;
+    /* 슬라이더(캐러셀) 컨트롤 버튼 스타일 */
+    .carousel-control-prev-icon,
+    .carousel-control-next-icon {
+        background-color: rgba(0, 0, 0, 0.4);
+        border-radius: 50%;
+        width: 3rem;
+        height: 3rem;
+        background-size: 50%;
     }
-    .img-grid img {
-        width: 100%;
-        border-radius: 8px;
-        border: 1px solid #dee2e6;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    .carousel-control-prev,
+    .carousel-control-next {
+        width: 10%;
+        opacity: 0.8;
+    }
+    .carousel-control-prev:hover,
+    .carousel-control-next:hover {
+        opacity: 1;
     }
 
     /* 아코디언 스타일 */
@@ -147,22 +153,22 @@
     <ul class="nav nav-tabs nav-fill" id="helpTab" role="tablist">
         <li class="nav-item" role="presentation">
             <a class="nav-link active" id="main-tab" data-toggle="tab" href="#main-screen" role="tab" aria-controls="main-screen" aria-selected="true">
-                <i data-lucide="home" class="mr-1"></i> 체험자 첫 화면
+                체험자 첫 화면
             </a>
         </li>
         <li class="nav-item" role="presentation">
             <a class="nav-link" id="activity-tab" data-toggle="tab" href="#activity-screen" role="tab" aria-controls="activity-screen" aria-selected="false">
-                <i data-lucide="activity" class="mr-1"></i> 내 활동
+                내 활동
             </a>
         </li>
         <li class="nav-item" role="presentation">
             <a class="nav-link" id="recommend-tab" data-toggle="tab" href="#recommend-screen" role="tab" aria-controls="recommend-screen" aria-selected="false">
-                <i data-lucide="map" class="mr-1"></i> 오늘의 추천 코스
+                오늘의 추천 코스
             </a>
         </li>
         <li class="nav-item" role="presentation">
             <a class="nav-link" id="album-tab" data-toggle="tab" href="#album-screen" role="tab" aria-controls="album-screen" aria-selected="false">
-                <i data-lucide="book-image" class="mr-1"></i> 추억 앨범
+                추억 앨범
             </a>
         </li>
     </ul>
@@ -239,9 +245,23 @@
         <!-- ============================================== -->
         <div class="tab-pane fade" id="activity-screen" role="tabpanel" aria-labelledby="activity-tab">
             
-            <div class="img-grid">
-                <img src="{{ url_for('static', filename='images/help/image02.png') }}" alt="내 활동 목록">
-                <img src="{{ url_for('static', filename='images/help/image03.png') }}" alt="저장된 코스 목록">
+            <div id="carouselActivity" class="carousel slide help-image-container" data-ride="carousel" data-interval="false">
+                <div class="carousel-inner">
+                    <div class="carousel-item active">
+                        <img src="{{ url_for('static', filename='images/help/image02.png') }}" class="d-block w-100 help-image" alt="내 활동 목록">
+                    </div>
+                    <div class="carousel-item">
+                        <img src="{{ url_for('static', filename='images/help/image03.png') }}" class="d-block w-100 help-image" alt="저장된 코스 목록">
+                    </div>
+                </div>
+                <a class="carousel-control-prev" href="#carouselActivity" role="button" data-slide="prev">
+                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                    <span class="sr-only">이전</span>
+                </a>
+                <a class="carousel-control-next" href="#carouselActivity" role="button" data-slide="next">
+                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                    <span class="sr-only">다음</span>
+                </a>
             </div>
             
             <div class="help-desc">
@@ -406,10 +426,26 @@
             
             <div class="help-desc mb-4">
                 <h5 class="mb-3 font-weight-bold"><i data-lucide="book" class="mr-2" style="color:var(--fl-icon-color);"></i>앨범 기본 설정 안내</h5>
-                <div class="img-grid">
-                    <img src="{{ url_for('static', filename='images/help/image07.png') }}" alt="겉사진 레이아웃">
-                    <img src="{{ url_for('static', filename='images/help/image08.png') }}" alt="속지 스타일">
+                
+                <div id="carouselAlbumBasic" class="carousel slide help-image-container mb-3" data-ride="carousel" data-interval="false" style="background-color: transparent; padding: 0;">
+                    <div class="carousel-inner">
+                        <div class="carousel-item active">
+                            <img src="{{ url_for('static', filename='images/help/image07.png') }}" class="d-block w-100 help-image" alt="겉사진 레이아웃">
+                        </div>
+                        <div class="carousel-item">
+                            <img src="{{ url_for('static', filename='images/help/image08.png') }}" class="d-block w-100 help-image" alt="속지 스타일">
+                        </div>
+                    </div>
+                    <a class="carousel-control-prev" href="#carouselAlbumBasic" role="button" data-slide="prev">
+                        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                        <span class="sr-only">이전</span>
+                    </a>
+                    <a class="carousel-control-next" href="#carouselAlbumBasic" role="button" data-slide="next">
+                        <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                        <span class="sr-only">다음</span>
+                    </a>
                 </div>
+
                 <ul>
                     <li><strong>다녀온 체험 정보:</strong> 내가 다녀온 체험 목록 중에서 앨범으로 만들 체험을 선택할 수 있습니다.</li>
                     <li><strong>앨범 모양:</strong> 세로, 가로, 정사각 모형 중 원하는 형태로 변경 가능합니다.</li>
@@ -435,11 +471,28 @@
                             앨범 페이지를 선택하고 <strong>'사진 배치'</strong>를 적용하면 자동으로 앨범 규격에 맞게 이미지 레이아웃이 생성됩니다. 이미지는 중앙 연결 파노라마 형태로 기본 설정됩니다.<br><br>
                             페이지를 클릭했을 때 주변에 <strong>녹색 테두리</strong>가 나타나는 부분에 레이아웃이 적용되며, 펼친 두 페이지를 모두 선택하여 사용할 경우 양쪽 모두에 레이아웃이 적용됩니다.<br><br>
                             
-                            <div class="img-grid mt-3">
-                                <img src="{{ url_for('static', filename='images/help/image12.png') }}" alt="사진 적용">
-                                <img src="{{ url_for('static', filename='images/help/image13.png') }}" alt="사진 회전">
-                                <img src="{{ url_for('static', filename='images/help/image14.png') }}" alt="사진 크기 조절">
+                            <div id="carouselAlbumApply" class="carousel slide help-image-container my-3" data-ride="carousel" data-interval="false" style="background-color: transparent; padding: 0;">
+                                <div class="carousel-inner">
+                                    <div class="carousel-item active">
+                                        <img src="{{ url_for('static', filename='images/help/image12.png') }}" class="d-block w-100 help-image" alt="사진 적용">
+                                    </div>
+                                    <div class="carousel-item">
+                                        <img src="{{ url_for('static', filename='images/help/image13.png') }}" class="d-block w-100 help-image" alt="사진 회전">
+                                    </div>
+                                    <div class="carousel-item">
+                                        <img src="{{ url_for('static', filename='images/help/image14.png') }}" class="d-block w-100 help-image" alt="사진 크기 조절">
+                                    </div>
+                                </div>
+                                <a class="carousel-control-prev" href="#carouselAlbumApply" role="button" data-slide="prev">
+                                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                                    <span class="sr-only">이전</span>
+                                </a>
+                                <a class="carousel-control-next" href="#carouselAlbumApply" role="button" data-slide="next">
+                                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                                    <span class="sr-only">다음</span>
+                                </a>
                             </div>
+
                             적용된 레이아웃 안의 사진 영역을 선택하면 등록한 사진이 자동으로 들어가며, 사진을 추가로 드래그하여 넣으면 자유 레이아웃 형태로 추가됩니다. 앨범에 추가된 모든 사진은 크기 조절, 회전, 모양 변경이 가능합니다.
                         </div>
                     </div>
@@ -456,10 +509,26 @@
                     </div>
                     <div id="collapseAlbum2" class="collapse" aria-labelledby="headingAlbum2" data-parent="#accordionAlbum">
                         <div class="card-body">
-                            <div class="img-grid">
-                                <img src="{{ url_for('static', filename='images/help/image10.png') }}" alt="사진 업로드">
-                                <img src="{{ url_for('static', filename='images/help/image11.png') }}" alt="전문가 사진 검색">
+                            
+                            <div id="carouselAlbumUpload" class="carousel slide help-image-container mb-3" data-ride="carousel" data-interval="false" style="background-color: transparent; padding: 0;">
+                                <div class="carousel-inner">
+                                    <div class="carousel-item active">
+                                        <img src="{{ url_for('static', filename='images/help/image10.png') }}" class="d-block w-100 help-image" alt="사진 업로드">
+                                    </div>
+                                    <div class="carousel-item">
+                                        <img src="{{ url_for('static', filename='images/help/image11.png') }}" class="d-block w-100 help-image" alt="전문가 사진 검색">
+                                    </div>
+                                </div>
+                                <a class="carousel-control-prev" href="#carouselAlbumUpload" role="button" data-slide="prev">
+                                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                                    <span class="sr-only">이전</span>
+                                </a>
+                                <a class="carousel-control-next" href="#carouselAlbumUpload" role="button" data-slide="next">
+                                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                                    <span class="sr-only">다음</span>
+                                </a>
                             </div>
+
                             <strong>사진 업로드:</strong> 기기에 저장된 사진을 직접 업로드할 수 있으며, 최대 50장까지 사용 가능합니다.<br>
                             '전체 삭제'를 누르면 업로드한 사진 목록을 일괄 삭제할 수 있고, 사진 우측 상단의 'X' 버튼을 눌러 개별 삭제도 가능합니다. (단, 이미 앨범 편집 영역에 적용된 사진은 목록에서 삭제되지 않습니다.)<br><br>
                             <strong>주변 명소 전문가 사진:</strong> 선택한 농촌 체험의 주소를 기반으로 시/구/면 단위 명소 사진을 자동으로 검색해 제공합니다. <br>
@@ -484,10 +553,25 @@
                             </div>
                             '텍스트 상자 추가' 버튼을 누르면 화면에 글상자가 생성됩니다. 글상자를 더블클릭하여 내용을 입력할 수 있고, 선택 시 나타나는 주변 UI 핸들을 조절해 상자의 크기와 회전 각도를 변경할 수 있습니다.<br><br>
                             
-                            <div class="img-grid">
-                                <img src="{{ url_for('static', filename='images/help/image16.png') }}" alt="텍스트 편집 팔레트">
-                                <img src="{{ url_for('static', filename='images/help/image17.png') }}" alt="텍스트 색상 적용">
+                            <div id="carouselAlbumText" class="carousel slide help-image-container my-3" data-ride="carousel" data-interval="false" style="background-color: transparent; padding: 0;">
+                                <div class="carousel-inner">
+                                    <div class="carousel-item active">
+                                        <img src="{{ url_for('static', filename='images/help/image16.png') }}" class="d-block w-100 help-image" alt="텍스트 편집 팔레트">
+                                    </div>
+                                    <div class="carousel-item">
+                                        <img src="{{ url_for('static', filename='images/help/image17.png') }}" class="d-block w-100 help-image" alt="텍스트 색상 적용">
+                                    </div>
+                                </div>
+                                <a class="carousel-control-prev" href="#carouselAlbumText" role="button" data-slide="prev">
+                                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                                    <span class="sr-only">이전</span>
+                                </a>
+                                <a class="carousel-control-next" href="#carouselAlbumText" role="button" data-slide="next">
+                                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                                    <span class="sr-only">다음</span>
+                                </a>
                             </div>
+
                             좌측 텍스트 편집 패널에서 <strong>글꼴, 크기, 스타일(굵기 등), 정렬 방식, 레이어 순서, 글자 색, 글상자 배경색</strong> 등을 상세하게 수정할 수 있습니다.<br>
                             '새로 쓰기'를 클릭하면 글상자 설정이 초기화됩니다. 색상 선택 시 무지개 아이콘을 클릭하면 팔레트에서 마우스로 색상을 직접 고르거나 HEX 코드(예: #FFFFFF)를 입력하여 원하는 색상을 정확히 적용할 수 있습니다.
                         </div>

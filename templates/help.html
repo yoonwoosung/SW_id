@@ -32,7 +32,7 @@
         padding: 2rem 0;
     }
     
-    /* 이미지 컨테이너 및 스타일 */
+    /* 이미지 컨테이너 및 자동 크기 조절 (비율 유지) */
     .help-image-container {
         text-align: center;
         margin-bottom: 2rem;
@@ -41,16 +41,19 @@
         border-radius: 8px;
         position: relative;
     }
-    .help-image {
+    .help-image, .accordion-img, .carousel-item img {
         max-width: 100%;
-        height: auto;
+        max-height: 450px; /* 모든 이미지의 최대 높이 고정으로 덜컹거림 방지 */
+        width: 100%;
+        object-fit: contain; /* 비율을 깨지 않고 박스 안에 예쁘게 맞춤 */
+        background-color: transparent;
+    }
+    .help-image {
         border: 1px solid #dee2e6;
         border-radius: 8px;
         box-shadow: 0 4px 12px rgba(0,0,0,0.08);
     }
     .accordion-img {
-        max-width: 100%;
-        height: auto;
         margin: 1rem 0;
         border: 1px solid #e9ecef;
         border-radius: 8px;
@@ -76,7 +79,7 @@
         opacity: 1;
     }
 
-    /* 아코디언 스타일 */
+    /* 아코디언 스타일 (텍스트 잘림 해결) */
     .accordion .card {
         margin-bottom: 1rem;
         border: 1px solid #dee2e6;
@@ -98,6 +101,12 @@
         display: flex;
         align-items: center;
         justify-content: space-between;
+        white-space: normal; /* 긴 텍스트 줄바꿈 허용 */
+    }
+    .accordion .btn-link span {
+        flex: 1;
+        line-height: 1.5;
+        margin-right: 1rem; /* 화살표 아이콘과의 간격 */
     }
     .accordion .btn-link:hover, .accordion .btn-link:focus {
         text-decoration: none;
@@ -109,6 +118,7 @@
     }
     .accordion .btn-link i {
         transition: transform 0.3s ease;
+        flex-shrink: 0;
     }
     .accordion .btn-link[aria-expanded="true"] i {
         transform: rotate(180deg);
@@ -377,16 +387,16 @@
                     </div>
                 </div>
 
-                <div class="card mt-4 border-info">
-                    <div class="card-header bg-info text-white" id="headingFilter1">
+                <div class="card mt-4">
+                    <div class="card-header" id="headingFilter1">
                         <h2 class="mb-0">
-                            <button class="btn btn-link text-white font-weight-bold" type="button" data-toggle="collapse" data-target="#collapseFilter1" aria-expanded="false" aria-controls="collapseFilter1">
+                            <button class="btn btn-link collapsed" type="button" data-toggle="collapse" data-target="#collapseFilter1" aria-expanded="false" aria-controls="collapseFilter1">
                                 <span>상세 맞춤 필터 활용법 및 조건 설정 안내</span>
                                 <i data-lucide="chevron-down"></i>
                             </button>
                         </h2>
                     </div>
-                    <div id="collapseFilter1" class="collapse show" aria-labelledby="headingFilter1" data-parent="#accordionRecommend">
+                    <div id="collapseFilter1" class="collapse" aria-labelledby="headingFilter1" data-parent="#accordionRecommend">
                         <div class="card-body">
                             <div class="text-center mb-3">
                                 <img src="{{ url_for('static', filename='images/help/image05.png') }}" class="accordion-img" alt="상세 맞춤 필터">

@@ -11,13 +11,39 @@ def estimate_course_cost_per_person(experience):
     return cost + COURSE_TRANSPORT_ESTIMATE + COURSE_MEAL_ESTIMATE
 
 
-def build_course_summary(experience):
-    """코스 카드용 요약: 예상 비용(1인 코스 총비용)·이동수단·무장애 여부. Experience 속성만 사용."""
-    return {
+# 화면에 쓰는 이동수단 표기.
+TRANSPORT_LABEL = {"car": "자가용", "public_transit": "대중교통", "taxi": "택시"}
+
+
+def build_course_summary(experience, estimate=None):
+    """코스 카드용 요약.
+
+    estimate(services/course_estimate.estimate)를 주면 ★코스 항목으로 실제 계산한★
+    시간·비용·구간을 싣는다. 없으면 예전처럼 Experience 속성만으로 대략값을 준다
+    (조건 없이 부른 경우·계산 실패 시 폴백).
+    """
+    summary = {
         "estimated_cost": estimate_course_cost_per_person(experience),
         "transport": "자가용" if getattr(experience, "has_parking", False) else "대중교통",
         "barrier_free": bool(getattr(experience, "barrier_free", False)),
     }
+    if not estimate:
+        return summary
+
+    summary.update({
+        "estimated_cost": estimate["total_cost"],
+        "transport": TRANSPORT_LABEL.get(estimate["transport"], estimate["transport"]),
+        "total_minutes": estimate["total_minutes"],
+        "move_minutes": estimate["move_minutes"],
+        "stay_minutes": estimate["stay_minutes"],
+        "total_distance_km": estimate["total_distance_km"],
+        "cost_breakdown": estimate["cost_breakdown"],
+        "legs": estimate["legs"],
+        "experience_stay_is_default": estimate["experience_stay_is_default"],
+        # ★화면이 '예상'임을 밝히도록 표시한다.★ 실제 경로·요금 API 를 쓰지 않는다.
+        "is_estimate": True,
+    })
+    return summary
 
 
 def build_course(experience, places_by_type, scorer=None):
@@ -38,7 +64,8 @@ def build_course(experience, places_by_type, scorer=None):
     for slot in COURSE_SLOTS:
         if slot["type"] == "experience":
             name = f"{experience.crop} 체험"
-            items.append({"time": slot["time"], "type": "experience", "name": name, "distance_km": 0.0})
+            items.append({"time": slot["time"], "type": "experience", "name": name,
+                          "distance_km": 0.0, "lat": origin_lat, "lng": origin_lng})
             used_names.add(name)
             continue
         candidates = _sorted_by_distance(origin_lat, origin_lng, places_by_type.get(slot["type"], []))
@@ -52,7 +79,10 @@ def build_course(experience, places_by_type, scorer=None):
             "type": slot["type"],
             "name": picked["name"],
             "address": picked.get("address"),
+            # 농장 기준 거리. 구간 거리(이전 장소 → 다음 장소)는 course_estimate 가 낸다.
             "distance_km": picked["distance_km"],
+            "lat": _to_float(picked.get("lat")),
+            "lng": _to_float(picked.get("lng")),
             # 출처를 화면까지 넘긴다. 충남 데이터면 '충남도 제공'을 표시한다.
             "source": picked.get("source"),
         }

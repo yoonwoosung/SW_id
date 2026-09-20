@@ -345,6 +345,18 @@
 
     var ciModal = document.getElementById('ci-modal');
 
+    function fmtMinutes(mins) {
+        var h = Math.floor(mins / 60), m = mins % 60;
+        return (h ? h + '시간' : '') + (m ? (h ? ' ' : '') + m + '분' : (h ? '' : '0분'));
+    }
+
+    // 서버가 이동·체류로 계산한 값을 쓴다. 없으면 예전처럼 슬롯 시각 차이로 대략 표시.
+    // (예전 값은 09:00~17:00 상수 뺄셈이라 실제 소요시간과 달랐다)
+    function courseDuration(sm, items) {
+        if (sm && sm.total_minutes) return fmtMinutes(sm.total_minutes);
+        return computeDuration(items);
+    }
+
     function computeDuration(items) {
         if (!items || items.length < 2) return null;
         var parse = function (t) {
@@ -383,23 +395,41 @@
         // 예상 비용
         var costEl = document.getElementById('ci-cost');
         if (sm.estimated_cost) {
-            costEl.innerHTML = '<div class="ci-modal__cost-num">' + Number(sm.estimated_cost).toLocaleString() + '원</div>'
-                + '<div class="ci-modal__cost-lbl">1인당 예상 비용 · 체험비 + 식사 + 교통 포함</div>';
+            var detail = '';
+            if (sm.cost_breakdown && sm.cost_breakdown.length) {
+                // ★'예상'임을 밝히고 산출 내역을 함께 보여준다.★
+                // 실제 경로·요금 API 를 쓰지 않는 추정값이라 근거 없이 단정하면 안 된다.
+                detail = '<details class="ci-cost-detail"><summary>산출 내역 보기</summary><ul>'
+                    + sm.cost_breakdown.map(function (c) {
+                        return '<li><span>' + esc(c.label)
+                            + (c.note ? ' <em>(' + esc(c.note) + ')</em>' : '')
+                            + (c.estimated ? ' <em>예상</em>' : '') + '</span>'
+                            + '<b>' + Number(c.amount).toLocaleString() + '원</b></li>';
+                    }).join('')
+                    + '</ul></details>';
+            }
+            costEl.innerHTML = '<div class="ci-modal__cost-num">' + Number(sm.estimated_cost).toLocaleString() + '원'
+                + (sm.is_estimate ? ' <span class="ci-est-tag">예상</span>' : '') + '</div>'
+                + '<div class="ci-modal__cost-lbl">1인당 · 체험비 외에는 평균값으로 추정합니다</div>'
+                + detail;
             costEl.hidden = false;
         } else { costEl.hidden = true; }
 
         // 코스 요약 칩
         var summaryEl = document.getElementById('ci-summary');
         var chips = [];
-        var dur = computeDuration(items);
-        if (dur) chips.push('<span class="ci-modal__summary-chip"><i class="fa-solid fa-clock"></i> 총 ' + dur + '</span>');
+        var dur = courseDuration(sm, items);
+        if (dur) chips.push('<span class="ci-modal__summary-chip"><i class="fa-solid fa-clock"></i> 총 ' + esc(dur)
+            + (sm.is_estimate ? ' <span style="opacity:.7;font-weight:500;">예상</span>' : '') + '</span>');
+        if (sm.total_distance_km) chips.push('<span class="ci-modal__summary-chip"><i class="fa-solid fa-route"></i> '
+            + sm.total_distance_km + 'km</span>');
         if (sm.transport) chips.push('<span class="ci-modal__summary-chip"><i class="fa-solid fa-' + (sm.transport === '자가용' ? 'car' : 'bus') + '"></i> ' + esc(sm.transport) + ' 추천</span>');
         if (items.length) chips.push('<span class="ci-modal__summary-chip"><i class="fa-solid fa-map-pin"></i> ' + items.length + '개 장소</span>');
         if (chips.length) { summaryEl.innerHTML = chips.join(''); summaryEl.hidden = false; }
         else { summaryEl.hidden = true; }
 
         // 추천 일정 타임라인
-        document.getElementById('ci-timeline').innerHTML = buildModalTimeline(items);
+        document.getElementById('ci-timeline').innerHTML = buildModalTimeline(items, sm);
 
         // ESG + 편의 태그
         var amenityEl = document.getElementById('ci-amenity');
@@ -451,15 +481,22 @@
 
     var TL_ICON = { experience: 'sprout', restaurant: 'utensils', attraction: 'landmark', cafe: 'coffee' };
 
-    function buildModalTimeline(items) {
+    function buildModalTimeline(items, sm) {
         if (!items || !items.length) return '<p class="fl-empty">코스 정보를 불러올 수 없어요.</p>';
         var stops = items.filter(function (it) { return it.type !== 'experience'; });
+        // 구간별 이동(이전 장소 → 다음 장소). 서버가 좌표로 계산해 내려준다.
+        var legBefore = {};
+        ((sm && sm.legs) || []).forEach(function (l) { legBefore[l.to] = l; });
         var tlHtml = '<div class="ci-tl">' + items.map(function (it) {
             var icon = TL_ICON[it.type] || 'map-pin';
             var sub = it.type === 'experience'
-                ? '메인 체험'
+                ? ('메인 체험' + (sm && sm.experience_stay_is_default ? ' · 2시간(기본값)' : ''))
                 : ((it.address || '') + (it.distance_km != null ? ' · ' + it.distance_km + 'km' : ''));
-            return '<div class="ci-tl-item">'
+            var leg = legBefore[it.name];
+            var legHtml = leg
+                ? '<div class="ci-tl-leg">↓ 이동 ' + leg.distance_km + 'km · 약 ' + leg.minutes + '분</div>'
+                : '';
+            return legHtml + '<div class="ci-tl-item">'
                 + '<div class="ci-tl-time">' + esc(it.time) + '</div>'
                 + '<div class="ci-tl-icon"><i data-lucide="' + icon + '"></i></div>'
                 + '<div><div class="ci-tl-name">' + esc(it.name || '') + '</div>'

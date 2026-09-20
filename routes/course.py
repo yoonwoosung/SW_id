@@ -19,6 +19,7 @@ from external import pet_travel_api
 from services import course_builder
 from services import place_merge
 from services import place_score
+from services import course_estimate
 from services.course_reason import build_course_reason
 from services.thumbnail_service import experience_thumbnail_url
 
@@ -175,6 +176,7 @@ def experience_course(item_id):
     codes = _selected_codes()
     activity_places, activity_names = _activity_places(item, codes)
     scorer = _build_scorer(item, codes, activity_names)
+    transport = course_estimate.normalize_transport(codes)
     places_by_type = _collect_places(item)
 
     # 액티비티 장소는 관광 슬롯 후보에 더한다(맛집·카페에 승마장이 섞이면 안 된다).
@@ -186,7 +188,12 @@ def experience_course(item_id):
         except Exception:
             pass      # 보강 실패는 코스 생성을 막지 않는다
     items = course_builder.build_course(item, places_by_type, scorer=scorer)
-    summary = course_builder.build_course_summary(item)
+    # 시간·비용 추정이 실패해도 코스는 그대로 나와야 한다.
+    try:
+        estimate = course_estimate.estimate(items, getattr(item, "cost", 0) or 0, transport)
+    except Exception:
+        estimate = None
+    summary = course_builder.build_course_summary(item, estimate)
 
     has_places = any(it.get("type") != "experience" for it in items)
     if not has_places:

@@ -127,10 +127,9 @@ def region_dropdown_groups():
     광역시는 별도 aliases(주소 키워드)를 검색어로 씀(광주→광주광역시 등)."""
     metro = {
         "label": "광역시·특별시",
-        "options": [
-            {"value": aliases[0], "label": label}
-            for _code, label, aliases, _cities in _METRO_REGIONS
-        ]
+        "options": [{"value": "광역시", "label": "광역시·특별시"}]
+        + [{"value": aliases[0], "label": label}
+           for _code, label, aliases, _cities in _METRO_REGIONS]
     }
     provinces = [
         {
@@ -207,13 +206,16 @@ SEARCH_CATEGORIES = [
         {"code": "course_under_30k", "label": "3만원 이하"}, {"code": "course_30_50k", "label": "3~5만원"},
         {"code": "course_50_100k", "label": "5~10만원"}, {"code": "course_over_100k", "label": "10만원 이상"}]},
     {"code": "transport", "label": "교통수단", "group": "practical", "children": [
+        # 코스의 이동 시간·교통비 계산 기준이 된다(services/course_estimate).
+        # 미설정이면 대중교통으로 본다(보수적 = 시간이 더 걸린다).
         {"code": "car", "label": "자가용"},
-        {"code": "public_transit", "label": "대중교통", "hidden": True},
-        # hidden: 자가용만 has_parking 과 연동된다. 나머지는 판정할 데이터가 없다.
-        # (2026-09-20 리팩터로 hidden 이 풀려 한동안 노출됐다 — 누르면 0건이었다)
+        {"code": "public_transit", "label": "대중교통"},
+        {"code": "taxi", "label": "택시"},
+        # hidden: 도보·자전거로는 코스 거리(수 km~수십 km)를 감당할 수 없어
+        # 시간·비용 추정이 무의미하다.
         {"code": "walk", "label": "도보", "hidden": True},
         {"code": "bike", "label": "자전거", "hidden": True},
-        # 판정 가능한 형제가 car 하나뿐이라 '기타'(=car 가 아닌 것)가 성립하지 않는다.
+        # 셋 중 하나를 반드시 쓰므로 '기타'가 성립하지 않는다.
         dict(_other_node("transport"), hidden=True)]},
     # hidden: 위와 같은 이유.
     {"code": "duration_hours", "label": "소요시간", "group": "practical", "hidden": True, "children": [

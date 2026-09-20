@@ -70,19 +70,16 @@
                 <div class="hero-unified-divider"></div>
                 <select name="region" class="hero-unified-select">
                     <option value="">지역</option>
-                    {% if region_groups %}
-                      {% for grp in region_groups %}
-                        {% if grp.label == '광역시·특별시' %}
-                          <optgroup label="광역시·특별시">
-                            {% for opt in grp.options %}
-                            <option value="{{ opt.value }}" {% if request.args.get('region')==opt.value %}selected{% endif %}>{{ opt.label }}</option>
-                            {% endfor %}
-                          </optgroup>
-                        {% else %}
-                          <option value="{{ grp.options[0].value }}" {% if request.args.get('region')==grp.options[0].value %}selected{% endif %}>{{ grp.options[0].label }}</option>
-                        {% endif %}
-                      {% endfor %}
-                    {% endif %}
+                    <option value="광역시" {% if request.args.get('region')=='광역시' %}selected{% endif %}>광역시·특별시</option>
+                    <option value="경기" {% if request.args.get('region')=='경기' %}selected{% endif %}>경기</option>
+                    <option value="강원" {% if request.args.get('region')=='강원' %}selected{% endif %}>강원</option>
+                    <option value="충북" {% if request.args.get('region')=='충북' %}selected{% endif %}>충북</option>
+                    <option value="충남" {% if request.args.get('region')=='충남' %}selected{% endif %}>충남</option>
+                    <option value="전북" {% if request.args.get('region')=='전북' %}selected{% endif %}>전북</option>
+                    <option value="전남" {% if request.args.get('region')=='전남' %}selected{% endif %}>전남</option>
+                    <option value="경북" {% if request.args.get('region')=='경북' %}selected{% endif %}>경북</option>
+                    <option value="경남" {% if request.args.get('region')=='경남' %}selected{% endif %}>경남</option>
+                    <option value="제주" {% if request.args.get('region')=='제주' %}selected{% endif %}>제주</option>
                 </select>
                 <div class="hero-unified-divider"></div>
                 <input type="date" name="date_filter" class="hero-unified-select"
@@ -691,17 +688,14 @@
     function showRight(grpIndex) {
         var grp = groups[grpIndex];
         if (!grp) { rightPanel.style.display = 'none'; return; }
-        var isMetro = grp.label === '광역시·특별시';
         rightGrid.innerHTML = grp.options.map(function (opt, i) {
-            var isFirst = i === 0 && !isMetro;
-            return '<button type="button" class="rd-opt' + (isFirst ? ' rd-opt--province' : '') + '" data-val="' + opt.value + '" data-lbl="' + opt.label + '">' + opt.label + (isFirst ? ' 전체' : '') + '</button>';
+            var isFirst = i === 0;
+            return '<button type="button" class="rd-opt' + (isFirst ? ' rd-opt--province' : '') + '" data-val="' + opt.value + '" data-lbl="' + opt.label + '">' + opt.label + '</button>';
         }).join('');
         rightGrid.querySelectorAll('.rd-opt').forEach(function (btn) {
             btn.addEventListener('click', function () { setRegion(btn.dataset.val, btn.dataset.lbl); });
         });
-        // 열 수: 항목 수에 따라 조정
-        var cols = Math.min(4, Math.ceil(grp.options.length / 5) + 1);
-        rightGrid.style.gridTemplateColumns = 'repeat(' + cols + ', minmax(72px, 1fr))';
+        rightGrid.style.gridTemplateColumns = 'repeat(4, minmax(72px, 1fr))';
         rightPanel.style.display = 'block';
     }
 

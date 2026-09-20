@@ -23,8 +23,8 @@ HIDDEN_CATEGORIES = {'schedule', 'duration_hours'}
 
 # 개별로 감춘 잎
 HIDDEN_LEAF_CODES = {
-    # 교통수단 — 자가용만 has_parking 과 연동된다
-    'public_transit', 'walk', 'bike', 'transport_other',
+    # 교통수단 — 도보·자전거는 코스 거리를 감당 못 해 추정이 무의미하다
+    'walk', 'bike', 'transport_other',
     # 편의시설 — 대응 컬럼이 없거나 불리언이라 '기타'가 성립하지 않는다
     'restroom', 'nursing_room', 'facility_other',
 }
@@ -101,9 +101,12 @@ def test_facility_keeps_working_options():
     assert {n['code'] for n in facility['children']} == VISIBLE_FACILITY
 
 
-def test_transport_keeps_car_only():
+def test_transport_keeps_three_modes():
+    """자가용·대중교통·택시. 각각 이동 속도와 교통비가 다르다."""
     transport = next(c for c in visible_categories() if c['code'] == 'transport')
-    assert [n['code'] for n in transport['children']] == ['car']
+    assert [n['code'] for n in transport['children']] == ['car', 'public_transit', 'taxi']
+    from common.constants import COURSE_SPEED_KMH
+    assert set(COURSE_SPEED_KMH) == {'car', 'public_transit', 'taxi'}
 
 
 def test_pet_group_lives_under_companion_type():

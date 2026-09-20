@@ -5,7 +5,7 @@ from models import Experience
 from common.response import success_response, error_response
 from common.constants import (COURSE_SEARCH_RADIUS_M, MAX_SEARCH_RADIUS_M, COURSE_SLOTS,
                               TOUR_CSV_RADIUS_M)
-from common.search_categories import LEAF_CODES
+from common.search_categories import ALL_CODES
 from external import tour_api
 from external import chungnam_api
 from external import tour_csv
@@ -94,7 +94,9 @@ def _selected_codes():
         for code in str(chunk).split(","):
             code = code.strip()
             # 트리에 없는 코드는 버린다(오타·조작 방지). 중복은 첫 순서만 남긴다.
-            if code and code in LEAF_CODES and code not in seen:
+            # ★잎이 아니라 전체 노드로 검증한다★ — 도(chungnam)·광역시 그룹(metro)·
+            # 반려견 '전체'(pet_allowed)는 잎이 아니지만 고를 수 있고 판정도 된다.
+            if code and code in ALL_CODES and code not in seen:
                 seen.add(code)
                 codes.append(code)
     return codes

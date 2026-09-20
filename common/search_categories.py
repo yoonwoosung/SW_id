@@ -172,9 +172,9 @@ SEARCH_CATEGORIES = [
         {"code": "healing", "label": "힐링"}, {"code": "active", "label": "액티브"},
         {"code": "photo", "label": "인생샷"}, {"code": "educational", "label": "교육적"},
         {"code": "tradition", "label": "전통"}, _other_node("mood")]},
-    {"code": "season", "label": "계절·제철", "group": "taste", "children": [
-        {"code": "spring_strawberry", "label": "봄 딸기"}, {"code": "summer_blueberry", "label": "여름 블루베리"},
-        {"code": "autumn_harvest", "label": "가을 수확"}, {"code": "winter_experience", "label": "겨울 체험"},
+    {"code": "season", "label": "계절", "group": "taste", "children": [
+        {"code": "spring_strawberry", "label": "봄"}, {"code": "summer_blueberry", "label": "여름"},
+        {"code": "autumn_harvest", "label": "가을"}, {"code": "winter_experience", "label": "겨울"},
         _other_node("season")]},
     {"code": "budget_range", "label": "예산대", "group": "practical",
      "note": "*1인당 코스 총비용(교통·식사 포함) 기준입니다", "children": [

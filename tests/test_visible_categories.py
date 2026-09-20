@@ -26,13 +26,15 @@ HIDDEN_CATEGORIES = {'duration_hours'}
 HIDDEN_LEAF_CODES = {
     # 교통수단 — 도보·자전거는 코스 거리를 감당 못 해 추정이 무의미하다
     'walk', 'bike', 'transport_other',
-    # 편의시설 — 대응 컬럼이 없거나 불리언이라 '기타'가 성립하지 않는다
-    'restroom', 'nursing_room', 'facility_other',
+    # 편의시설 — 불리언이라 '기타'가 성립하지 않는다
+    # (화장실·수유실은 2026-09-20 에 장소 종류 기준값으로 살렸다)
+    'facility_other',
     # 일정 — 셋 중 하나를 반드시 쓰므로 '기타'가 성립하지 않는다
     'schedule_other',
 }
 
-VISIBLE_FACILITY = {'parking', 'barrier_free', 'wifi', 'pesticide_free', 'organic'}
+VISIBLE_FACILITY = {'parking', 'barrier_free', 'wifi', 'pesticide_free', 'organic',
+                    'restroom', 'nursing_room'}
 
 
 def _leaves(nodes):

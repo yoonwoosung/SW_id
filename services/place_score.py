@@ -9,6 +9,8 @@
 from common.search_categories import REGION_ADDRESS_KEYWORDS
 from common.constants import (  # noqa: F401  (COURSE_RULE_* 는 routes/course 가 재사용)
     COURSE_ACTIVITY_KAKAO,
+    COURSE_AMENITY_CSV_WORD,
+    COURSE_AMENITY_DEFAULT,
     COURSE_COMPANION_KAKAO,
     COURSE_CONDITION_WEIGHTS,
     COURSE_FACILITY_NEARBY,
@@ -40,6 +42,8 @@ def judgeable(code, api_sets=None):
         return True
     if code in COURSE_OTHER_SIBLINGS:
         return True
+    if code in COURSE_AMENITY_CSV_WORD:
+        return True      # 장소 종류·CSV 데이터로 판정한다(추가 호출 없음)
     if code in COURSE_PARTY_RULES:
         # 주차가 필요한 규칙은 주차장 조회 결과가 있어야 판정할 수 있다.
         if COURSE_PARTY_RULES[code]["parking"] is None:
@@ -130,8 +134,29 @@ def _matches_party(place, code, api_sets):
     return has_parking      # 주차만 보는 규칙(3~4명)
 
 
+def _matches_amenity(place, code):
+    """화장실·수유실 — CSV 실데이터를 먼저 보고, 없으면 장소 종류로 추정한다.
+
+    ★추정이라 화면에 '예상'이라고 밝힌다.★ 카카오 '공중화장실' 검색은
+    세차장·공원이 섞여 부정확해 쓰지 않는다(실측 확인).
+    확실하지 않은 종류(문화재·전망대)는 판정하지 않는다 — 억지로 붙이면 틀린 정보다.
+    """
+    facilities = str(place.get("facilities") or "")
+    if facilities:                                   # CSV 장소: 실제 데이터가 우선
+        return COURSE_AMENITY_CSV_WORD[code] in facilities
+
+    category = str(place.get("category") or "")
+    index = 0 if code == "restroom" else 1
+    for prefix, flags in COURSE_AMENITY_DEFAULT:
+        if category.startswith(prefix):
+            return flags[index]
+    return False
+
+
 def matches(place, code, api_sets=None):
     """장소 하나가 조건 하나를 충족하는가."""
+    if code in COURSE_AMENITY_CSV_WORD:
+        return _matches_amenity(place, code)
     if code in COURSE_PARTY_RULES:
         return _matches_party(place, code, api_sets)
     if code in REGION_ADDRESS_KEYWORDS:

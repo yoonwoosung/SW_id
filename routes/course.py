@@ -355,6 +355,9 @@ _IGNORED_REASON = {
 # ★점수가 아니라 '필터'로 반영되는 조건.★ 가중치를 주면 아무것도 맞히지
 # 못하면서 다른 조건의 몫만 줄인다. 대신 후보를 거르거나 넓혀 코스를 바꾼다.
 # 반영은 되므로 목록에 넣되 비율 대신 역할을 적는다.
+# 근거가 추정인 조건. 화면에 '예상'이라고 밝힌다.
+_ESTIMATED_CODES = {"restroom", "nursing_room"}
+
 _FILTER_ROLE = {
     "budget_range": "예산 안에 드는 장소를 고릅니다",
     "schedule": "더 먼 곳까지 후보로 봅니다",
@@ -401,6 +404,8 @@ def _condition_report(codes, api_sets, items, budget_over=False):
         "percent": weights[code],
         # 체험 목록은 못 거르고 코스 장소에만 쓰이는 조건은 그렇다고 밝힌다.
         "course_only": CATEGORY_OF_CODE.get(code) in _COURSE_ONLY,
+        # 실제 데이터가 아니라 장소 종류로 추정한 조건임을 밝힌다.
+        "estimated": code in _ESTIMATED_CODES,
     } for code in codes if code in weights]
 
     for code in codes:

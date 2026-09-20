@@ -496,6 +496,7 @@
                     return '<span class="ci-cond__item">' + esc(a.label)
                         + (a.percent != null ? ' <b>' + a.percent + '%</b>' : '')
                         + (a.role ? '<em>' + esc(a.role) + '</em>' : '')
+                        + (a.estimated ? '<em title="장소 종류로 추정한 값입니다">예상</em>' : '')
                         + (a.course_only ? '<em title="체험 목록은 거르지 않습니다">코스만</em>' : '')
                         + '</span>';
                 }).join('') + '</div>';

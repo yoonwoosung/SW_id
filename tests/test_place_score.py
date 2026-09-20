@@ -311,3 +311,38 @@ def test_party_2_is_not_judged():
     """
     assert judgeable('party_2') is False
     assert matches(HISTORY_PLACE, 'party_2') is False
+
+
+# ---- 화장실·수유실 (2026-09-20) ----
+
+def test_csv_facilities_take_priority():
+    """★CSV 장소는 실제 데이터(화장실 651건)가 있어 그쪽을 먼저 본다.★"""
+    have = {'name': 'x', 'category': '관광지', 'facilities': '주차장+화장실'}
+    only_parking = {'name': 'y', 'category': '관광지', 'facilities': '주차장'}
+    assert matches(have, 'restroom') is True
+    assert matches(only_parking, 'restroom') is False
+
+
+def test_amenity_defaults_by_place_kind():
+    assert matches({'name': 'x', 'category': 'A01010900'}, 'restroom') is True    # 계곡
+    assert matches({'name': 'x', 'category': 'A02030100'}, 'nursing_room') is True  # 체험관
+    assert matches({'name': 'x', 'category': 'A05020100'}, 'restroom') is True    # 음식점
+
+
+def test_uncertain_kinds_are_not_judged():
+    """★확실하지 않은 종류는 판정하지 않는다.★ 억지로 붙이면 틀린 정보다."""
+    for category in ('A02010700', 'A02050600'):   # 문화재 · 전망대
+        assert matches({'name': 'x', 'category': category}, 'restroom') is False
+        assert matches({'name': 'x', 'category': category}, 'nursing_room') is False
+
+
+def test_nursing_room_rarer_than_restroom():
+    """수유실은 화장실보다 드물다 — 체험관에만 있다고 본다."""
+    park = {'name': 'x', 'category': 'A01010900'}
+    assert matches(park, 'restroom') is True
+    assert matches(park, 'nursing_room') is False
+
+
+def test_amenity_needs_no_api_call():
+    assert judgeable('restroom') is True
+    assert judgeable('nursing_room') is True

@@ -230,9 +230,10 @@ SEARCH_CATEGORIES = [
         {"code": "parking", "label": "주차"},
         {"code": "barrier_free", "label": "무장애"}, {"code": "wifi", "label": "와이파이"},
         {"code": "pesticide_free", "label": "무농약"}, {"code": "organic", "label": "유기농인증"},
-        # hidden: 대응 컬럼이 없어 고르면 결과가 항상 0건이다.
-        {"code": "restroom", "label": "화장실", "hidden": True},
-        {"code": "nursing_room", "label": "수유실", "hidden": True},
+        # 2026-09-20: 코스 장소는 CSV 실데이터·장소 종류로 판정해 감춤을 풀었다.
+        # 체험 목록 필터로는 여전히 동작하지 않는다(Experience 에 대응 컬럼이 없다).
+        {"code": "restroom", "label": "화장실"},
+        {"code": "nursing_room", "label": "수유실"},
         # hidden: 불리언 항목이라 '목록에 없는 값'이라는 개념이 성립하지 않는다.
         dict(_other_node("facility"), hidden=True)]},
 ]

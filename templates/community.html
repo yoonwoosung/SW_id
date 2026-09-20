@@ -146,6 +146,7 @@
     padding: 12px;
     box-shadow: -4px 6px 14px rgba(0,0,0,0.22);
     position: relative;
+    overflow: hidden;
     transition: transform 0.2s;
 }
 
@@ -525,12 +526,17 @@
             card.onclick = () => openViewerModal(album.id);
 
             const catLabel = CATEGORY_NAMES[album.category] || '체험';
+            const coverPage = album.cover_page || {};
+            const hasElements = coverPage.elements && coverPage.elements.length > 0;
+            const thumbId = `thumb-cover-${album.id}`;
+            const shape = album.shape_theme || 'shape-portrait';
+            const pageW = shape === 'shape-landscape' ? 550 : shape === 'shape-square' ? 480 : 436;
+            const pageH = shape === 'shape-landscape' ? 420 : shape === 'shape-square' ? 480 : 640;
 
             card.innerHTML = `
                 <div class="album-card-thumb">
-                    <div class="mini-cover-preview ${album.cover_theme || 'cover-green'}">
-                        <i class="fa-solid fa-book-open"></i>
-                        <span class="mini-title">${escapeHtml(album.title || '추억 앨범')}</span>
+                    <div class="mini-cover-preview ${album.cover_theme || 'cover-green'}" id="${thumbId}" data-page-w="${pageW}" data-page-h="${pageH}">
+                        ${!hasElements ? `<i class="fa-solid fa-book-open"></i><span class="mini-title">${escapeHtml(album.title || '추억 앨범')}</span>` : ''}
                     </div>
                 </div>
                 <div class="album-card-info">
@@ -542,6 +548,14 @@
                 </div>
             `;
             grid.appendChild(card);
+
+            // 커버 요소가 있으면 실제 편집 내용을 썸네일에 렌더링
+            if (hasElements) {
+                const thumbCanvas = document.getElementById(thumbId);
+                if (thumbCanvas) {
+                    renderMiniCoverElements(thumbCanvas, coverPage.elements, 140, 180);
+                }
+            }
         });
     }
 
@@ -835,6 +849,56 @@
             }
             canvas.appendChild(elemDiv);
         });
+    }
+
+    // 썸네일 카드 커버 렌더링 — 실제 페이지 크기로 내부 컨테이너를 만들어 CSS scale로 축소
+    function renderMiniCoverElements(thumbEl, elements, thumbW, thumbH) {
+        if (!elements || !elements.length) return;
+
+        const pageW = parseInt(thumbEl.dataset.pageW || 436);
+        const pageH = parseInt(thumbEl.dataset.pageH || 640);
+
+        const scale = Math.min(thumbW / pageW, thumbH / pageH);
+
+        const inner = document.createElement('div');
+        inner.style.cssText = `
+            position:absolute;
+            top:50%;left:50%;
+            width:${pageW}px;height:${pageH}px;
+            transform:translate(-50%,-50%) scale(${scale});
+            transform-origin:center center;
+            overflow:hidden;
+        `;
+
+        elements.forEach(el => {
+            const elemDiv = document.createElement('div');
+            elemDiv.style.position = 'absolute';
+            elemDiv.style.top = (el.top || 0) + 'px';
+            elemDiv.style.left = (el.left || 0) + 'px';
+            elemDiv.style.width = (el.width || 100) + 'px';
+            if (el.height) elemDiv.style.height = el.height + 'px';
+            if (el.rotation) elemDiv.style.transform = `rotate(${el.rotation}deg)`;
+
+            if ((el.type === 'slot' || el.type === 'image') && el.src) {
+                elemDiv.innerHTML = `<img src="${el.src}" style="width:100%;height:100%;object-fit:cover;border-radius:4px;" draggable="false">`;
+            } else if (el.type === 'text') {
+                const txtStyle = [
+                    'font-family:' + (el.fontFamily || 'NanumBarunHippi'),
+                    'font-size:' + (el.fontSize || 16) + 'px',
+                    'font-weight:' + (el.fontWeight || 'normal'),
+                    'font-style:' + (el.fontStyle || 'normal'),
+                    'text-decoration:' + (el.textDecoration || 'none'),
+                    'text-align:' + (el.textAlign || 'left'),
+                    'color:' + (el.color || '#333333'),
+                    'background-color:' + (el.backgroundColor || 'transparent'),
+                    'width:100%;height:100%;padding:8px;box-sizing:border-box;overflow:hidden;word-break:break-word;white-space:pre-wrap;border:none'
+                ].join(';');
+                elemDiv.innerHTML = `<div style="${txtStyle}">${escapeHtml(el.text || '')}</div>`;
+            }
+            inner.appendChild(elemDiv);
+        });
+
+        thumbEl.appendChild(inner);
     }
 
     function escapeHtml(text) {

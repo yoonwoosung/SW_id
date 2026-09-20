@@ -5,6 +5,7 @@
 # 사용자는 필터를 켰다고 생각하는데 안 맞는 결과가 보이는 문제다.
 # 여기서는 가점이 아니라 통과/제외를 판정한다. 점수 계산은 건드리지 않는다.
 from common.constants import ESG_GRADE_B
+from services import category_match
 from services.category_match import matched_categories
 from services.esg_service import compute_esg
 
@@ -17,8 +18,13 @@ from services.esg_service import compute_esg
 # ★activity 를 뺀 이유★: activity_type 컬럼은 있으나 저장하는 코드가 없어
 # 모든 체험이 NULL 이다. 여기 두면 저장된 ?cond_activity=kayak 링크로 들어온
 # 사용자에게 결과가 항상 0건이 된다. 화면에서도 감췄다(search_categories 의 hidden).
+# ★'pet_dog' → 'companion_type'★ (2026-09-20 리팩터)
+# 반려견이 독립 대분류에서 동반유형 하위 그룹으로 옮겨졌다. 판정 코드가
+# 옛 대분류를 가리키고 있어 반려견 필터가 아무것도 거르지 못하고 있었다.
+# 동반유형 안의 인원수·동반구성은 판정할 수 없어 category_match.pet_selection 이
+# 반려견 코드만 추린다(자세한 이유는 그 함수 주석).
 JUDGEABLE_CATEGORIES = frozenset({
-    'region', 'budget_range', 'facility', 'pet_dog', 'transport',
+    'region', 'budget_range', 'facility', 'companion_type', 'transport',
 })
 
 
@@ -28,8 +34,19 @@ def selected_categories(conditions):
         return set()
     return {
         code for code, values in conditions.items()
-        if values and code in JUDGEABLE_CATEGORIES
+        if values and code in JUDGEABLE_CATEGORIES and _judgeable_values(code, values)
     }
+
+
+def _judgeable_values(category_code, values):
+    """대분류 안에서 실제로 판정할 수 있는 선택값만 남긴다.
+
+    동반유형은 반려견(판정 가능)과 인원수·동반구성(불가)이 섞여 있다.
+    불가한 것만 골랐다면 그 대분류는 건너뛴다 — 넣으면 결과가 항상 0건이 된다.
+    """
+    if category_code == 'companion_type':
+        return category_match.pet_selection(values)
+    return list(values)
 
 
 def passes_conditions(conditions, experience):

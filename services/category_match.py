@@ -19,8 +19,8 @@ def matched_categories(conditions, experience):
         matched.add("facility")
     if _has_activity(conditions.get("activity"), experience):
         matched.add("activity")
-    if _has_pet(conditions.get("pet_dog"), experience):
-        matched.add("pet_dog")
+    if _has_pet(pet_selection(conditions.get("companion_type")), experience):
+        matched.add("companion_type")
     if _has_transport(conditions.get("transport"), experience):
         matched.add("transport")
     return matched
@@ -32,7 +32,6 @@ def compute_category_match(conditions, experience):
 
 
 REGION_OTHER = "region" + OTHER_SUFFIX
-PET_OTHER = "pet_dog" + OTHER_SUFFIX
 
 # 지역 판정에 쓰는 전체 키워드(어느 지역에도 안 걸리는지 볼 때 쓴다).
 _ALL_REGION_KEYWORDS = tuple(
@@ -99,8 +98,23 @@ def _has_activity(selected, experience):
     return bool(activity) and activity in selected
 
 
+# 반려견은 2026-09-20 리팩터로 'pet_dog' 대분류에서 '동반유형(companion_type)'
+# 하위 그룹으로 옮겨졌다. 그룹 노드의 코드가 'pet_allowed' 라서 그룹의 '전체'
+# 체크박스가 이 값을 보낸다.
 PET_ALLOWED = "pet_allowed"
 PET_NOT_ALLOWED = "pet_not_allowed"
+
+# ★동반유형 안에서 실제로 판정할 수 있는 코드.★
+# 같은 대분류에 인원수(party_*)·동반구성(solo 등)이 섞여 있는데 이들은
+# Experience 에 대응 데이터가 없다. 걸러내지 않으면 사용자가 '혼자'만 골랐을 때
+# 동반유형이 '충족해야 할 대분류'로 잡히고 아무 체험도 통과하지 못해
+# ★결과가 통째로 0건★ 이 된다(지금까지 무시되던 것이 더 나쁜 버그로 바뀐다).
+PET_CODES = frozenset({PET_ALLOWED, PET_NOT_ALLOWED}) | frozenset(PET_WEIGHT_MIN_KG)
+
+
+def pet_selection(selected):
+    """동반유형 선택값에서 반려견 코드만 추린다. 없으면 빈 리스트(판정 건너뜀)."""
+    return [code for code in (selected or []) if code in PET_CODES]
 
 
 def _has_pet(selected, experience):
@@ -128,11 +142,6 @@ def _has_pet(selected, experience):
     allowed_kg = getattr(experience, "pet_max_weight_kg", None)
     if allowed_kg is None:
         return False      # 값이 없으면 '기타'도 아니다(목록 밖이 아니라 미입력이다)
-
-    # '기타' = 동반가능인데 허용 몸무게가 어떤 티어에도 못 미치는 경우(1~4kg).
-    # 소형견만 받는 농장이 여기 걸린다.
-    if PET_OTHER in selected and allowed_kg < min(PET_WEIGHT_MIN_KG.values()):
-        return True
 
     return any(
         PET_WEIGHT_MIN_KG.get(code) is not None and allowed_kg >= PET_WEIGHT_MIN_KG[code]

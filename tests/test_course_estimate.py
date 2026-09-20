@@ -467,3 +467,67 @@ def test_leisure_uses_the_requested_radius(monkeypatch):
     rc._leisure_places(_Exp(), ['active'], 40000)
     assert seen['radius'] == 40000
     assert seen['rows'] == rc._rows_for(40000)
+
+
+# ---- 조건 0건이면 반경 자동 확대 (2026-09-20) ----
+
+def test_nothing_matches_detects_zero_hits():
+    import routes.course as rc
+    scorer = lambda p: 1.0 if p.get('category', '').startswith('A0202') else 0.0
+    miss = {'attraction': [{'category': 'A0101'}, {'category': 'A0201'}]}
+    hit = {'attraction': [{'category': 'A0101'}, {'category': 'A02020700'}]}
+    assert rc._nothing_matches(scorer, miss) is True
+    assert rc._nothing_matches(scorer, hit) is False
+    # 조건을 안 골랐으면(scorer 없음) 넓히지 않는다 — 기존 거리순 그대로.
+    assert rc._nothing_matches(None, miss) is False
+
+
+def test_nothing_matches_survives_broken_scorer():
+    """★점수 계산이 터져도 코스는 만들어져야 한다.★"""
+    import routes.course as rc
+
+    def boom(place):
+        raise RuntimeError('점수 계산 실패')
+    assert rc._nothing_matches(boom, {'attraction': [{'category': 'A01'}]}) is True
+
+
+def test_widen_uses_retry_radius_and_more_rows(monkeypatch):
+    """★반경만 넓히면 소용없다.★ 조회 건수도 함께 늘어나야 한다."""
+    import routes.course as rc
+    from common.constants import COURSE_CONDITION_RETRY_RADIUS_M
+    seen = {}
+
+    def fake_fetch(experience, content_type, add_chungnam=False, radius_m=None):
+        seen['radius'] = radius_m
+        return [{'name': '보련마을', 'category': 'A02030100', 'lat': 36.9, 'lng': 127.4}]
+    monkeypatch.setattr(rc, '_fetch_places', fake_fetch)
+    monkeypatch.setattr(rc, '_leisure_places', lambda *a, **kw: [])
+
+    out = rc._widen_attraction(_Exp(), ['harvest'], {'attraction': []})
+    assert seen['radius'] == COURSE_CONDITION_RETRY_RADIUS_M
+    assert rc._rows_for(COURSE_CONDITION_RETRY_RADIUS_M) > rc._rows_for(10000)
+    assert [p['name'] for p in out['attraction']] == ['보련마을']
+
+
+def test_widen_keeps_existing_candidates(monkeypatch):
+    """★기존 후보가 사라지면 안 된다.★ 넓힌 결과는 더하는 것이다."""
+    import routes.course as rc
+    monkeypatch.setattr(rc, '_fetch_places',
+                        lambda *a, **kw: [{'name': '새 장소', 'category': 'A02030100',
+                                           'lat': 36.9, 'lng': 127.4}])
+    monkeypatch.setattr(rc, '_leisure_places', lambda *a, **kw: [])
+    before = [{'name': '기존 장소', 'category': 'A0201', 'lat': 36.8, 'lng': 127.3}]
+    out = rc._widen_attraction(_Exp(), [], {'attraction': list(before)})
+    names = [p['name'] for p in out['attraction']]
+    assert '기존 장소' in names and '새 장소' in names
+
+
+def test_widen_survives_fetch_failure(monkeypatch):
+    """★넓히기 실패가 코스 생성을 막으면 안 된다.★ 원래 후보를 그대로 돌려준다."""
+    import routes.course as rc
+
+    def boom(*a, **kw):
+        raise RuntimeError('관광공사 장애')
+    monkeypatch.setattr(rc, '_fetch_places', boom)
+    before = {'attraction': [{'name': '기존 장소', 'category': 'A0201'}]}
+    assert rc._widen_attraction(_Exp(), [], before) == before

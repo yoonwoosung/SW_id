@@ -294,6 +294,11 @@ COURSE_COMPANION_CAFE_HINT = "카페"
 # (항상 더하면 조건 없는 기본 코스에 골프장·캠핑장이 올라온다).
 COURSE_LEISURE_CODE = "active"
 
+# 조건에 맞는 장소가 0건일 때 관광 후보를 다시 찾는 반경(m).
+# ★반경만 넓히면 소용없다★ — 조회 건수도 함께 늘려야 한다(_rows_for).
+# 60km·rows 90 이 실질 상한이다(천안 40km 90건 = 60km 90건, 실측).
+COURSE_CONDITION_RETRY_RADIUS_M = 60000
+
 COURSE_PET_KAKAO = ("애견동반", "음식점")
 
 # --- 편의시설: 좌표 근접으로 판정 ---

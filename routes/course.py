@@ -14,6 +14,7 @@ from external import tour_csv
 from external import kakao_place
 from common.constants import (COURSE_ACTIVITY_KAKAO, COURSE_COMPANION_KAKAO,
                               COURSE_COMPANION_CAFE_HINT, COURSE_LEISURE_CODE,
+                              COURSE_CONDITION_RETRY_RADIUS_M,
                               COURSE_DURATION_SLOTS,
                               COURSE_SCHEDULE_RADIUS_M, COURSE_ROWS_PER_RADIUS,
                               COURSE_MAX_ROWS, NEARBY_RESULT_LIMIT,
@@ -201,6 +202,49 @@ def _activity_places(experience, codes):
             places.append(dict(place, content_type_id=TOUR_CONTENT_TYPE_ATTRACTION,
                                source=KAKAO_SOURCE))
     return places, names
+
+
+def _nothing_matches(scorer, places_by_type):
+    """고른 조건에 맞는 장소가 후보에 하나도 없는지."""
+    if scorer is None:
+        return False
+    for places in (places_by_type or {}).values():
+        for place in places or []:
+            try:
+                if scorer(place) > 0:
+                    return False
+            except Exception:
+                continue      # 점수 계산 실패는 '안 맞음'으로 본다
+    return True
+
+
+def _widen_attraction(experience, codes, places_by_type):
+    """조건에 맞는 장소가 0건이면 ★관광 후보만★ 더 멀리까지 다시 찾는다.
+
+    천안 병천은 반경 10km 안에 체험마을(수확)이 0건이지만 20km 부터 5건이
+    있다(실측). 지금까지는 그대로 거리순으로 떨어져 "조건이 안 먹는다"로
+    보였다.
+
+    ★관광 슬롯만 다시 부른다.★ 조건 대부분이 관광지 분류 위에 세워져 있고,
+    맛집·카페까지 다시 부르면 호출이 세 배가 된다.
+    ★한 번만 넓힌다.★ 신규 호출이 0.3초라 단계를 반복하면 체감이 나빠진다.
+    결과는 1시간 캐싱되므로 같은 체험을 다시 열 때는 비용이 없다.
+    """
+    radius_m = COURSE_CONDITION_RETRY_RADIUS_M
+    try:
+        wider = _fetch_places(experience, TOUR_CONTENT_TYPE_ATTRACTION,
+                              place_merge.is_chungnam(experience), radius_m)
+        wider += _leisure_places(experience, codes, radius_m)
+    except Exception:
+        return places_by_type     # ★넓히기 실패가 코스 생성을 막으면 안 된다.★
+    if not wider:
+        return places_by_type
+    try:
+        places_by_type["attraction"] = place_merge.merge(
+            places_by_type.get("attraction") or [], wider)
+    except Exception:
+        pass          # 보강 실패는 코스 생성을 막지 않는다
+    return places_by_type
 
 
 def _leisure_places(experience, codes, radius_m=None):
@@ -587,6 +631,17 @@ def experience_course(item_id):
         facility_names = {}
     scorer, _last_api_sets = _build_scorer(
         item, codes, activity_names, pet_names, facility_names, companion_names)
+
+    # 조건에 맞는 장소가 하나도 없으면 관광 후보를 더 멀리까지 찾아본다.
+    if _nothing_matches(scorer, places_by_type):
+        places_by_type = _widen_attraction(item, codes, places_by_type)
+        try:
+            facility_names = _facility_names(item, codes, places_by_type)
+        except Exception:
+            pass      # 넓힌 뒤 편의시설 재판정 실패는 무시하고 기존 값을 쓴다
+        scorer, _last_api_sets = _build_scorer(
+            item, codes, activity_names, pet_names, facility_names, companion_names)
+
     budget_left = _budget_for_places(codes, item)
     max_slots = _max_slots(codes)
     items = course_builder.build_course(item, places_by_type, scorer=scorer,

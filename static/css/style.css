@@ -2530,6 +2530,7 @@ a svg, a i { pointer-events: none; }
     background: transparent;
     box-shadow: none;
     border-radius: 0;
+    overflow: hidden;
 }
 
 .slider-card + .slider-card {

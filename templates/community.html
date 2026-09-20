@@ -2,6 +2,36 @@
 {% block content %}
 
 <style>
+/* ─── 로컬 웹폰트 ─── */
+@font-face {
+    font-family: 'NanumBarunHippi';
+    src: url("{{ url_for('static', filename='fonts/나눔손글씨 바른히피.ttf') }}") format('truetype');
+}
+@font-face {
+    font-family: 'MaruBuri';
+    src: url("{{ url_for('static', filename='fonts/MaruBuri-Regular.ttf') }}") format('truetype');
+    font-weight: normal;
+}
+@font-face {
+    font-family: 'MaruBuri';
+    src: url("{{ url_for('static', filename='fonts/MaruBuri-Bold.ttf') }}") format('truetype');
+    font-weight: bold;
+}
+@font-face {
+    font-family: 'BMJUA';
+    src: url("{{ url_for('static', filename='fonts/BMJUA_ttf.ttf') }}") format('truetype');
+}
+@font-face {
+    font-family: 'CookieRun';
+    src: url("{{ url_for('static', filename='fonts/CookieRun Regular.ttf') }}") format('truetype');
+    font-weight: normal;
+}
+@font-face {
+    font-family: 'CookieRun';
+    src: url("{{ url_for('static', filename='fonts/CookieRun Bold.ttf') }}") format('truetype');
+    font-weight: bold;
+}
+
 /* ========================================================
    🌿 앨범마당 메인 스타일
 ======================================================== */
@@ -641,16 +671,31 @@
 
             const book = document.createElement('div');
             book.className = `book-container is-closed is-single-preview ${cover} ${shape}`;
-            book.innerHTML = `
-                <div class="book-page single-page book-cover-page d-flex flex-column align-items-center justify-content-center p-4">
-                    <div class="cover-emboss-border text-center p-4 w-100 h-100 d-flex flex-column align-items-center justify-content-center">
-                        <i class="fa-solid fa-book-open fa-4x mb-3 text-gold"></i>
-                        <h3 class="font-weight-bold text-gold mb-3">${escapeHtml(viewerAlbumData.title || '추억 앨범')}</h3>
-                        <p class="small text-gold mb-0">FarmLink Memory Photo Book</p>
+
+            const coverPage = pagesData[0];
+            const hasElements = coverPage && coverPage.elements && coverPage.elements.length > 0;
+
+            if (hasElements) {
+                book.innerHTML = `
+                    <div class="book-page single-page book-cover-page" id="viewerCoverCanvas" style="position:relative;overflow:hidden;"></div>
+                `;
+                stage.appendChild(book);
+                const canvas = book.querySelector('#viewerCoverCanvas');
+                if (canvas) {
+                    renderElementsToCanvas(canvas, coverPage.elements);
+                }
+            } else {
+                book.innerHTML = `
+                    <div class="book-page single-page book-cover-page d-flex flex-column align-items-center justify-content-center p-4">
+                        <div class="cover-emboss-border text-center p-4 w-100 h-100 d-flex flex-column align-items-center justify-content-center">
+                            <i class="fa-solid fa-book-open fa-4x mb-3 text-gold"></i>
+                            <h3 class="font-weight-bold text-gold mb-3">${escapeHtml(viewerAlbumData.title || '추억 앨범')}</h3>
+                            <p class="small text-gold mb-0">FarmLink Memory Photo Book</p>
+                        </div>
                     </div>
-                </div>
-            `;
-            stage.appendChild(book);
+                `;
+                stage.appendChild(book);
+            }
         }
         else if (slide.type === 'cover_back') {
             let scaleRatio = 0.65;

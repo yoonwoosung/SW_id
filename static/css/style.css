@@ -5001,3 +5001,42 @@ header.header-volunteer { border-bottom-color: #FF9800; }
     opacity: 0.75;
     line-height: 1.5;
 }
+
+/* ============================================================================
+   [코스 추정] 구간 이동 표시 · 비용 산출 내역
+   ★모두 '예상'값이다.★ 실제 경로·요금 API 를 쓰지 않으므로 화면에서 밝힌다.
+   ============================================================================ */
+.ci-tl-leg {
+    margin: 2px 0 2px 22px;
+    font-size: 0.74rem;
+    color: #8a938c;
+    letter-spacing: -0.01em;
+}
+.ci-est-tag {
+    font-size: 0.62rem;
+    font-weight: 700;
+    color: #8a938c;
+    background: #f0f2ef;
+    border-radius: 4px;
+    padding: 2px 6px;
+    vertical-align: 5px;
+    margin-left: 4px;
+}
+.ci-cost-detail { margin-top: 8px; }
+.ci-cost-detail > summary {
+    cursor: pointer;
+    font-size: 0.76rem;
+    color: #6a746d;
+    list-style: none;
+}
+.ci-cost-detail > summary::-webkit-details-marker { display: none; }
+.ci-cost-detail > summary::before { content: "▸ "; }
+.ci-cost-detail[open] > summary::before { content: "▾ "; }
+.ci-cost-detail ul { margin: 6px 0 0; padding: 0; list-style: none; }
+.ci-cost-detail li {
+    display: flex; justify-content: space-between; gap: 10px;
+    font-size: 0.78rem; color: #55605a; padding: 3px 0;
+    border-bottom: 1px dashed #e8ebe8;
+}
+.ci-cost-detail li:last-child { border-bottom: none; }
+.ci-cost-detail em { font-style: normal; font-size: 0.7rem; color: #9aa39c; }

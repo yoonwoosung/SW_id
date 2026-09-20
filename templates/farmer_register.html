@@ -28,6 +28,14 @@
                         <label class="form-check-label" for="has_parking">주차장 제공</label>
                     </div>
                     <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="barrier_free" value="true" id="barrier_free" {% if item and item.barrier_free %}checked{% endif %}>
+                        <label class="form-check-label" for="barrier_free">무장애 접근 가능 (휠체어·유모차)</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="has_wifi" value="true" id="has_wifi" {% if item and item.has_wifi %}checked{% endif %}>
+                        <label class="form-check-label" for="has_wifi">와이파이 제공</label>
+                    </div>
+                    <div class="form-check">
                         <input class="form-check-input" type="checkbox" name="pet_allowed" value="true" id="pet_allowed"
                                {% if item and item.pet_allowed %}checked{% endif %}
                                onchange="document.getElementById('pet-weight-row').hidden = !this.checked;">

@@ -98,6 +98,16 @@
                         <label class="easy-form-label-lg">추가 옵션</label>
                         
                         <!-- 주차장 체크 행 -->
+                        <div class="custom-option-card" onclick="toggleCheckbox('barrier_free')">
+                            <span class="option-title">♿ 무장애 접근 가능 (휠체어·유모차)</span>
+                            <input type="checkbox" class="custom-large-check" id="barrier_free" name="barrier_free"
+                                {% if form_data.get('barrier_free') or (item and item.barrier_free) %}checked{% endif %} onclick="event.stopPropagation()">
+                        </div>
+                        <div class="custom-option-card" onclick="toggleCheckbox('has_wifi')">
+                            <span class="option-title">📶 와이파이 제공</span>
+                            <input type="checkbox" class="custom-large-check" id="has_wifi" name="has_wifi"
+                                {% if form_data.get('has_wifi') or (item and item.has_wifi) %}checked{% endif %} onclick="event.stopPropagation()">
+                        </div>
                         <div class="custom-option-card" onclick="toggleCheckbox('has_parking')">
                             <span class="option-title">🅿️ 주차장 제공</span>
                             <input type="checkbox" class="custom-large-check" id="has_parking" name="has_parking" 
@@ -229,7 +239,7 @@
 
                         <div id="recipe-fields-easy"
                             style="display: {% if form_data.get('has_recipe') or (item and item.has_recipe) %}block{% else %}none{% endif %}; margin-top:16px; padding:20px; background:#f4faec; border-radius:12px; border:1px solid #c8e6c9;">
-                            <p class="text-muted small mb-3">체험을 완료한 손님에게만 특별한 레시피가 제공됩니다. <br><b>모든 칸을 채울 필요 없이, 빈칸이나 사진 중 하나만 등록해도 됩니다!</b></p>
+                            <p class="text-muted small mb-3">체험을 완료한 손님에게만 특별한 레시피가 제공됩니다. <br><b>모든 칸을 채울 필요 없이, 글로 직접 적으시거나 손글씨 레시피 사진만 한 장 올리셔도 됩니다!</b></p>
                             
                             <div class="form-group">
                                 <label class="easy-form-label-lg" style="font-size:1rem;" for="recipe_name">요리 이름 (선택)</label>
@@ -253,7 +263,7 @@
                             </div>
 
                             <div class="form-group mb-0">
-                                <label class="easy-form-label-lg" style="font-size:1rem;" for="recipe_image">요리 완성 사진 또는 손글씨 사진 (선택)</label>
+                                <label class="easy-form-label-lg" style="font-size:1rem;" for="recipe_image">손글씨 레시피 사진 (선택)</label>
                                 <input type="file" class="form-control-file" id="recipe_image" name="recipe_image" accept="image/*">
                                 {% if item and item.recipe_image %}
                                 <small class="form-text text-muted" id="existing_recipe_img">현재 파일: {{ item.recipe_image }}</small>

@@ -11,7 +11,7 @@ from sqlalchemy.orm import joinedload
 
 from common.response import success_response
 from services import surplus_service
-from services.experience_validator import discount_rate
+from services.experience_validator import discount_percent
 from services.thumbnail_service import experience_thumbnail_url
 
 DEFAULT_LIMIT = 12
@@ -19,7 +19,9 @@ MAX_LIMIT = 50
 
 
 def _to_card(experience):
-    rate = discount_rate(experience.list_price, experience.cost)
+    # 리본·상세 배지와 같은 값을 쓴다(내림한 정수 %).
+    # 예전에는 여기만 round(rate*100, 1) 이라 같은 체험이 '33.3%'·'33%' 로 달랐다.
+    percent = discount_percent(experience)
     left = surplus_service.remaining(experience)
     return {
         "id": experience.id,
@@ -27,7 +29,7 @@ def _to_card(experience):
         "address": experience.address_detail or experience.location or "",
         "cost": experience.cost,                      # 할인가(실제 결제 금액)
         "list_price": experience.list_price,          # 정가(취소선 표시용)
-        "discount_rate": round(rate * 100, 1) if rate is not None else None,
+        "discount_rate": percent,       # 내림한 정수 %. 필드명은 프론트 호환을 위해 유지.
         "unit": experience.surplus_unit or "kg",
         "per_person": experience.surplus_per_person,
         "qty_total": experience.surplus_qty_total,

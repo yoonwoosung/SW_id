@@ -68,7 +68,10 @@ def _has_facility(selected, experience):
             return True
         if code == "organic" and getattr(experience, "organic_certification_type", None):
             return True
-        # restroom, barrier_free, nursing_room: Experience에 대응 데이터가 없어 판정하지 않는다.
+        if code == "barrier_free" and getattr(experience, "barrier_free", False):
+            return True
+        # restroom, nursing_room: Experience 에 대응 컬럼이 없어 판정할 수 없다.
+        # 화면에서도 감춘다(common/search_categories 의 hidden).
     return False
 
 
@@ -79,10 +82,32 @@ def _has_activity(selected, experience):
     return bool(activity) and activity in selected
 
 
+PET_ALLOWED = "pet_allowed"
+PET_NOT_ALLOWED = "pet_not_allowed"
+
+
 def _has_pet(selected, experience):
-    # 몸무게 티어(dog_small/medium/large)만 판정: 체험이 그 몸무게 이상 허용하면 충족.
-    if not selected or not getattr(experience, "pet_allowed", False):
+    """반려견 조건 충족 여부.
+
+    예전에는 몸무게 티어(dog_small/medium/large)만 봤다. 그래서 목록의
+    ★'동반가능'·'동반불가'를 고르면 어떤 체험도 통과하지 못했다.★
+    '동반가능'은 티어를 감싸는 부모 체크박스라 실제로 전송되는 값이다.
+
+    케어 조건(목줄·케이지·실내·야외)은 대응 컬럼이 없어 여전히 판정하지
+    않는다. 화면에서도 감춘다(common/search_categories 의 hidden).
+    """
+    if not selected:
         return False
+    pet_allowed = bool(getattr(experience, "pet_allowed", False))
+
+    if PET_NOT_ALLOWED in selected and not pet_allowed:
+        return True
+    if not pet_allowed:
+        return False
+    if PET_ALLOWED in selected:
+        return True
+
+    # 몸무게 티어: 체험이 그 몸무게 이상 허용하면 충족.
     allowed_kg = getattr(experience, "pet_max_weight_kg", None)
     if allowed_kg is None:
         return False

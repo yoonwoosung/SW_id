@@ -467,3 +467,124 @@ def test_etc_whitespace_trimmed():
 def test_reason_cleared_when_not_surplus():
     data, err = parse_surplus_fields({'surplus_reason': '과잉생산'}, cost=25000)
     assert err is None and data['surplus_reason'] is None
+
+
+# ======================================================================
+# 리본 문구 — 사유·정가가 없어도 떠야 한다
+# ======================================================================
+#
+# 증상: 과생산 탭에 3건이 나오는데 리본은 2건만 떴다.
+# 사유 컬럼이 생기기 전에 등록된 체험(surplus_reason=NULL)이 걸러졌다.
+
+from services.experience_validator import (
+    ribbon_text, discount_percent, SURPLUS_RIBBON_DEFAULT_REASON,
+)
+
+
+class FakeSurplus:
+    def __init__(self, is_surplus=True, terms=True, list_price=50000,
+                 cost=25000, reason='과잉생산'):
+        self.is_surplus = is_surplus
+        self.surplus_terms_agreed = terms
+        self.list_price = list_price
+        self.cost = cost
+        self.surplus_reason = reason
+
+
+# ---- 할인율(정수 %) ----
+
+def test_discount_percent_floors():
+    """★내림한다.★ 66.67% 를 67% 로 올리면 실제보다 더 깎아준 것처럼 보인다."""
+    assert discount_percent(FakeSurplus(list_price=30000, cost=10000)) == 66   # 66.67%
+    assert discount_percent(FakeSurplus(list_price=30000, cost=20000)) == 33   # 33.33%
+    assert discount_percent(FakeSurplus(list_price=50000, cost=25000)) == 50
+
+
+def test_discount_percent_none_without_list_price():
+    assert discount_percent(FakeSurplus(list_price=None)) is None
+    assert discount_percent(FakeSurplus(list_price=0)) is None
+    assert discount_percent(FakeSurplus(cost=None)) is None
+
+
+# ---- 리본 문구 4가지 ----
+
+def test_ribbon_with_reason_and_rate():
+    assert ribbon_text(FakeSurplus(list_price=30000, cost=20000)) == '과잉생산 33%'
+
+
+def test_ribbon_without_reason_uses_default_label():
+    """★사유가 없어도 뜬다.★ (배포된 '저렴한 좋은 파인애플' 사례)
+
+    '90%' 만 띄우면 무엇이 90% 인지 알 수 없어 기본 문구를 붙인다.
+    """
+    pineapple = FakeSurplus(list_price=150000, cost=15000, reason=None)
+    assert ribbon_text(pineapple) == '과생산 90%'
+    assert SURPLUS_RIBBON_DEFAULT_REASON == '과생산'
+
+
+def test_ribbon_without_list_price_shows_reason_only():
+    """정가가 없으면 할인율을 못 구한다. 그래도 과생산인 건 알려준다."""
+    assert ribbon_text(FakeSurplus(list_price=None)) == '과잉생산'
+
+
+def test_ribbon_without_reason_and_rate():
+    assert ribbon_text(FakeSurplus(list_price=None, reason=None)) == '과생산'
+
+
+def test_ribbon_empty_reason_treated_as_missing():
+    assert ribbon_text(FakeSurplus(list_price=50000, cost=25000, reason='')) == '과생산 50%'
+
+
+# ---- 떠서는 안 되는 경우 ----
+
+def test_ribbon_none_when_not_surplus():
+    assert ribbon_text(FakeSurplus(is_surplus=False)) is None
+
+
+def test_ribbon_none_when_terms_not_agreed():
+    """★약관 미동의는 리본을 띄우지 않는다.★
+
+    목록 쿼리가 이미 거르지만, 상세처럼 쿼리를 거치지 않는 화면도 있어
+    함수에서 한 번 더 막는다.
+    """
+    assert ribbon_text(FakeSurplus(terms=False)) is None
+
+
+def test_ribbon_none_for_none():
+    assert ribbon_text(None) is None
+
+
+# ---- 목록과 상세가 같은 값을 쓰는가 ----
+
+def test_ribbon_and_badge_use_same_percent():
+    """상세 배지는 discount_percent() 를, 리본은 ribbon_text() 를 쓴다.
+
+    예전에는 리본이 반올림·배지가 내림이라 66.67% 가 67%·66% 로 달랐다.
+    두 값이 같은 숫자를 내는지 고정한다.
+    """
+    for lp, cost in ((30000, 10000), (30000, 20000), (150000, 15000), (50000, 25000)):
+        exp = FakeSurplus(list_price=lp, cost=cost)
+        assert f"{discount_percent(exp)}%" in ribbon_text(exp)
+
+
+# ---- 리본과 상세 배지가 같은 조건을 쓰는가 ----
+
+from services.experience_validator import shows_surplus
+
+
+def test_shows_surplus_requires_both_flags():
+    assert shows_surplus(FakeSurplus()) is True
+    assert shows_surplus(FakeSurplus(is_surplus=False)) is False
+    assert shows_surplus(FakeSurplus(terms=False)) is False
+    assert shows_surplus(None) is False
+
+
+def test_badge_and_ribbon_share_one_condition():
+    """★리본이 안 뜨면 배지도 안 뜬다.★
+
+    예전에는 배지가 is_surplus 만 봐서, 약관 미동의 건이 리본 없이
+    배지만 뜨는 한 화면 불일치가 있었다.
+    """
+    for exp in (FakeSurplus(), FakeSurplus(reason=None), FakeSurplus(list_price=None),
+                FakeSurplus(is_surplus=False), FakeSurplus(terms=False)):
+        assert bool(ribbon_text(exp)) == shows_surplus(exp)

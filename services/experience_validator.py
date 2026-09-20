@@ -26,6 +26,9 @@ SURPLUS_MAX_PER_PERSON = 1000     # 1인당 수확량 상한
 
 # 할인 사유. 리본에 "사유 + 할인율"로 찍히므로 짧아야 한다.
 SURPLUS_REASONS = ('과잉생산', '못난이', '수확임박', '규격외')
+# 사유가 없는 체험(사유 컬럼이 생기기 전에 등록된 건)의 리본 기본 문구.
+# 할인율만 '90%' 라고 띄우면 무엇이 90% 인지 알 수 없어 탭 이름과 같은 말을 쓴다.
+SURPLUS_RIBBON_DEFAULT_REASON = '과생산'
 SURPLUS_REASON_ETC = '기타'
 SURPLUS_REASON_MAX_LEN = 6        # '기타' 자유 입력 상한. 리본 폭이 한계다.
 
@@ -296,16 +299,55 @@ def resolve_max_participants(requested_raw, capacity):
     return requested, None
 
 
-def ribbon_text(experience):
-    """카드 리본 문구: "사유 할인율%". 과생산이 아니거나 값이 없으면 None.
+def discount_percent(experience):
+    """정가 대비 ★실제★ 할인율(정수 %). 계산할 수 없으면 None.
 
-    할인율은 반올림한다. 리본 폭이 한계라 사유는 등록 때 6자로 제한해 뒀다.
+    ★내림한다.★ 반올림하면 66.67% 가 67% 로 보여 실제보다 더 깎아준 것처럼
+    말하게 된다. 할인 표시는 과장하지 않는 쪽이 안전하다.
+
+    목록 리본·상세 배지·과생산 API 가 모두 이 함수를 쓴다. 예전에는 리본이
+    반올림, 상세 배지가 템플릿 안에서 내림이라 같은 체험이 67%·66% 로 달랐다.
     """
-    if experience is None or not getattr(experience, 'is_surplus', False):
-        return None
-    reason = getattr(experience, 'surplus_reason', None)
     rate = discount_rate(getattr(experience, 'list_price', None),
                          getattr(experience, 'cost', None))
-    if not reason or rate is None:
+    if rate is None:
         return None
-    return f"{reason} {round(rate * 100)}%"
+    return int(math.floor(rate * 100))
+
+
+def shows_surplus(experience):
+    """과생산 표시(목록 리본·상세 배지)를 띄울 대상인가.
+
+    ★두 요소가 같은 조건을 쓰도록 한 곳에 모은다.★ 예전에는 배지가
+    is_surplus 만 봐서, 약관 미동의 건이 리본 없이 배지만 뜨는
+    한 화면 불일치가 있었다. 정상 등록 경로에서는 약관 동의 없이 과생산으로
+    저장할 수 없지만, 컬럼이 생기기 전의 옛 데이터에는 있을 수 있다.
+    """
+    if experience is None:
+        return False
+    return bool(getattr(experience, 'is_surplus', False)
+                and getattr(experience, 'surplus_terms_agreed', False))
+
+
+def ribbon_text(experience):
+    """카드·상세 리본 문구. 과생산이 아니거나 약관 미동의면 None.
+
+    ★사유나 할인율이 없어도 리본은 띄운다.★ 예전에는 둘 중 하나라도 없으면
+    None 이라, 사유 컬럼이 생기기 전에 등록된 체험은 과생산 탭에 나오면서도
+    리본만 빠졌다. 같은 목록에서 어떤 카드는 뜨고 어떤 카드는 안 떠 보였다.
+
+        사유 + 할인율 → '과잉생산 33%'
+        할인율만      → '과생산 90%'    (기본 문구를 붙여 맥락을 준다)
+        사유만        → '과잉생산'      (정가가 없어 할인율을 못 구하는 경우)
+        둘 다 없음    → '과생산'
+
+    리본 폭이 한계라 사유는 등록 때 6자로 제한해 뒀다.
+    """
+    # 목록 쿼리가 약관을 이미 거르지만 함수에서도 막는다.
+    # 상세 등 쿼리를 거치지 않는 화면에서 직접 부르기 때문이다.
+    if not shows_surplus(experience):
+        return None
+
+    label = getattr(experience, 'surplus_reason', None) or SURPLUS_RIBBON_DEFAULT_REASON
+    percent = discount_percent(experience)
+    return f"{label} {percent}%" if percent is not None else label

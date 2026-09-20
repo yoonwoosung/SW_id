@@ -995,14 +995,14 @@ a svg, a i { pointer-events: none; }
     outline: none;
     font-size: 0.88rem;
     color: #444;
-    padding: 0 10px 0 2px;
+    padding: 0 10px 0 8px;
     height: 100%;
     background: transparent;
     cursor: pointer;
     flex: 0 0 120px;
     appearance: auto;
-    text-align: center;
-    text-align-last: center;
+    text-align: left;
+    text-align-last: left;
 }
 .hero-unified-select-wide { min-width: 160px; }
 

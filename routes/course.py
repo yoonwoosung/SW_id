@@ -10,7 +10,10 @@ from external import tour_api
 from external import chungnam_api
 from external import tour_csv
 from external import kakao_place
-from common.constants import COURSE_ACTIVITY_KAKAO, TOUR_CONTENT_TYPE_ATTRACTION
+from common.constants import (COURSE_ACTIVITY_KAKAO, COURSE_FACILITY_NEARBY,
+                              COURSE_PET_KAKAO, TOUR_CONTENT_TYPE_ATTRACTION,
+                              TOUR_CONTENT_TYPE_RESTAURANT)
+from services.distance import haversine
 
 # 코스 장소 출처 표기(화면 배지). CSV 는 'standard', 충남 올담은 'chungnam'.
 KAKAO_SOURCE = 'kakao'
@@ -137,7 +140,94 @@ def _activity_places(experience, codes):
     return places, names
 
 
-def _build_scorer(experience, codes, activity_names=None):
+def _pet_places(experience, codes):
+    """반려견 조건을 고르면 동반 가능한 장소를 찾는다. 반환: (장소 리스트, 이름 집합)
+
+    ★반려동물 동반여행 API 를 우선한다.★ 키에 활용신청이 승인되면 그쪽이
+    결과를 주고, 그때는 카카오를 부르지 않는다. 지금은 403 이라 빈 리스트다.
+
+    카카오 '애견동반' 결과는 대부분 음식점·카페다(실측 199건 중 관광지 1건).
+    그래서 ★맛집·카페 슬롯★ 후보로 더한다 — 관광 슬롯에 넣으면 카페가
+    관광지 자리에 들어간다.
+    """
+    if not any(code in place_score.COURSE_RULE_PET for code in codes or []):
+        return [], set()
+
+    try:
+        official = pet_travel_api.find_pet_facilities(
+            experience.lat, experience.lng, COURSE_SEARCH_RADIUS_M)
+    except Exception:
+        official = []
+    if official:
+        return [], {"".join(str(p.get("name") or "").split()) for p in official if p.get("name")}
+
+    keyword, hint = COURSE_PET_KAKAO
+    try:
+        found = [p for p in kakao_place.search(
+                    keyword, experience.lat, experience.lng, COURSE_SEARCH_RADIUS_M)
+                 if hint in (p.get("category") or "")]
+    except Exception:
+        found = []
+    places = [dict(p, content_type_id=TOUR_CONTENT_TYPE_RESTAURANT, source=KAKAO_SOURCE)
+              for p in found]
+    return places, {"".join(str(p["name"]).split()) for p in found}
+
+
+def _facility_names(experience, codes, places_by_type):
+    """편의시설을 좌표 근접으로 판정한다. 반환: {조건코드: {장소이름, ...}}
+
+    ★주차장을 코스 후보로 넣지 않는다.★ 주차장이 코스 항목이 되면 이상하다.
+    카카오에서 찾은 주차장 좌표와 후보 장소 좌표를 대어, 반경(기본 200m) 안에
+    주차장이 있으면 그 장소를 '주차 가능'으로 본다. 호출은 조건당 1회다.
+    """
+    result = {}
+    for code in codes or []:
+        rule = COURSE_FACILITY_NEARBY.get(code)
+        if not rule:
+            continue
+        keyword, hint, radius_m = rule
+        try:
+            spots = [p for p in kakao_place.search(
+                        keyword, experience.lat, experience.lng, COURSE_SEARCH_RADIUS_M)
+                     if hint in (p.get("category") or "")]
+        except Exception:
+            spots = []
+        coords = []
+        for spot in spots:
+            lat, lng = _to_float(spot.get("lat")), _to_float(spot.get("lng"))
+            if lat is not None and lng is not None:
+                coords.append((lat, lng))
+        if not coords:
+            continue
+
+        names = set()
+        limit_km = radius_m / 1000.0
+        for candidates in (places_by_type or {}).values():
+            for place in candidates:
+                lat, lng = _to_float(place.get("lat")), _to_float(place.get("lng"))
+                if lat is None or lng is None:
+                    continue
+                if any(haversine(lat, lng, sy, sx) <= limit_km for sy, sx in coords):
+                    names.add("".join(str(place.get("name") or "").split()))
+        # CSV 장소는 자체 시설 정보가 있으면 그것도 인정한다(카카오보다 정확하다).
+        for candidates in (places_by_type or {}).values():
+            for place in candidates:
+                facilities = place.get("facilities") or ""
+                if "주차" in facilities or (place.get("parking_count") or 0) > 0:
+                    names.add("".join(str(place.get("name") or "").split()))
+        result[code] = names
+    return result
+
+
+def _to_float(value):
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def _build_scorer(experience, codes, activity_names=None, pet_names=None,
+                  facility_names=None):
     """조건 코드로 장소 점수 함수를 만든다. 못 만들면 None(기존 거리순).
 
     전용 API 는 조건에 그 항목이 있을 때만 부른다 — 쓰지도 않을 호출로
@@ -147,22 +237,23 @@ def _build_scorer(experience, codes, activity_names=None):
     if not codes:
         return None
 
-    barrier_free, pet = [], []
+    barrier_free = []
     try:
         if place_score.COURSE_RULE_BARRIER_FREE in codes:
             barrier_free = barrier_free_api.find_barrier_free_places(
                 experience.lat, experience.lng, COURSE_SEARCH_RADIUS_M)
     except Exception:
         barrier_free = []
-    try:
-        if any(code in place_score.COURSE_RULE_PET for code in codes):
-            pet = pet_travel_api.find_pet_facilities(
-                experience.lat, experience.lng, COURSE_SEARCH_RADIUS_M)
-    except Exception:
-        pet = []
+
+    # 반려견은 이름 집합을 이미 만들어 받는다(_pet_places).
+    pet_sets = {code: set(pet_names or ()) for code in place_score.COURSE_RULE_PET}
 
     try:
-        api_sets = place_score.build_api_sets(barrier_free, pet, activity_names)
+        api_sets = place_score.build_api_sets(
+            barrier_free, None, activity_names, facility_names)
+        for code, names in pet_sets.items():
+            if names:
+                api_sets[code] = names
         return place_score.build_scorer(codes, api_sets)
     except Exception:
         return None      # 점수 계산이 어떤 이유로든 실패하면 기존 코스 생성을 지킨다
@@ -175,18 +266,32 @@ def experience_course(item_id):
 
     codes = _selected_codes()
     activity_places, activity_names = _activity_places(item, codes)
-    scorer = _build_scorer(item, codes, activity_names)
+    pet_places, pet_names = _pet_places(item, codes)
     transport = course_estimate.normalize_transport(codes)
     places_by_type = _collect_places(item)
 
     # 액티비티 장소는 관광 슬롯 후보에 더한다(맛집·카페에 승마장이 섞이면 안 된다).
     if activity_places:
         try:
-            slot = "attraction"
-            places_by_type[slot] = place_merge.merge(
-                places_by_type.get(slot) or [], activity_places)
+            places_by_type["attraction"] = place_merge.merge(
+                places_by_type.get("attraction") or [], activity_places)
         except Exception:
             pass      # 보강 실패는 코스 생성을 막지 않는다
+    # 반려견 동반 장소는 대부분 음식점·카페라 그 두 슬롯에 더한다.
+    if pet_places:
+        for slot in ("restaurant", "cafe"):
+            try:
+                places_by_type[slot] = place_merge.merge(
+                    places_by_type.get(slot) or [], pet_places)
+            except Exception:
+                pass
+
+    # 편의시설은 후보를 모은 뒤에 판정한다(후보 좌표가 있어야 근접 판정이 된다).
+    try:
+        facility_names = _facility_names(item, codes, places_by_type)
+    except Exception:
+        facility_names = {}
+    scorer = _build_scorer(item, codes, activity_names, pet_names, facility_names)
     items = course_builder.build_course(item, places_by_type, scorer=scorer)
     # 시간·비용 추정이 실패해도 코스는 그대로 나와야 한다.
     try:

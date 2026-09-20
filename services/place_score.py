@@ -10,6 +10,7 @@ from common.search_categories import REGION_ADDRESS_KEYWORDS
 from common.constants import (  # noqa: F401  (COURSE_RULE_* 는 routes/course 가 재사용)
     COURSE_ACTIVITY_KAKAO,
     COURSE_CONDITION_WEIGHTS,
+    COURSE_FACILITY_NEARBY,
     COURSE_OTHER_SIBLINGS,
     COURSE_CONDITION_TAIL_WEIGHT,
     COURSE_PLACE_RULES,
@@ -21,7 +22,7 @@ from common.constants import (  # noqa: F401  (COURSE_RULE_* 는 routes/course �
 # 전용 API 로만 판정하는 조건(분류 코드로는 알 수 없다).
 # 전용 API·외부 검색으로만 판정하는 조건(분류 코드로는 알 수 없다).
 _API_RULES = ({COURSE_RULE_BARRIER_FREE} | set(COURSE_RULE_PET)
-              | set(COURSE_ACTIVITY_KAKAO))
+              | set(COURSE_ACTIVITY_KAKAO) | set(COURSE_FACILITY_NEARBY))
 
 
 def judgeable(code, api_sets=None):
@@ -128,10 +129,12 @@ def matches(place, code, api_sets=None):
     return False
 
 
-def build_api_sets(barrier_free_places=None, pet_places=None, activity_names=None):
+def build_api_sets(barrier_free_places=None, pet_places=None, activity_names=None,
+                   facility_names=None):
     """외부 조회 결과를 '이름 집합'으로 바꾼다. 빈 결과면 그 조건은 판정 불가가 된다.
 
     activity_names: {조건코드: {장소이름, ...}} — 카카오 키워드 검색 결과.
+    facility_names: {조건코드: {장소이름, ...}} — 좌표 근접으로 미리 판정한 결과.
     """
     bf = {_place_key(p) for p in (barrier_free_places or []) if p.get("name")}
     pet = {_place_key(p) for p in (pet_places or []) if p.get("name")}
@@ -141,9 +144,10 @@ def build_api_sets(barrier_free_places=None, pet_places=None, activity_names=Non
     if pet:
         for code in COURSE_RULE_PET:
             sets[code] = pet
-    for code, names in (activity_names or {}).items():
-        if names:
-            sets[code] = set(names)
+    for source in (activity_names, facility_names):
+        for code, names in (source or {}).items():
+            if names:
+                sets[code] = set(names)
     return sets
 
 

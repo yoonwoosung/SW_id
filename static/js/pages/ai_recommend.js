@@ -5,7 +5,7 @@
     'use strict';
     var TYPE_ICON = { experience: 'sprout', restaurant: 'utensils', attraction: 'landmark', cafe: 'coffee' };
     // 코스 장소 출처 배지. 관광공사 결과는 source 가 없어 배지가 붙지 않는다.
-    var SOURCE_LABEL = { standard: '공공데이터포털', chungnam: '충남도 제공' };
+    var SOURCE_LABEL = { standard: '공공데이터포털', chungnam: '충남도 제공', kakao: '카카오맵' };
 
     // ▼▼ 목업: 코스별 "지금 N명이 보는 중" 값만 직접 채우세요(비우면 안 보임). {체험id: 인원} ▼▼
     var COURSE_MOCK = { viewers: {} };   // 예: { 2: 12, 3: 7 }

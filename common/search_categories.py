@@ -186,11 +186,11 @@ SEARCH_CATEGORIES = [
         {"code": "harvest", "label": "수확"}, {"code": "food", "label": "먹거리"},
         {"code": "craft", "label": "공예"}, {"code": "animal", "label": "동물교감"},
         {"code": "nature", "label": "자연생태"}, _other_node("experience_type")]},
-    # ★hidden: activity_type 컬럼은 있으나 저장하는 코드가 어디에도 없다.★
-    # 등록 폼에 입력이 없어 모든 체험이 NULL 이고, 고르면 결과가 항상 0건이다.
-    # 등록 폼에 드롭다운을 추가하면 hidden 만 지우면 살아난다.
-    # (회원가입의 '관심 액티비티'는 이 트리 원본을 읽으므로 영향받지 않는다)
-    {"code": "activity", "label": "액티비티", "group": "taste", "hidden": True, "children": [
+    # 2026-09-20: 카카오 로컬 키워드 검색으로 ★코스 장소 판정★ 이 가능해져 감춤을 풀었다.
+    # 체험 목록 필터로는 여전히 동작하지 않는다 — activity_type 컬럼은 있으나
+    # 저장하는 코드가 없어 모든 체험이 NULL 이다. 그래서 eco_filter 의
+    # JUDGEABLE_CATEGORIES 에는 넣지 않는다(넣으면 고르는 순간 목록이 0건이 된다).
+    {"code": "activity", "label": "액티비티", "group": "taste", "children": [
         {"code": "horse_riding", "label": "승마"}, {"code": "kayak", "label": "카약"},
         {"code": "fishing", "label": "낚시"}, {"code": "hiking", "label": "등산"},
         {"code": "cycling", "label": "자전거"}]},

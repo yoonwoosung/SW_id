@@ -18,7 +18,8 @@ from common.search_categories import (
 from services.eco_filter import JUDGEABLE_CATEGORIES
 
 # 대분류째 감춘 것
-HIDDEN_CATEGORIES = {'activity', 'schedule', 'duration_hours'}
+# 액티비티는 2026-09-20 에 카카오 판정이 붙어 감춤을 풀었다.
+HIDDEN_CATEGORIES = {'schedule', 'duration_hours'}
 
 # 개별로 감춘 잎
 HIDDEN_LEAF_CODES = {
@@ -69,8 +70,14 @@ def test_dead_category_is_hidden(code):
     assert code not in _top(visible_categories()), code
 
 
-def test_activity_removed_from_filtering():
-    """★저장된 ?cond_activity=kayak 링크가 결과를 0건으로 만들지 않아야 한다.★"""
+def test_activity_visible_but_not_an_experience_filter():
+    """액티비티는 ★코스 장소★ 판정에만 쓴다.
+
+    화면에는 보이지만 JUDGEABLE_CATEGORIES 에는 넣지 않는다.
+    activity_type 컬럼을 저장하는 코드가 없어 모든 체험이 NULL 이라,
+    넣으면 고르는 순간 체험 목록이 0건이 된다.
+    """
+    assert 'activity' in _top(visible_categories())
     assert 'activity' not in JUDGEABLE_CATEGORIES
 
 

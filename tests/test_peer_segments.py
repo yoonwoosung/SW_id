@@ -273,3 +273,71 @@ def test_no_conditions_still_returns_results(client):
     res = client.get('/api/recommendations/personalized')
     assert res.status_code == 200
     assert len(res.get_json()['data']['results']) == 5
+
+
+# ---- 조건을 걸면 거리 제한을 풀어준다 (2026-09-20) ----
+# 실측: 서울에서 울산 배 297km·천안에서 232km 라 '지역>울산'을 골라도 0건이었다.
+# ★lat/lon 을 포함해 테스트한다★ — 위치가 없으면 거리 필터 자체가 돌지 않아
+# 실제 사용 조건을 재현하지 못한다(예전 검증이 이걸 놓쳤다).
+
+NEAR = (36.187, 127.098)      # 논산
+FAR = (35.5978, 129.2200)     # 울산 — 논산에서 약 200km
+
+
+def _near_and_far(farmer_email):
+    farmer = _user(farmer_email, role='farmer')
+    today = date.today()
+    near = Experience(
+        crop="논산 딸기", location="충남", address_detail="충남 논산시 연무읍",
+        cost=10000, status='recruiting', farmer_id=farmer.id,
+        duration_start=today, end_date=today + timedelta(days=30),
+        max_participants=10, current_participants=0,
+        lat=NEAR[0], lng=NEAR[1], has_parking=True)
+    far = Experience(
+        crop="울산 배", location="울산", address_detail="울산 울주군 두동면",
+        cost=10000, status='recruiting', farmer_id=farmer.id,
+        duration_start=today, end_date=today + timedelta(days=30),
+        max_participants=10, current_participants=0,
+        lat=FAR[0], lng=FAR[1], has_parking=True)
+    db.session.add_all([near, far])
+    db.session.commit()
+    return near, far
+
+
+def test_distance_limit_kept_without_conditions(client):
+    """★기존 동작 유지.★ 조건이 없으면 가까운 곳만 보여준다."""
+    near, far = _near_and_far("dist1@x.com")
+    res = client.get(f'/api/recommendations/personalized?lat={NEAR[0]}&lon={NEAR[1]}')
+    ids = [r['id'] for r in res.get_json()['data']['results']]
+    assert near.id in ids
+    assert far.id not in ids, "조건 없이 200km 밖이 나오면 기본 추천 성격이 바뀐다"
+
+
+def test_distance_limit_lifted_when_condition_narrows_list(client):
+    """★지역을 골랐으면 거리 제한은 의미가 없다.★"""
+    near, far = _near_and_far("dist2@x.com")
+    res = client.get(f'/api/recommendations/personalized'
+                     f'?lat={NEAR[0]}&lon={NEAR[1]}&cond_region=ulsan')
+    ids = [r['id'] for r in res.get_json()['data']['results']]
+    assert ids == [far.id], f"울산을 골랐는데 울산이 안 나온다: {ids}"
+
+
+def test_far_place_does_not_outrank_near_one(client):
+    """★거리 점수는 그대로 둔다.★ 먼 곳이 상위로 올라오면 이상하다."""
+    near, far = _near_and_far("dist3@x.com")
+    res = client.get(f'/api/recommendations/personalized'
+                     f'?lat={NEAR[0]}&lon={NEAR[1]}&cond_facility=parking')
+    ids = [r['id'] for r in res.get_json()['data']['results']]
+    assert ids == [near.id, far.id], "가까운 곳이 먼저 와야 한다"
+
+
+def test_limit_kept_for_conditions_that_do_not_narrow_the_list(client):
+    """분위기·계절은 목록을 좁히지 않는다 — 제한을 유지한다.
+
+    좁히지도 않으면서 거리 제한만 풀면 기본 추천에 먼 곳이 섞인다.
+    """
+    near, far = _near_and_far("dist4@x.com")
+    res = client.get(f'/api/recommendations/personalized'
+                     f'?lat={NEAR[0]}&lon={NEAR[1]}&cond_mood=healing')
+    ids = [r['id'] for r in res.get_json()['data']['results']]
+    assert far.id not in ids

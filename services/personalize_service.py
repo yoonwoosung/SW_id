@@ -1,7 +1,8 @@
 # services/personalize_service.py — 회원 정보(과거 신청 이력) 기반 개인화 추천 로직(순수 함수).
 # 로그인 사용자의 지난 신청 작물을 선호로 보고, 같은 작물 체험에 가점한다.
 # 파트3: 같은 성별·나이대가 많이 누른 체험(trending_ids)에도 가점한다.
-from common.constants import PERSONALIZE_CROP_BOOST, SEGMENT_TREND_BOOST
+from common.constants import (PERSONALIZE_CROP_BOOST, SEGMENT_TREND_BOOST,
+                              RECOMMEND_LIMIT, RECOMMEND_MAX_DISTANCE_KM)
 from services.distance import haversine
 from services.recommend_service import matches_specialty, calculate_score, category_bonus, score_components
 
@@ -25,7 +26,8 @@ def personalize_boost(experience, prefs):
 
 
 def rank_personalized(experiences, user, user_lat, user_lon, conditions=None,
-                      trending_ids=None, max_distance_km=150, limit=15):
+                      trending_ids=None, max_distance_km=RECOMMEND_MAX_DISTANCE_KM,
+                      limit=RECOMMEND_LIMIT):
     """거리·특산물(기본) + 회원 개인화 + 세그먼트 인기 + 카테고리 조건을 합산해 추천 순위를 매긴다.
     trending_ids: 같은 성별·나이대가 많이 누른 체험 id 집합(없으면 규칙 기반으로 폴백).
     반환: (experience, distance_km, score, reasons[]) 리스트."""
@@ -37,7 +39,9 @@ def rank_personalized(experiences, user, user_lat, user_lon, conditions=None,
     for exp in experiences:
         if has_location:
             distance = haversine(user_lat, user_lon, exp.lat, exp.lng)
-            if distance > max_distance_km:
+            # None 이면 거리로 거르지 않는다(조건으로 목록을 좁힌 경우).
+            # ★거리 점수는 그대로 쓴다★ — 먼 곳은 0점이라 아래로 밀린다.
+            if max_distance_km is not None and distance > max_distance_km:
                 continue
         else:
             distance = None

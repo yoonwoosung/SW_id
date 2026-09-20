@@ -20,6 +20,7 @@ class FakeExp:
     """ESG·조건 판정에 쓰이는 속성만 가진 가짜 체험."""
 
     def __init__(self, pesticide_free=False, organic_certification_type=None,
+                 organic_cert_status='__auto__',
                  organic_certification_image=None, volunteer_needed=0,
                  barrier_free=False, has_parking=False,
                  address_detail='충남 논산시', cost=25000,
@@ -27,6 +28,12 @@ class FakeExp:
                  has_wifi=False):
         self.pesticide_free = pesticide_free
         self.organic_certification_type = organic_certification_type
+        # ★유기농 판정은 관리자 승인(APPROVED)까지 봐야 한다.★ 기존 테스트가
+        # 인증 종류만 주고 '있다'를 기대하므로, 따로 지정하지 않으면 승인된
+        # 것으로 둔다. 심사 전/반려 상태는 테스트에서 명시적으로 넘긴다.
+        self.organic_cert_status = (
+            ('APPROVED' if organic_certification_type else None)
+            if organic_cert_status == '__auto__' else organic_cert_status)
         self.organic_certification_image = organic_certification_image
         self.volunteer_needed = volunteer_needed
         self.barrier_free = barrier_free
@@ -277,3 +284,37 @@ def test_every_visible_leaf_can_match_some_experience():
         if not any(passes_conditions({category: [code]}, exp) for exp in candidates(code)):
             dead.append(code)
     assert dead == [], f"단독으로 고르면 결과가 0건이 되는 선택지: {dead}"
+
+
+# ---- 유기농 판정 기준 통일 (2026-09-20) ----
+# 같은 '유기농인증'인데 화면마다 결과가 달랐다(실측: 메인 2건, 추천 5건).
+# 추천 쪽이 심사 전·반려된 인증까지 세고 있었다.
+
+def test_organic_requires_admin_approval():
+    """★농장주 자기신고가 아니라 관리자 심사 결과를 본다.★"""
+    approved = FakeExp(organic_certification_type='유기농', organic_cert_status='APPROVED')
+    pending = FakeExp(organic_certification_type='유기농', organic_cert_status='PENDING')
+    rejected = FakeExp(organic_certification_type='유기농', organic_cert_status='REJECTED')
+    none_yet = FakeExp(organic_certification_type='유기농', organic_cert_status=None)
+
+    assert is_organic_certified(approved) is True
+    assert is_organic_certified(pending) is False
+    assert is_organic_certified(rejected) is False
+    assert is_organic_certified(none_yet) is False
+
+
+def test_organic_condition_uses_the_same_rule():
+    """추천 조건도 같은 기준을 쓴다 — 판정이 두 벌이 되지 않게."""
+    pending = FakeExp(organic_certification_type='유기농', organic_cert_status='PENDING')
+    approved = FakeExp(organic_certification_type='유기농', organic_cert_status='APPROVED')
+    assert passes_conditions({'facility': ['organic']}, pending) is False
+    assert passes_conditions({'facility': ['organic']}, approved) is True
+
+
+def test_organic_rule_is_defined_once():
+    """★판정은 한 곳에서만 한다.★ eco_filter 가 category_match 에 위임한다."""
+    from services import category_match
+    assert is_organic_certified.__module__ == 'services.eco_filter'
+    approved = FakeExp(organic_certification_type='유기농', organic_cert_status='APPROVED')
+    assert category_match.is_organic_approved(approved) is True
+    assert category_match.is_organic_approved(None) is False

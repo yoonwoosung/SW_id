@@ -98,10 +98,11 @@ def is_organic_certified(experience):
 
     무농약과 유기농은 별개 인증이다. 유기농 필터를 켠 사용자에게
     무농약 농장을 보여주면 잘못된 결과다.
+
+    ★판정은 한 곳에서만 한다.★ 예전에는 여기와 category_match 와 메인
+    페이지가 각자 판정해 결과가 달랐다(실측: 메인 2건, 추천 5건).
     """
-    if experience is None:
-        return False
-    return bool(getattr(experience, 'organic_certification_type', None))
+    return category_match.is_organic_approved(experience)
 
 
 def passes_eco_section(experience):

@@ -6,7 +6,8 @@ from sqlalchemy.orm import joinedload
 
 from models import Experience, User
 from common.response import success_response, error_response
-from common.constants import RECOMMEND_LIMIT
+from common.constants import (RECOMMEND_LIMIT, RECOMMEND_MAX_DISTANCE_KM,
+                              RECOMMEND_CONDITION_MAX_DISTANCE_KM)
 from common.search_categories import CATEGORY_CODES, LABEL_BY_CODE
 from services.recommend_service import rank_recommendations
 from services.personalize_service import rank_personalized
@@ -83,10 +84,22 @@ def personalized_recommendations():
     experiences = [exp for exp in _recruiting_experiences()
                    if eco_filter.passes_conditions(conditions, exp)]
 
+    # ★조건으로 목록을 좁혔으면 거리 제한을 걸지 않는다.★
+    # 예전에는 위치를 허용한 사용자에게 150km 밖 체험을 순위 계산 전에 버렸다.
+    # 그래서 서울·천안에서 '지역>울산'을 골라도 0건이었다(실측 232~297km).
+    # 조건을 안 걸었으면 예전 그대로 가까운 곳 우선이다.
+    #
+    # 판단 기준은 ★목록을 실제로 좁히는 조건★이 걸렸는지다. 분위기·계절처럼
+    # 코스 장소에만 쓰이는 조건은 목록을 좁히지 않으므로 제한을 유지한다.
+    narrowed = bool(eco_filter.selected_categories(conditions))
+    max_distance = (RECOMMEND_CONDITION_MAX_DISTANCE_KM if narrowed
+                    else RECOMMEND_MAX_DISTANCE_KM)
+
     # limit 은 여기서 주지 않는다. 세그먼트 보너스까지 반영한 뒤 잘라야
     # 섹션 기준이 순서에 실제로 반영된다(아래 RECOMMEND_LIMIT).
     ranked = rank_personalized(experiences, user, lat, lon, conditions,
-                               trending_ids=trending, limit=None)
+                               trending_ids=trending, limit=None,
+                               max_distance_km=max_distance)
 
     if segment == 'esg':
         # '친환경 인증 농장' 섹션: 정렬만 하면 친환경이 아닌 체험도 남는다.

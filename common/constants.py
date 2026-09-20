@@ -19,6 +19,11 @@ TOUR_CACHE_MAX_ENTRIES = 500     # 캐시 파일 수 상한. 넘으면 오래된
 # --- 추천 점수 ---
 # 추천 기본 점수(calculate_score)는 0~1 스케일. 충족한 '대분류'당 이 값을 가산한다(대분류당 OR·1회).
 # (3~4개 대분류 충족 시 거리·특산물 점수를 앞서도록 설계. 실제 값은 튜닝 대상)
+# 유기농 인증을 '있다'고 볼 상태. ★관리자 심사를 통과한 것만 인정한다.★
+# 농장주가 제출하면 PENDING 이 되고 관리자가 APPROVED/REJECTED 로 바꾼다.
+# 이 값을 안 보면 심사 전·반려된 인증까지 유기농으로 세게 된다.
+ORGANIC_APPROVED_STATUS = 'APPROVED'
+
 CATEGORY_MATCH_SCORE = 0.3
 # 대분류별 가중치 override(비우면 전부 CATEGORY_MATCH_SCORE 동일). 예: {"region": 0.4}
 CATEGORY_WEIGHTS = {}
@@ -303,6 +308,14 @@ COURSE_CONDITION_RETRY_RADIUS_M = 60000
 # ★자르는 것은 조건 필터·세그먼트 보너스를 모두 거친 뒤다.★ 먼저 자르면
 # 16위 이하가 조건 검사조차 못 받는다(실측: 21건 중 6건이 사각지대였다).
 RECOMMEND_LIMIT = 15
+
+# 위치를 아는 사용자에게 보여줄 최대 거리(km). 기본 추천은 가까운 곳 우선이다.
+RECOMMEND_MAX_DISTANCE_KM = 150
+# ★조건으로 목록을 좁힌 경우에는 거리 제한을 걸지 않는다.★
+# "울산을 골랐는데 여기서 200km라 안 보여드립니다"는 납득이 안 된다.
+# 실측: 서울에서 울산 배 297km·천안에서 232km 라 순위 계산 전에 버려졌다.
+# 거리 ★점수★는 그대로 두므로(50km 밖은 0점) 먼 곳이 상위로 올라오진 않는다.
+RECOMMEND_CONDITION_MAX_DISTANCE_KM = None
 
 COURSE_PET_KAKAO = ("애견동반", "음식점")
 

@@ -1,8 +1,9 @@
 {% extends "layout.html" %}
 {% block content %}
 <div class="container register-container">
-    <div class="text-center mb-5">
-        <h2>{{ "체험 수정하기" if item else "신규 농장 체험 등록" }}</h2>
+    <div class="d-flex justify-content-between align-items-center mb-5">
+        <h2 class="mb-0">{{ "체험 수정하기" if item else "신규 농장 체험 등록" }}</h2>
+        <a href="{{ url_for('farmer_guide') }}#register-screen" class="fl-help-btn"><i data-lucide="circle-help"></i> 도움말</a>
     </div>
 
     <form id="farm-register-form" method="POST" action="{{ url_for('farmer_register', item_id=item.id) if item else url_for('farmer_register') }}" enctype="multipart/form-data">

@@ -53,9 +53,12 @@
                 <section class="fl-card"><div class="fl-card-body">
                     <div class="fl-section-head">
                         <h2>예약 일정</h2>
-                        <a href="{{ url_for('farmer_calendar') }}" class="fl-btn fl-btn-outline">
-                            <i class="fa-solid fa-calendar-days"></i> 캘린더로 보기
-                        </a>
+                        <div style="display:flex;gap:0.5rem;align-items:center;">
+                            <a href="{{ url_for('farmer_guide') }}#reservation-screen" class="fl-help-btn"><i data-lucide="circle-help"></i> 도움말</a>
+                            <a href="{{ url_for('farmer_calendar') }}" class="fl-btn fl-btn-outline">
+                                <i class="fa-solid fa-calendar-days"></i> 캘린더로 보기
+                            </a>
+                        </div>
                     </div>
 
                     {# 날짜 데이터 #}
@@ -122,7 +125,10 @@
                 <section class="fl-card"><div class="fl-card-body">
                     <div class="fl-section-head">
                         <h2>내 체험 목록</h2>
-                        <a href="{{ url_for('easy_create_experience') }}" class="fl-btn em-btn-register">+ 등록</a>
+                        <div style="display:flex;gap:0.5rem;align-items:center;">
+                            <a href="{{ url_for('farmer_guide') }}#experience-screen" class="fl-help-btn"><i data-lucide="circle-help"></i> 도움말</a>
+                            <a href="{{ url_for('easy_create_experience') }}" class="fl-btn em-btn-register">+ 등록</a>
+                        </div>
                     </div>
                     
                     {% for listing in listings if listing.status in ['recruiting', 'hidden'] %}
@@ -187,7 +193,10 @@
                 <section class="fl-card"><div class="fl-card-body">
                     <div class="fl-section-head">
                         <h2>문의 관리</h2>
-                        <a href="{{ url_for('easy_communication') }}" class="fl-btn fl-btn-outline">전체 보기</a>
+                        <div style="display:flex;gap:0.5rem;align-items:center;">
+                            <a href="{{ url_for('farmer_guide') }}#reservation-screen" class="fl-help-btn"><i data-lucide="circle-help"></i> 도움말</a>
+                            <a href="{{ url_for('easy_communication') }}" class="fl-btn fl-btn-outline">전체 보기</a>
+                        </div>
                     </div>
                     {% for inquiry in recent_inquiries %}
                     <div class="em-inquiry-row">
@@ -212,9 +221,12 @@
                 <section class="fl-card"><div class="fl-card-body">
                     <div class="fl-section-head">
                         <h2>기본 정보</h2>
-                        <button type="button" class="fl-btn fl-btn-outline" id="account-edit-btn">
-                            <i class="fa-solid fa-pen"></i> 수정
-                        </button>
+                        <div style="display:flex;gap:0.5rem;align-items:center;">
+                            <a href="{{ url_for('farmer_guide') }}#stats-screen" class="fl-help-btn"><i data-lucide="circle-help"></i> 도움말</a>
+                            <button type="button" class="fl-btn fl-btn-outline" id="account-edit-btn">
+                                <i class="fa-solid fa-pen"></i> 수정
+                            </button>
+                        </div>
                     </div>
 
                     <div id="account-view">
@@ -280,7 +292,10 @@
                 <section class="fl-card" id="farm-management-section"><div class="fl-card-body">
                     <div class="fl-section-head">
                         <h2>농장 관리</h2>
-                        <button type="button" class="fl-btn fl-btn-outline" id="farm-add-btn">+ 농장 추가</button>
+                        <div style="display:flex;gap:0.5rem;align-items:center;">
+                            <a href="{{ url_for('farmer_guide') }}#register-screen" class="fl-help-btn"><i data-lucide="circle-help"></i> 도움말</a>
+                            <button type="button" class="fl-btn fl-btn-outline" id="farm-add-btn">+ 농장 추가</button>
+                        </div>
                     </div>
 
                     {% for farm in farms %}
@@ -413,7 +428,10 @@
             <div class="farmer-tab-panel" id="panel-stats">
 
                 <section class="fl-card"><div class="fl-card-body">
-                    <div class="fl-section-head"><h2>내 농장 통계</h2></div>
+                    <div class="fl-section-head">
+                        <h2>내 농장 통계</h2>
+                        <a href="{{ url_for('farmer_guide') }}#stats-screen" class="fl-help-btn"><i data-lucide="circle-help"></i> 도움말</a>
+                    </div>
                     <div class="easy-stats-grid">
                         <div class="easy-stat-box">
                             <span class="easy-stat-icon"><img src="{{ url_for('static', filename='icons/icon-rural-experience.svg') }}" width="36" height="36"></span>

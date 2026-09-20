@@ -189,12 +189,12 @@
                 <div class="sort-pills">
                     <a href="#" onclick="getGpsAndSort(event)"
                         class="sort-pill {% if sort_by == 'recommended' %}active{% endif %}">내 주변</a>
-                    <a href="{{ url_for('index', sort='deadline', region=request.args.get('region'), crop_query=request.args.get('crop_query')) }}"
+                    <a href="{{ url_for('index', sort='deadline', region=request.args.get('region'), crop_query=request.args.get('crop_query'), date_filter=request.args.get('date_filter'), people_count=request.args.get('people_count'), eco=request.args.get('eco'), parking=request.args.get('parking'), pet=request.args.get('pet'), surplus=request.args.get('surplus'), view=view) }}"
                         class="sort-pill {% if sort_by == 'deadline' or not sort_by %}active{% endif %}">모집 임박순</a>
-                    <a href="{{ url_for('index', sort='reviews', region=request.args.get('region'), crop_query=request.args.get('crop_query')) }}"
+                    <a href="{{ url_for('index', sort='reviews', region=request.args.get('region'), crop_query=request.args.get('crop_query'), date_filter=request.args.get('date_filter'), people_count=request.args.get('people_count'), eco=request.args.get('eco'), parking=request.args.get('parking'), pet=request.args.get('pet'), surplus=request.args.get('surplus'), view=view) }}"
                         class="sort-pill {% if sort_by == 'reviews' %}active{% endif %}">리뷰 많은순</a>
                     {% if view != 'list' %}
-                    <a href="{{ url_for('index', sort='surplus', region=request.args.get('region'), crop_query=request.args.get('crop_query')) }}"
+                    <a href="{{ url_for('index', sort='surplus', region=request.args.get('region'), crop_query=request.args.get('crop_query'), date_filter=request.args.get('date_filter'), people_count=request.args.get('people_count'), eco=request.args.get('eco'), parking=request.args.get('parking'), pet=request.args.get('pet'), view=view) }}"
                         class="sort-pill {% if sort_by == 'surplus' %}active{% endif %}">과생산</a>
                     {% endif %}
                 </div>

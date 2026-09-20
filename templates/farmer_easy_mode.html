@@ -299,7 +299,18 @@
                                 {% endif %}
                             </div>
 
-                            <p class="ac-farm-address mb-1">{{ farm.address }} <span class="text-muted font-weight-normal">{{ farm.address_detail or '' }}</span></p>
+                            <p class="ac-farm-address mb-1">
+                                <span class="farm-addr-view" data-farm-id="{{ farm.id }}">{{ farm.address }} <span class="text-muted font-weight-normal">{{ farm.address_detail or '' }}</span></span>
+                                <button type="button" class="farm-addr-edit-btn" data-farm-id="{{ farm.id }}" title="주소 변경"
+                                  style="background:none;border:none;cursor:pointer;color:var(--fl-text-muted);padding:2px 4px;margin-left:4px;">
+                                  <i class="fa-solid fa-pen-to-square" style="font-size:.85rem;"></i>
+                                </button>
+                                <span class="farm-addr-edit-area" data-farm-id="{{ farm.id }}" style="display:none;align-items:center;gap:6px;flex-wrap:wrap;margin-top:4px;">
+                                  <input type="text" class="farm-addr-input form-control form-control-sm" value="{{ farm.address }}" placeholder="새 주소" style="width:240px;">
+                                  <button type="button" class="farm-addr-save fl-btn fl-btn-primary fl-btn-sm" data-farm-id="{{ farm.id }}">저장</button>
+                                  <button type="button" class="farm-addr-cancel fl-btn fl-btn-outline fl-btn-sm" data-farm-id="{{ farm.id }}">취소</button>
+                                </span>
+                            </p>
                             {% if farm.size %}<p class="ac-farm-size">농장 규모: {{ farm.size }}평</p>{% endif %}
                             
                             <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;">
@@ -548,6 +559,56 @@ document.querySelectorAll('.farm-name-edit-btn').forEach(function(btn) {
         alert(res.msg || '저장에 실패했습니다.');
       }
     }).catch(function() { alert('오류가 발생했습니다.'); })
+      .finally(function() { save.disabled = false; });
+  });
+
+  input.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') save.click();
+    if (e.key === 'Escape') cancel.click();
+  });
+});
+
+/* ── 농장 주소 변경 ── */
+document.querySelectorAll('.farm-addr-edit-btn').forEach(function(btn) {
+  var id = btn.dataset.farmId;
+  var view   = document.querySelector('.farm-addr-view[data-farm-id="' + id + '"]');
+  var area   = document.querySelector('.farm-addr-edit-area[data-farm-id="' + id + '"]');
+  var input  = area.querySelector('.farm-addr-input');
+  var save   = area.querySelector('.farm-addr-save');
+  var cancel = area.querySelector('.farm-addr-cancel');
+
+  btn.addEventListener('click', function() {
+    view.style.display = 'none';
+    btn.style.display = 'none';
+    area.style.display = 'flex';
+    input.focus();
+  });
+
+  cancel.addEventListener('click', function() {
+    area.style.display = 'none';
+    view.style.display = '';
+    btn.style.display = '';
+  });
+
+  save.addEventListener('click', function() {
+    var addr = input.value.trim();
+    if (!addr) { input.focus(); return; }
+    save.disabled = true;
+    var fd = new FormData();
+    fd.append('name', document.querySelector('.farm-name-view[data-farm-id="' + id + '"]').textContent.trim());
+    fd.append('address', addr);
+    fetch('/api/farms/' + id, { method: 'PUT', body: fd })
+      .then(function(r) { return r.json(); })
+      .then(function(res) {
+        if (res.success) {
+          view.innerHTML = addr;
+          area.style.display = 'none';
+          view.style.display = '';
+          btn.style.display = '';
+        } else {
+          alert((res.error && res.error.message) || '저장에 실패했습니다.');
+        }
+      }).catch(function() { alert('오류가 발생했습니다.'); })
       .finally(function() { save.disabled = false; });
   });
 

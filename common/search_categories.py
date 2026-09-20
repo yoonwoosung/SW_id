@@ -146,12 +146,12 @@ SEARCH_CATEGORIES = [
         {"code": "age_composition", "label": "동반 구성", "no_select_all": True, "children": [
             {"code": "solo", "label": "혼자"}, {"code": "couple", "label": "커플"},
             {"code": "family_child", "label": "가족(아이)"}, {"code": "friends", "label": "친구"},
-            {"code": "parents", "label": "부모님"}, {"code": "adults_only", "label": "성인만"},
-            {"code": "pet_not_allowed", "label": "노펫존"}]},
+            {"code": "parents", "label": "부모님"}, {"code": "adults_only", "label": "성인만"}]},
         {"code": "pet_allowed", "label": "반려견", "children": [
             {"code": "dog_small", "label": "소형(5kg 미만)"},
             {"code": "dog_medium", "label": "중형(5~15kg)"},
-            {"code": "dog_large", "label": "대형(15kg 이상)"}]},
+            {"code": "dog_large", "label": "대형(15kg 이상)"},
+            {"code": "pet_not_allowed", "label": "노펫존"}]},
     ]},
     {"code": "schedule", "label": "일정", "group": "travel", "children": [
         {"code": "day_trip", "label": "당일"}, {"code": "one_night", "label": "1박 2일"},

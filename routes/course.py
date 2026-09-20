@@ -13,6 +13,7 @@ from external import chungnam_api
 from external import tour_csv
 from external import kakao_place
 from common.constants import (COURSE_ACTIVITY_KAKAO, COURSE_FACILITY_NEARBY,
+                              COURSE_PARTY_RULES,
                               COURSE_PET_KAKAO, TOUR_CONTENT_TYPE_ATTRACTION,
                               TOUR_CONTENT_TYPE_RESTAURANT)
 from services.distance import haversine
@@ -182,8 +183,14 @@ def _facility_names(experience, codes, places_by_type):
     카카오에서 찾은 주차장 좌표와 후보 장소 좌표를 대어, 반경(기본 200m) 안에
     주차장이 있으면 그 장소를 '주차 가능'으로 본다. 호출은 조건당 1회다.
     """
+    # 인원수 3~4명·5명 이상도 주차 조회가 필요하다. 같은 결과를 재사용한다
+    # (조회는 한 번뿐이고 캐시도 공유한다).
+    needs = set(codes or [])
+    if any(COURSE_PARTY_RULES.get(c, {}).get("parking") for c in needs):
+        needs.add("parking")
+
     result = {}
-    for code in codes or []:
+    for code in needs:
         rule = COURSE_FACILITY_NEARBY.get(code)
         if not rule:
             continue
@@ -263,6 +270,9 @@ def _build_scorer(experience, codes, activity_names=None, pet_names=None,
 
 # 코스 장소에는 반영되지 않는 조건을 왜 그런지 설명한다.
 # ★조용히 무시하면 "조건을 걸었는데 안 바뀐다"로만 보인다.★
+_IGNORED_CODE_REASON = {
+    "party_2": "제한 없이 모든 장소가 대상입니다",
+}
 _IGNORED_REASON = {
     "budget_range": "체험 목록에만 적용됩니다",
     "companion_type": "아직 코스 장소에 반영되지 않습니다",
@@ -323,7 +333,7 @@ def _condition_report(codes, api_sets, items, budget_over=False):
         if code in weights or code in BUDGET_RANGES:
             continue
         category = CATEGORY_OF_CODE.get(code)
-        reason = _IGNORED_REASON.get(category)
+        reason = _IGNORED_CODE_REASON.get(code) or _IGNORED_REASON.get(category)
         if reason is None:
             reason = ("근처에 해당하는 장소 정보를 찾지 못했습니다"
                       if category in JUDGEABLE_CATEGORIES or category in _COURSE_ONLY

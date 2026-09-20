@@ -12,8 +12,8 @@ from external import tour_api
 from external import chungnam_api
 from external import tour_csv
 from external import kakao_place
-from common.constants import (COURSE_ACTIVITY_KAKAO, COURSE_FACILITY_NEARBY,
-                              COURSE_PARTY_RULES,
+from common.constants import (COURSE_ACTIVITY_KAKAO, COURSE_COMPANION_KAKAO,
+                              COURSE_FACILITY_NEARBY, COURSE_PARTY_RULES,
                               COURSE_PET_KAKAO, TOUR_CONTENT_TYPE_ATTRACTION,
                               TOUR_CONTENT_TYPE_RESTAURANT)
 from services.distance import haversine
@@ -143,6 +143,48 @@ def _activity_places(experience, codes):
     return places, names
 
 
+def _companion_places(experience, codes):
+    """동반구성에 맞는 장소를 찾는다. 반환: (장소 리스트, {코드: 이름집합})
+
+    ★호출을 줄인다.★ 유형당 키워드가 2개이고, 유형 사이에 겹치는 검색어
+    (공원·카페)는 한 번만 부른다. 7개를 다 골라도 검색어는 7개뿐이다.
+    병렬로 돌려 체감 시간도 줄인다(실측 7종 0.14초).
+
+    결과는 대부분 카페·공원·문화재라 ★관광 슬롯★ 후보로 더한다.
+    카페 키워드로 나온 곳은 맛집·카페 슬롯에도 맞지만, 슬롯을 늘리면
+    관광 자리가 카페로 채워질 수 있어 관광 슬롯만 보강한다.
+    """
+    wanted = [code for code in (codes or []) if code in COURSE_COMPANION_KAKAO]
+    if not wanted:
+        return [], {}
+
+    queries = [kw for code in wanted for kw, _hint in COURSE_COMPANION_KAKAO[code]]
+    try:
+        found = kakao_place.search_many(
+            queries, experience.lat, experience.lng, COURSE_SEARCH_RADIUS_M)
+    except Exception:
+        return [], {}
+
+    places, names = [], {}
+    for code in wanted:
+        matched = []
+        for keyword, hint in COURSE_COMPANION_KAKAO[code]:
+            matched += [p for p in found.get(keyword, [])
+                        if hint in (p.get("category") or "")]
+        names[code] = {"".join(str(p["name"]).split()) for p in matched if p.get("name")}
+        places += matched
+
+    # 같은 장소가 여러 유형에 걸릴 수 있다(카페는 혼자·친구 모두). 한 번만 넣는다.
+    seen, unique = set(), []
+    for place in places:
+        key = "".join(str(place.get("name") or "").split())
+        if key and key not in seen:
+            seen.add(key)
+            unique.append(dict(place, content_type_id=TOUR_CONTENT_TYPE_ATTRACTION,
+                               source=KAKAO_SOURCE))
+    return unique, names
+
+
 def _pet_places(experience, codes):
     """반려견 조건을 고르면 동반 가능한 장소를 찾는다. 반환: (장소 리스트, 이름 집합)
 
@@ -236,7 +278,7 @@ def _to_float(value):
 
 
 def _build_scorer(experience, codes, activity_names=None, pet_names=None,
-                  facility_names=None):
+                  facility_names=None, companion_names=None):
     """조건 코드로 장소 점수 함수를 만든다. 못 만들면 None(기존 거리순).
 
     전용 API 는 조건에 그 항목이 있을 때만 부른다 — 쓰지도 않을 호출로
@@ -260,6 +302,9 @@ def _build_scorer(experience, codes, activity_names=None, pet_names=None,
     try:
         api_sets = place_score.build_api_sets(
             barrier_free, None, activity_names, facility_names)
+        for code, names in (companion_names or {}).items():
+            if names:
+                api_sets[code] = names
         for code, names in pet_sets.items():
             if names:
                 api_sets[code] = names
@@ -363,6 +408,7 @@ def experience_course(item_id):
     codes = _selected_codes()
     activity_places, activity_names = _activity_places(item, codes)
     pet_places, pet_names = _pet_places(item, codes)
+    companion_places, companion_names = _companion_places(item, codes)
     transport = course_estimate.normalize_transport(codes)
     places_by_type = _collect_places(item)
 
@@ -373,6 +419,13 @@ def experience_course(item_id):
                 places_by_type.get("attraction") or [], activity_places)
         except Exception:
             pass      # 보강 실패는 코스 생성을 막지 않는다
+    # 동반구성 장소(카페·공원·문화재 등)는 관광 슬롯에 더한다.
+    if companion_places:
+        try:
+            places_by_type["attraction"] = place_merge.merge(
+                places_by_type.get("attraction") or [], companion_places)
+        except Exception:
+            pass
     # 반려견 동반 장소는 대부분 음식점·카페라 그 두 슬롯에 더한다.
     if pet_places:
         for slot in ("restaurant", "cafe"):
@@ -388,7 +441,7 @@ def experience_course(item_id):
     except Exception:
         facility_names = {}
     scorer, _last_api_sets = _build_scorer(
-        item, codes, activity_names, pet_names, facility_names)
+        item, codes, activity_names, pet_names, facility_names, companion_names)
     budget_left = _budget_for_places(codes, item)
     items = course_builder.build_course(item, places_by_type, scorer=scorer,
                                         budget_left=budget_left)

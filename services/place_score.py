@@ -9,6 +9,7 @@
 from common.search_categories import REGION_ADDRESS_KEYWORDS
 from common.constants import (  # noqa: F401  (COURSE_RULE_* 는 routes/course 가 재사용)
     COURSE_ACTIVITY_KAKAO,
+    COURSE_COMPANION_KAKAO,
     COURSE_CONDITION_WEIGHTS,
     COURSE_FACILITY_NEARBY,
     COURSE_PARTY_RULES,
@@ -23,7 +24,8 @@ from common.constants import (  # noqa: F401  (COURSE_RULE_* 는 routes/course �
 # 전용 API 로만 판정하는 조건(분류 코드로는 알 수 없다).
 # 전용 API·외부 검색으로만 판정하는 조건(분류 코드로는 알 수 없다).
 _API_RULES = ({COURSE_RULE_BARRIER_FREE} | set(COURSE_RULE_PET)
-              | set(COURSE_ACTIVITY_KAKAO) | set(COURSE_FACILITY_NEARBY))
+              | set(COURSE_ACTIVITY_KAKAO) | set(COURSE_FACILITY_NEARBY)
+              | set(COURSE_COMPANION_KAKAO))
 
 
 def judgeable(code, api_sets=None):

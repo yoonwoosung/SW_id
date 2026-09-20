@@ -44,12 +44,18 @@ def selected_categories(conditions):
 def _judgeable_values(category_code, values):
     """대분류 안에서 실제로 판정할 수 있는 선택값만 남긴다.
 
-    동반유형은 반려견(판정 가능)과 인원수·동반구성(불가)이 섞여 있다.
-    불가한 것만 골랐다면 그 대분류는 건너뛴다 — 넣으면 결과가 항상 0건이 된다.
+    판정 가능·불가가 한 대분류에 섞여 있다. 불가한 것만 골랐다면 그 대분류는
+    건너뛴다 — 넣으면 결과가 항상 0건이 된다.
+
+      동반유형  반려견은 가능, 인원수·동반구성은 불가
+      교통수단  자가용만 가능(주차 연동), 대중교통·택시는 불가
+      편의시설  주차·와이파이·무농약·유기농·무장애는 가능, 화장실·수유실은 불가
+
+    ★불가한 값도 코스 쪽에서는 반영될 수 있다.★ 교통수단은 이동시간·교통비
+    추정에, 화장실·수유실은 장소 종류 기준값에 쓰인다. 여기서 거르는 것은
+    '체험 목록을 AND 로 좁힐 수 있는가'뿐이다.
     """
-    if category_code == 'companion_type':
-        return category_match.pet_selection(values)
-    return list(values)
+    return category_match.judgeable_selection(category_code, values)
 
 
 def passes_conditions(conditions, experience):

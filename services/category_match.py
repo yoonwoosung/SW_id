@@ -133,9 +133,41 @@ PET_NOT_ALLOWED = "pet_not_allowed"
 PET_CODES = frozenset({PET_ALLOWED, PET_NOT_ALLOWED}) | frozenset(PET_WEIGHT_MIN_KG)
 
 
+# ★같은 문제가 교통수단·편의시설에도 있었다.★ (2026-09-20 전수 확인)
+# 교통수단은 자가용만 주차 데이터로 판정한다(_has_transport). 대중교통·택시를
+# 단독으로 고르면 어떤 체험도 통과하지 못해 결과가 0건이었다(실측 확인).
+# 코스 쪽 반영(이동시간·교통비 추정)은 이와 무관하게 그대로 동작한다.
+TRANSPORT_CODES = frozenset({"car"})
+
+# 편의시설은 Experience 에 컬럼이 있는 것만 판정한다(_has_facility).
+# 화장실·수유실은 컬럼이 없는데, 코스 장소 기준값으로 살리면서 감춤을 푼 탓에
+# 체험 목록 쪽이 0건이 됐다. ★코스에는 반영되지만 목록은 거르지 못한다.★
+FACILITY_CODES = frozenset({"parking", "wifi", "pesticide_free",
+                            "organic", "barrier_free"})
+
+# 대분류별 '판정 가능한 코드' 집합. 여기 없는 값만 골랐다면 그 대분류는
+# 통째로 건너뛴다 — 넣으면 결과가 항상 0건이 된다.
+JUDGEABLE_CODES_BY_CATEGORY = {
+    "companion_type": PET_CODES,
+    "transport": TRANSPORT_CODES,
+    "facility": FACILITY_CODES,
+}
+
+
+def judgeable_selection(category_code, selected):
+    """대분류 안에서 ★실제로 판정할 수 있는 값★만 남긴다. 없으면 빈 리스트.
+
+    판정 가능 목록이 없는 대분류(지역·예산대·액티비티)는 값을 그대로 돌려준다.
+    """
+    codes = JUDGEABLE_CODES_BY_CATEGORY.get(category_code)
+    if codes is None:
+        return list(selected or [])
+    return [code for code in (selected or []) if code in codes]
+
+
 def pet_selection(selected):
     """동반유형 선택값에서 반려견 코드만 추린다. 없으면 빈 리스트(판정 건너뜀)."""
-    return [code for code in (selected or []) if code in PET_CODES]
+    return judgeable_selection("companion_type", selected)
 
 
 def _has_pet(selected, experience):

@@ -181,3 +181,99 @@ def test_all_judgeable_codes_are_real():
     """JUDGEABLE_CATEGORIES 가 실제 카테고리 코드인지 확인."""
     from common.search_categories import CATEGORY_CODES
     assert JUDGEABLE_CATEGORIES.issubset(set(CATEGORY_CODES))
+
+
+# ---- 대분류 안에 판정 불가 값만 골랐을 때 0건이 되지 않는가 (2026-09-20) ----
+# 반려견에서 한 번, 교통수단·편의시설에서 또 나온 패턴이라 대분류마다 못 박는다.
+
+def test_transit_only_does_not_zero_everything():
+    """★대중교통·택시만 고르면 결과가 0건이었다.★ (실측 확인 후 수정)
+
+    _has_transport 는 자가용만 주차 데이터로 판정하는데, 교통수단 대분류가
+    'AND 로 충족해야 할 대분류'에 들어가 어떤 체험도 통과하지 못했다.
+    """
+    exp = FakeExp(has_parking=False)
+    assert passes_conditions({'transport': ['public_transit']}, exp) is True
+    assert passes_conditions({'transport': ['taxi']}, exp) is True
+    assert passes_conditions({'transport': ['public_transit', 'taxi']}, exp) is True
+
+
+def test_car_still_filters_by_parking():
+    """★기존 동작 유지.★ 자가용은 여전히 주차 있는 체험만 통과시킨다."""
+    assert passes_conditions({'transport': ['car']}, FakeExp(has_parking=True)) is True
+    assert passes_conditions({'transport': ['car']}, FakeExp(has_parking=False)) is False
+
+
+def test_car_with_transit_keeps_car_rule():
+    """자가용을 같이 골랐으면 자가용 기준으로 판정한다(대분류 안은 OR)."""
+    conditions = {'transport': ['car', 'public_transit']}
+    assert passes_conditions(conditions, FakeExp(has_parking=True)) is True
+    assert passes_conditions(conditions, FakeExp(has_parking=False)) is False
+
+
+def test_restroom_only_does_not_zero_everything():
+    """화장실·수유실은 Experience 컬럼이 없다.
+
+    코스 장소 기준값으로 살리며 화면 감춤을 풀었는데, 체험 목록 쪽 판정이
+    없어 단독으로 고르면 0건이 됐다. ★코스 반영과 목록 판정은 별개다.★
+    """
+    exp = FakeExp()
+    assert passes_conditions({'facility': ['restroom']}, exp) is True
+    assert passes_conditions({'facility': ['nursing_room']}, exp) is True
+
+
+def test_facility_judgeable_codes_still_filter():
+    """★기존 동작 유지.★ 컬럼이 있는 편의시설은 그대로 거른다."""
+    assert passes_conditions({'facility': ['parking']}, FakeExp(has_parking=True)) is True
+    assert passes_conditions({'facility': ['parking']}, FakeExp(has_parking=False)) is False
+    assert passes_conditions({'facility': ['wifi']}, FakeExp(has_wifi=True)) is True
+    assert passes_conditions({'facility': ['wifi']}, FakeExp(has_wifi=False)) is False
+
+
+def test_restroom_with_parking_keeps_parking_rule():
+    """판정 가능한 값이 하나라도 있으면 그 값으로 판정한다."""
+    conditions = {'facility': ['restroom', 'parking']}
+    assert passes_conditions(conditions, FakeExp(has_parking=True)) is True
+    assert passes_conditions(conditions, FakeExp(has_parking=False)) is False
+
+
+def test_every_visible_leaf_can_match_some_experience():
+    """★전수 확인.★ 화면에 보이는 선택지를 단독으로 골라 0건이 되면 안 된다.
+
+    "판정 불가 값만 고르면 대분류째 건너뛴다"는 규칙이 모든 대분류에서
+    지켜지는지 본다. 지역·예산대·액티비티는 값에 맞춘 체험으로 확인한다.
+    """
+    from common.search_categories import (visible_categories, CATEGORY_OF_CODE,
+                                          REGION_ADDRESS_KEYWORDS, BUDGET_RANGES)
+    from common.constants import EXPERIENCE_ACTIVITY_KEYWORDS
+
+    def leaves(nodes):
+        for node in nodes:
+            if node.get('children'):
+                yield from leaves(node['children'])
+            else:
+                yield node['code']
+
+    def candidates(code):
+        yield FakeExp(has_parking=True, has_wifi=True, pesticide_free=True,
+                      organic_certification_type='유기농', barrier_free=True,
+                      pet_allowed=True, pet_max_weight_kg=50.0, cost=1000)
+        yield FakeExp(pet_allowed=False)
+        for keyword in REGION_ADDRESS_KEYWORDS.get(code, []):
+            yield FakeExp(address_detail=f'{keyword} 어딘가 1-1')
+        if code in BUDGET_RANGES:
+            low, high = BUDGET_RANGES[code]
+            # 예산대는 코스 총비용(체험비 + 교통·식사 추정) 기준이라 체험비를 훑는다.
+            for cost in range(0, (high or low) + 1, 5000):
+                yield FakeExp(cost=cost)
+        if code in EXPERIENCE_ACTIVITY_KEYWORDS:
+            yield FakeExp(activity_type=code)
+
+    dead = []
+    for code in leaves(visible_categories()):
+        category = CATEGORY_OF_CODE.get(code)
+        if category not in JUDGEABLE_CATEGORIES:
+            continue
+        if not any(passes_conditions({category: [code]}, exp) for exp in candidates(code)):
+            dead.append(code)
+    assert dead == [], f"단독으로 고르면 결과가 0건이 되는 선택지: {dead}"

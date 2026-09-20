@@ -6,6 +6,23 @@ _AGE_LABEL = dict(AGE_GROUPS)                                  # {'20s':'20대',
 _GENDER_LABEL = {code: label for code, label in GENDERS if code != 'other'}  # 기타는 라벨 생략
 
 
+def peer_segment_availability(user):
+    """또래·성별 섹션을 그릴 수 있는지. {'age': bool, 'gender': bool}
+
+    ★섹션 이름과 실제 기준이 어긋나면 안 된다.★ '내 또래가 즐기는 코스'는
+    같은 나이대의 클릭 로그로 순서를 매기는데, 나이대가 없으면 집계가 0건이라
+    기본 점수순으로 떨어져 '지금 내 주변 추천'과 똑같은 카드가 나온다
+    (배포 서버 확인: 세 섹션 상위 3건이 전부 같았다).
+
+    그래서 근거가 없는 섹션은 아예 그리지 않는다. 화면을 채우려고 다른
+    기준으로 정렬하면 제목이 거짓말이 된다.
+    """
+    return {
+        'age': bool(getattr(user, 'age_group', None)) if user else False,
+        'gender': bool(getattr(user, 'gender', None)) if user else False,
+    }
+
+
 def user_segment_label(user):
     """'20대·남성'처럼 사용자 세그먼트 라벨. 프로필 없으면 None."""
     if user is None:

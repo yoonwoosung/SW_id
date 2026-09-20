@@ -116,6 +116,8 @@ def recommendation_segments():
     return success_response({
         "segment_label": segment_service.user_segment_label(user),
         "segments": segment_service.auto_segments(user),
+        # 또래·성별 섹션을 그릴 근거가 있는지. 없으면 프론트가 섹션을 숨긴다.
+        "peer_segments": segment_service.peer_segment_availability(user),
     })
 
 

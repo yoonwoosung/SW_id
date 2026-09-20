@@ -158,3 +158,43 @@ def test_no_clicks_falls_back_to_base_order(client, db_session):
 def test_anonymous_user_gets_results(client, world):
     """비로그인도 결과가 나온다(프로필이 없어 인기 가점만 빠진다)."""
     assert len(_crops(client, 'peers_age')) == 4
+
+
+# ---- 근거가 없으면 섹션을 그리지 않는다 (2026-09-20) ----
+# 배포 서버 확인: 비로그인 상태에서 '내 주변'·'내 또래'·'함께 가기' 상위 3건이
+# [6, 7, 9] 로 전부 같았다. 제목은 또래·성별인데 기준은 기본 점수순이었다.
+
+def test_peer_availability_without_profile():
+    from services.segment_service import peer_segment_availability
+    assert peer_segment_availability(None) == {'age': False, 'gender': False}
+
+
+def test_peer_availability_needs_the_matching_field():
+    """★나이 섹션은 나이가, 성별 섹션은 성별이 있어야 한다.★
+
+    has_recommendation_profile 은 가족구성·관심활동만 있어도 참이라 기준이
+    될 수 없다. 나이대가 없으면 나이 집계가 0건이라 섹션이 '내 주변'과
+    같아진다.
+    """
+    from services.segment_service import peer_segment_availability
+
+    class FakeUser:
+        age_group = None
+        gender = None
+
+    user = FakeUser()
+    assert peer_segment_availability(user) == {'age': False, 'gender': False}
+
+    user.age_group = '20s'
+    assert peer_segment_availability(user) == {'age': True, 'gender': False}
+
+    user.gender = 'M'
+    assert peer_segment_availability(user) == {'age': True, 'gender': True}
+
+
+def test_segments_api_exposes_peer_availability(client):
+    """프론트가 섹션을 숨길 수 있게 응답에 실어 보낸다."""
+    res = client.get('/api/recommendations/segments')
+    assert res.status_code == 200
+    data = res.get_json()['data']
+    assert data['peer_segments'] == {'age': False, 'gender': False}

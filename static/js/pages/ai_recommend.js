@@ -185,12 +185,33 @@
         $(this.getAttribute('aria-controls')).hidden = open;
     });
 
+    // ★근거가 없는 섹션은 그리지 않는다.★
+    // '내 또래가 즐기는 코스'는 같은 나이대의 클릭 로그로 순서를 매기는데,
+    // 나이대가 없으면 집계가 0건이라 '지금 내 주변 추천'과 똑같은 카드가 나온다
+    // (배포 서버 확인: 세 섹션 상위 3건이 전부 같았다). 제목이 거짓이 되므로
+    // 섹션째 숨기고, 로그인해서 나이·성별을 넣으면 다시 나타난다.
+    var PEER_SECTIONS = {
+        age: { key: 'peers_age', wrapId: 'sec-peers-age-wrap' },
+        gender: { key: 'peers_gender', wrapId: 'sec-peers-gender-wrap' }
+    };
+
+    function hidePeerSection(which) {
+        var conf = PEER_SECTIONS[which];
+        var wrap = conf && $(conf.wrapId);
+        if (wrap) wrap.hidden = true;
+        // 숨긴 섹션은 더 부르지 않는다(불필요한 호출·코스 조회를 줄인다).
+        SECTIONS = SECTIONS.filter(function (s) { return s.key !== conf.key; });
+    }
+
     // ---- 섹션 제목/문구 개인화(회원 세그먼트 라벨) ----
     fetch('/api/recommendations/segments').then(function (r) { return r.json(); }).then(function (res) {
         if (!res.success) return;
         var label = (res.data && res.data.segment_label) || '';        // 예: "20대·남성"
         var age = label.split('·').filter(function (p) { return /대$/.test(p); })[0] || '';
         if (noteEl && label) noteEl.textContent = label + ' 회원님께 어울리는 코스를 준비했어요.';
+        var peers = (res.data && res.data.peer_segments) || {};
+        if (!peers.age) hidePeerSection('age');
+        if (!peers.gender) hidePeerSection('gender');
         // 섹션 제목은 '기준'을 드러내야 하므로 나이로 덮어쓰지 않는다.
         // (예전에는 '20대가 놀러가기 좋은 코스'로 바꿨는데, 실제로는 나이를 기준으로
         //  고르지 않아 이름과 근거가 어긋났다.)

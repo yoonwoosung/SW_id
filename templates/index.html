@@ -3,11 +3,11 @@
 {% block content %}
 
 <style>
-.rd-col { padding: 0 4px; }
-.rd-group-label { font-size: .75rem; font-weight: 800; color: var(--fl-text-muted); padding: 4px 6px 4px; letter-spacing: .02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.rd-opt { display: block; width: 100%; text-align: left; background: none; border: none; cursor: pointer; font-size: .82rem; padding: 4px 6px; border-radius: 6px; color: var(--fl-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rd-left { transition: background .12s; }
+.rd-left--active, .rd-left:hover { background: var(--fl-green-50, #f0f7f2) !important; color: var(--fl-green-700); font-weight: 700; }
+.rd-opt { display: block; width: 100%; text-align: left; background: none; border: none; cursor: pointer; font-size: .82rem; padding: 5px 6px; border-radius: 6px; color: var(--fl-text); white-space: nowrap; }
 .rd-opt:hover { background: var(--fl-green-50, #f0f7f2); color: var(--fl-green-700); }
-.rd-opt--province { font-weight: 700; border-bottom: 1px solid var(--fl-border); margin-bottom: 2px; padding-bottom: 5px; }
+.rd-opt--province { font-weight: 700; color: var(--fl-green-700); border-bottom: 1px solid var(--fl-border); margin-bottom: 4px; padding-bottom: 6px; }
 
 /* ========================================================
    📸 메인 화면 추억일지 미니 앨범 커버 스타일
@@ -73,9 +73,11 @@
                     {% if region_groups %}
                       {% for grp in region_groups %}
                         {% if grp.label == '광역시·특별시' %}
-                          {% for opt in grp.options %}
-                          <option value="{{ opt.value }}" {% if request.args.get('region')==opt.value %}selected{% endif %}>{{ opt.label }}</option>
-                          {% endfor %}
+                          <optgroup label="광역시·특별시">
+                            {% for opt in grp.options %}
+                            <option value="{{ opt.value }}" {% if request.args.get('region')==opt.value %}selected{% endif %}>{{ opt.label }}</option>
+                            {% endfor %}
+                          </optgroup>
                         {% else %}
                           <option value="{{ grp.options[0].value }}" {% if request.args.get('region')==grp.options[0].value %}selected{% endif %}>{{ grp.options[0].label }}</option>
                         {% endif %}
@@ -123,23 +125,20 @@
                         <span id="regionLabel">{% set cur = request.args.get('region','') %}{% if cur %}{% for grp in region_groups %}{% for opt in grp.options %}{% if opt.value == cur %}{{ opt.label }}{% endif %}{% endfor %}{% endfor %}{% else %}전체{% endif %}</span>
                         <i class="fa-solid fa-chevron-down" style="font-size:.7rem;color:var(--fl-text-muted);"></i>
                     </button>
-                    <!-- 전체 펼침 지역 드롭다운 -->
-                    <div id="regionDropdown" style="display:none;position:absolute;top:calc(100% + 4px);left:0;z-index:999;background:#fff;border:1px solid var(--fl-border);border-radius:12px;box-shadow:0 6px 24px rgba(0,0,0,.13);padding:12px 6px 10px;width:660px;">
-                        <!-- 전체 선택 -->
-                        <div style="padding:4px 8px 10px;border-bottom:1px solid var(--fl-border);margin-bottom:8px;">
-                            <button type="button" id="regionAll" style="background:none;border:none;cursor:pointer;font-size:.88rem;font-weight:700;color:var(--fl-green-700);padding:2px 6px;border-radius:6px;">전체 (선택 해제)</button>
-                        </div>
-                        <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:0 4px;">
-                            {% if region_groups %}
-                            {% for grp in region_groups %}
-                            <div class="rd-col">
-                                <div class="rd-group-label">{{ grp.label }}</div>
-                                {% for opt in grp.options %}
-                                <button type="button" class="rd-opt {% if loop.first and grp.label != '광역시·특별시' %}rd-opt--province{% endif %}" data-val="{{ opt.value }}" data-lbl="{{ opt.label }}">{{ opt.label }}</button>
-                                {% endfor %}
+                    <!-- 1열+2열 지역 드롭다운: 1열=대분류, 2열=소분류 멀티컬럼 -->
+                    <div id="regionDropdown" style="display:none;position:absolute;top:calc(100% + 4px);left:0;z-index:999;background:#fff;border:1px solid var(--fl-border);border-radius:12px;box-shadow:0 6px 24px rgba(0,0,0,.13);overflow:hidden;">
+                        <div style="display:flex;">
+                            <!-- 1열: 대분류 -->
+                            <ul id="rdLeftCol" style="margin:0;padding:6px 0;list-style:none;width:110px;border-right:1px solid var(--fl-border);flex-shrink:0;">
+                                <li class="rd-left rd-left--active" data-idx="" style="padding:8px 14px;cursor:pointer;font-size:.86rem;font-weight:700;">전체</li>
+                                {% if region_groups %}{% for grp in region_groups %}
+                                <li class="rd-left" data-idx="{{ loop.index0 }}" style="padding:8px 14px;cursor:pointer;font-size:.86rem;">{{ grp.label }}</li>
+                                {% endfor %}{% endif %}
+                            </ul>
+                            <!-- 2열: 소분류 멀티컬럼 -->
+                            <div id="rdRightPanel" style="padding:10px 14px;min-width:280px;max-width:520px;display:none;">
+                                <div id="rdRightGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(72px,1fr));gap:2px 8px;"></div>
                             </div>
-                            {% endfor %}
-                            {% endif %}
                         </div>
                     </div>
                 </div>
@@ -669,14 +668,18 @@
 </script>
 
 <script>
-/* ── 전체 펼침 지역 드롭다운 ── */
+/* ── 1열+2열 지역 드롭다운 ── */
 (function () {
-    var trigger  = document.getElementById('regionTrigger');
-    var dropdown = document.getElementById('regionDropdown');
-    var input    = document.getElementById('regionInput');
-    var labelEl  = document.getElementById('regionLabel');
-    var allBtn   = document.getElementById('regionAll');
+    var trigger    = document.getElementById('regionTrigger');
+    var dropdown   = document.getElementById('regionDropdown');
+    var input      = document.getElementById('regionInput');
+    var labelEl    = document.getElementById('regionLabel');
+    var leftCol    = document.getElementById('rdLeftCol');
+    var rightPanel = document.getElementById('rdRightPanel');
+    var rightGrid  = document.getElementById('rdRightGrid');
     if (!trigger) return;
+
+    var groups = {{ region_groups | tojson if region_groups else '[]' }};
 
     function setRegion(value, label) {
         input.value = value;
@@ -685,10 +688,34 @@
         document.getElementById('listFilterForm').submit();
     }
 
-    allBtn.addEventListener('click', function () { setRegion('', '전체'); });
+    function showRight(grpIndex) {
+        var grp = groups[grpIndex];
+        if (!grp) { rightPanel.style.display = 'none'; return; }
+        var isMetro = grp.label === '광역시·특별시';
+        rightGrid.innerHTML = grp.options.map(function (opt, i) {
+            var isFirst = i === 0 && !isMetro;
+            return '<button type="button" class="rd-opt' + (isFirst ? ' rd-opt--province' : '') + '" data-val="' + opt.value + '" data-lbl="' + opt.label + '">' + opt.label + (isFirst ? ' 전체' : '') + '</button>';
+        }).join('');
+        rightGrid.querySelectorAll('.rd-opt').forEach(function (btn) {
+            btn.addEventListener('click', function () { setRegion(btn.dataset.val, btn.dataset.lbl); });
+        });
+        // 열 수: 항목 수에 따라 조정
+        var cols = Math.min(4, Math.ceil(grp.options.length / 5) + 1);
+        rightGrid.style.gridTemplateColumns = 'repeat(' + cols + ', minmax(72px, 1fr))';
+        rightPanel.style.display = 'block';
+    }
 
-    dropdown.querySelectorAll('.rd-opt').forEach(function (btn) {
-        btn.addEventListener('click', function () { setRegion(btn.dataset.val, btn.dataset.lbl); });
+    leftCol.querySelectorAll('.rd-left').forEach(function (item) {
+        item.addEventListener('mouseenter', function () {
+            leftCol.querySelectorAll('.rd-left').forEach(function (el) { el.classList.remove('rd-left--active'); });
+            item.classList.add('rd-left--active');
+            var idx = item.dataset.idx;
+            if (idx === '') { rightPanel.style.display = 'none'; }
+            else { showRight(parseInt(idx)); }
+        });
+        item.addEventListener('click', function () {
+            if (item.dataset.idx === '') setRegion('', '전체');
+        });
     });
 
     trigger.addEventListener('click', function (e) {

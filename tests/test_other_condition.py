@@ -107,14 +107,17 @@ SPORTS = {'name': '천안카약장', 'category': 'A03020200', 'content_type_id':
 def test_place_other_is_complement_of_siblings():
     """'기타' = 같은 대분류 다른 선택지의 여집합."""
     assert matches(SHOPPING, 'experience_type_other') is True   # A04 는 어디에도 없다
-    assert matches(NATURE, 'experience_type_other') is False    # A01 = 자연생태
-    assert matches(HISTORY, 'experience_type_other') is False   # A02 = 공예
+    assert matches(NATURE, 'experience_type_other') is False    # A0101 = 자연생태
+    # 2026-09-20 재매핑 이후 역사관광지(A0201)는 체험종류 어디에도 안 걸린다 → 기타
+    assert matches(HISTORY, 'experience_type_other') is True
 
 
 def test_mood_other():
     assert matches(SHOPPING, 'mood_other') is True
     assert matches(SPORTS, 'mood_other') is False               # A03 = 액티브
-    assert matches(NATURE, 'mood_other') is False               # A01 = 힐링
+    assert matches(HISTORY, 'mood_other') is False              # A0201 = 전통
+    # 재매핑 후 자연관광지(A0101)는 분위기 어디에도 안 걸린다 → 기타
+    assert matches(NATURE, 'mood_other') is True
 
 
 def test_season_other_by_name():
@@ -130,7 +133,7 @@ def test_place_other_is_judgeable():
 def test_place_other_takes_weight_in_scorer():
     scorer = build_scorer(['mood_other'])
     assert scorer(SHOPPING) == pytest.approx(1.0)
-    assert scorer(NATURE) == pytest.approx(0.0)
+    assert scorer(HISTORY) == pytest.approx(0.0)      # 전통에 걸리므로 기타가 아니다
 
 
 def test_place_other_ors_with_normal_choice():
@@ -138,7 +141,8 @@ def test_place_other_ors_with_normal_choice():
     scorer = build_scorer(['tradition', 'mood_other'])
     assert scorer(HISTORY) > 0      # 전통
     assert scorer(SHOPPING) > 0     # 기타
-    assert scorer(NATURE) == pytest.approx(0.0)
+    park = {'name': '태조산 공원', 'category': 'A02020700', 'content_type_id': 12}
+    assert scorer(park) == pytest.approx(0.0)   # 힐링이라 전통도 기타도 아니다
 
 
 def test_siblings_cover_every_non_other_choice():

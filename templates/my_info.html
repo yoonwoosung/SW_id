@@ -340,8 +340,11 @@
         {% if applications %}
           <div class="mi-res-list" style="padding:0 20px 16px;">
             {% for app in applications %}
-            <!-- 💡 레시피 조회를 위해 data-state, data-exp-id 추가 -->
-            <div class="mi-res-card" data-state="{{ app.status }}" data-exp-id="{{ app.experience.id }}">
+            {# 레시피 조회를 위해 data-state, data-exp-id 를 둔다.
+               ★원본 status 가 아니라 계산된 상태를 쓴다.★ status 만 보면 체험이
+               끝났는데도 '확정'으로 남아 있어 완료 예약을 못 찾는다.
+               mypage.html 과 같은 값(completed 등)을 쓴다. #}
+            <div class="mi-res-card" data-state="{{ reservation_states[app.id] }}" data-exp-id="{{ app.experience.id }}">
               {% if app.experience.images %}
                 <img class="mi-res-thumb" src="{{ url_for('static', filename='uploads/' + app.experience.images.split(',')[0]) }}" alt="{{ app.experience.crop }}">
               {% else %}
@@ -858,7 +861,10 @@ document.getElementById('mi-course-modal').addEventListener('click', function(e)
 })();
 
 document.addEventListener('DOMContentLoaded', function () {
-    const completedCards = document.querySelectorAll('.mi-res-card[data-state="확정"]');
+    // ★체험이 끝난 예약에 레시피 버튼을 붙인다.★
+    // 예전에는 '확정'(체험 전)을 찾아서, 체험 전에는 보이고 완료되면 사라졌다.
+    // data-state 는 이제 계산된 상태다(services/activity_service.STATE_COMPLETED).
+    const completedCards = document.querySelectorAll('.mi-res-card[data-state="completed"]');
     
     completedCards.forEach(card => {
         const expId = card.getAttribute('data-exp-id');

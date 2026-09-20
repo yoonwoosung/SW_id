@@ -164,8 +164,18 @@ def my_info():
             return redirect(url_for('farmer_easy_mode', tab='account'))
         return redirect(url_for('my_info'))
 
+    # 체험이 끝난 예약을 '완료'로 올린다. 이게 없으면 종료된 체험이 계속
+    # '확정'으로 남아 후기 작성·레시피 버튼이 열리지 않는다.
+    activity_service.sync_user_completed_reservations(user.id)
+
     applications = Application.query.filter_by(user_id=user.id).order_by(Application.apply_date.desc()).all()
+    # ★화면에는 원본 status 가 아니라 계산된 상태를 넘긴다.★
+    # status 만 보면 '확정'과 '완료'를 구분하지 못한다 — reservation_state 는
+    # 상태값·can_review·체험 종료 시각을 함께 본다(mypage 와 같은 규칙).
+    reservation_states = {app.id: activity_service.reservation_state(app)
+                          for app in applications}
     return render_template('my_info.html', user=user, applications=applications,
+                           reservation_states=reservation_states,
                            refunded_app_ids=point_service.refunded_application_ids(user.id))
 
 

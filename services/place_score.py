@@ -11,6 +11,7 @@ from common.constants import (  # noqa: F401  (COURSE_RULE_* 는 routes/course �
     COURSE_ACTIVITY_KAKAO,
     COURSE_CONDITION_WEIGHTS,
     COURSE_FACILITY_NEARBY,
+    COURSE_PARTY_RULES,
     COURSE_OTHER_SIBLINGS,
     COURSE_CONDITION_TAIL_WEIGHT,
     COURSE_PLACE_RULES,
@@ -37,6 +38,11 @@ def judgeable(code, api_sets=None):
         return True
     if code in COURSE_OTHER_SIBLINGS:
         return True
+    if code in COURSE_PARTY_RULES:
+        # 주차가 필요한 규칙은 주차장 조회 결과가 있어야 판정할 수 있다.
+        if COURSE_PARTY_RULES[code]["parking"] is None:
+            return True
+        return bool((api_sets or {}).get("parking"))
     if code in REGION_ADDRESS_KEYWORDS:
         return True      # 지역은 장소 주소로 판정한다(추가 API 호출 없음)
     if code in _API_RULES:
@@ -109,8 +115,23 @@ def _matches_region(place, code):
     return any(word in address for word in REGION_ADDRESS_KEYWORDS.get(code, ()))
 
 
+def _matches_party(place, code, api_sets):
+    """인원수 판정 — 주차 여부와 장소 성격을 함께 본다."""
+    rule = COURSE_PARTY_RULES[code]
+    has_parking = _place_key(place) in ((api_sets or {}).get("parking") or set())
+
+    if rule["parking"] == "required" and not has_parking:
+        return False
+    if rule["cat"]:
+        category = str(place.get("category") or "")
+        return any(category.startswith(prefix) for prefix in rule["cat"])
+    return has_parking      # 주차만 보는 규칙(3~4명)
+
+
 def matches(place, code, api_sets=None):
     """장소 하나가 조건 하나를 충족하는가."""
+    if code in COURSE_PARTY_RULES:
+        return _matches_party(place, code, api_sets)
     if code in REGION_ADDRESS_KEYWORDS:
         return _matches_region(place, code)
     siblings = COURSE_OTHER_SIBLINGS.get(code)

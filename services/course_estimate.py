@@ -9,10 +9,11 @@
 # 예전에는 코스 화면의 '총 8시간'이 COURSE_SLOTS 의 첫 시각과 마지막 시각을
 # 뺀 값이었다. 이동·체류와 무관한 상수 뺄셈이라 실제와 달랐다.
 from common.constants import (
-    COURSE_COST_ATTRACTION,
-    COURSE_COST_CAFE,
     COURSE_COST_CAR_PER_KM,
-    COURSE_COST_MEAL,
+    COURSE_PLACE_PRICE,
+    COURSE_PRICE_BY_SLOT,
+    COURSE_PRICE_DEFAULT,
+    COURSE_PRICE_SLOT_FIRST,
     COURSE_COST_TAXI_BASE,
     COURSE_COST_TAXI_PER_KM,
     COURSE_COST_TRANSIT_PER_LEG,
@@ -23,12 +24,6 @@ from common.constants import (
 )
 from services.distance import haversine
 
-# 슬롯 종류 → 1인 비용 추정
-_SLOT_COST = {
-    "restaurant": COURSE_COST_MEAL,
-    "attraction": COURSE_COST_ATTRACTION,
-    "cafe": COURSE_COST_CAFE,
-}
 _SLOT_LABEL = {
     "experience": "체험",
     "restaurant": "식사",
@@ -67,6 +62,34 @@ def travel_minutes(straight_km, transport=None):
 
 def stay_minutes(slot_type):
     return COURSE_STAY_MINUTES.get(slot_type, 0)
+
+
+def place_price(item):
+    """장소 하나의 1인 단가 추정(원).
+
+    ★관광공사 cat 코드를 먼저 본다.★ 공원(A0101)은 0원, 체험관광지(A0203)는
+    10,000원처럼 실제 성격에 맞게 매긴다. 예전에는 슬롯 고정값이라
+    공원이든 유원지든 똑같이 5,000원이었다.
+
+    분류가 없는 장소(CSV 는 '관광지' 한글 문자열, 카카오는 자체 분류)는
+    슬롯으로 되짚고, 그것도 없으면 기본값을 쓴다.
+    """
+    slot = item.get("type")
+    if slot == "experience":
+        return 0          # 체험비는 Experience.cost 로 따로 더한다
+
+    # 관광공사에 카페 분류가 없어 카페도 음식점(A05)으로 온다. 슬롯이 우선한다.
+    if slot in COURSE_PRICE_SLOT_FIRST:
+        return COURSE_PRICE_SLOT_FIRST[slot]
+
+    category = str(item.get("category") or "")
+    if category.startswith("A"):          # 관광공사 cat3 코드
+        for prefix, price in COURSE_PLACE_PRICE:
+            if category.startswith(prefix):
+                return price
+    if slot in COURSE_PRICE_BY_SLOT:
+        return COURSE_PRICE_BY_SLOT[slot]
+    return COURSE_PRICE_DEFAULT
 
 
 def _to_float(value):
@@ -131,10 +154,15 @@ def estimate(items, experience_cost=0, transport=None):
     if experience_cost:
         cost_items.append({"label": "체험", "amount": int(experience_cost), "estimated": False})
     for item in items or []:
-        amount = _SLOT_COST.get(item.get("type"))
-        if amount:
-            cost_items.append({"label": _SLOT_LABEL.get(item["type"], item["type"]),
-                               "amount": amount, "estimated": True})
+        if item.get("type") == "experience":
+            continue
+        amount = place_price(item)
+        # 무료 장소(공원·전망대)도 내역에 남긴다 — '왜 싼지'가 보여야 한다.
+        cost_items.append({
+            "label": _SLOT_LABEL.get(item.get("type"), item.get("type")),
+            "amount": amount, "estimated": True,
+            "note": (item.get("name") or "")[:14] + (" · 무료" if amount == 0 else ""),
+        })
     moving = travel_cost(total_km, len(route), transport)
     if moving:
         cost_items.append({"label": "교통", "amount": moving, "estimated": True,

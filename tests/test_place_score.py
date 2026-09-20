@@ -134,7 +134,8 @@ def test_unjudgeable_condition_redistributes_weight():
 def test_scorer_is_none_without_usable_conditions():
     """쓸 조건이 하나도 없으면 None — 호출부가 기존 거리순을 쓴다."""
     assert build_scorer([]) is None
-    assert build_scorer(['solo', 'party_1', 'day_trip']) is None
+    # party_1 은 2026-09-20 부터 판정 가능해졌다(역사관광지 기준).
+    assert build_scorer(['solo', 'day_trip']) is None
     assert build_scorer(['dog_medium'], build_api_sets()) is None
 
 
@@ -266,3 +267,47 @@ def test_applied_weights_drop_unjudgeable():
 def test_usable_codes_preserve_order():
     from services.place_score import usable_codes
     assert usable_codes(['course_under_30k', 'healing', 'tradition']) == ['healing', 'tradition']
+
+
+# ---- 인원수 (2026-09-20) ----
+
+HISTORY_PLACE = {'name': '박문수묘', 'category': 'A02010700', 'content_type_id': 12}
+RESORT_PLACE = {'name': '천안상록리조트', 'category': 'A02020200', 'content_type_id': 12}
+
+
+def test_party_1_prefers_quiet_places():
+    """혼자는 조용히 둘러보는 곳(역사관광지)."""
+    assert matches(HISTORY_PLACE, 'party_1') is True
+    assert matches(RESORT_PLACE, 'party_1') is False
+
+
+def test_party_1_needs_no_parking_lookup():
+    """주차 조회 없이도 판정된다(추가 호출 0회)."""
+    assert judgeable('party_1') is True
+
+
+def test_party_3_4_needs_parking_result():
+    """주차가 있는 곳에 가점. 주차장 조회 결과가 없으면 판정 불가."""
+    assert judgeable('party_3_4') is False
+    sets = build_api_sets(facility_names={'parking': {'박문수묘'}})
+    assert judgeable('party_3_4', sets) is True
+    assert matches(HISTORY_PLACE, 'party_3_4', sets) is True
+    assert matches(RESORT_PLACE, 'party_3_4', sets) is False
+
+
+def test_party_5plus_requires_parking_and_space():
+    """★5명 이상은 주차가 없으면 탈락한다.★ 넓은 곳(휴양·자연)이어야 한다."""
+    with_parking = build_api_sets(facility_names={'parking': {'천안상록리조트', '박문수묘'}})
+    assert matches(RESORT_PLACE, 'party_5plus', with_parking) is True    # 주차 O + 휴양지
+    assert matches(HISTORY_PLACE, 'party_5plus', with_parking) is False  # 주차 O 이나 역사관광지
+    no_parking = build_api_sets(facility_names={'parking': {'다른곳'}})
+    assert matches(RESORT_PLACE, 'party_5plus', no_parking) is False     # 주차 X
+
+
+def test_party_2_is_not_judged():
+    """★'2명'은 제한이 없어 판정하지 않는다.★
+
+    가중치를 차지한 채 모든 장소를 통과시키면 다른 조건의 몫만 줄인다.
+    """
+    assert judgeable('party_2') is False
+    assert matches(HISTORY_PLACE, 'party_2') is False

@@ -494,10 +494,14 @@
             html += '<div class="ci-cond__row"><span class="ci-cond__tag">반영됨</span>'
                 + applied.map(function (a) {
                     return '<span class="ci-cond__item">' + esc(a.label)
-                        + ' <b>' + a.percent + '%</b>'
+                        + (a.percent != null ? ' <b>' + a.percent + '%</b>' : '')
+                        + (a.role ? '<em>' + esc(a.role) + '</em>' : '')
                         + (a.course_only ? '<em title="체험 목록은 거르지 않습니다">코스만</em>' : '')
                         + '</span>';
                 }).join('') + '</div>';
+        }
+        if (cond.budget_over) {
+            html += '<p class="ci-cond__warn">예산 안에 드는 장소가 부족해 가장 저렴한 곳으로 구성했습니다.</p>';
         }
         if (cond.fell_back) {
             html += '<p class="ci-cond__warn">조건에 맞는 장소가 근처에 없어 가까운 순으로 구성했습니다.</p>';

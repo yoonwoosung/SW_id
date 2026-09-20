@@ -3,6 +3,21 @@
 # 구조: 각 노드 = {code(영문), label(한글), children?(하위 노드 리스트)}. children 없으면 잎(선택 가능).
 
 
+# '기타' = 그 대분류의 다른 선택지 어디에도 걸리지 않는 값.
+# ★값이 아예 없는 것은 제외한다★ — 값이 있는데 목록 밖인 것만 본다.
+#
+# 5개 대분류에만 넣는다. 나머지 8개는 넣어도 항상 0건이라서다:
+#   예산대   구간이 0~∞ 를 빈틈없이 덮는다(코스 총비용은 늘 20,000원 이상)
+#   편의시설·교통수단  불리언이라 '목록 밖 값'이라는 개념이 없다
+#   동반유형·인원·일정·소요시간  대응 데이터가 아예 없다
+OTHER_SUFFIX = "_other"
+OTHER_LABEL = "기타"
+
+
+def _other_node(category_code):
+    return {"code": category_code + OTHER_SUFFIX, "label": OTHER_LABEL}
+
+
 def _pet_conditions():
     # 반려견 몸무게 노드 하위 공통 조건(목줄·케이지 등) — 티어마다 새 리스트로 생성.
     # ★hidden: Experience 에 대응 컬럼이 없어 고르면 결과가 항상 0건이다.★
@@ -119,6 +134,8 @@ def _region_node():
     return {"code": "region", "label": "지역", "group": "travel", "children": [
         {"code": METRO_GROUP_CODE, "label": "광역시·특별시", "children": metro_children},
         *province_children,
+        # 주소는 있는데 위 시도·시군 어디에도 걸리지 않는 체험.
+        _other_node("region"),
     ]}
 
 
@@ -135,6 +152,8 @@ SEARCH_CATEGORIES = [
             {"code": "dog_large", "label": "대형(15kg 이상)", "children": _pet_conditions()},
         ]},
         {"code": "pet_not_allowed", "label": "동반불가"},
+        # 동반가능인데 허용 몸무게가 소형 기준(5kg)에 못 미치는 경우(1~4kg).
+        _other_node("pet_dog"),
     ]},
     {"code": "party", "label": "인원", "group": "travel", "children": [
         {"code": "headcount", "label": "인원수", "children": [
@@ -149,7 +168,7 @@ SEARCH_CATEGORIES = [
     {"code": "experience_type", "label": "체험종류", "group": "taste", "children": [
         {"code": "harvest", "label": "수확"}, {"code": "food", "label": "먹거리"},
         {"code": "craft", "label": "공예"}, {"code": "animal", "label": "동물교감"},
-        {"code": "nature", "label": "자연생태"}]},
+        {"code": "nature", "label": "자연생태"}, _other_node("experience_type")]},
     # ★hidden: activity_type 컬럼은 있으나 저장하는 코드가 어디에도 없다.★
     # 등록 폼에 입력이 없어 모든 체험이 NULL 이고, 고르면 결과가 항상 0건이다.
     # 등록 폼에 드롭다운을 추가하면 hidden 만 지우면 살아난다.
@@ -161,10 +180,11 @@ SEARCH_CATEGORIES = [
     {"code": "mood", "label": "분위기", "group": "taste", "children": [
         {"code": "healing", "label": "힐링"}, {"code": "active", "label": "액티브"},
         {"code": "photo", "label": "인생샷"}, {"code": "educational", "label": "교육적"},
-        {"code": "tradition", "label": "전통"}]},
+        {"code": "tradition", "label": "전통"}, _other_node("mood")]},
     {"code": "season", "label": "계절·제철", "group": "taste", "children": [
         {"code": "spring_strawberry", "label": "봄 딸기"}, {"code": "summer_blueberry", "label": "여름 블루베리"},
-        {"code": "autumn_harvest", "label": "가을 수확"}, {"code": "winter_experience", "label": "겨울 체험"}]},
+        {"code": "autumn_harvest", "label": "가을 수확"}, {"code": "winter_experience", "label": "겨울 체험"},
+        _other_node("season")]},
     {"code": "budget_range", "label": "예산대", "group": "practical",
      "note": "*1인당 코스 총비용(교통·식사 포함) 기준입니다", "children": [
         {"code": "course_under_30k", "label": "3만원 이하"}, {"code": "course_30_50k", "label": "3~5만원"},

@@ -32,10 +32,22 @@
     // 결과가 아니라 '진행 중인 Promise' 를 기억해 그 창까지 막는다.
     // 실패하면 항목을 지워 다음 시도가 다시 요청할 수 있게 한다.
     var courseCache = {};
+
+    // 고른 조건을 고른 순서대로 이어 붙인다. 코스 장소 점수에서 1순위가 40% 를
+    // 차지하므로 순서가 결과를 좌우한다. 조건이 없으면 빈 문자열 → 서버는 거리순.
+    function conditionOrder() {
+        return ((lastSelected && lastSelected.__order) || []).join(',');
+    }
+
     function fetchCourse(id) {
-        var key = String(id);
+        var order = conditionOrder();
+        // ★조건이 바뀌면 캐시도 갈라져야 한다.★ id 만으로 캐싱하면 조건을 바꿔도
+        // 먼저 받아둔 코스가 그대로 나와 "바뀌지 않는다"로 보인다.
+        var key = String(id) + '|' + order;
         if (!courseCache[key]) {
-            courseCache[key] = fetch('/api/experiences/' + encodeURIComponent(id) + '/course')
+            var url = '/api/experiences/' + encodeURIComponent(id) + '/course'
+                + (order ? '?cond_order=' + encodeURIComponent(order) : '');
+            courseCache[key] = fetch(url)
                 .then(function (r) { return r.json(); })
                 .catch(function (err) { delete courseCache[key]; throw err; });
         }
@@ -232,6 +244,7 @@
         if (coords.lat != null && coords.lon != null) { qs.set('lat', coords.lat); qs.set('lon', coords.lon); }
         if (segment && segment !== 'nearby') qs.set('segment', segment);
         Object.keys(selected || {}).forEach(function (cat) {
+            if (cat === '__order') return;      // 순서는 아래에서 따로 보낸다
             (selected[cat] || []).forEach(function (v) { qs.append('cond_' + cat, v); });
         });
         return qs.toString();

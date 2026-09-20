@@ -290,6 +290,10 @@ COURSE_COST_TAXI_PER_KM = 1000
 # 카카오는 '음식점 > 카페 > 커피전문점 > 메가MGC커피'처럼 단계로 준다(실측).
 COURSE_COMPANION_CAFE_HINT = "카페"
 
+# 레포츠 후보를 더할 조건. 이 코드를 고른 경우에만 contentType 28 을 부른다
+# (항상 더하면 조건 없는 기본 코스에 골프장·캠핑장이 올라온다).
+COURSE_LEISURE_CODE = "active"
+
 COURSE_PET_KAKAO = ("애견동반", "음식점")
 
 # --- 편의시설: 좌표 근접으로 판정 ---

@@ -13,7 +13,7 @@ from external import chungnam_api
 from external import tour_csv
 from external import kakao_place
 from common.constants import (COURSE_ACTIVITY_KAKAO, COURSE_COMPANION_KAKAO,
-                              COURSE_COMPANION_CAFE_HINT,
+                              COURSE_COMPANION_CAFE_HINT, COURSE_LEISURE_CODE,
                               COURSE_DURATION_SLOTS,
                               COURSE_SCHEDULE_RADIUS_M, COURSE_ROWS_PER_RADIUS,
                               COURSE_MAX_ROWS, NEARBY_RESULT_LIMIT,
@@ -201,6 +201,28 @@ def _activity_places(experience, codes):
             places.append(dict(place, content_type_id=TOUR_CONTENT_TYPE_ATTRACTION,
                                source=KAKAO_SOURCE))
     return places, names
+
+
+def _leisure_places(experience, codes, radius_m=None):
+    """액티브를 고른 경우에만 레포츠(28) 후보를 가져온다.
+
+    ★A03(레포츠)은 관광지(12)에 한 건도 없다.★ 실측으로 확인했다 —
+    천안 20km 기준 관광지 60건 중 A03 은 0건, 레포츠 26건은 전부 A03 이다.
+    후보를 12·39 만 모아서 액티브 조건이 어느 지역에서도 0건이었다
+    (천안·예산·논산·영월·남원·양평 모두 0건).
+
+    ★고른 경우에만 부른다.★ 항상 더하면 조건 없이 볼 때 골프장·캠핑장이
+    상위에 올라와 기본 코스가 나빠진다(반려견·주차에서 쓴 방식과 같다).
+    """
+    if COURSE_LEISURE_CODE not in (codes or []):
+        return []
+    radius_m = radius_m or COURSE_SEARCH_RADIUS_M
+    try:
+        return tour_api.find_nearby_places(
+            experience.lat, experience.lng, radius_m,
+            TOUR_CONTENT_TYPE_LEISURE, _rows_for(radius_m)) or []
+    except Exception:
+        return []      # 보강 실패는 코스 생성을 막지 않는다
 
 
 def _companion_places(experience, codes):
@@ -525,6 +547,14 @@ def experience_course(item_id):
     radius_m = _search_radius(codes)
     places_by_type = _collect_places(item, radius_m)
 
+    # 레포츠(28)는 액티브를 골랐을 때만 관광 슬롯에 더한다.
+    leisure_places = _leisure_places(item, codes, radius_m)
+    if leisure_places:
+        try:
+            places_by_type["attraction"] = place_merge.merge(
+                places_by_type.get("attraction") or [], leisure_places)
+        except Exception:
+            pass
     # 액티비티 장소는 관광 슬롯 후보에 더한다(맛집·카페에 승마장이 섞이면 안 된다).
     if activity_places:
         try:

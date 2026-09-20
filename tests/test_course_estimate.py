@@ -416,3 +416,54 @@ def test_companion_places_empty_when_not_selected():
     by_slot, names = rc._companion_places(_Exp(), ['healing'])
     assert by_slot == [] or by_slot == {} or not any(by_slot.values())
     assert names == {}
+
+
+# ---- 레포츠(28) 후보: 액티브를 고른 경우에만 (2026-09-20) ----
+
+def test_leisure_places_only_when_active_selected(monkeypatch):
+    """★항상 더하면 기본 코스가 나빠진다.★
+
+    조건 없이 볼 때 골프장·캠핑장이 관광 슬롯 상위에 올라온다.
+    반려견·주차와 같게 '고른 경우에만' 부른다.
+    """
+    import routes.course as rc
+    calls = []
+
+    def fake_fetch(lat, lng, radius, content_type, rows):
+        calls.append(content_type)
+        return [{'name': '천안 상록골프장', 'category': 'A03020200',
+                 'lat': 36.8, 'lng': 127.2}]
+    monkeypatch.setattr(rc.tour_api, 'find_nearby_places', fake_fetch)
+
+    assert rc._leisure_places(_Exp(), ['healing']) == []
+    assert rc._leisure_places(_Exp(), []) == []
+    assert calls == []                      # 안 고르면 아예 부르지 않는다
+
+    found = rc._leisure_places(_Exp(), ['active'])
+    assert [p['name'] for p in found] == ['천안 상록골프장']
+    from common.constants import TOUR_CONTENT_TYPE_LEISURE
+    assert calls == [TOUR_CONTENT_TYPE_LEISURE]
+
+
+def test_leisure_failure_does_not_break_course(monkeypatch):
+    """★보강 실패가 코스 생성을 막으면 안 된다.★"""
+    import routes.course as rc
+
+    def boom(*a, **kw):
+        raise RuntimeError('관광공사 장애')
+    monkeypatch.setattr(rc.tour_api, 'find_nearby_places', boom)
+    assert rc._leisure_places(_Exp(), ['active']) == []
+
+
+def test_leisure_uses_the_requested_radius(monkeypatch):
+    """일정 조건으로 넓힌 반경을 그대로 쓴다(조회 건수도 함께 늘어난다)."""
+    import routes.course as rc
+    seen = {}
+
+    def fake_fetch(lat, lng, radius, content_type, rows):
+        seen['radius'], seen['rows'] = radius, rows
+        return []
+    monkeypatch.setattr(rc.tour_api, 'find_nearby_places', fake_fetch)
+    rc._leisure_places(_Exp(), ['active'], 40000)
+    assert seen['radius'] == 40000
+    assert seen['rows'] == rc._rows_for(40000)

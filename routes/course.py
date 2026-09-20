@@ -462,13 +462,19 @@ def _condition_report(codes, api_sets, items, budget_over=False):
 
     # 조건을 반영했는데 맞는 장소가 하나도 없으면 거리순으로 떨어진다.
     # 지금까지 조용히 일어나 사용자는 "조건이 무시됐다"고만 느꼈다.
+    #
+    # ★'점수로 반영되는 조건'이 있을 때만 폴백을 따진다.★ 예산대·일정·
+    # 소요시간·교통수단은 장소에 점수를 매기지 않아 match_score 가 아예 없다.
+    # 이걸 구분하지 않으면 그 조건만 골랐을 때 잘 동작하는데도
+    # "조건에 맞는 장소가 근처에 없다"는 거짓 경고가 뜬다(배포 서버에서 재현).
     scored = [i for i in (items or []) if i.get("type") != "experience"]
     matched_any = any((i.get("match_score") or 0) > 0 for i in scored)
+    has_scored_condition = any(a.get("percent") is not None for a in applied)
 
     return {
         "applied": applied,
         "ignored": ignored,
-        "fell_back": bool(applied) and not matched_any,
+        "fell_back": has_scored_condition and not matched_any,
         # 예산 안에 드는 장소가 없어 넘겼을 때 화면이 안내한다.
         "budget_over": bool(budget_over),
     }

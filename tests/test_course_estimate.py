@@ -310,3 +310,31 @@ def test_no_visible_condition_is_silently_ignored():
                 | {i['code'] for i in report['ignored']})
     assert set(codes) - reported == set()
     assert all(i['reason'] for i in report['ignored'])
+
+
+def test_filter_only_conditions_do_not_warn_fallback():
+    """★거짓 경고를 막는다.★ (배포 서버에서 재현한 버그)
+
+    예산대·일정·소요시간·교통수단은 장소에 점수를 매기지 않아 match_score 가
+    없다. 이걸 폴백으로 세면 잘 동작하는데도 "조건에 맞는 장소가 근처에
+    없어 가까운 순으로 구성했습니다"가 뜬다.
+    """
+    import routes.course as rc
+    items = [{'type': 'attraction', 'name': 'A'}]      # 점수 없음
+    for codes in (['taxi'], ['half_day'], ['day_trip'], ['course_under_30k']):
+        assert rc._condition_report(codes, {}, items)['fell_back'] is False, codes
+
+
+def test_scored_condition_with_no_match_still_warns():
+    """★기존 동작 유지.★ 점수 조건이 하나도 안 맞으면 폴백 경고는 그대로다."""
+    import routes.course as rc
+    items = [{'type': 'attraction', 'name': 'A', 'match_score': 0.0}]
+    assert rc._condition_report(['healing'], {}, items)['fell_back'] is True
+    # 필터 조건을 같이 골라도 점수 조건이 안 맞았으면 경고는 유지된다.
+    assert rc._condition_report(['healing', 'taxi'], {}, items)['fell_back'] is True
+
+
+def test_matched_scored_condition_does_not_warn():
+    import routes.course as rc
+    items = [{'type': 'attraction', 'name': 'A', 'match_score': 0.4}]
+    assert rc._condition_report(['healing'], {}, items)['fell_back'] is False

@@ -634,13 +634,16 @@
     </div>
 </div>
 
+{% endblock %}
+
+{% block scripts %}
 <script>
-(function () {
+$(function () {
     var hash = window.location.hash;
     if (hash) {
         var tab = document.querySelector('[href="' + hash + '"]');
         if (tab) { $(tab).tab('show'); }
     }
-})();
+});
 </script>
 {% endblock %}

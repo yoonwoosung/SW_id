@@ -1028,13 +1028,13 @@ a svg, a i { pointer-events: none; }
 .fl-help-btn {
     display: inline-flex;
     align-items: center;
-    gap: 4px;
-    font-size: .78rem;
+    gap: 5px;
+    font-size: .85rem;
     color: var(--fl-text-muted);
     background: none;
     border: 1px solid var(--fl-border);
     border-radius: 20px;
-    padding: 4px 10px;
+    padding: 6px 14px;
     text-decoration: none;
     transition: color .15s, border-color .15s;
     white-space: nowrap;
@@ -1044,7 +1044,7 @@ a svg, a i { pointer-events: none; }
     border-color: var(--fl-green-700);
     text-decoration: none;
 }
-.fl-help-btn svg { width: 13px; height: 13px; }
+.fl-help-btn svg { width: 15px; height: 15px; }
 
 /* 체험 더보기 필터 바 */
 .list-filter-bar {

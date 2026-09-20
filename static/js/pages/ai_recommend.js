@@ -596,6 +596,10 @@
         if (cond.fell_back) {
             html += '<p class="ci-cond__warn">조건에 맞는 장소가 근처에 없어 가까운 순으로 구성했습니다.</p>';
         }
+        if (cond.pet_cafe_missing) {
+            // 카페 시간에 식당을 넣지 않는 대신, 동반이 안 될 수 있음을 알린다.
+            html += '<p class="ci-cond__warn">반려견 동반이 가능한 카페가 근처에 없어 일반 카페로 구성했습니다.</p>';
+        }
         if (ignored.length) {
             html += '<details class="ci-cond__more"><summary>반영되지 않은 조건 '
                 + ignored.length + '개</summary><ul>'

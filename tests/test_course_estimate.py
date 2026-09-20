@@ -531,3 +531,61 @@ def test_widen_survives_fetch_failure(monkeypatch):
     monkeypatch.setattr(rc, '_fetch_places', boom)
     before = {'attraction': [{'name': '기존 장소', 'category': 'A0201'}]}
     assert rc._widen_attraction(_Exp(), [], before) == before
+
+
+# ---- 반려견 후보를 슬롯 종류에 맞게 나눈다 (2026-09-20) ----
+
+def test_pet_places_split_by_slot(monkeypatch):
+    """★카페 시간에 중식당이 오면 안 된다.★
+
+    예전에는 애견동반 결과를 맛집·카페 두 슬롯에 통째로 넣어, 안산에서
+    애견동반 카페(컴포즈커피)가 12:30 점심 자리에 오고 중식당이 17:00
+    카페 자리에 올 수 있었다.
+    """
+    import routes.course as rc
+    from common.constants import TOUR_CAT_CAFE
+
+    monkeypatch.setattr(rc.pet_travel_api, 'find_pet_facilities', lambda *a, **kw: [])
+    monkeypatch.setattr(rc.kakao_place, 'search', lambda *a, **kw: [
+        {'name': '컴포즈커피 안산원곡동점', 'category': '음식점 > 카페 > 커피전문점'},
+        {'name': '오복당 고잔점', 'category': '음식점 > 중식 > 중국요리'},
+        {'name': '뽁식당 고잔점', 'category': '음식점 > 양식'},
+    ])
+    by_slot, names = rc._pet_places(_Exp(), ['pet_allowed'])
+    assert [p['name'] for p in by_slot['cafe']] == ['컴포즈커피 안산원곡동점']
+    assert [p['name'] for p in by_slot['restaurant']] == ['오복당 고잔점', '뽁식당 고잔점']
+    # 카페 슬롯이 분류 코드로 거르므로 살아남아야 한다.
+    assert by_slot['cafe'][0]['category'] == TOUR_CAT_CAFE
+    assert rc._cafes_only(by_slot['cafe']) == by_slot['cafe']
+    # 판정용 이름 집합은 슬롯과 무관하게 전부 담는다.
+    assert len(names) == 3
+
+
+def test_pet_places_skipped_without_pet_condition():
+    """★기존 동작 유지.★ 안 고르면 빈 묶음."""
+    import routes.course as rc
+    assert rc._pet_places(_Exp(), ['healing']) == ({}, set())
+
+
+def test_pet_cafe_missing_is_reported():
+    """★조용히 넘어가면 강아지를 데리고 갔다가 못 들어간다.★"""
+    import routes.course as rc
+    items = [{'type': 'experience'}, {'type': 'cafe', 'name': '데미안'}]
+
+    # 애견동반 카페를 못 찾았다 → 알린다
+    assert rc._pet_cafe_missing(['pet_allowed'], {'restaurant': [{'name': '오복당'}]}, items) is True
+    assert rc._pet_cafe_missing(['pet_allowed'], {}, items) is True
+    # 찾았다 → 알릴 것이 없다
+    assert rc._pet_cafe_missing(['pet_allowed'], {'cafe': [{'name': '컴포즈커피'}]}, items) is False
+    # 반려견을 안 골랐다 → 해당 없음
+    assert rc._pet_cafe_missing(['healing'], {}, items) is False
+    # 카페 슬롯 자체가 없다(소요시간을 짧게 골랐다) → 알릴 것이 없다
+    assert rc._pet_cafe_missing(['pet_allowed'], {}, [{'type': 'experience'}]) is False
+
+
+def test_pet_cafe_missing_flows_into_the_report():
+    import routes.course as rc
+    items = [{'type': 'cafe', 'name': '데미안'}]
+    assert rc._condition_report(['pet_allowed'], {}, items,
+                                pet_cafe_missing=True)['pet_cafe_missing'] is True
+    assert rc._condition_report(['pet_allowed'], {}, items)['pet_cafe_missing'] is False

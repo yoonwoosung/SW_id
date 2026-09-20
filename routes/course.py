@@ -325,17 +325,23 @@ def _companion_places(experience, codes):
 
 
 def _pet_places(experience, codes):
-    """반려견 조건을 고르면 동반 가능한 장소를 찾는다. 반환: (장소 리스트, 이름 집합)
+    """반려견 조건을 고르면 동반 가능한 장소를 찾는다.
+
+    반환: ({슬롯: 장소 리스트}, 이름 집합)
 
     ★반려동물 동반여행 API 를 우선한다.★ 키에 활용신청이 승인되면 그쪽이
     결과를 주고, 그때는 카카오를 부르지 않는다. 지금은 403 이라 빈 리스트다.
 
     카카오 '애견동반' 결과는 대부분 음식점·카페다(실측 199건 중 관광지 1건).
-    그래서 ★맛집·카페 슬롯★ 후보로 더한다 — 관광 슬롯에 넣으면 카페가
-    관광지 자리에 들어간다.
+    ★종류에 맞는 슬롯으로 나눈다.★ 예전에는 맛집·카페 두 슬롯에 통째로
+    넣어서, 애견동반 중식당이 17:00 카페 자리에 오고 애견동반 카페가
+    12:30 점심 자리에 오는 일이 실제로 있었다(안산 컴포즈커피가 점심).
+
+      음식점 > 카페 …        → 카페 슬롯
+      음식점 > 중식/양식 …   → 맛집 슬롯
     """
     if not any(code in place_score.COURSE_RULE_PET for code in codes or []):
-        return [], set()
+        return {}, set()
 
     try:
         official = pet_travel_api.find_pet_facilities(
@@ -343,7 +349,7 @@ def _pet_places(experience, codes):
     except Exception:
         official = []
     if official:
-        return [], {"".join(str(p.get("name") or "").split()) for p in official if p.get("name")}
+        return {}, {"".join(str(p.get("name") or "").split()) for p in official if p.get("name")}
 
     keyword, hint = COURSE_PET_KAKAO
     try:
@@ -352,9 +358,16 @@ def _pet_places(experience, codes):
                  if hint in (p.get("category") or "")]
     except Exception:
         found = []
-    places = [dict(p, content_type_id=TOUR_CONTENT_TYPE_RESTAURANT, source=KAKAO_SOURCE)
-              for p in found]
-    return places, {"".join(str(p["name"]).split()) for p in found}
+
+    by_slot = {"restaurant": [], "cafe": []}
+    for place in found:
+        is_cafe = COURSE_COMPANION_CAFE_HINT in (place.get("category") or "")
+        extra = {"content_type_id": TOUR_CONTENT_TYPE_RESTAURANT, "source": KAKAO_SOURCE}
+        if is_cafe:
+            # 카페 슬롯이 분류 코드로 거르므로(_cafes_only) 같은 코드를 달아 준다.
+            extra["category"] = TOUR_CAT_CAFE
+        by_slot["cafe" if is_cafe else "restaurant"].append(dict(place, **extra))
+    return by_slot, {"".join(str(p["name"]).split()) for p in found}
 
 
 def _facility_names(experience, codes, places_by_type):
@@ -525,7 +538,22 @@ def _budget_for_places(codes, experience):
     return max(0, ceiling - spent)
 
 
-def _condition_report(codes, api_sets, items, budget_over=False):
+def _pet_cafe_missing(codes, pet_places, items):
+    """반려견을 골랐는데 ★카페 슬롯만★ 동반 불가로 채워졌는지.
+
+    슬롯 성격을 지키느라(카페 시간에 중식당을 넣지 않느라) 근처에 애견동반
+    카페가 없으면 일반 카페로 떨어진다. 조용히 넘어가면 사용자가 강아지를
+    데리고 갔다가 못 들어간다. 화면에 알린다.
+    """
+    if not any(code in place_score.COURSE_RULE_PET for code in codes or []):
+        return False
+    if (pet_places or {}).get("cafe"):
+        return False      # 애견동반 카페를 후보로 넣었다 — 알릴 것이 없다
+    return any(it.get("type") == "cafe" for it in items or [])
+
+
+def _condition_report(codes, api_sets, items, budget_over=False,
+                      pet_cafe_missing=False):
     """반영된 조건·반영되지 않은 조건·폴백 여부를 화면에 설명할 형태로 만든다."""
     weights = place_score.applied_weights(codes, api_sets)
 
@@ -575,6 +603,8 @@ def _condition_report(codes, api_sets, items, budget_over=False):
         "fell_back": has_scored_condition and not matched_any,
         # 예산 안에 드는 장소가 없어 넘겼을 때 화면이 안내한다.
         "budget_over": bool(budget_over),
+        # 애견동반 카페가 근처에 없어 일반 카페로 채웠을 때 화면이 안내한다.
+        "pet_cafe_missing": bool(pet_cafe_missing),
     }
 
 
@@ -615,14 +645,15 @@ def experience_course(item_id):
                 places_by_type.get(slot) or [], found)
         except Exception:
             pass      # 보강 실패는 코스 생성을 막지 않는다
-    # 반려견 동반 장소는 대부분 음식점·카페라 그 두 슬롯에 더한다.
-    if pet_places:
-        for slot in ("restaurant", "cafe"):
-            try:
-                places_by_type[slot] = place_merge.merge(
-                    places_by_type.get(slot) or [], pet_places)
-            except Exception:
-                pass
+    # 반려견 동반 장소는 종류에 맞는 슬롯에 더한다(카페는 카페, 식당은 맛집).
+    for slot, found in (pet_places or {}).items():
+        if not found:
+            continue
+        try:
+            places_by_type[slot] = place_merge.merge(
+                places_by_type.get(slot) or [], found)
+        except Exception:
+            pass      # 보강 실패는 코스 생성을 막지 않는다
 
     # 편의시설은 후보를 모은 뒤에 판정한다(후보 좌표가 있어야 근접 판정이 된다).
     try:
@@ -652,7 +683,9 @@ def experience_course(item_id):
         budget_over = spent > budget_left
 
     try:
-        conditions = _condition_report(codes, _last_api_sets, items, budget_over)
+        conditions = _condition_report(
+            codes, _last_api_sets, items, budget_over,
+            _pet_cafe_missing(codes, pet_places, items))
     except Exception:
         conditions = None      # 설명 생성 실패가 코스를 막지 않는다
     # 시간·비용 추정이 실패해도 코스는 그대로 나와야 한다.

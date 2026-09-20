@@ -166,7 +166,8 @@ def test_pet_not_called_without_pet_condition(monkeypatch):
     called = []
     monkeypatch.setattr(rc.pet_travel_api, 'find_pet_facilities',
                         lambda *a, **kw: called.append(1) or [])
-    assert rc._pet_places(Exp(), ['nature']) == ([], set())
+    # 반환이 슬롯별 묶음으로 바뀌었다(카페는 카페 슬롯, 식당은 맛집 슬롯).
+    assert rc._pet_places(Exp(), ['nature']) == ({}, set())
     assert called == [], "고르지 않은 조건으로 호출을 태우지 않는다"
 
 

@@ -47,7 +47,8 @@ def build_course_summary(experience, estimate=None):
     return summary
 
 
-def build_course(experience, places_by_type, scorer=None, budget_left=None):
+def build_course(experience, places_by_type, scorer=None, budget_left=None,
+                 max_slots=None):
     """체험 좌표를 기준으로 시간순 코스 항목 리스트를 만든다.
 
     places_by_type: {슬롯 type: [place, ...]} — 각 place는 name·lat·lng를 가진다.
@@ -62,11 +63,16 @@ def build_course(experience, places_by_type, scorer=None, budget_left=None):
     budget_left: 장소에 쓸 수 있는 남은 예산(원, 1인). 주면 예산을 넘는 장소를
       건너뛰고 싼 쪽을 고른다. ★예산 때문에 슬롯이 비지 않게★, 후보가 전부
       예산을 넘으면 그중 가장 싼 것을 넣고 초과를 기록한다(호출부가 안내한다).
+
+    max_slots: 넣을 슬롯 수(소요시간 조건). ★뒤에서부터 잘라낸다.★
+      시각 상수(COURSE_SLOTS)는 건드리지 않고 개수만 줄인다.
+      1 이면 체험만 남는다 — 호출부가 이를 '장소를 못 가져온 실패'로 보면 안 된다.
     """
     origin_lat, origin_lng = experience.lat, experience.lng
     used_names = set()
     items = []
-    for slot in COURSE_SLOTS:
+    slots = COURSE_SLOTS if max_slots is None else COURSE_SLOTS[:max(1, int(max_slots))]
+    for slot in slots:
         if slot["type"] == "experience":
             name = f"{experience.crop} 체험"
             items.append({"time": slot["time"], "type": "experience", "name": name,

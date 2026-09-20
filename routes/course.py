@@ -13,6 +13,7 @@ from external import chungnam_api
 from external import tour_csv
 from external import kakao_place
 from common.constants import (COURSE_ACTIVITY_KAKAO, COURSE_COMPANION_KAKAO,
+                              COURSE_DURATION_SLOTS,
                               COURSE_SCHEDULE_RADIUS_M, COURSE_ROWS_PER_RADIUS,
                               COURSE_MAX_ROWS, NEARBY_RESULT_LIMIT,
                               COURSE_FACILITY_NEARBY, COURSE_PARTY_RULES,
@@ -40,6 +41,17 @@ def _rows_for(radius_m):
     """
     scale = max(1, int(radius_m) // COURSE_SEARCH_RADIUS_M)
     return min(COURSE_MAX_ROWS, NEARBY_RESULT_LIMIT * min(scale, COURSE_ROWS_PER_RADIUS))
+
+
+def _max_slots(codes):
+    """고른 소요시간에 맞는 슬롯 수. 안 골랐으면 None(전부).
+
+    여러 개를 골랐으면 ★가장 긴 쪽★을 쓴다 — 대분류 안은 OR 이라
+    "2~4시간 또는 종일"이면 종일 기준으로 넉넉히 만든다.
+    """
+    picked = [COURSE_DURATION_SLOTS[c] for c in (codes or [])
+              if c in COURSE_DURATION_SLOTS]
+    return max(picked) if picked else None
 
 
 def _search_radius(codes):
@@ -349,7 +361,9 @@ _IGNORED_CODE_REASON = {
 }
 _IGNORED_REASON = {
     "companion_type": "아직 코스 장소에 반영되지 않습니다",
-    "duration_hours": "아직 반영되지 않습니다",
+    # 소요시간 대분류는 슬롯 수로 반영되지만, 슬롯 수를 정할 수 없는
+    # 선택지('1시간 이내'·'기타')만 여기로 떨어진다. 둘 다 화면에선 감춰져 있다.
+    "duration_hours": "코스 길이를 정할 수 없어 반영하지 않습니다",
 }
 
 # ★점수가 아니라 '필터'로 반영되는 조건.★ 가중치를 주면 아무것도 맞히지
@@ -361,11 +375,17 @@ _ESTIMATED_CODES = {"restroom", "nursing_room"}
 _FILTER_ROLE = {
     "budget_range": "예산 안에 드는 장소를 고릅니다",
     "schedule": "더 먼 곳까지 후보로 봅니다",
+    "duration_hours": "코스에 넣을 장소 수를 맞춥니다",
 }
 
 
 def _filter_role(code):
-    return _FILTER_ROLE.get(CATEGORY_OF_CODE.get(code))
+    category = CATEGORY_OF_CODE.get(code)
+    # 소요시간은 ★슬롯 수를 아는 선택지만★ 반영된다. 나머지는 반영 목록에
+    # 넣으면 "반영했다"는 거짓말이 되므로 미반영으로 보낸다.
+    if category == "duration_hours" and code not in COURSE_DURATION_SLOTS:
+        return None
+    return _FILTER_ROLE.get(category)
 # 코스 장소에만 반영되고 ★체험 목록은 거르지 못하는★ 대분류.
 # (activity_type 컬럼을 저장하는 코드가 없어 체험은 전부 NULL 이다)
 _COURSE_ONLY = {"activity", "experience_type", "mood", "season"}
@@ -485,8 +505,9 @@ def experience_course(item_id):
     scorer, _last_api_sets = _build_scorer(
         item, codes, activity_names, pet_names, facility_names, companion_names)
     budget_left = _budget_for_places(codes, item)
+    max_slots = _max_slots(codes)
     items = course_builder.build_course(item, places_by_type, scorer=scorer,
-                                        budget_left=budget_left)
+                                        budget_left=budget_left, max_slots=max_slots)
     budget_over = False
     if budget_left is not None:
         spent = sum(course_estimate.place_price(i) for i in items)
@@ -503,8 +524,11 @@ def experience_course(item_id):
         estimate = None
     summary = course_builder.build_course_summary(item, estimate)
 
+    # ★'체험만' 코스는 실패가 아니다.★ 사용자가 소요시간을 짧게 골라 슬롯을
+    # 하나로 줄인 경우라, 이때까지 실패 안내를 띄우면 안 된다.
+    wants_places = max_slots is None or max_slots > 1
     has_places = any(it.get("type") != "experience" for it in items)
-    if not has_places:
+    if wants_places and not has_places:
         # 외부 장소를 못 가져와도 화면이 죽지 않게 200 + 안내 메시지로 응답.
         return success_response({
             "experience_id": item.id,

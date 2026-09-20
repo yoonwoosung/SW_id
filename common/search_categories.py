@@ -218,13 +218,14 @@ SEARCH_CATEGORIES = [
         {"code": "bike", "label": "자전거", "hidden": True},
         # 셋 중 하나를 반드시 쓰므로 '기타'가 성립하지 않는다.
         dict(_other_node("transport"), hidden=True)]},
-    # hidden: 위와 같은 이유.
-    {"code": "duration_hours", "label": "소요시간", "group": "practical", "hidden": True, "children": [
-        # hidden: timetable_data 에 시작 시각만 있고 소요시간이 없다.
+    # 2026-09-20: 코스에 넣을 슬롯 수로 반영해 감춤을 풀었다.
+    # '2시간 미만'은 뺐다 — 체험 체류 기본값이 120분이라 수학적으로 불가능하다.
+    {"code": "duration_hours", "label": "소요시간", "group": "practical", "children": [
         {"code": "under_2h",  "label": "2시간 미만", "hidden": True},
-        {"code": "hours_2",   "label": "2~4시간", "hidden": True},
-        {"code": "half_day",  "label": "반나절 (4~6시간)", "hidden": True},
-        {"code": "full_day",  "label": "종일 (6시간 이상)", "hidden": True},
+        {"code": "hours_2",   "label": "2~4시간"},
+        {"code": "half_day",  "label": "반나절 (4~6시간)"},
+        {"code": "full_day",  "label": "종일 (6시간 이상)"},
+        # hidden: 셋 중 하나를 반드시 쓰므로 '기타'가 성립하지 않는다.
         dict(_other_node("duration_hours"), hidden=True)]},
     {"code": "facility", "label": "편의시설", "group": "practical", "children": [
         {"code": "parking", "label": "주차"},

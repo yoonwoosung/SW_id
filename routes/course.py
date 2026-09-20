@@ -9,6 +9,11 @@ from common.search_categories import ALL_CODES
 from external import tour_api
 from external import chungnam_api
 from external import tour_csv
+from external import kakao_place
+from common.constants import COURSE_ACTIVITY_KAKAO, TOUR_CONTENT_TYPE_ATTRACTION
+
+# 코스 장소 출처 표기(화면 배지). CSV 는 'standard', 충남 올담은 'chungnam'.
+KAKAO_SOURCE = 'kakao'
 from external import barrier_free_api
 from external import pet_travel_api
 from services import course_builder
@@ -102,7 +107,36 @@ def _selected_codes():
     return codes
 
 
-def _build_scorer(experience, codes):
+def _activity_places(experience, codes):
+    """고른 액티비티에 해당하는 카카오 장소를 찾는다. 반환: (장소 리스트, {코드: 이름집합})
+
+    ★판정만으로는 부족하다.★ 승마장·낚시터는 관광공사 관광지 목록에 없어서
+    후보 풀에 없으면 아무리 점수를 매겨도 코스에 들어올 수 없다.
+    그래서 후보로 '더하고'(관광 슬롯) 동시에 판정용 이름 집합도 만든다.
+    관광공사 결과는 그대로 남는다 — 대체가 아니라 보강이다.
+
+    고른 항목만 부른다(안 고른 조건으로 호출을 태우지 않게). 결과는 1시간 캐싱된다.
+    """
+    places, names = [], {}
+    for code in codes or []:
+        rule = COURSE_ACTIVITY_KAKAO.get(code)
+        if not rule:
+            continue
+        keyword, hint = rule
+        try:
+            found = [p for p in kakao_place.search(
+                        keyword, experience.lat, experience.lng, COURSE_SEARCH_RADIUS_M)
+                     if hint in (p.get("category") or "")]
+        except Exception:
+            found = []
+        names[code] = {"".join(str(p["name"]).split()) for p in found}
+        for place in found:
+            places.append(dict(place, content_type_id=TOUR_CONTENT_TYPE_ATTRACTION,
+                               source=KAKAO_SOURCE))
+    return places, names
+
+
+def _build_scorer(experience, codes, activity_names=None):
     """조건 코드로 장소 점수 함수를 만든다. 못 만들면 None(기존 거리순).
 
     전용 API 는 조건에 그 항목이 있을 때만 부른다 — 쓰지도 않을 호출로
@@ -127,7 +161,7 @@ def _build_scorer(experience, codes):
         pet = []
 
     try:
-        api_sets = place_score.build_api_sets(barrier_free, pet)
+        api_sets = place_score.build_api_sets(barrier_free, pet, activity_names)
         return place_score.build_scorer(codes, api_sets)
     except Exception:
         return None      # 점수 계산이 어떤 이유로든 실패하면 기존 코스 생성을 지킨다
@@ -139,8 +173,18 @@ def experience_course(item_id):
         return error_response("EXPERIENCE_NOT_FOUND", "체험을 찾을 수 없습니다.", 404)
 
     codes = _selected_codes()
-    scorer = _build_scorer(item, codes)
+    activity_places, activity_names = _activity_places(item, codes)
+    scorer = _build_scorer(item, codes, activity_names)
     places_by_type = _collect_places(item)
+
+    # 액티비티 장소는 관광 슬롯 후보에 더한다(맛집·카페에 승마장이 섞이면 안 된다).
+    if activity_places:
+        try:
+            slot = "attraction"
+            places_by_type[slot] = place_merge.merge(
+                places_by_type.get(slot) or [], activity_places)
+        except Exception:
+            pass      # 보강 실패는 코스 생성을 막지 않는다
     items = course_builder.build_course(item, places_by_type, scorer=scorer)
     summary = course_builder.build_course_summary(item)
 

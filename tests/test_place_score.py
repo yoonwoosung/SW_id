@@ -66,7 +66,9 @@ def test_order_changes_weight():
     (NATURE, 'nature', True), (NATURE, 'healing', False), (NATURE, 'tradition', False),
     (HISTORY, 'tradition', True), (HISTORY, 'craft', False), (HISTORY, 'nature', False),
     (FOOD, 'food', True), (FOOD, 'nature', False),
-    (SPORTS, 'active', True), (SPORTS, 'kayak', True), (SPORTS, 'horse_riding', False),
+    (SPORTS, 'active', True),
+    # 액티비티는 cat 규칙을 두지 않는다(카카오 전용) — 분류 코드로는 안 걸린다
+    (SPORTS, 'kayak', False), (SPORTS, 'horse_riding', False),
 ])
 def test_category_rules(place, code, expected):
     assert matches(place, code) is expected

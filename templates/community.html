@@ -124,22 +124,13 @@
 
 /* 앨범 미니 커버 썸네일 */
 .album-card-thumb {
-    position: relative;
-    overflow: hidden;
-}
-
-.mini-cover-preview {
-    width: 100%;
-    height: 100%;
+    background: #f1f5f9;
     display: flex;
-    flex-direction: column;
     align-items: center;
     justify-content: center;
-    text-align: center;
-    padding: 12px;
+    padding: 8px;
     position: relative;
     overflow: hidden;
-    transition: transform 0.2s;
 }
 
 /* 모양별 썸네일 높이 */
@@ -147,8 +138,23 @@
 .album-card-thumb.shape-square    { height: 190px; }
 .album-card-thumb.shape-landscape { height: 160px; }
 
+.mini-cover-preview {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 12px;
+    border-radius: 6px;
+    box-shadow: -4px 6px 14px rgba(0,0,0,0.22);
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.2s;
+    flex-shrink: 0;
+}
+
 .community-album-card:hover .mini-cover-preview {
-    transform: scale(1.04);
+    transform: scale(1.04) rotate(-1deg);
 }
 
 /* 겉표지 테마 색상 — album_create.html COVER_COLORS 기준으로 통일 */
@@ -550,9 +556,26 @@
             if (hasElements) {
                 const thumbCanvas = document.getElementById(thumbId);
                 if (thumbCanvas) {
-                    const thumbH = shape === 'shape-landscape' ? 160 : shape === 'shape-square' ? 190 : 220;
-                    const thumbW = thumbCanvas.closest('.album-card-thumb').offsetWidth || 260;
-                    renderMiniCoverElements(thumbCanvas, coverPage.elements, thumbW, thumbH);
+                    const padding = 8;
+                    const availH = (shape === 'shape-landscape' ? 160 : shape === 'shape-square' ? 190 : 220) - padding * 2;
+                    const availW = (thumbCanvas.closest('.album-card-thumb').offsetWidth || 260) - padding * 2;
+                    const scale = Math.min(availW / pageW, availH / pageH);
+                    const coverW = Math.round(pageW * scale);
+                    const coverH = Math.round(pageH * scale);
+                    thumbCanvas.style.width  = coverW + 'px';
+                    thumbCanvas.style.height = coverH + 'px';
+                    renderMiniCoverElements(thumbCanvas, coverPage.elements, coverW, coverH);
+                }
+            } else {
+                // 요소 없는 경우 — shape 비율에 맞춰 mini-cover 크기 세팅
+                const thumbCanvas = document.getElementById(thumbId);
+                if (thumbCanvas) {
+                    const padding = 8;
+                    const availH = (shape === 'shape-landscape' ? 160 : shape === 'shape-square' ? 190 : 220) - padding * 2;
+                    const availW = (thumbCanvas.closest('.album-card-thumb').offsetWidth || 260) - padding * 2;
+                    const scale = Math.min(availW / pageW, availH / pageH);
+                    thumbCanvas.style.width  = Math.round(pageW * scale) + 'px';
+                    thumbCanvas.style.height = Math.round(pageH * scale) + 'px';
                 }
             }
         });
@@ -857,8 +880,7 @@
         const pageW = parseInt(thumbEl.dataset.pageW || 436);
         const pageH = parseInt(thumbEl.dataset.pageH || 640);
 
-        // Math.max → cover(꽉 채움), Math.min → contain(여백 있음)
-        const scale = Math.max(thumbW / pageW, thumbH / pageH);
+        const scale = Math.min(thumbW / pageW, thumbH / pageH);
 
         const inner = document.createElement('div');
         inner.style.cssText = `

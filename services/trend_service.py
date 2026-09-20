@@ -80,6 +80,8 @@ def recent_viewed_experiences(user_id, limit=RECENT_VIEWS_LIMIT):
         experience = Experience.query.get(int(log.target_id))
         if experience is None:  # 삭제된 체험은 건너뛴다
             continue
+        if experience.status != 'recruiting':  # 숨김·마감 체험도 제외
+            continue
         results.append({
             "id": experience.id,
             "name": f"{experience.crop} 체험",

@@ -165,7 +165,15 @@
     FarmFilter.mount(filterEl, {
         endpoint: filterEl.dataset.endpoint,
         initialState: hasPreset ? presetFromUrl : null,
-        onApply: function (sel) { lastSelected = sel; loadAll(); },
+        onApply: function (sel) {
+            lastSelected = sel;
+            loadAll();
+            // ★누른 뒤 화면에 아무 변화가 없으면 "안 먹는다"로 보인다.★
+            // 패널이 화면을 채우고 있어 바뀐 카드는 스크롤 밖에 있다.
+            updateCondCount(sel);
+            collapsePanel();
+            scrollToResults();
+        },
         onReady: hasPreset ? function () {
             // 칩 하이라이트 애니메이션
             setTimeout(function () {
@@ -176,6 +184,47 @@
             }, 100);
         } : null
     });
+
+    // ---- 조건 개수 배지 · 패널 접기 · 결과로 스크롤 ----
+    function appliedCount(sel) {
+        return Object.keys(sel || {}).reduce(function (n, cat) {
+            return cat === '__order' ? n : n + ((sel[cat] || []).length);
+        }, 0);
+    }
+
+    function updateCondCount(sel) {
+        var toggle = document.querySelector('.fl-collapse__toggle');
+        if (!toggle) return;
+        var badge = toggle.querySelector('.fl-collapse__count');
+        if (!badge) {
+            badge = document.createElement('span');
+            badge.className = 'fl-collapse__count';
+            // 여는 화살표 앞에 둔다(라벨 바로 뒤).
+            toggle.insertBefore(badge, toggle.querySelector('i') || null);
+        }
+        var n = appliedCount(sel);
+        badge.textContent = n;
+        badge.hidden = n === 0;
+        // 패널을 접으면 칩이 안 보이므로, 개수를 읽어줄 수 있게 라벨에도 담는다.
+        toggle.setAttribute('aria-label', n ? '여행 조건 설정하기, ' + n + '개 적용 중' : '여행 조건 설정하기');
+    }
+
+    function collapsePanel() {
+        var toggle = document.querySelector('.fl-collapse__toggle');
+        var body = $('cond-body');
+        if (toggle) toggle.setAttribute('aria-expanded', 'false');
+        if (body) body.hidden = true;
+    }
+
+    function scrollToResults() {
+        var sec = document.querySelector('.fl-sec[data-section]:not([hidden])');
+        if (!sec) return;
+        var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        sec.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
+    }
+
+    // 링크로 들어와 조건이 미리 걸린 경우에도 개수를 맞춰 둔다.
+    updateCondCount(lastSelected);
 
     // ---- 상세조건 접힘 토글 ----
     var collapseToggle = document.querySelector('.fl-collapse__toggle');

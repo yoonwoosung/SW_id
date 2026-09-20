@@ -160,7 +160,8 @@ SEARCH_CATEGORIES = [
             {"code": "with_parents", "label": "부모님 동반"}]},
     ]},
     {"code": "schedule", "label": "일정", "group": "travel", "children": [
-        {"code": "day_trip", "label": "당일"}, {"code": "one_night", "label": "1박 2일"}]},
+        {"code": "day_trip", "label": "당일"}, {"code": "one_night", "label": "1박 2일"},
+        {"code": "two_night", "label": "2박 3일"}, _other_node("schedule")]},
     {"code": "experience_type", "label": "체험종류", "group": "taste", "children": [
         {"code": "harvest", "label": "수확"}, {"code": "food", "label": "먹거리"},
         {"code": "craft", "label": "공예"}, {"code": "animal", "label": "동물교감"},
@@ -187,10 +188,10 @@ SEARCH_CATEGORIES = [
         {"code": "course_50_100k", "label": "5~10만원"}, {"code": "course_over_100k", "label": "10만원 이상"}]},
     {"code": "transport", "label": "교통수단", "group": "practical", "children": [
         {"code": "car", "label": "자가용"},
-        # hidden: 자가용만 has_parking 과 연동된다. 나머지는 판정할 데이터가 없다.
         {"code": "public_transit", "label": "대중교통", "hidden": True},
-        {"code": "walk", "label": "도보", "hidden": True},
-        {"code": "bike", "label": "자전거", "hidden": True}]},
+        {"code": "walk", "label": "도보"},
+        {"code": "bike", "label": "자전거"},
+        _other_node("transport")]},
     {"code": "duration_hours", "label": "소요시간", "group": "practical", "children": [
         {"code": "hours_2", "label": "2시간"}, {"code": "half_day", "label": "반나절"},
         {"code": "full_day", "label": "종일"}]},
@@ -200,7 +201,8 @@ SEARCH_CATEGORIES = [
         {"code": "pesticide_free", "label": "무농약"}, {"code": "organic", "label": "유기농인증"},
         # hidden: 대응 컬럼이 없어 고르면 결과가 항상 0건이다.
         {"code": "restroom", "label": "화장실", "hidden": True},
-        {"code": "nursing_room", "label": "수유실", "hidden": True}]},
+        {"code": "nursing_room", "label": "수유실", "hidden": True},
+        _other_node("facility")]},
 ]
 
 CATEGORY_CODES = [category["code"] for category in SEARCH_CATEGORIES]

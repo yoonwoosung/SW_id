@@ -230,3 +230,43 @@ COURSE_ACTIVITY_KAKAO = {
     "cycling":      ("자전거길", "자전거도로"),
     "kayak":        ("수상레저", "수상스포츠"),
 }
+
+# --- 코스 이동·체류·비용 추정 (services/course_estimate.py) ---
+#
+# ★전부 추정값이다.★ 실제 경로·요금 API 를 쓰지 않는다.
+#   · 카카오 모빌리티는 자동차 경로만 주고 대중교통 소요시간은 제공하지 않는다
+#   · 관광지 입장료·식비를 주는 공개 API 가 없다
+# 그래서 좌표 직선거리와 평균값으로 추정하고, ★화면에 '예상'임을 밝히고
+# 산출 내역을 함께 보여준다.★ 값은 전부 여기서 조정한다.
+
+# 직선거리 → 실제 도로 거리 보정 계수. 곧은 길이 없으므로 1 보다 크다.
+COURSE_ROUTE_DETOUR = 1.3
+
+# 이동수단별 평균 속도(km/h). 위 보정을 적용한 '직선거리 기준' 속도가 아니라
+# 실제 도로 거리에 대한 속도다(계산: 보정거리 ÷ 속도).
+COURSE_SPEED_KMH = {
+    "car": 35,             # 지방도·시내 혼재
+    "public_transit": 18,  # 농촌 버스 배차 간격 포함
+    "taxi": 40,            # 자가용보다 조금 빠르게(주차 시간 없음)
+}
+COURSE_DEFAULT_TRANSPORT = "public_transit"   # 미설정이면 보수적으로(시간이 더 걸린다)
+
+# 슬롯별 체류 시간(분). ★관광공사·카카오 장소에는 체류시간 데이터가 없다.★
+# 체험은 Experience 에도 소요시간 컬럼이 없어 기본값이다(화면에 '기본값'이라 밝힌다).
+COURSE_STAY_MINUTES = {
+    "experience": 120,
+    "restaurant": 60,
+    "attraction": 90,
+    "cafe": 50,
+}
+
+# 1인 비용 추정(원). 체험비만 실제 값(Experience.cost)이고 나머지는 평균 추정이다.
+COURSE_COST_MEAL = 12000        # 농촌 지역 1인 식사
+COURSE_COST_ATTRACTION = 5000   # 무료가 많지만 유료는 5,000~10,000원이라 중간값
+COURSE_COST_CAFE = 6000         # 음료 1잔
+
+# 교통비(1인)
+COURSE_COST_CAR_PER_KM = 200        # 유류비 + 통행료
+COURSE_COST_TRANSIT_PER_LEG = 1500  # 구간당 요금(환승 포함 평균)
+COURSE_COST_TAXI_BASE = 4800        # 기본요금
+COURSE_COST_TAXI_PER_KM = 1000

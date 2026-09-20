@@ -84,6 +84,7 @@
     cursor: pointer;
     display: flex;
     flex-direction: column;
+    position: relative; /* 삭제 버튼 위치 기준용 */
 }
 
 .community-album-card:hover {
@@ -175,6 +176,31 @@
     background: #f1f5f9;
     color: #475569;
 }
+
+/* 임시 삭제 버튼 스타일 */
+.album-delete-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: rgba(255, 255, 255, 0.9);
+    color: #dc3545;
+    border: 1px solid #dc3545;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 10;
+    transition: all 0.2s;
+}
+
+.album-delete-btn:hover {
+    background: #dc3545;
+    color: #fff;
+}
+
 
 /* 페이징 네비게이션 */
 .pagination-wrapper {
@@ -411,6 +437,9 @@
 <script>
     let currentCategory = 'all';
     let currentPage = 1;
+    
+    // 현재 세션에 로그인한 사용자의 닉네임을 템플릿 엔진을 통해 변수에 담습니다.
+    const currentUserNickname = "{{ session.get('nickname', '') }}";
 
     const CATEGORY_NAMES = {
         'all': '전체',
@@ -479,8 +508,19 @@
             card.onclick = () => openViewerModal(album.id);
 
             const catLabel = CATEGORY_NAMES[album.category] || '체험';
+            
+            // 현재 로그인 사용자와 앨범 작성자가 같을 때만 임시 삭제 버튼 표시
+            let deleteBtnHtml = '';
+            if (currentUserNickname && album.user_nickname === currentUserNickname) {
+                deleteBtnHtml = `
+                    <button class="album-delete-btn" title="앨범 완전 삭제" onclick="deleteCommunityAlbum(event, ${album.id})">
+                        <i class="fa-solid fa-trash"></i>
+                    </button>
+                `;
+            }
 
             card.innerHTML = `
+                ${deleteBtnHtml}
                 <div class="album-card-thumb">
                     <div class="mini-cover-preview ${album.cover_theme || 'cover-green'}">
                         <i class="fa-solid fa-camera-retro"></i>
@@ -496,6 +536,33 @@
                 </div>
             `;
             grid.appendChild(card);
+        });
+    }
+    
+    // 임시 삭제 기능 처리 함수
+    function deleteCommunityAlbum(event, albumId) {
+        // 부모(카드) 클릭 이벤트인 뷰어 열기를 방지
+        event.stopPropagation();
+        
+        if(!confirm('이 앨범을 삭제하시겠습니까? (이 작업은 로컬과 서버 모두에서 삭제됩니다.)')) {
+            return;
+        }
+
+        fetch(`/api/albums/${albumId}`, {
+            method: 'DELETE'
+        })
+        .then(res => res.json())
+        .then(data => {
+            if(data.success) {
+                alert('앨범이 삭제되었습니다.');
+                loadCommunityAlbums(currentPage); // 현재 페이지 갱신
+            } else {
+                alert('삭제 실패: ' + (data.message || '오류가 발생했습니다.'));
+            }
+        })
+        .catch(err => {
+            console.error('삭제 에러:', err);
+            alert('서버 통신 중 오류가 발생했습니다.');
         });
     }
 

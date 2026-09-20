@@ -1183,11 +1183,14 @@
             </h1>
             <p style="color:#717171;font-size:.9rem;margin:0;">농촌 체험의 소중한 기억을 담은 나만의 포토북</p>
         </div>
+        <div style="display:flex;align-items:center;gap:10px;">
+        <a href="{{ url_for('help_page') }}#album-screen" class="fl-help-btn"><i data-lucide="circle-help"></i> 도움말</a>
         <button type="button" onclick="startNewAlbum()" style="background:var(--green-dark);color:#fff;border:none;border-radius:10px;
                    padding:10px 20px;font-size:.95rem;font-weight:800;cursor:pointer;
                    display:inline-flex;align-items:center;gap:6px;flex-shrink:0;">
             <i data-lucide="plus"></i> 새 앨범 만들기
         </button>
+        </div>
     </div>
 
     <!-- 앨범 카드 그리드 -->

@@ -69,9 +69,12 @@
 {% block content %}
 <div class="ai-rec-wrap">
 
-    <div class="ai-rec-head">
+    <div class="ai-rec-head" style="position:relative;">
         <h1>나에게 맞는 하루 여행 찾기</h1>
         <p id="rec-note">회원님 정보를 바탕으로 추천 코스를 준비했어요.</p>
+        <a href="{{ url_for('help_page') }}#recommend-screen" class="fl-help-btn" style="position:absolute;top:0;right:0;">
+            <i data-lucide="circle-help"></i> 도움말
+        </a>
     </div>
 
     <!-- 1. 인적사항 단축 버튼 2개 (최상단) -->

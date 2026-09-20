@@ -186,6 +186,7 @@
         <div class="section-header">
             <h2 class="section-title"><i data-lucide="sprout" class="text-success"></i> {% if view == 'list' %}전체 체험{% else %}이번 주 제철 체험{% endif %}</h2>
             <div class="d-flex align-items-center gap-12">
+                <a href="{{ url_for('help_page') }}#main-screen" class="fl-help-btn"><i data-lucide="circle-help"></i> 도움말</a>
                 <div class="sort-pills">
                     <a href="#" onclick="getGpsAndSort(event)"
                         class="sort-pill {% if sort_by == 'recommended' %}active{% endif %}">내 주변</a>

@@ -132,7 +132,10 @@
       {# ── 예약 내역 ── #}
       <div id="panel-res" class="mp-panel" style="display:flex;flex-direction:column;gap:var(--fl-s4);">
         <section class="fl-card"><div class="fl-card-body" style="padding-bottom:0;">
-          <div class="fl-section-head"><h2><img src="{{ url_for('static', filename='icons/icon-calendar-schedule.svg') }}" class="fl-icon-sm" alt=""> 예약 내역</h2></div>
+          <div class="fl-section-head" style="display:flex;align-items:center;justify-content:space-between;">
+            <h2><img src="{{ url_for('static', filename='icons/icon-calendar-schedule.svg') }}" class="fl-icon-sm" alt=""> 예약 내역</h2>
+            <a href="{{ url_for('help_page') }}#activity-screen" class="fl-help-btn"><i data-lucide="circle-help"></i> 도움말</a>
+          </div>
         </div>
         {% if reservation_cards %}
           <div class="mp-res-list" style="padding:0 20px 16px;">

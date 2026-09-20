@@ -3,6 +3,12 @@
 {% block content %}
 
 <style>
+.rd-col { padding: 0 4px; }
+.rd-group-label { font-size: .75rem; font-weight: 800; color: var(--fl-text-muted); padding: 4px 6px 4px; letter-spacing: .02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rd-opt { display: block; width: 100%; text-align: left; background: none; border: none; cursor: pointer; font-size: .82rem; padding: 4px 6px; border-radius: 6px; color: var(--fl-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rd-opt:hover { background: var(--fl-green-50, #f0f7f2); color: var(--fl-green-700); }
+.rd-opt--province { font-weight: 700; border-bottom: 1px solid var(--fl-border); margin-bottom: 2px; padding-bottom: 5px; }
+
 /* ========================================================
    📸 메인 화면 추억일지 미니 앨범 커버 스타일
 ======================================================== */
@@ -64,10 +70,17 @@
                 <div class="hero-unified-divider"></div>
                 <select name="region" class="hero-unified-select">
                     <option value="">지역</option>
-                    {% set hero_regions = [("서울","서울"),("경기","경기"),("인천","인천"),("강원","강원"),("대전","대전"),("세종특별자치시","세종"),("충북","충북"),("충남","충남"),("부산","부산"),("대구","대구"),("울산","울산"),("경북","경북"),("경남","경남"),("광주광역시","광주"),("전북","전북"),("전남","전남"),("제주","제주")] %}
-                    {% for val, lbl in hero_regions %}
-                    <option value="{{ val }}" {% if request.args.get('region')==val %}selected{% endif %}>{{ lbl }}</option>
-                    {% endfor %}
+                    {% if region_groups %}
+                      {% for grp in region_groups %}
+                        {% if grp.label == '광역시·특별시' %}
+                          {% for opt in grp.options %}
+                          <option value="{{ opt.value }}" {% if request.args.get('region')==opt.value %}selected{% endif %}>{{ opt.label }}</option>
+                          {% endfor %}
+                        {% else %}
+                          <option value="{{ grp.options[0].value }}" {% if request.args.get('region')==grp.options[0].value %}selected{% endif %}>{{ grp.options[0].label }}</option>
+                        {% endif %}
+                      {% endfor %}
+                    {% endif %}
                 </select>
                 <div class="hero-unified-divider"></div>
                 <input type="date" name="date_filter" class="hero-unified-select"
@@ -103,20 +116,32 @@
                     <input type="text" name="crop_query" class="list-filter-input" placeholder="지역, 종류, 점포명 등"
                         value="{{ request.args.get('crop_query', '') }}">
                 </div>
-                <div class="list-filter-field">
+                <div class="list-filter-field" style="position:relative;">
                     <label class="list-filter-label">지역</label>
-                    <select name="region" class="list-filter-select">
-                        <option value="">전체</option>
-                        {% if region_groups %}
-                          {% for grp in region_groups %}
-                          <optgroup label="{{ grp.label }}">
-                            {% for opt in grp.options %}
-                            <option value="{{ opt.value }}" {% if request.args.get('region')==opt.value %}selected{% endif %}>{{ opt.label }}</option>
+                    <input type="hidden" name="region" id="regionInput" value="{{ request.args.get('region', '') }}">
+                    <button type="button" id="regionTrigger" class="list-filter-select" style="text-align:left;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:6px;">
+                        <span id="regionLabel">{% set cur = request.args.get('region','') %}{% if cur %}{% for grp in region_groups %}{% for opt in grp.options %}{% if opt.value == cur %}{{ opt.label }}{% endif %}{% endfor %}{% endfor %}{% else %}전체{% endif %}</span>
+                        <i class="fa-solid fa-chevron-down" style="font-size:.7rem;color:var(--fl-text-muted);"></i>
+                    </button>
+                    <!-- 전체 펼침 지역 드롭다운 -->
+                    <div id="regionDropdown" style="display:none;position:absolute;top:calc(100% + 4px);left:0;z-index:999;background:#fff;border:1px solid var(--fl-border);border-radius:12px;box-shadow:0 6px 24px rgba(0,0,0,.13);padding:12px 6px 10px;width:660px;">
+                        <!-- 전체 선택 -->
+                        <div style="padding:4px 8px 10px;border-bottom:1px solid var(--fl-border);margin-bottom:8px;">
+                            <button type="button" id="regionAll" style="background:none;border:none;cursor:pointer;font-size:.88rem;font-weight:700;color:var(--fl-green-700);padding:2px 6px;border-radius:6px;">전체 (선택 해제)</button>
+                        </div>
+                        <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:0 4px;">
+                            {% if region_groups %}
+                            {% for grp in region_groups %}
+                            <div class="rd-col">
+                                <div class="rd-group-label">{{ grp.label }}</div>
+                                {% for opt in grp.options %}
+                                <button type="button" class="rd-opt {% if loop.first and grp.label != '광역시·특별시' %}rd-opt--province{% endif %}" data-val="{{ opt.value }}" data-lbl="{{ opt.label }}">{{ opt.label }}</button>
+                                {% endfor %}
+                            </div>
                             {% endfor %}
-                          </optgroup>
-                          {% endfor %}
-                        {% endif %}
-                    </select>
+                            {% endif %}
+                        </div>
+                    </div>
                 </div>
                 <div class="list-filter-field">
                     <label class="list-filter-label">날짜</label>
@@ -641,5 +666,38 @@
             })
             .catch(function () { /* 섹션은 숨긴 채로 둔다 */ });
     })();
+</script>
+
+<script>
+/* ── 전체 펼침 지역 드롭다운 ── */
+(function () {
+    var trigger  = document.getElementById('regionTrigger');
+    var dropdown = document.getElementById('regionDropdown');
+    var input    = document.getElementById('regionInput');
+    var labelEl  = document.getElementById('regionLabel');
+    var allBtn   = document.getElementById('regionAll');
+    if (!trigger) return;
+
+    function setRegion(value, label) {
+        input.value = value;
+        labelEl.textContent = label || '전체';
+        dropdown.style.display = 'none';
+        document.getElementById('listFilterForm').submit();
+    }
+
+    allBtn.addEventListener('click', function () { setRegion('', '전체'); });
+
+    dropdown.querySelectorAll('.rd-opt').forEach(function (btn) {
+        btn.addEventListener('click', function () { setRegion(btn.dataset.val, btn.dataset.lbl); });
+    });
+
+    trigger.addEventListener('click', function (e) {
+        e.stopPropagation();
+        dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
+    });
+    document.addEventListener('click', function (e) {
+        if (!dropdown.contains(e.target) && e.target !== trigger) dropdown.style.display = 'none';
+    });
+})();
 </script>
 {% endblock %}

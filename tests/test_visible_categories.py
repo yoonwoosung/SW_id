@@ -142,3 +142,27 @@ def test_signup_activity_options_unaffected():
     from common.profile_options import ACTIVITY_LABELS, ACTIVITY_OPTIONS
     assert len(ACTIVITY_LABELS) == 5
     assert 'kayak' in ACTIVITY_OPTIONS
+
+
+# ---- 조건 코드 검증은 그룹 노드까지 포함해야 한다 ----
+
+def test_all_codes_includes_group_nodes():
+    """★도·광역시 그룹·반려견 '전체'는 잎이 아니지만 고를 수 있다.★
+
+    routes/course 가 LEAF_CODES 로만 검증하던 동안 이 코드들이 전부 걸러져
+    도 단위 지역 선택이 코스에 전달되지 않았다.
+    """
+    from common.search_categories import ALL_CODES, LEAF_CODES
+    for code in ('chungnam', 'chungbuk', 'metro', 'pet_allowed', 'headcount'):
+        assert code in ALL_CODES, code
+        assert code not in LEAF_CODES, code
+
+
+def test_all_codes_superset_of_leaf_codes():
+    from common.search_categories import ALL_CODES, LEAF_CODES
+    assert LEAF_CODES < ALL_CODES
+
+
+def test_unknown_code_rejected():
+    from common.search_categories import ALL_CODES
+    assert 'nonexistent_code' not in ALL_CODES

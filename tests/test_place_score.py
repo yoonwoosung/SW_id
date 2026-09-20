@@ -186,3 +186,56 @@ def test_cat3_prefix_is_supported():
     """cat3 수준 규칙이 동작해야 한다(수확·교육적이 cat3 를 쓴다)."""
     assert matches({'name': 'x', 'category': 'A02030100'}, 'harvest') is True
     assert matches({'name': 'x', 'category': 'A02030400'}, 'harvest') is False
+
+
+# ---- 지역: 장소 주소로 판정 (2026-09-20) ----
+
+CHEONAN_PLACE = {'name': '천안북면계곡', 'address': '충청남도 천안시 동남구 북면',
+                 'category': 'A01010900', 'content_type_id': 12}
+NAJU_PLACE = {'name': '완사천', 'address': '전라남도 나주시 송월동',
+              'category': 'A02010700', 'content_type_id': 12}
+
+
+@pytest.mark.parametrize('code,expected', [
+    ('cheonan', True), ('chungnam', True), ('naju', False), ('jeonnam', False),
+])
+def test_region_matched_by_place_address(code, expected):
+    """★지역은 사용자가 가장 많이 만지는 조건인데 코스에 반영되지 않았다.★"""
+    assert matches(CHEONAN_PLACE, code) is expected
+
+
+def test_region_uses_same_keywords_as_experience_filter():
+    """체험 목록 필터와 같은 키워드 표를 쓴다(정의가 두 벌이 되지 않게)."""
+    from common.search_categories import REGION_ADDRESS_KEYWORDS
+    from services.category_match import _has_region
+
+    class FakeExp:
+        address_detail = NAJU_PLACE['address']
+
+    assert matches(NAJU_PLACE, 'naju') is True
+    assert _has_region(['naju'], FakeExp()) is True
+    assert 'naju' in REGION_ADDRESS_KEYWORDS
+
+
+def test_region_is_judgeable_without_api():
+    """추가 API 호출 없이 판정된다."""
+    assert judgeable('chungnam') is True
+    assert build_scorer(['chungnam']) is not None
+
+
+def test_place_without_address_never_matches_region():
+    assert matches({'name': 'x', 'address': '', 'category': 'A01'}, 'chungnam') is False
+    assert matches({'name': 'x', 'category': 'A01'}, 'chungnam') is False
+
+
+def test_metro_group_matches_any_metro_place():
+    seoul = {'name': 'x', 'address': '서울특별시 강남구', 'category': 'A02'}
+    assert matches(seoul, 'metro') is True
+    assert matches(CHEONAN_PLACE, 'metro') is False
+
+
+def test_region_scores_alongside_other_conditions():
+    """지역과 분위기를 함께 고르면 둘 다 점수에 들어간다."""
+    scorer = build_scorer(['chungnam', 'nature'])
+    assert scorer(CHEONAN_PLACE) == pytest.approx(1.0)      # 충남 + 자연 둘 다
+    assert scorer(NAJU_PLACE) == pytest.approx(0.0)

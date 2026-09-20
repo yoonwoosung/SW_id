@@ -6,6 +6,7 @@
 #
 # ★조건이 없으면 모든 점수가 0 이라 호출부가 기존 거리순을 그대로 쓴다.★
 # 기존 코스 생성을 깨뜨리지 않는 것이 이 모듈의 첫 번째 규칙이다.
+from common.search_categories import REGION_ADDRESS_KEYWORDS
 from common.constants import (  # noqa: F401  (COURSE_RULE_* 는 routes/course 가 재사용)
     COURSE_CONDITION_WEIGHTS,
     COURSE_OTHER_SIBLINGS,
@@ -32,6 +33,8 @@ def judgeable(code, api_sets=None):
         return True
     if code in COURSE_OTHER_SIBLINGS:
         return True
+    if code in REGION_ADDRESS_KEYWORDS:
+        return True      # 지역은 장소 주소로 판정한다(추가 API 호출 없음)
     if code in _API_RULES:
         return bool((api_sets or {}).get(code))
     return False
@@ -89,8 +92,23 @@ def _place_key(place):
     return "".join(str(place.get("name") or "").split())
 
 
+def _matches_region(place, code):
+    """장소 주소가 그 지역인가.
+
+    체험 목록 필터(services/category_match._has_region)와 ★같은 키워드 표★를 쓴다.
+    관광공사·CSV 장소 모두 address 를 갖고 있어 추가 호출 없이 판정된다.
+    지역은 사용자가 가장 많이 만지는 조건인데 지금까지 코스에 전혀 반영되지 않았다.
+    """
+    address = str(place.get("address") or "")
+    if not address:
+        return False
+    return any(word in address for word in REGION_ADDRESS_KEYWORDS.get(code, ()))
+
+
 def matches(place, code, api_sets=None):
     """장소 하나가 조건 하나를 충족하는가."""
+    if code in REGION_ADDRESS_KEYWORDS:
+        return _matches_region(place, code)
     siblings = COURSE_OTHER_SIBLINGS.get(code)
     if siblings is not None:
         # '기타' = 같은 대분류의 다른 선택지 어디에도 걸리지 않는 장소.

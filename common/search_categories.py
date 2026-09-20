@@ -276,6 +276,20 @@ def _iter_leaf_codes(nodes):
 LEAF_CODES = set(_iter_leaf_codes(SEARCH_CATEGORIES))
 
 
+def _iter_node_codes(nodes):
+    for node in nodes:
+        yield node["code"]
+        if node.get("children"):
+            yield from _iter_node_codes(node["children"])
+
+
+# ★그룹 노드까지 포함한 전체 코드 집합.★
+# 도(chungnam)·광역시 그룹(metro)·반려견 '전체'(pet_allowed)는 잎이 아니지만
+# 사용자가 실제로 고를 수 있고 판정 로직도 있다. LEAF_CODES 로만 검증하면
+# 이들이 전부 걸러져 조건이 서버에 전달되지 않는다.
+ALL_CODES = set(_iter_node_codes(SEARCH_CATEGORIES))
+
+
 def _iter_all_nodes(nodes):
     for node in nodes:
         yield node

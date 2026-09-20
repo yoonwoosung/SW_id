@@ -120,3 +120,53 @@ def test_matches_mypage_rule(client):
     my_info = io.open('templates/my_info.html', encoding='utf-8').read()
     marker = f'[data-state="{STATE_COMPLETED}"]'
     assert marker in mypage and marker in my_info
+
+
+# ---- 사진과 글이 둘 다 있으면 사진 우선 (2026-09-20) ----
+# 요청: "둘 다 주면 사진으로만 레시피 제공"
+# ★숨기지 않고 접는다.★ PDF 저장이 화면을 그대로 캡처하므로, 완전히 숨기면
+# 재료·순서가 PDF 에서도 사라져 손글씨가 흐릴 때 대안이 없어진다.
+
+def _my_info_html():
+    import io
+    return io.open('templates/my_info.html', encoding='utf-8').read()
+
+
+def test_text_sections_are_wrapped_for_folding():
+    """재료·팁·만드는 방법이 한 덩어리로 묶여 있어야 접을 수 있다."""
+    html = _my_info_html()
+    assert 'id="r_text_group"' in html
+    start = html.index('id="r_text_group"')
+    end = html.index('/#r_text_group')
+    group = html[start:end]
+    for box in ('r_ing_box', 'r_tip_box', 'r_steps_box'):
+        assert box in group, f"{box} 가 접는 영역 밖에 있다"
+    # 사진은 접히면 안 된다 — 첫 화면에 보여야 하는 것이다.
+    assert 'r_handwritten_box' not in group
+
+
+def test_toggle_button_exists_and_is_hidden_by_default():
+    html = _my_info_html()
+    assert 'id="r_text_toggle"' in html
+    assert '글로 된 레시피 보기' in html
+    toggle = html[html.index('id="r_text_toggle"'):]
+    assert 'display:none' in toggle[:400], "기본은 감춰져 있어야 한다"
+    assert 'aria-controls="r_text_group"' in toggle[:400]
+
+
+def test_fold_decision_covers_the_three_cases():
+    """★사진만 / 글만 / 둘 다★ 세 경우가 스크립트에 그대로 들어 있어야 한다."""
+    html = _my_info_html()
+    assert 'const hasPhoto' in html and 'const hasText' in html
+    assert 'if (hasPhoto && hasText)' in html
+    # 공백만 있는 값을 '있다'로 세면 글 없는 레시피에도 펼침 버튼이 뜬다.
+    assert "(data.recipe_image || '').trim()" in html
+    assert "(data.recipe_steps || '').trim()" in html
+
+
+def test_pdf_area_still_contains_the_text_group():
+    """★펼치면 PDF 에도 담긴다.★ PDF 는 화면을 그대로 캡처한다."""
+    html = _my_info_html()
+    start = html.index('id="recipePrintArea"')
+    end = html.index('downloadRecipePDF')
+    assert 'id="r_text_group"' in html[start:end]

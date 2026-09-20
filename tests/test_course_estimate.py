@@ -338,3 +338,37 @@ def test_matched_scored_condition_does_not_warn():
     import routes.course as rc
     items = [{'type': 'attraction', 'name': 'A', 'match_score': 0.4}]
     assert rc._condition_report(['healing'], {}, items)['fell_back'] is False
+
+
+# ---- 카페 슬롯 정상화 (2026-09-20) ----
+
+def _food(name, cat):
+    return {'name': name, 'category': cat, 'lat': 37.3, 'lng': 126.8}
+
+
+def test_cafe_slot_keeps_only_cafes():
+    """★카페 자리에 김밥집이 오면 안 된다.★
+
+    카페 슬롯은 맛집과 같은 contentType(39)이라 지금까지 '가까운 음식점
+    두 번째'를 집었다(실측: 안산 좋은날 김밥, 천안 신은수참병천순대집).
+    """
+    import routes.course as rc
+    from common.constants import TOUR_CAT_CAFE
+    places = [_food('좋은날 김밥', 'A05020100'), _food('데미안', TOUR_CAT_CAFE),
+              _food('오복당', 'A05020400'), _food('묵커피바', TOUR_CAT_CAFE)]
+    assert [p['name'] for p in rc._cafes_only(places)] == ['데미안', '묵커피바']
+
+
+def test_cafe_slot_falls_back_when_no_cafe():
+    """★한 곳도 없으면 좁히지 않는다.★ 빈 슬롯보다 음식점이라도 낫다."""
+    import routes.course as rc
+    places = [_food('좋은날 김밥', 'A05020100'), _food('오복당', 'A05020400')]
+    assert rc._cafes_only(places) == places
+
+
+def test_cafe_slot_handles_empty_and_missing_category():
+    import routes.course as rc
+    assert rc._cafes_only([]) == []
+    assert rc._cafes_only(None) == []
+    no_cat = [{'name': '카카오카페', 'lat': 37.3, 'lng': 126.8}]
+    assert rc._cafes_only(no_cat) == no_cat      # 분류가 없으면 거르지 않는다

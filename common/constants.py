@@ -28,6 +28,13 @@ COURSE_SEARCH_RADIUS_M = 10000        # 코스용 주변 장소 검색 반경(�
 # 한국관광공사 contentTypeId (장소 종류 코드)
 TOUR_CONTENT_TYPE_ATTRACTION = 12     # 관광지
 TOUR_CONTENT_TYPE_RESTAURANT = 39     # 음식점(맛집·카페) — KTO에 별도 카페 타입이 없어 음식점으로 통합
+# ★카페는 별도 contentType 이 없을 뿐 분류 코드는 있다.★ (categoryCode2 로 확인)
+#   A05020100 한식 / A05020200 서양식 / A05020300 일식 / A05020400 중식
+#   A05020700 이색음식점 / A05020900 카페·전통찻집 / A05021000 클럽
+# 이걸 안 쓰면 카페 슬롯이 '가까운 음식점 두 번째'를 집어 김밥집·순대집이 들어간다.
+TOUR_CAT_CAFE = "A05020900"
+# 레포츠(액티브 조건). 관광지(12)에는 A03 이 한 건도 없다 — 전부 여기 있다(실측).
+TOUR_CONTENT_TYPE_LEISURE = 28
 # 코스 시간 슬롯: 시각·장소종류·검색할 contentType (experience는 체험 자체라 API 조회 없음)
 COURSE_SLOTS = [
     {"time": "09:00", "type": "experience", "content_type": None},

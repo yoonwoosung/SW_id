@@ -18,7 +18,8 @@ from common.constants import (COURSE_ACTIVITY_KAKAO, COURSE_COMPANION_KAKAO,
                               COURSE_MAX_ROWS, NEARBY_RESULT_LIMIT,
                               COURSE_FACILITY_NEARBY, COURSE_PARTY_RULES,
                               COURSE_PET_KAKAO, TOUR_CONTENT_TYPE_ATTRACTION,
-                              TOUR_CONTENT_TYPE_RESTAURANT)
+                              TOUR_CONTENT_TYPE_RESTAURANT,
+                              TOUR_CAT_CAFE, TOUR_CONTENT_TYPE_LEISURE)
 from services.distance import haversine
 
 # 코스 장소 출처 표기(화면 배지). CSV 는 'standard', 충남 올담은 'chungnam'.
@@ -131,7 +132,24 @@ def _collect_places(experience, radius_m=None):
             places_by_content[content_type] = _fetch_places(
                 experience, content_type, add_chungnam, radius_m)
         places_by_type[slot["type"]] = places_by_content[content_type]
+    places_by_type["cafe"] = _cafes_only(places_by_type.get("cafe"))
     return places_by_type
+
+
+def _cafes_only(places):
+    """카페 슬롯 후보를 ★진짜 카페★로 좁힌다. 없으면 원래 목록 그대로.
+
+    카페 슬롯은 맛집과 같은 contentType(39)을 쓴다 — KTO 에 카페 타입이 없다.
+    그래서 지금까지 '가까운 음식점 중 두 번째'가 카페 자리에 들어가
+    김밥집·순대집이 17:00 에 놓였다(실측).
+
+    분류 코드에는 카페가 있다(A05020900). 안산 반경 10km 음식점 30건 중
+    7건이 카페였다. ★한 곳도 없으면 좁히지 않는다★ — 빈 슬롯보다 낫다.
+    """
+    places = places or []
+    cafes = [p for p in places
+             if str(p.get("category") or "").startswith(TOUR_CAT_CAFE)]
+    return cafes or places
 
 
 def _selected_codes():

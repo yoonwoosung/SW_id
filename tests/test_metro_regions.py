@@ -90,13 +90,11 @@ def test_metro_labels():
 def test_metro_group_comes_before_provinces():
     """'광역시·특별시' 그룹이 도 목록보다 위에 온다.
 
-    맨 뒤의 'region_other'(기타)는 어느 시도에도 걸리지 않는 주소를 뜻하며
-    목록의 마지막에 온다.
+    (지역의 '기타'는 팀원이 c55255ed 에서 제거했다)
     """
     codes = [n['code'] for n in _region_children()]
     assert codes[0] == METRO_GROUP_CODE
-    assert codes[1:-1] == list(PROVINCE_CODES)
-    assert codes[-1] == 'region_other'
+    assert codes[1:] == list(PROVINCE_CODES)
 
 
 # ───────────────────── 주소 매칭 ─────────────────────

@@ -71,7 +71,7 @@ def _matches_rule(place, rule):
                 return True
         except (TypeError, ValueError):
             pass
-    for key in ("cat1", "cat2"):
+    for key in ("cat1", "cat2", "cat3"):
         prefix = rule.get(key)
         if prefix and category.startswith(prefix):
             return True

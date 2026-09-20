@@ -64,10 +64,9 @@
                 <div class="hero-unified-divider"></div>
                 <select name="region" class="hero-unified-select">
                     <option value="">지역</option>
-                    {% set regions = ["서울", "경기", "인천", "강원", "대전", "세종", "충북", "충남", "부산", "대구", "울산", "경북", "경남",
-                    "광주", "전북", "전남", "제주"] %}
-                    {% for r in regions %}
-                    <option value="{{ r }}" {% if request.args.get('region')==r %}selected{% endif %}>{{ r }}</option>
+                    {% set hero_regions = [("서울","서울"),("경기","경기"),("인천","인천"),("강원","강원"),("대전","대전"),("세종특별자치시","세종"),("충북","충북"),("충남","충남"),("부산","부산"),("대구","대구"),("울산","울산"),("경북","경북"),("경남","경남"),("광주광역시","광주"),("전북","전북"),("전남","전남"),("제주","제주")] %}
+                    {% for val, lbl in hero_regions %}
+                    <option value="{{ val }}" {% if request.args.get('region')==val %}selected{% endif %}>{{ lbl }}</option>
                     {% endfor %}
                 </select>
                 <div class="hero-unified-divider"></div>
@@ -108,10 +107,15 @@
                     <label class="list-filter-label">지역</label>
                     <select name="region" class="list-filter-select">
                         <option value="">전체</option>
-                        {% set regions = ["서울", "경기", "인천", "강원", "대전", "세종", "충북", "충남", "부산", "대구", "울산", "경북", "경남", "광주", "전북", "전남", "제주"] %}
-                        {% for r in regions %}
-                        <option value="{{ r }}" {% if request.args.get('region')==r %}selected{% endif %}>{{ r }}</option>
-                        {% endfor %}
+                        {% if region_groups %}
+                          {% for grp in region_groups %}
+                          <optgroup label="{{ grp.label }}">
+                            {% for opt in grp.options %}
+                            <option value="{{ opt.value }}" {% if request.args.get('region')==opt.value %}selected{% endif %}>{{ opt.label }}</option>
+                            {% endfor %}
+                          </optgroup>
+                          {% endfor %}
+                        {% endif %}
                     </select>
                 </div>
                 <div class="list-filter-field">

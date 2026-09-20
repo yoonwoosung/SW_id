@@ -68,10 +68,10 @@ def test_activity_match():
 def test_pet_weight_tier_match():
     # 최대 15kg까지 허용하는 체험: 소형·중형 둘 다 골라도 OR로 대분류 1회.
     exp = FakeExperience(pet_allowed=True, pet_max_weight_kg=15)
-    assert compute_category_match({"pet_dog": ["dog_small", "dog_medium"]}, exp) == 1
-    assert compute_category_match({"pet_dog": ["dog_large"]}, exp) == 0  # 25kg 필요 → 불충족
+    assert compute_category_match({"companion_type": ["dog_small", "dog_medium"]}, exp) == 1
+    assert compute_category_match({"companion_type": ["dog_large"]}, exp) == 0  # 25kg 필요 → 불충족
     # 동반 불가 체험은 어떤 티어도 매칭 안 됨.
-    assert compute_category_match({"pet_dog": ["dog_small"]}, FakeExperience(pet_allowed=False)) == 0
+    assert compute_category_match({"companion_type": ["dog_small"]}, FakeExperience(pet_allowed=False)) == 0
 
 
 def test_transport_car_uses_parking():
@@ -157,39 +157,39 @@ def test_unjudgeable_facility_codes_still_false():
 
 def test_pet_allowed_parent_option():
     assert compute_category_match(
-        {"pet_dog": ["pet_allowed"]},
+        {"companion_type": ["pet_allowed"]},
         FakeExperience(pet_allowed=True, pet_max_weight_kg=15)) == 1
     assert compute_category_match(
-        {"pet_dog": ["pet_allowed"]}, FakeExperience(pet_allowed=False)) == 0
+        {"companion_type": ["pet_allowed"]}, FakeExperience(pet_allowed=False)) == 0
 
 
 def test_pet_not_allowed_option():
     assert compute_category_match(
-        {"pet_dog": ["pet_not_allowed"]}, FakeExperience(pet_allowed=False)) == 1
+        {"companion_type": ["pet_not_allowed"]}, FakeExperience(pet_allowed=False)) == 1
     assert compute_category_match(
-        {"pet_dog": ["pet_not_allowed"]},
+        {"companion_type": ["pet_not_allowed"]},
         FakeExperience(pet_allowed=True, pet_max_weight_kg=15)) == 0
 
 
 def test_pet_allowed_without_weight_still_matches_parent():
     """부모 선택지는 몸무게가 비어 있어도 충족한다(티어 판정과 다르다)."""
     exp = FakeExperience(pet_allowed=True, pet_max_weight_kg=None)
-    assert compute_category_match({"pet_dog": ["pet_allowed"]}, exp) == 1
-    assert compute_category_match({"pet_dog": ["dog_small"]}, exp) == 0
+    assert compute_category_match({"companion_type": ["pet_allowed"]}, exp) == 1
+    assert compute_category_match({"companion_type": ["dog_small"]}, exp) == 0
 
 
 def test_pet_weight_tiers_unchanged():
     """기존 몸무게 판정은 그대로다(어제 살린 동작이 깨지면 안 된다)."""
     exp = FakeExperience(pet_allowed=True, pet_max_weight_kg=15)
-    assert compute_category_match({"pet_dog": ["dog_medium"]}, exp) == 1   # 15 >= 15
-    assert compute_category_match({"pet_dog": ["dog_large"]}, exp) == 0    # 15 < 25
+    assert compute_category_match({"companion_type": ["dog_medium"]}, exp) == 1   # 15 >= 15
+    assert compute_category_match({"companion_type": ["dog_large"]}, exp) == 0    # 15 < 25
 
 
 def test_pet_care_conditions_still_unjudged():
     """케어 조건은 대응 컬럼이 없어 그대로 판정하지 않는다(화면에서 감춘다)."""
     exp = FakeExperience(pet_allowed=True, pet_max_weight_kg=100)
     for code in ("leash_required", "cage_required", "indoor_ok", "outdoor_only"):
-        assert compute_category_match({"pet_dog": [code]}, exp) == 0, code
+        assert compute_category_match({"companion_type": [code]}, exp) == 0, code
 
 
 # ---- 지역: '광역시·특별시 전체' 체크박스 ----
@@ -205,3 +205,46 @@ def test_metro_group_does_not_match_provinces():
     for address in ("충남 논산시", "경기도 광주시"):
         assert compute_category_match(
             {"region": ["metro"]}, FakeExperience(address_detail=address)) == 0, address
+
+
+# ======================================================================
+# 반려견이 동반유형 하위로 옮겨진 뒤 (2026-09-20 리팩터 대응)
+# ======================================================================
+
+def test_non_pet_companion_codes_are_skipped():
+    """★'혼자'만 골랐을 때 결과가 0건이 되면 안 된다.★
+
+    동반유형에는 반려견(판정 가능)과 인원수·동반구성(불가)이 섞여 있다.
+    판정 불가만 고른 경우 그 대분류를 건너뛰어야 한다. 그러지 않으면
+    지금까지 '무시되던' 조건이 '모든 체험을 제외하는' 더 나쁜 버그가 된다.
+    """
+    from services import eco_filter
+    exp = FakeExperience(address_detail="충남 논산시", pet_allowed=True, pet_max_weight_kg=15)
+    for codes in (["solo"], ["party_1"], ["family_child", "adults_only"]):
+        assert eco_filter.passes_conditions({"companion_type": codes}, exp) is True, codes
+
+
+def test_pet_codes_still_filter_within_companion_type():
+    from services import eco_filter
+    allowed = FakeExperience(address_detail="충남", pet_allowed=True, pet_max_weight_kg=15)
+    denied = FakeExperience(address_detail="충남", pet_allowed=False)
+    assert eco_filter.passes_conditions({"companion_type": ["dog_medium"]}, allowed) is True
+    assert eco_filter.passes_conditions({"companion_type": ["dog_medium"]}, denied) is False
+    assert eco_filter.passes_conditions({"companion_type": ["pet_not_allowed"]}, denied) is True
+
+
+def test_mixed_selection_uses_pet_codes_only():
+    """'혼자 + 중형'이면 반려견 코드만 추려 판정한다."""
+    from services import eco_filter
+    allowed = FakeExperience(address_detail="충남", pet_allowed=True, pet_max_weight_kg=15)
+    denied = FakeExperience(address_detail="충남", pet_allowed=False)
+    conditions = {"companion_type": ["solo", "dog_medium"]}
+    assert eco_filter.passes_conditions(conditions, allowed) is True
+    assert eco_filter.passes_conditions(conditions, denied) is False
+
+
+def test_pet_selection_helper():
+    from services.category_match import pet_selection
+    assert pet_selection(["solo", "dog_medium", "party_1"]) == ["dog_medium"]
+    assert pet_selection(["solo"]) == []
+    assert pet_selection(None) == []

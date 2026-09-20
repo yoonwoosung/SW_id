@@ -121,6 +121,28 @@ _PROVINCES = [
 _REGIONS = _METRO_REGIONS + _PROVINCES
 
 
+def region_dropdown_groups():
+    """체험 더보기 지역 <select> 용 그룹 데이터.
+    반환: [{"label": 그룹명, "options": [{"value": LIKE검색어, "label": 표시명}, ...]}]
+    광역시는 별도 aliases(주소 키워드)를 검색어로 씀(광주→광주광역시 등)."""
+    metro = {
+        "label": "광역시·특별시",
+        "options": [
+            {"value": aliases[0], "label": label}
+            for _code, label, aliases, _cities in _METRO_REGIONS
+        ]
+    }
+    provinces = [
+        {
+            "label": label,
+            "options": [{"value": aliases[0], "label": label}]
+            + [{"value": city_label, "label": city_label} for _cc, city_label in cities]
+        }
+        for _code, label, aliases, cities in _PROVINCES
+    ]
+    return [metro] + provinces
+
+
 def _region_node():
     metro_children = [
         {"code": prov_code, "label": prov_label}
@@ -153,9 +175,13 @@ SEARCH_CATEGORIES = [
             {"code": "dog_large", "label": "대형(15kg 이상)"},
             {"code": "pet_not_allowed", "label": "노펫존"}]},
     ]},
-    {"code": "schedule", "label": "일정", "group": "travel", "children": [
-        {"code": "day_trip", "label": "당일"}, {"code": "one_night", "label": "1박 2일"},
-        {"code": "two_night", "label": "2박 3일"}, _other_node("schedule")]},
+    # hidden: 하위가 전부 판정 불가라 탭을 열면 빈 화면이 된다. 대분류째 감춘다.
+    {"code": "schedule", "label": "일정", "group": "travel", "hidden": True, "children": [
+        # hidden: 체험·장소 어느 쪽에도 숙박 일수 데이터가 없다.
+        {"code": "day_trip", "label": "당일", "hidden": True},
+        {"code": "one_night", "label": "1박 2일", "hidden": True},
+        {"code": "two_night", "label": "2박 3일", "hidden": True},
+        dict(_other_node("schedule"), hidden=True)]},
     {"code": "experience_type", "label": "체험종류", "group": "taste", "children": [
         {"code": "harvest", "label": "수확"}, {"code": "food", "label": "먹거리"},
         {"code": "craft", "label": "공예"}, {"code": "animal", "label": "동물교감"},
@@ -183,15 +209,20 @@ SEARCH_CATEGORIES = [
     {"code": "transport", "label": "교통수단", "group": "practical", "children": [
         {"code": "car", "label": "자가용"},
         {"code": "public_transit", "label": "대중교통", "hidden": True},
-        {"code": "walk", "label": "도보"},
-        {"code": "bike", "label": "자전거"},
-        _other_node("transport")]},
-    {"code": "duration_hours", "label": "소요시간", "group": "practical", "children": [
-        {"code": "under_2h",  "label": "2시간 미만"},
-        {"code": "hours_2",   "label": "2~4시간"},
-        {"code": "half_day",  "label": "반나절 (4~6시간)"},
-        {"code": "full_day",  "label": "종일 (6시간 이상)"},
-        _other_node("duration_hours")]},
+        # hidden: 자가용만 has_parking 과 연동된다. 나머지는 판정할 데이터가 없다.
+        # (2026-09-20 리팩터로 hidden 이 풀려 한동안 노출됐다 — 누르면 0건이었다)
+        {"code": "walk", "label": "도보", "hidden": True},
+        {"code": "bike", "label": "자전거", "hidden": True},
+        # 판정 가능한 형제가 car 하나뿐이라 '기타'(=car 가 아닌 것)가 성립하지 않는다.
+        dict(_other_node("transport"), hidden=True)]},
+    # hidden: 위와 같은 이유.
+    {"code": "duration_hours", "label": "소요시간", "group": "practical", "hidden": True, "children": [
+        # hidden: timetable_data 에 시작 시각만 있고 소요시간이 없다.
+        {"code": "under_2h",  "label": "2시간 미만", "hidden": True},
+        {"code": "hours_2",   "label": "2~4시간", "hidden": True},
+        {"code": "half_day",  "label": "반나절 (4~6시간)", "hidden": True},
+        {"code": "full_day",  "label": "종일 (6시간 이상)", "hidden": True},
+        dict(_other_node("duration_hours"), hidden=True)]},
     {"code": "facility", "label": "편의시설", "group": "practical", "children": [
         {"code": "parking", "label": "주차"},
         {"code": "barrier_free", "label": "무장애"}, {"code": "wifi", "label": "와이파이"},
@@ -199,7 +230,8 @@ SEARCH_CATEGORIES = [
         # hidden: 대응 컬럼이 없어 고르면 결과가 항상 0건이다.
         {"code": "restroom", "label": "화장실", "hidden": True},
         {"code": "nursing_room", "label": "수유실", "hidden": True},
-        _other_node("facility")]},
+        # hidden: 불리언 항목이라 '목록에 없는 값'이라는 개념이 성립하지 않는다.
+        dict(_other_node("facility"), hidden=True)]},
 ]
 
 CATEGORY_CODES = [category["code"] for category in SEARCH_CATEGORIES]

@@ -60,9 +60,11 @@ def test_order_changes_weight():
 
 # ---- 분류 코드 판정 ----
 
+# 2026-09-20 재매핑: 힐링·수확·자연생태가 전부 cat1=A01 이던 것을
+# cat2·cat3 로 내려 겹치지 않게 나눴다.
 @pytest.mark.parametrize('place,code,expected', [
-    (NATURE, 'nature', True), (NATURE, 'healing', True), (NATURE, 'tradition', False),
-    (HISTORY, 'tradition', True), (HISTORY, 'craft', True), (HISTORY, 'nature', False),
+    (NATURE, 'nature', True), (NATURE, 'healing', False), (NATURE, 'tradition', False),
+    (HISTORY, 'tradition', True), (HISTORY, 'craft', False), (HISTORY, 'nature', False),
     (FOOD, 'food', True), (FOOD, 'nature', False),
     (SPORTS, 'active', True), (SPORTS, 'kayak', True), (SPORTS, 'horse_riding', False),
 ])
@@ -135,11 +137,52 @@ def test_scorer_is_none_without_usable_conditions():
 
 
 def test_score_adds_up_matched_weights():
-    scorer = build_scorer(['nature', 'healing'])
-    # 계곡은 둘 다 A01 이라 모두 충족
-    assert scorer(NATURE) == pytest.approx(1.0)
-    assert scorer(HISTORY) == pytest.approx(0.0)
+    """여러 조건을 충족하면 가중치가 더해진다."""
+    park = {'name': '태조산 공원', 'category': 'A02020700', 'content_type_id': 12}
+    scorer = build_scorer(['healing', 'tradition'])
+    assert scorer(park) == pytest.approx(ordered_weights(['healing', 'tradition'])['healing'])
+    assert scorer(HISTORY) == pytest.approx(ordered_weights(['healing', 'tradition'])['tradition'])
+    assert scorer(NATURE) == pytest.approx(0.0)
 
 
 def test_score_is_zero_without_weights():
     assert score_place(NATURE, {}) == 0.0
+
+
+# ---- 분류 코드 재매핑 (2026-09-20) ----
+
+def test_no_duplicate_rules_among_core_conditions():
+    """★한 코드를 두 조건이 함께 쓰면 안 된다.★
+
+    예전에는 힐링·수확·자연생태가 전부 cat1=A01 이라 서로 다른 조건인데
+    같은 결과가 나왔다. "조건을 바꿔도 코스가 안 바뀐다"의 직접 원인이었다.
+    액티비티 5개는 관광공사 코드로 구분이 불가능해 제외한다(감춘 상태).
+    """
+    from common.constants import COURSE_PLACE_RULES
+    activity = {'horse_riding', 'hiking', 'cycling', 'kayak', 'fishing'}
+    core = {k: str(v) for k, v in COURSE_PLACE_RULES.items() if k not in activity}
+    assert len(set(core.values())) == len(core), core
+
+
+@pytest.mark.parametrize('place,expected', [
+    ({'name': '천안북면계곡', 'category': 'A01010900'}, 'nature'),
+    ({'name': '박문수묘', 'category': 'A02010700'}, 'tradition'),
+    ({'name': '태조산 공원', 'category': 'A02020700'}, 'healing'),
+    ({'name': '보련마을', 'category': 'A02030100'}, 'harvest'),
+    ({'name': '충남안전체험관', 'category': 'A02030400'}, 'educational'),
+    ({'name': '흔들전망대', 'category': 'A02050600'}, 'photo'),
+    ({'name': '영산강문화관', 'category': 'A02040800'}, 'craft'),
+    ({'name': '울주 구량리 은행나무', 'category': 'A01020100'}, 'animal'),
+])
+def test_each_place_matches_exactly_one_core_condition(place, expected):
+    """실제 응답값으로 만든 장소가 의도한 조건 하나에만 걸린다."""
+    core = ('nature', 'harvest', 'craft', 'animal',
+            'healing', 'educational', 'tradition', 'photo')
+    hit = [c for c in core if matches(place, c)]
+    assert hit == [expected], (place['name'], hit)
+
+
+def test_cat3_prefix_is_supported():
+    """cat3 수준 규칙이 동작해야 한다(수확·교육적이 cat3 를 쓴다)."""
+    assert matches({'name': 'x', 'category': 'A02030100'}, 'harvest') is True
+    assert matches({'name': 'x', 'category': 'A02030400'}, 'harvest') is False

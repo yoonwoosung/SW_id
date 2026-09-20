@@ -12,9 +12,15 @@ from common.constants import COURSE_OTHER_SIBLINGS
 from services.category_match import compute_category_match
 from services.place_score import matches, judgeable, build_scorer
 
-WITH_OTHER = ('region', 'pet_dog', 'experience_type', 'mood', 'season')
-WITHOUT_OTHER = ('companion_type', 'party', 'schedule', 'budget_range',
-                 'transport', 'duration_hours', 'facility', 'activity')
+# 2026-09-20 리팩터로 구조가 바뀌었다.
+#   · 인원(party) 대분류 삭제, 반려견도 동반유형 하위로 → pet_dog_other 는 없어졌다
+#   · 팀원이 일정·소요시간·교통수단·편의시설에도 '기타'를 추가했으나
+#     그 대분류들은 판정 자체가 불가해 화면에서 감췄다(test_visible_categories)
+# 지역·반려견의 '기타'는 팀원이 c55255ed 에서 제거했다(의도적 결정).
+WITH_OTHER = ('experience_type', 'mood', 'season')
+REMOVED_OTHER = ('region', 'pet_dog')
+# '기타'가 성립하지 않는 대분류(넣어도 항상 0건이라 화면에 내보내지 않는다)
+NO_USABLE_OTHER = ('companion_type', 'budget_range')
 
 
 class FakeExp:
@@ -41,15 +47,36 @@ def test_five_categories_have_other(code):
     assert code + OTHER_SUFFIX in LEAF_CODES
 
 
-@pytest.mark.parametrize('code', WITHOUT_OTHER)
+@pytest.mark.parametrize('code', NO_USABLE_OTHER)
 def test_other_categories_do_not_have_other(code):
     """★넣어도 항상 0건인 곳에는 넣지 않는다.★
 
-    예산대는 구간이 0~무한을 빈틈없이 덮고, 편의시설·교통수단은 불리언이라
-    '목록 밖 값'이라는 개념이 없다. 나머지는 대응 데이터가 아예 없다.
+    예산대는 구간이 0~무한을 빈틈없이 덮어 빈틈이 없고,
+    동반유형은 판정 가능한 반려견이 불리언+구간이라 '목록 밖'이 성립하지 않는다.
     """
     category = next(c for c in SEARCH_CATEGORIES if c['code'] == code)
     assert '기타' not in list(_labels([category])), code
+
+
+@pytest.mark.parametrize('code', REMOVED_OTHER)
+def test_removed_other_stays_removed(code):
+    """지역·반려견의 '기타'는 팀원이 제거했다(c55255ed). 되살리지 않는다."""
+    from common.search_categories import LEAF_CODES
+    assert code + '_other' not in LEAF_CODES
+
+
+def test_other_is_hidden_where_it_cannot_work():
+    """팀원이 추가한 '기타' 중 판정 불가한 것은 화면에서 감췄다."""
+    from common.search_categories import visible_categories
+    visible = set()
+    def walk(ns):
+        for n in ns:
+            visible.add(n['code'])
+            if n.get('children'): walk(n['children'])
+    walk(visible_categories())
+    for code in ('transport_other', 'facility_other', 'schedule_other',
+                 'duration_hours_other'):
+        assert code not in visible, code
 
 
 def test_other_is_visible_on_screen():
@@ -59,64 +86,14 @@ def test_other_is_visible_on_screen():
             assert '기타' in list(_labels([category])), category['code']
 
 
-# ---- 지역 ----
-
-def test_region_other_matches_unknown_address():
-    exp = FakeExp(address_detail='Hokkaido Japan')
-    assert compute_category_match({'region': ['region_other']}, exp) == 1
-
-
-@pytest.mark.parametrize('address', ['충남 논산시', '서울특별시 강남구', '경기도 가평군'])
-def test_region_other_skips_known_regions(address):
-    assert compute_category_match({'region': ['region_other']}, FakeExp(address)) == 0
-
-
-@pytest.mark.parametrize('address', ['', '   ', None])
-def test_region_other_excludes_missing_address(address):
-    """★주소가 없는 것은 '기타'가 아니다.★ 값 없음과 목록 밖은 다르다."""
-    assert compute_category_match({'region': ['region_other']}, FakeExp(address or '')) == 0
-
-
-def test_region_other_ors_with_normal_choice():
-    """대분류 안은 OR — 충남이거나 목록 밖."""
-    conditions = {'region': ['chungnam', 'region_other']}
-    assert compute_category_match(conditions, FakeExp('충남 논산시')) == 1
-    assert compute_category_match(conditions, FakeExp('Hokkaido Japan')) == 1
-    assert compute_category_match(conditions, FakeExp('경기도 가평군')) == 0
+# 지역 '기타'(region_other)는 팀원이 트리에서 제거했다(c55255ed).
+# services/category_match 의 판정 코드는 남아 있어 되살리면 바로 동작한다.
 
 
 # ---- 반려견 ----
 
-def test_pet_other_matches_below_smallest_tier():
-    """★동반가능인데 허용 몸무게가 소형 기준(5kg)에 못 미치는 경우.★"""
-    exp = FakeExp('충남', pet_allowed=True, pet_max_weight_kg=3)
-    assert compute_category_match({'pet_dog': ['pet_dog_other']}, exp) == 1
-    assert compute_category_match({'pet_dog': ['dog_small']}, exp) == 0
-
-
-@pytest.mark.parametrize('weight', [5, 15, 25, 100])
-def test_pet_other_skips_tiered_weights(weight):
-    exp = FakeExp('충남', pet_allowed=True, pet_max_weight_kg=weight)
-    assert compute_category_match({'pet_dog': ['pet_dog_other']}, exp) == 0
-
-
-def test_pet_other_excludes_missing_weight():
-    """몸무게 미입력은 '기타'가 아니다."""
-    exp = FakeExp('충남', pet_allowed=True, pet_max_weight_kg=None)
-    assert compute_category_match({'pet_dog': ['pet_dog_other']}, exp) == 0
-
-
-def test_pet_other_excludes_not_allowed():
-    exp = FakeExp('충남', pet_allowed=False)
-    assert compute_category_match({'pet_dog': ['pet_dog_other']}, exp) == 0
-
-
-def test_pet_other_boundary_is_smallest_tier():
-    smallest = min(PET_WEIGHT_MIN_KG.values())
-    below = FakeExp('충남', pet_allowed=True, pet_max_weight_kg=smallest - 1)
-    at = FakeExp('충남', pet_allowed=True, pet_max_weight_kg=smallest)
-    assert compute_category_match({'pet_dog': ['pet_dog_other']}, below) == 1
-    assert compute_category_match({'pet_dog': ['pet_dog_other']}, at) == 0
+# 반려견 '기타'(pet_dog_other)는 2026-09-20 리팩터로 트리에서 사라졌다.
+# 반려견이 동반유형 하위로 옮겨지며 팀원이 제거했다.
 
 
 # ---- 코스 장소 ----
@@ -130,14 +107,17 @@ SPORTS = {'name': '천안카약장', 'category': 'A03020200', 'content_type_id':
 def test_place_other_is_complement_of_siblings():
     """'기타' = 같은 대분류 다른 선택지의 여집합."""
     assert matches(SHOPPING, 'experience_type_other') is True   # A04 는 어디에도 없다
-    assert matches(NATURE, 'experience_type_other') is False    # A01 = 자연생태
-    assert matches(HISTORY, 'experience_type_other') is False   # A02 = 공예
+    assert matches(NATURE, 'experience_type_other') is False    # A0101 = 자연생태
+    # 2026-09-20 재매핑 이후 역사관광지(A0201)는 체험종류 어디에도 안 걸린다 → 기타
+    assert matches(HISTORY, 'experience_type_other') is True
 
 
 def test_mood_other():
     assert matches(SHOPPING, 'mood_other') is True
     assert matches(SPORTS, 'mood_other') is False               # A03 = 액티브
-    assert matches(NATURE, 'mood_other') is False               # A01 = 힐링
+    assert matches(HISTORY, 'mood_other') is False              # A0201 = 전통
+    # 재매핑 후 자연관광지(A0101)는 분위기 어디에도 안 걸린다 → 기타
+    assert matches(NATURE, 'mood_other') is True
 
 
 def test_season_other_by_name():
@@ -153,7 +133,7 @@ def test_place_other_is_judgeable():
 def test_place_other_takes_weight_in_scorer():
     scorer = build_scorer(['mood_other'])
     assert scorer(SHOPPING) == pytest.approx(1.0)
-    assert scorer(NATURE) == pytest.approx(0.0)
+    assert scorer(HISTORY) == pytest.approx(0.0)      # 전통에 걸리므로 기타가 아니다
 
 
 def test_place_other_ors_with_normal_choice():
@@ -161,7 +141,8 @@ def test_place_other_ors_with_normal_choice():
     scorer = build_scorer(['tradition', 'mood_other'])
     assert scorer(HISTORY) > 0      # 전통
     assert scorer(SHOPPING) > 0     # 기타
-    assert scorer(NATURE) == pytest.approx(0.0)
+    park = {'name': '태조산 공원', 'category': 'A02020700', 'content_type_id': 12}
+    assert scorer(park) == pytest.approx(0.0)   # 힐링이라 전통도 기타도 아니다
 
 
 def test_siblings_cover_every_non_other_choice():

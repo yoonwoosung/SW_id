@@ -140,10 +140,10 @@ def _region_node():
 SEARCH_CATEGORIES = [
     _region_node(),
     {"code": "companion_type", "label": "동반유형", "group": "travel", "children": [
-        {"code": "headcount", "label": "인원수", "children": [
+        {"code": "headcount", "label": "인원수", "no_select_all": True, "children": [
             {"code": "party_1", "label": "1명"}, {"code": "party_2", "label": "2명"},
             {"code": "party_3_4", "label": "3~4명"}, {"code": "party_5plus", "label": "5명 이상"}]},
-        {"code": "age_composition", "label": "동반 구성", "children": [
+        {"code": "age_composition", "label": "동반 구성", "no_select_all": True, "children": [
             {"code": "solo", "label": "혼자"}, {"code": "couple", "label": "커플"},
             {"code": "family_child", "label": "가족(아이)"}, {"code": "friends", "label": "친구"},
             {"code": "parents", "label": "부모님"}, {"code": "adults_only", "label": "성인만"},

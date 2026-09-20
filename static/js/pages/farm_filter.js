@@ -33,8 +33,8 @@ window.FarmFilter = (function () {
                 + '<button type="button" class="fl-acc__toggle-btn" aria-expanded="false">'
                 + '<i class="fa-solid fa-chevron-right fl-acc__caret" aria-hidden="true"></i>'
                 + '<span>' + esc(g.label) + '</span></button>'
-                + '<label class="fl-acc__check" title="' + esc(g.label) + ' 전체 선택">'
-                + '<input type="checkbox" class="fl-parent" data-cat="' + esc(topCode) + '" value="' + esc(g.code) + '"><span>전체</span></label>'
+                + (g.no_select_all ? '' : '<label class="fl-acc__check" title="' + esc(g.label) + ' 전체 선택">'
+                + '<input type="checkbox" class="fl-parent" data-cat="' + esc(topCode) + '" value="' + esc(g.code) + '"><span>전체</span></label>')
                 + '</div>'
                 + '<div class="fl-acc__body" hidden>' + renderPanelNodes(g.children, topCode, init) + '</div>'
                 + '</div>';

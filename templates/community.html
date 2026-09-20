@@ -366,6 +366,22 @@
     box-shadow: 0 16px 36px rgba(0, 0, 0, 0.22) !important;
     border-radius: 8px !important;
 }
+
+/* 뷰어에서는 편집 UI 전부 숨김 */
+#viewerStage .free-drag-element {
+    cursor: default !important;
+    outline: none !important;
+    box-shadow: none !important;
+}
+#viewerStage .free-drag-element:hover {
+    outline: none !important;
+    box-shadow: none !important;
+}
+#viewerStage .editable-text-box {
+    border: none !important;
+    background: transparent !important;
+    min-width: unset !important;
+}
 </style>
 
 <div class="community-wrapper">

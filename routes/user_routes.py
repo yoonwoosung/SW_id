@@ -198,6 +198,11 @@ def farmer_guide():
     return render_template('farmer_guide.html')
 
 
+# 👇 새로 추가된 사용자 도움말 페이지 라우트
+def help_page():
+    return render_template('help.html')
+
+
 def album_create():
     if 'user_id' not in session:
         flash("로그인이 필요합니다.", "warning")
@@ -349,6 +354,10 @@ def register(app):
     app.add_url_rule('/api/users/me/points', 'my_points', my_points)
     app.add_url_rule('/guide', 'guide_page', guide_page)
     app.add_url_rule('/farmer_guide', 'farmer_guide', farmer_guide)
+    
+    # 👇 새로 추가된 사용자 도움말 페이지 라우트 규칙 등록
+    app.add_url_rule('/help', 'help_page', help_page)
+    
     app.add_url_rule('/album/create', 'album_create', album_create, methods=['GET', 'POST'])
     
     # FE 신규 기능 라우트 등록

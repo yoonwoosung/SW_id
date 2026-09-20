@@ -1,0 +1,527 @@
+{% extends "layout.html" %}
+
+{% block page_class %}help-page{% endblock %}
+
+{% block head %}
+<style>
+    /* 도움말 페이지 전용 스타일 */
+    .help-header {
+        background-color: var(--fl-icon-color);
+        color: white;
+        padding: 3rem 0;
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+    .help-header h1 {
+        font-weight: 700;
+    }
+    
+    /* 탭 내비게이션 */
+    .nav-tabs .nav-link {
+        color: #495057;
+        font-weight: 500;
+        border-radius: 0;
+        padding: 1rem;
+    }
+    .nav-tabs .nav-link.active {
+        color: var(--fl-icon-color);
+        font-weight: 700;
+        border-bottom: 3px solid var(--fl-icon-color);
+    }
+    .tab-content {
+        padding: 2rem 0;
+    }
+    
+    /* 이미지 컨테이너 및 스타일 */
+    .help-image-container {
+        text-align: center;
+        margin-bottom: 2rem;
+        background-color: #f8f9fa;
+        padding: 1rem;
+        border-radius: 8px;
+    }
+    .help-image {
+        max-width: 100%;
+        height: auto;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+    .accordion-img {
+        max-width: 100%;
+        height: auto;
+        margin: 1rem 0;
+        border: 1px solid #e9ecef;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    
+    /* 이미지 그리드 (여러 장 나열 시) */
+    .img-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 1.5rem;
+        margin: 1.5rem 0;
+    }
+    .img-grid img {
+        width: 100%;
+        border-radius: 8px;
+        border: 1px solid #dee2e6;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+
+    /* 아코디언 스타일 */
+    .accordion .card {
+        margin-bottom: 1rem;
+        border: 1px solid #dee2e6;
+        border-radius: 8px !important;
+        overflow: hidden;
+    }
+    .accordion .card-header {
+        background-color: white;
+        border-bottom: none;
+        padding: 0;
+    }
+    .accordion .btn-link {
+        color: #333;
+        font-weight: 600;
+        text-decoration: none;
+        width: 100%;
+        text-align: left;
+        padding: 1.25rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    .accordion .btn-link:hover, .accordion .btn-link:focus {
+        text-decoration: none;
+        background-color: #f8f9fa;
+    }
+    .accordion .btn-link[aria-expanded="true"] {
+        color: var(--fl-icon-color);
+        background-color: #f1f8f4;
+    }
+    .accordion .btn-link i {
+        transition: transform 0.3s ease;
+    }
+    .accordion .btn-link[aria-expanded="true"] i {
+        transform: rotate(180deg);
+    }
+    .accordion .card-body {
+        font-size: 0.95rem;
+        line-height: 1.6;
+        color: #495057;
+    }
+
+    /* 설명 박스 스타일 */
+    .help-desc {
+        background-color: #f8f9fa;
+        padding: 1.5rem;
+        border-radius: 8px;
+        border-left: 4px solid var(--fl-icon-color);
+        margin-bottom: 2rem;
+    }
+    .help-desc ul {
+        margin-bottom: 0;
+        padding-left: 1.5rem;
+    }
+    .help-desc li {
+        margin-bottom: 0.75rem;
+    }
+    .help-desc li:last-child {
+        margin-bottom: 0;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="help-header">
+    <div class="container">
+        <h1>FarmLink 사용 도움말</h1>
+        <p class="lead mt-2 mb-0">팜링크를 100% 활용하기 위한 가이드</p>
+    </div>
+</div>
+
+<div class="container mb-5">
+    <!-- 내비게이션 탭 -->
+    <ul class="nav nav-tabs nav-fill" id="helpTab" role="tablist">
+        <li class="nav-item" role="presentation">
+            <a class="nav-link active" id="main-tab" data-toggle="tab" href="#main-screen" role="tab" aria-controls="main-screen" aria-selected="true">
+                <i data-lucide="home" class="mr-1"></i> 체험자 첫 화면
+            </a>
+        </li>
+        <li class="nav-item" role="presentation">
+            <a class="nav-link" id="activity-tab" data-toggle="tab" href="#activity-screen" role="tab" aria-controls="activity-screen" aria-selected="false">
+                <i data-lucide="activity" class="mr-1"></i> 내 활동
+            </a>
+        </li>
+        <li class="nav-item" role="presentation">
+            <a class="nav-link" id="recommend-tab" data-toggle="tab" href="#recommend-screen" role="tab" aria-controls="recommend-screen" aria-selected="false">
+                <i data-lucide="map" class="mr-1"></i> 오늘의 추천 코스
+            </a>
+        </li>
+        <li class="nav-item" role="presentation">
+            <a class="nav-link" id="album-tab" data-toggle="tab" href="#album-screen" role="tab" aria-controls="album-screen" aria-selected="false">
+                <i data-lucide="book-image" class="mr-1"></i> 추억 앨범
+            </a>
+        </li>
+    </ul>
+
+    <!-- 탭 내용 -->
+    <div class="tab-content" id="helpTabContent">
+        
+        <!-- ============================================== -->
+        <!-- 1. 체험자 첫 화면 -->
+        <!-- ============================================== -->
+        <div class="tab-pane fade show active" id="main-screen" role="tabpanel" aria-labelledby="main-tab">
+            <div class="help-image-container">
+                <img src="{{ url_for('static', filename='images/help/image01.png') }}" class="help-image" alt="체험자 첫 화면 예시">
+            </div>
+            
+            <div class="accordion" id="accordionMain">
+                <div class="card">
+                    <div class="card-header" id="headingMain1">
+                        <h2 class="mb-0">
+                            <button class="btn btn-link" type="button" data-toggle="collapse" data-target="#collapseMain1" aria-expanded="true" aria-controls="collapseMain1">
+                                <span>① 과생산 농산물 수확 체험이란 무엇인가요?</span>
+                                <i data-lucide="chevron-down"></i>
+                            </button>
+                        </h2>
+                    </div>
+                    <div id="collapseMain1" class="collapse show" aria-labelledby="headingMain1" data-parent="#accordionMain">
+                        <div class="card-body">
+                            수확량 초과나 규격 외 작물 등으로 처분 위기에 놓인 농산물을 소비자가 직접 수확해 가져가는 농가 상생 프로그램입니다. 유통 마진이 빠져 농장주가 설정한 정가 대비 최소 20% 이상 저렴하며, 남은 수량이 많을수록 할인율이 자동으로 높게 산정됩니다. (농가 설정에 따라 더 큰 할인율이 적용되기도 합니다.)<br><br>
+                            본 프로그램은 '현장 수확 및 현장 수령' 전용으로 택배 배송은 지원하지 않으며, 농가별 잔여 수량이 부족하면 예약이 자동 마감됩니다.
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header" id="headingMain2">
+                        <h2 class="mb-0">
+                            <button class="btn btn-link collapsed" type="button" data-toggle="collapse" data-target="#collapseMain2" aria-expanded="false" aria-controls="collapseMain2">
+                                <span>② AI 내 주변 추천 여행 코스는 어떻게 만들어지나요?</span>
+                                <i data-lucide="chevron-down"></i>
+                            </button>
+                        </h2>
+                    </div>
+                    <div id="collapseMain2" class="collapse" aria-labelledby="headingMain2" data-parent="#accordionMain">
+                        <div class="card-body">
+                            선택하신 농촌 체험장을 중심으로 반경 20km 내의 맛집, 관광지, 카페를 한국관광공사 및 공공데이터에서 찾아, 체험 장소에서 가까운 거리 순으로 하루 일정(09:00 체험 → 12:30 점심 → 15:00 관광 → 17:00 카페)을 자동 구성해 드립니다.<br><br>
+                            여행 조건을 선택하시면 고르신 우선순위에 따라 가중치를 적용해 최적의 장소를 우선 배치합니다.<br>
+                            완성된 일정은 코스 상세 화면에서 확인 후 <strong>'코스 저장'</strong>해 두거나 바로 <strong>'예약하러 가기'</strong>로 진행할 수 있습니다.
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header" id="headingMain3">
+                        <h2 class="mb-0">
+                            <button class="btn btn-link collapsed" type="button" data-toggle="collapse" data-target="#collapseMain3" aria-expanded="false" aria-controls="collapseMain3">
+                                <span>③ 맞춤 필터(여행 조건)는 어떻게 적용되나요?</span>
+                                <i data-lucide="chevron-down"></i>
+                            </button>
+                        </h2>
+                    </div>
+                    <div id="collapseMain3" class="collapse" aria-labelledby="headingMain3" data-parent="#accordionMain">
+                        <div class="card-body">
+                            희망 지역, 예산대, 반려견 동반(소·중·대형), 무장애 시설(휠체어·유아차 이동 가능), 주차 여부, 무농약·유기농 인증 등 실제 이용 조건에 맞는 농가를 선별해 보여줍니다.<br><br>
+                            설정하신 조건은 체험 농가뿐만 아니라 함께 추천되는 주변 식당·관광지 선정에도 반영됩니다.<br>
+                            편의시설 및 반려견 동반 정보는 농장주가 직접 입력한 등록 기준이며, 유기농 인증 농가는 관리자가 인증서 서류를 직접 검토해 승인한 곳입니다.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ============================================== -->
+        <!-- 2. 내 활동 -->
+        <!-- ============================================== -->
+        <div class="tab-pane fade" id="activity-screen" role="tabpanel" aria-labelledby="activity-tab">
+            
+            <div class="img-grid">
+                <img src="{{ url_for('static', filename='images/help/image02.png') }}" alt="내 활동 목록">
+                <img src="{{ url_for('static', filename='images/help/image03.png') }}" alt="저장된 코스 목록">
+            </div>
+            
+            <div class="help-desc">
+                <h5 class="mb-3 font-weight-bold"><i data-lucide="info" class="mr-2" style="color:var(--fl-icon-color);"></i>내 활동 주요 기능 안내</h5>
+                <ul>
+                    <li><strong>AI 코스 보기:</strong> 해당 여행지와 사용자에 맞는 여행 코스를 추천해 줍니다. 전체 일정 중 최근 체험을 기준으로 코스를 작성합니다.</li>
+                    <li><strong>레시피 보기:</strong> 농장주가 직접 올린 레시피에 한해 제공되며, 체험이 완료된 이후에 열람할 수 있습니다.</li>
+                    <li><strong>포인트:</strong> 결제 시 사용 가능하며, 결제 취소(환불) 시 포인트로 반환됩니다. 일반 결제 시 결제 금액의 0.3%가 포인트로 적립됩니다.</li>
+                    <li><strong>찜(관심 체험):</strong> 체험 상세 페이지에서 하트(찜) 아이콘을 눌러야 이 목록에 등록됩니다.</li>
+                    <li><strong>다가오는 체험:</strong> 현재 예약이 확정된 체험 중 날짜가 가장 가까운 일정이 표시됩니다.</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- ============================================== -->
+        <!-- 3. 오늘의 추천 코스 -->
+        <!-- ============================================== -->
+        <div class="tab-pane fade" id="recommend-screen" role="tabpanel" aria-labelledby="recommend-tab">
+            
+            <div class="help-image-container">
+                <img src="{{ url_for('static', filename='images/help/image04.png') }}" class="help-image" alt="오늘의 추천 코스">
+            </div>
+            
+            <div class="accordion" id="accordionRecommend">
+                <div class="card">
+                    <div class="card-header" id="headingRec1">
+                        <h2 class="mb-0">
+                            <button class="btn btn-link" type="button" data-toggle="collapse" data-target="#collapseRec1" aria-expanded="true" aria-controls="collapseRec1">
+                                <span>① 나에게 맞는 여행 코스는 어떤 기준으로 추천되나요?</span>
+                                <i data-lucide="chevron-down"></i>
+                            </button>
+                        </h2>
+                    </div>
+                    <div id="collapseRec1" class="collapse show" aria-labelledby="headingRec1" data-parent="#accordionRecommend">
+                        <div class="card-body">
+                            동일한 연령대와 성별(예: 20대 남성) 회원의 조회(클릭) 선호도, 이전에 신청하셨던 작물 이력, 현재 접속 위치를 종합하여 코스를 추천합니다. (브라우저 위치 권한을 허용하지 않은 경우 지역 특산물 여부와 잔여석 위주로 코스를 계산합니다.)<br><br>
+                            <strong>나와 비슷한 분들이 많이 봤어요:</strong> 동일 연령·성별 그룹의 회원들이 가장 많이 클릭하고 관심을 가진 인기 코스입니다.<br>
+                            <strong>이전에 신청한 작물이에요:</strong> 기존에 신청하셨던 작물과 이름이 일치하는 체험을 우선 매칭해 드립니다.
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header" id="headingRec2">
+                        <h2 class="mb-0">
+                            <button class="btn btn-link collapsed" type="button" data-toggle="collapse" data-target="#collapseRec2" aria-expanded="false" aria-controls="collapseRec2">
+                                <span>② 테마별 추천 코스(내 또래, 가볍게, 단체 등)의 차이는 무엇인가요?</span>
+                                <i data-lucide="chevron-down"></i>
+                            </button>
+                        </h2>
+                    </div>
+                    <div id="collapseRec2" class="collapse" aria-labelledby="headingRec2" data-parent="#accordionRecommend">
+                        <div class="card-body">
+                            각 테마 목적에 맞춘 데이터 점수를 기준으로 코스를 분류해 제안합니다.<br><br>
+                            <strong>지금 내 주변 추천:</strong> 현재 접속 위치 기준 직선거리, 지역 특산물 여부, 잔여석 여유 비율을 종합 반영하여 추천합니다.<br>
+                            <strong>내 또래 / 함께 가기 좋은 코스:</strong> 같은 나이대 또는 동일 성별 회원들이 자주 조회한 체험을 모았습니다.<br>
+                            <strong>가볍게 다녀오기 좋은 코스:</strong> 1인 체험 비용이 저렴하고 직선거리가 가까워 부담 없이 떠날 수 있는 코스입니다.<br>
+                            <strong>단체로 가기 좋은 코스:</strong> 예약 가능 잔여석이 여유롭고 주차 시설이 완비된 농장을 우선 추천합니다.
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header" id="headingRec3">
+                        <h2 class="mb-0">
+                            <button class="btn btn-link collapsed" type="button" data-toggle="collapse" data-target="#collapseRec3" aria-expanded="false" aria-controls="collapseRec3">
+                                <span>③ '코스 상세보기'와 '추천 교통수단'은 무엇인가요?</span>
+                                <i data-lucide="chevron-down"></i>
+                            </button>
+                        </h2>
+                    </div>
+                    <div id="collapseRec3" class="collapse" aria-labelledby="headingRec3" data-parent="#accordionRecommend">
+                        <div class="card-body">
+                            수확 체험을 중심으로 주변 식당, 관광지, 카페를 조화롭게 엮은 1일 일정표(체험-점심-관광-카페)를 제안합니다.<br><br>
+                            <strong>추천 자가용 / 대중교통:</strong> 해당 농장의 주차 공간 보유 여부에 따라 주차 시설이 있으면 '자가용', 주차장이 없으면 '대중교통'으로 자동 안내됩니다.<br>
+                            '코스 상세보기'를 누르면 제안된 동선과 주변 장소 정보를 한눈에 확인하고, 코스 저장 또는 예약 페이지로 이동할 수 있습니다.
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header" id="headingRec4">
+                        <h2 class="mb-0">
+                            <button class="btn btn-link collapsed" type="button" data-toggle="collapse" data-target="#collapseRec4" aria-expanded="false" aria-controls="collapseRec4">
+                                <span>④ 'ESG B' 뱃지와 친환경 인증 농장은 어떤 기준인가요?</span>
+                                <i data-lucide="chevron-down"></i>
+                            </button>
+                        </h2>
+                    </div>
+                    <div id="collapseRec4" class="collapse" aria-labelledby="headingRec4" data-parent="#accordionRecommend">
+                        <div class="card-body">
+                            팜링크 ESG 평가 기준(무농약 재배, 유기농 인증, 농가 일손/봉사 프로그램 운영, 무장애 편의시설, 주차 시설 등)에서 총점 60점 이상을 획득한 농가입니다.<br>
+                            유기농 인증 및 관련 증빙 서류는 관리자의 확인·승인을 거치며, 기준 점수를 충족한 농가에 공인 뱃지가 부여됩니다.
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header" id="headingRec5">
+                        <h2 class="mb-0">
+                            <button class="btn btn-link collapsed" type="button" data-toggle="collapse" data-target="#collapseRec5" aria-expanded="false" aria-controls="collapseRec5">
+                                <span>⑤ '저장된 코스'와 '방금 예약한 체험 코스'는 어떻게 쓰나요?</span>
+                                <i data-lucide="chevron-down"></i>
+                            </button>
+                        </h2>
+                    </div>
+                    <div id="collapseRec5" class="collapse" aria-labelledby="headingRec5" data-parent="#accordionRecommend">
+                        <div class="card-body">
+                            관심 있는 코스를 임시 보관하거나 선택한 체험 주변 일정을 빠르게 확인하는 영역입니다.<br><br>
+                            <strong>저장된 코스:</strong> 마음에 든 코스를 현재 브라우저에 저장해두고 열람할 수 있습니다. (브라우저 방문 기록을 삭제하거나 다른 기기·브라우저로 접속할 경우 초기화될 수 있습니다.)<br>
+                            <strong>방금 예약한 체험 코스:</strong> 선택하신 체험을 중심으로 주변 추천 식당과 명소가 조합된 하루 코스를 바로 확인하실 수 있습니다.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card mt-4 border-info">
+                    <div class="card-header bg-info text-white" id="headingFilter1">
+                        <h2 class="mb-0">
+                            <button class="btn btn-link text-white font-weight-bold" type="button" data-toggle="collapse" data-target="#collapseFilter1" aria-expanded="false" aria-controls="collapseFilter1">
+                                <span>상세 맞춤 필터 활용법 및 조건 설정 안내</span>
+                                <i data-lucide="chevron-down"></i>
+                            </button>
+                        </h2>
+                    </div>
+                    <div id="collapseFilter1" class="collapse show" aria-labelledby="headingFilter1" data-parent="#accordionRecommend">
+                        <div class="card-body">
+                            <div class="text-center mb-3">
+                                <img src="{{ url_for('static', filename='images/help/image05.png') }}" class="accordion-img" alt="상세 맞춤 필터">
+                            </div>
+                            <ul>
+                                <li class="mb-3">
+                                    <strong>'여행 조건 설정하기' 이용 방법:</strong><br>
+                                    희망하는 지역, 예산대, 반려견 동반 등 주요 조건을 설정하여 나에게 맞는 코스를 찾아보는 기능입니다. 좌측 메뉴에서 원하는 조건을 체크한 후 하단의 <strong>[이 조건으로 추천받기]</strong>를 누르면 조건이 반영된 코스 목록이 표시됩니다. 설정을 초기 상태로 되돌리려면 좌측 하단의 <strong>[초기화]</strong> 버튼을 누르시면 됩니다.
+                                </li>
+                                <li class="mb-3">
+                                    <strong>지역 및 복수 선택 기준:</strong><br>
+                                    원하시는 지역을 체크박스를 통해 복수로 선택하실 수 있습니다. 경기, 충남 등 '도' 단위 지역은 우측의 화살표(>)를 눌러 세부 시·군을 개별 선택하거나, 상단의 <strong>[전체]</strong>를 체크하여 해당 도 전체를 일괄 선택할 수 있습니다. 서울 및 광역시는 '광역시·특별시' 그룹에서 원하는 도시를 선택하시면 됩니다.
+                                </li>
+                                <li class="mb-3">
+                                    <strong>반려견 조건 기준:</strong><br>
+                                    농가에서 직접 등록한 반려견 동반 허용 여부와 입장 가능 체중 기준을 바탕으로 검색됩니다. 반려견의 크기(소형견~5kg / 중형견~15kg / 대형견~25kg) 조건을 선택하시면 해당 체급의 출입을 허용한 농장을 선별해 드립니다.
+                                </li>
+                                <li>
+                                    <strong>예산대 및 비용 산정 기준:</strong><br>
+                                    체험비뿐만 아니라 코스에 포함된 예상 식사비와 교통비를 합산한 1인당 코스 총비용 기준입니다. 식사 및 교통 경비는 평균 추정액이 반영된 수치이므로 실제 방문 시 주문 메뉴나 이동 경로에 따라 차이가 발생할 수 있습니다.
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ============================================== -->
+        <!-- 4. 추억 앨범 화면 -->
+        <!-- ============================================== -->
+        <div class="tab-pane fade" id="album-screen" role="tabpanel" aria-labelledby="album-tab">
+            
+            <div class="help-image-container">
+                <img src="{{ url_for('static', filename='images/help/image06.png') }}" class="help-image" alt="내 추억 앨범 메인">
+            </div>
+            
+            <div class="help-desc mb-4">
+                <h5 class="mb-3 font-weight-bold"><i data-lucide="book" class="mr-2" style="color:var(--fl-icon-color);"></i>앨범 기본 설정 안내</h5>
+                <div class="img-grid">
+                    <img src="{{ url_for('static', filename='images/help/image07.png') }}" alt="겉사진 레이아웃">
+                    <img src="{{ url_for('static', filename='images/help/image08.png') }}" alt="속지 스타일">
+                </div>
+                <ul>
+                    <li><strong>다녀온 체험 정보:</strong> 내가 다녀온 체험 목록 중에서 앨범으로 만들 체험을 선택할 수 있습니다.</li>
+                    <li><strong>앨범 모양:</strong> 세로, 가로, 정사각 모형 중 원하는 형태로 변경 가능합니다.</li>
+                    <li><strong>앨범 표지:</strong> 표지의 색상을 다양하게 선택할 수 있습니다.</li>
+                    <li><strong>겉사진 레이아웃:</strong> 앨범 앞 표지에 제목만 작성할지, 사진을 함께 넣을지 레이아웃을 선택할 수 있으며 사진은 자유롭게 이동 가능합니다.</li>
+                    <li><strong>속지 스타일:</strong> 앨범 내 페이지의 바탕 색상을 변경할 수 있습니다.</li>
+                </ul>
+            </div>
+
+            <div class="accordion" id="accordionAlbum">
+                <div class="card">
+                    <div class="card-header" id="headingAlbum1">
+                        <h2 class="mb-0">
+                            <button class="btn btn-link" type="button" data-toggle="collapse" data-target="#collapseAlbum1" aria-expanded="true" aria-controls="collapseAlbum1">
+                                <span>사진 배치 및 레이아웃 적용 방법</span>
+                                <i data-lucide="chevron-down"></i>
+                            </button>
+                        </h2>
+                    </div>
+                    <div id="collapseAlbum1" class="collapse show" aria-labelledby="headingAlbum1" data-parent="#accordionAlbum">
+                        <div class="card-body">
+                            <img src="{{ url_for('static', filename='images/help/image09.png') }}" class="accordion-img" alt="사진 배치 레이아웃">
+                            앨범 페이지를 선택하고 <strong>'사진 배치'</strong>를 적용하면 자동으로 앨범 규격에 맞게 이미지 레이아웃이 생성됩니다. 이미지는 중앙 연결 파노라마 형태로 기본 설정됩니다.<br><br>
+                            페이지를 클릭했을 때 주변에 <strong>녹색 테두리</strong>가 나타나는 부분에 레이아웃이 적용되며, 펼친 두 페이지를 모두 선택하여 사용할 경우 양쪽 모두에 레이아웃이 적용됩니다.<br><br>
+                            
+                            <div class="img-grid mt-3">
+                                <img src="{{ url_for('static', filename='images/help/image12.png') }}" alt="사진 적용">
+                                <img src="{{ url_for('static', filename='images/help/image13.png') }}" alt="사진 회전">
+                                <img src="{{ url_for('static', filename='images/help/image14.png') }}" alt="사진 크기 조절">
+                            </div>
+                            적용된 레이아웃 안의 사진 영역을 선택하면 등록한 사진이 자동으로 들어가며, 사진을 추가로 드래그하여 넣으면 자유 레이아웃 형태로 추가됩니다. 앨범에 추가된 모든 사진은 크기 조절, 회전, 모양 변경이 가능합니다.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header" id="headingAlbum2">
+                        <h2 class="mb-0">
+                            <button class="btn btn-link collapsed" type="button" data-toggle="collapse" data-target="#collapseAlbum2" aria-expanded="false" aria-controls="collapseAlbum2">
+                                <span>사진 업로드 및 전문가 사진 검색</span>
+                                <i data-lucide="chevron-down"></i>
+                            </button>
+                        </h2>
+                    </div>
+                    <div id="collapseAlbum2" class="collapse" aria-labelledby="headingAlbum2" data-parent="#accordionAlbum">
+                        <div class="card-body">
+                            <div class="img-grid">
+                                <img src="{{ url_for('static', filename='images/help/image10.png') }}" alt="사진 업로드">
+                                <img src="{{ url_for('static', filename='images/help/image11.png') }}" alt="전문가 사진 검색">
+                            </div>
+                            <strong>사진 업로드:</strong> 기기에 저장된 사진을 직접 업로드할 수 있으며, 최대 50장까지 사용 가능합니다.<br>
+                            '전체 삭제'를 누르면 업로드한 사진 목록을 일괄 삭제할 수 있고, 사진 우측 상단의 'X' 버튼을 눌러 개별 삭제도 가능합니다. (단, 이미 앨범 편집 영역에 적용된 사진은 목록에서 삭제되지 않습니다.)<br><br>
+                            <strong>주변 명소 전문가 사진:</strong> 선택한 농촌 체험의 주소를 기반으로 시/구/면 단위 명소 사진을 자동으로 검색해 제공합니다. <br>
+                            직접 검색 시에는 상세 주소 대신 '독립기념관'과 같이 명확한 명칭 키워드로 검색해야 결과가 나타납니다. '사진 더보기'를 누르면 한국관광공사(포토코리아)에서 제공하는 해당 지역의 추가 이미지들을 불러옵니다.
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header" id="headingAlbum3">
+                        <h2 class="mb-0">
+                            <button class="btn btn-link collapsed" type="button" data-toggle="collapse" data-target="#collapseAlbum3" aria-expanded="false" aria-controls="collapseAlbum3">
+                                <span>텍스트(글상자) 추가 및 편집</span>
+                                <i data-lucide="chevron-down"></i>
+                            </button>
+                        </h2>
+                    </div>
+                    <div id="collapseAlbum3" class="collapse" aria-labelledby="headingAlbum3" data-parent="#accordionAlbum">
+                        <div class="card-body">
+                            <div class="text-center">
+                                <img src="{{ url_for('static', filename='images/help/image15.png') }}" class="accordion-img" alt="텍스트 추가">
+                            </div>
+                            '텍스트 상자 추가' 버튼을 누르면 화면에 글상자가 생성됩니다. 글상자를 더블클릭하여 내용을 입력할 수 있고, 선택 시 나타나는 주변 UI 핸들을 조절해 상자의 크기와 회전 각도를 변경할 수 있습니다.<br><br>
+                            
+                            <div class="img-grid">
+                                <img src="{{ url_for('static', filename='images/help/image16.png') }}" alt="텍스트 편집 팔레트">
+                                <img src="{{ url_for('static', filename='images/help/image17.png') }}" alt="텍스트 색상 적용">
+                            </div>
+                            좌측 텍스트 편집 패널에서 <strong>글꼴, 크기, 스타일(굵기 등), 정렬 방식, 레이어 순서, 글자 색, 글상자 배경색</strong> 등을 상세하게 수정할 수 있습니다.<br>
+                            '새로 쓰기'를 클릭하면 글상자 설정이 초기화됩니다. 색상 선택 시 무지개 아이콘을 클릭하면 팔레트에서 마우스로 색상을 직접 고르거나 HEX 코드(예: #FFFFFF)를 입력하여 원하는 색상을 정확히 적용할 수 있습니다.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header" id="headingAlbum4">
+                        <h2 class="mb-0">
+                            <button class="btn btn-link collapsed" type="button" data-toggle="collapse" data-target="#collapseAlbum4" aria-expanded="false" aria-controls="collapseAlbum4">
+                                <span>추억 앨범 완성 및 공유 옵션</span>
+                                <i data-lucide="chevron-down"></i>
+                            </button>
+                        </h2>
+                    </div>
+                    <div id="collapseAlbum4" class="collapse" aria-labelledby="headingAlbum4" data-parent="#accordionAlbum">
+                        <div class="card-body">
+                            <div class="text-center">
+                                <img src="{{ url_for('static', filename='images/help/image18.png') }}" class="accordion-img" alt="앨범 완성 및 공유">
+                            </div>
+                            편집을 마치고 우측 상단의 <strong>'앨범 완성하기'</strong> 버튼을 클릭하면 최종 앨범을 미리 볼 수 있는 창이 나타납니다. 여기서 원하는 저장/공유 방식을 선택할 수 있습니다.<br><br>
+                            <ul>
+                                <li><strong>나만 보기 / 내 앨범 보관함에 저장하기:</strong> 완성된 앨범이 마이페이지의 '내 추억 앨범' 목록에 저장되며 본인만 열람할 수 있습니다.</li>
+                                <li><strong>추억 광장 공유:</strong> 커뮤니티의 '추억 공유' 게시판에 앨범이 등록되어 다른 사용자들과 여행 기록을 함께 나눌 수 있습니다.</li>
+                                <li><strong>고화질 PDF 다운:</strong> 제작한 앨범을 인쇄 가능한 고품질 PDF 파일 형식으로 기기에 다운로드합니다.</li>
+                                <li><strong>공유 링크 복사:</strong> 내가 만든 앨범을 웹에서 바로 확인할 수 있는 URL 주소를 복사하여 메신저 등으로 지인에게 공유할 수 있습니다.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+        
+    </div>
+</div>
+{% endblock %}

@@ -2153,6 +2153,22 @@
         initShapeContextBar();
         if (window.lucide) lucide.createIcons();
         window.addEventListener('resize', renderBookView);
+        // 서버 앨범 목록과 동기화: 다른 계정의 앨범이 같은 PC의 localStorage에 남아있을 경우 제거
+        fetch('/api/albums')
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (!data.success) return;
+                var serverIds = new Set(data.albums.map(function(a) { return String(a.id); }));
+                var local = getAllAlbums();
+                var filtered = local.filter(function(a) {
+                    return !a.serverId || serverIds.has(String(a.serverId));
+                });
+                if (filtered.length !== local.length) {
+                    saveAllAlbums(filtered);
+                    renderAlbumList();
+                }
+            })
+            .catch(function() {});
     });
 
     function clearElementSelection() {
@@ -3417,7 +3433,10 @@
                 let targetPageIdx = pageIdx;
                 let targetCanvas = (pageIdx === leftPageIndex) ? leftCanvas : rightCanvas;
 
-                if (pageIdx === leftPageIndex && elemCenterX >= rightRect.left) {
+                const leftTpl = albumPagesData[leftPageIndex]?.template || 'free';
+                const isFullSpread = (leftTpl === 'fullSpread');
+
+                if (!isFullSpread && pageIdx === leftPageIndex && elemCenterX >= rightRect.left) {
                     targetPageIdx = rightPageIndex;
                     targetCanvas = rightCanvas;
                 }

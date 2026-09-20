@@ -123,11 +123,11 @@
     transform: scale(1.04) rotate(-1deg);
 }
 
-/* 겉표지 테마 색상 */
-.mini-cover-preview.cover-green { background: linear-gradient(135deg, #1b4332, #2d6a4f); color: #d8f3dc; }
-.mini-cover-preview.cover-leather { background: linear-gradient(135deg, #4a2810, #78350f); color: #fef3c7; }
-.mini-cover-preview.cover-linen { background: linear-gradient(135deg, #d97706, #f59e0b); color: #fffbeb; }
-.mini-cover-preview.cover-navy { background: linear-gradient(135deg, #0f172a, #1e3a8a); color: #e0e7ff; }
+/* 겉표지 테마 색상 — album_create.html COVER_COLORS 기준으로 통일 */
+.mini-cover-preview.cover-green { background: #4CAF50; color: #ffffff; }
+.mini-cover-preview.cover-leather { background: #8B5E3C; color: #fef3c7; }
+.mini-cover-preview.cover-linen { background: #E8B89A; color: #4E342E; }
+.mini-cover-preview.cover-navy { background: #1a2d5a; color: #e0e7ff; }
 
 .mini-cover-preview i { font-size: 2rem; margin-bottom: 8px; opacity: 0.9; }
 .mini-cover-preview .mini-title { font-size: 0.85rem; font-weight: 700; line-height: 1.3; word-break: keep-all; }
@@ -483,7 +483,7 @@
             card.innerHTML = `
                 <div class="album-card-thumb">
                     <div class="mini-cover-preview ${album.cover_theme || 'cover-green'}">
-                        <i class="fa-solid fa-camera-retro"></i>
+                        <i class="fa-solid fa-book-open"></i>
                         <span class="mini-title">${escapeHtml(album.title || '추억 앨범')}</span>
                     </div>
                 </div>
@@ -644,7 +644,7 @@
             book.innerHTML = `
                 <div class="book-page single-page book-cover-page d-flex flex-column align-items-center justify-content-center p-4">
                     <div class="cover-emboss-border text-center p-4 w-100 h-100 d-flex flex-column align-items-center justify-content-center">
-                        <i class="fa-solid fa-camera-retro fa-4x mb-3 text-gold"></i>
+                        <i class="fa-solid fa-book-open fa-4x mb-3 text-gold"></i>
                         <h3 class="font-weight-bold text-gold mb-3">${escapeHtml(viewerAlbumData.title || '추억 앨범')}</h3>
                         <p class="small text-gold mb-0">FarmLink Memory Photo Book</p>
                     </div>

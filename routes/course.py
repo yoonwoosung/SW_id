@@ -3,10 +3,12 @@ from flask import request
 
 from models import Experience
 from common.response import success_response, error_response
-from common.constants import COURSE_SEARCH_RADIUS_M, MAX_SEARCH_RADIUS_M, COURSE_SLOTS
+from common.constants import (COURSE_SEARCH_RADIUS_M, MAX_SEARCH_RADIUS_M, COURSE_SLOTS,
+                              TOUR_CSV_RADIUS_M)
 from common.search_categories import LEAF_CODES
 from external import tour_api
 from external import chungnam_api
+from external import tour_csv
 from external import barrier_free_api
 from external import pet_travel_api
 from services import course_builder
@@ -17,16 +19,31 @@ from services.thumbnail_service import experience_thumbnail_url
 
 
 def _fetch_places(experience, content_type, add_chungnam=False):
-    """관광공사에서 주변 장소를 가져오고, 충남 체험이면 도 데이터로 보강한다.
+    """관광공사에서 주변 장소를 가져오고, 공공데이터로 보강한다.
 
     관광공사 호출은 그대로 유지한다(대회 필수 요건이라 호출 기록이 남아야 한다).
-    충남 호출이 실패하면 빈 리스트가 와서 관광공사 결과만 남으므로,
+    보강이 실패하면 빈 리스트가 와서 관광공사 결과만 남으므로,
     기존 코스 생성은 어느 경우에도 그대로 동작한다.
+
+    보강 소스 두 가지
+      1. 관광지정보 표준데이터 CSV — ★전국★. 관광 슬롯(관광지)에만 더한다.
+      2. 충남 올담 API — 충남 체험에만. 서버 점검 중이라 지금은 늘 빈 리스트다.
     """
     # 기본 반경으로 조회하고, 비면 최대 반경으로 한 번 더 시도(시골 농장 대응).
     places = tour_api.find_nearby_places(experience.lat, experience.lng, COURSE_SEARCH_RADIUS_M, content_type)
     if not places:
         places = tour_api.find_nearby_places(experience.lat, experience.lng, MAX_SEARCH_RADIUS_M, content_type)
+
+    # CSV 보강: 전국 데이터라 지역을 가리지 않는다. 충남으로 묶으면 오히려
+    # 커버리지가 가장 낮은 지역만 쓰게 된다(충남 43건 vs 전남 205건).
+    # CSV 는 전부 관광지라 content_type 이 다르면 알아서 빈 리스트를 준다.
+    try:
+        from_csv = tour_csv.find_nearby_places(
+            experience.lat, experience.lng, TOUR_CSV_RADIUS_M, content_type)
+        if from_csv:
+            places = place_merge.merge(places, from_csv)
+    except Exception:
+        pass      # 보강은 '있으면 좋은 것'이다. 실패해도 관광공사 결과로 코스를 만든다
 
     if not add_chungnam:
         return places

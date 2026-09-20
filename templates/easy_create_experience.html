@@ -169,7 +169,7 @@
                             <p id="surplus-capacity" class="text-muted mb-3">—</p>
 
                             <label for="surplus_reason" class="option-title d-block mb-2">할인 사유 <span class="text-danger">*</span></label>
-                            {% set _presets = ['과잉생산', '못난이', '수확임박', '규격외'] %}
+                            {% set _presets = ['잉여', '못난이', '수확임박', '규격외'] %}
                             {% set _saved = form_data.get('surplus_reason') or (item.surplus_reason if item else None) %}
                             {% set _is_etc = _saved and _saved not in _presets %}
                             <select class="form-control mb-2" name="surplus_reason" id="surplus_reason"

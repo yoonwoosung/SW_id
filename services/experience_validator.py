@@ -25,10 +25,10 @@ SURPLUS_MAX_QTY = 100000          # 총 수량 상한(오입력 방지)
 SURPLUS_MAX_PER_PERSON = 1000     # 1인당 수확량 상한
 
 # 할인 사유. 리본에 "사유 + 할인율"로 찍히므로 짧아야 한다.
-SURPLUS_REASONS = ('과잉생산', '못난이', '수확임박', '규격외')
+SURPLUS_REASONS = ('잉여', '못난이', '수확임박', '규격외')
 # 사유가 없는 체험(사유 컬럼이 생기기 전에 등록된 건)의 리본 기본 문구.
 # 할인율만 '90%' 라고 띄우면 무엇이 90% 인지 알 수 없어 탭 이름과 같은 말을 쓴다.
-SURPLUS_RIBBON_DEFAULT_REASON = '과생산'
+SURPLUS_RIBBON_DEFAULT_REASON = '잉여'
 SURPLUS_REASON_ETC = '기타'
 SURPLUS_REASON_MAX_LEN = 6        # '기타' 자유 입력 상한. 리본 폭이 한계다.
 

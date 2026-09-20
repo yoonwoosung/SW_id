@@ -1,7 +1,8 @@
 # services/category_match.py — 사용자가 고른 조건과 체험의 대분류별 일치 여부를 판정한다(순수 함수).
 # ★규칙: 한 대분류 안에서 선택값 중 하나라도 맞으면(OR) 그 대분류는 '충족' 1회로 친다(중복 가산 없음).★
 # 추천 가점(recommend_service)과 역제안 매칭(match_service)이 함께 재사용한다.
-from common.search_categories import REGION_ADDRESS_KEYWORDS, BUDGET_RANGES, PET_WEIGHT_MIN_KG
+from common.search_categories import (REGION_ADDRESS_KEYWORDS, BUDGET_RANGES,
+                                      PET_WEIGHT_MIN_KG, OTHER_SUFFIX)
 from services.course_builder import estimate_course_cost_per_person
 
 
@@ -30,10 +31,26 @@ def compute_category_match(conditions, experience):
     return len(matched_categories(conditions, experience))
 
 
+REGION_OTHER = "region" + OTHER_SUFFIX
+PET_OTHER = "pet_dog" + OTHER_SUFFIX
+
+# 지역 판정에 쓰는 전체 키워드(어느 지역에도 안 걸리는지 볼 때 쓴다).
+_ALL_REGION_KEYWORDS = tuple(
+    keyword for keywords in REGION_ADDRESS_KEYWORDS.values() for keyword in keywords
+)
+
+
 def _has_region(selected, experience):
     if not selected:
         return False
     address = experience.address_detail or ""
+
+    # '기타' = 주소는 있는데 어떤 시도·시군에도 걸리지 않는 체험.
+    # ★주소가 비어 있으면 제외한다★ — 값이 없는 것과 목록 밖인 것은 다르다.
+    if REGION_OTHER in selected and address.strip():
+        if not any(keyword in address for keyword in _ALL_REGION_KEYWORDS):
+            return True
+
     return any(
         keyword in address
         for code in selected
@@ -110,7 +127,13 @@ def _has_pet(selected, experience):
     # 몸무게 티어: 체험이 그 몸무게 이상 허용하면 충족.
     allowed_kg = getattr(experience, "pet_max_weight_kg", None)
     if allowed_kg is None:
-        return False
+        return False      # 값이 없으면 '기타'도 아니다(목록 밖이 아니라 미입력이다)
+
+    # '기타' = 동반가능인데 허용 몸무게가 어떤 티어에도 못 미치는 경우(1~4kg).
+    # 소형견만 받는 농장이 여기 걸린다.
+    if PET_OTHER in selected and allowed_kg < min(PET_WEIGHT_MIN_KG.values()):
+        return True
+
     return any(
         PET_WEIGHT_MIN_KG.get(code) is not None and allowed_kg >= PET_WEIGHT_MIN_KG[code]
         for code in selected

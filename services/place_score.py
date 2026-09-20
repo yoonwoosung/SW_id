@@ -8,6 +8,7 @@
 # 기존 코스 생성을 깨뜨리지 않는 것이 이 모듈의 첫 번째 규칙이다.
 from common.constants import (  # noqa: F401  (COURSE_RULE_* 는 routes/course 가 재사용)
     COURSE_CONDITION_WEIGHTS,
+    COURSE_OTHER_SIBLINGS,
     COURSE_CONDITION_TAIL_WEIGHT,
     COURSE_PLACE_RULES,
     COURSE_RULE_BARRIER_FREE,
@@ -28,6 +29,8 @@ def judgeable(code, api_sets=None):
     가중치를 차지한 채 아무 일도 하지 않으면 다른 조건의 몫을 훔치게 된다.
     """
     if code in COURSE_PLACE_RULES or code in COURSE_SEASON_KEYWORDS:
+        return True
+    if code in COURSE_OTHER_SIBLINGS:
         return True
     if code in _API_RULES:
         return bool((api_sets or {}).get(code))
@@ -88,6 +91,11 @@ def _place_key(place):
 
 def matches(place, code, api_sets=None):
     """장소 하나가 조건 하나를 충족하는가."""
+    siblings = COURSE_OTHER_SIBLINGS.get(code)
+    if siblings is not None:
+        # '기타' = 같은 대분류의 다른 선택지 어디에도 걸리지 않는 장소.
+        # 범위가 넓어 후보의 상당수가 걸린다. "정해진 성격이 아닌 곳"을 고르는 뜻이다.
+        return not any(matches(place, sibling, api_sets) for sibling in siblings)
     if code in _API_RULES:
         names = (api_sets or {}).get(code) or set()
         return _place_key(place) in names

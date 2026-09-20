@@ -177,6 +177,16 @@ COURSE_PLACE_RULES = {
 COURSE_RULE_BARRIER_FREE = "barrier_free"
 COURSE_RULE_PET = frozenset({"pet_allowed", "dog_small", "dog_medium", "dog_large"})
 
+# '기타'가 어느 선택지들의 여집합인지. 셋 중 아무것도 충족하지 않으면 '기타'다.
+# 예: 분위기 기타 = A01(힐링)·A03(액티브)·A0201(전통)·A0202(인생샷)·A0206(교육) 밖의 장소.
+# 지역·반려견은 장소가 아니라 체험 속성이라 여기 없다(services/category_match 가 본다).
+COURSE_OTHER_SIBLINGS = {
+    "experience_type_other": ("harvest", "food", "craft", "animal", "nature"),
+    "mood_other":            ("healing", "active", "photo", "educational", "tradition"),
+    "season_other":          ("spring_strawberry", "summer_blueberry",
+                              "autumn_harvest", "winter_experience"),
+}
+
 # 계절·제철은 분류 코드가 없어 장소 이름 키워드로 본다.
 COURSE_SEASON_KEYWORDS = {
     "spring_strawberry": ("딸기", "봄"),

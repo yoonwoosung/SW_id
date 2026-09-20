@@ -25,6 +25,9 @@ from services.esg_service import compute_esg
 # 반려견 코드만 추린다(자세한 이유는 그 함수 주석).
 JUDGEABLE_CATEGORIES = frozenset({
     'region', 'budget_range', 'facility', 'companion_type', 'transport',
+    # 2026-09-20: 체험명·설명 키워드로 판정할 수 있게 돼 다시 넣었다.
+    # (activity_type 컬럼이 채워지면 그쪽이 우선한다 — category_match._has_activity)
+    'activity',
 })
 
 

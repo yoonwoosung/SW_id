@@ -3,6 +3,7 @@
 # 추천 가점(recommend_service)과 역제안 매칭(match_service)이 함께 재사용한다.
 from common.search_categories import (REGION_ADDRESS_KEYWORDS, BUDGET_RANGES,
                                       PET_WEIGHT_MIN_KG, OTHER_SUFFIX)
+from common.constants import EXPERIENCE_ACTIVITY_KEYWORDS
 from services.course_builder import estimate_course_cost_per_person
 
 
@@ -92,10 +93,30 @@ def _has_facility(selected, experience):
 
 
 def _has_activity(selected, experience):
+    """체험의 액티비티 종류를 판정한다.
+
+    ★activity_type 컬럼이 있으면 그것을 우선한다.★ 등록 폼에 드롭다운이
+    생기면 아래 키워드 폴백은 저절로 쓰이지 않는다.
+
+    지금은 저장하는 코드가 없어 모든 체험이 NULL 이라, 체험명·설명에서
+    키워드를 찾는다. 하나도 없으면 판정하지 않는다 — 억지로 맞히지 않는다.
+    """
     if not selected:
         return False
+
     activity = getattr(experience, "activity_type", None)
-    return bool(activity) and activity in selected
+    if activity:
+        return activity in selected
+
+    text = " ".join(str(getattr(experience, field, "") or "")
+                    for field in ("crop", "notes"))
+    if not text.strip():
+        return False
+    return any(
+        word in text
+        for code in selected
+        for word in EXPERIENCE_ACTIVITY_KEYWORDS.get(code, ())
+    )
 
 
 # 반려견은 2026-09-20 리팩터로 'pet_dog' 대분류에서 '동반유형(companion_type)'

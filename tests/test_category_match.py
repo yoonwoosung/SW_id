@@ -248,3 +248,54 @@ def test_pet_selection_helper():
     assert pet_selection(["solo", "dog_medium", "party_1"]) == ["dog_medium"]
     assert pet_selection(["solo"]) == []
     assert pet_selection(None) == []
+
+
+# ======================================================================
+# 액티비티 — 체험 목록 필터 (2026-09-20)
+# ======================================================================
+#
+# activity_type 컬럼은 있으나 저장하는 코드가 없어 모든 체험이 NULL 이다.
+# 체험명·설명 키워드로 판정하되, ★컬럼이 채워지면 그쪽이 우선★ 한다.
+
+class ActivityExp(FakeExperience):
+    def __init__(self, crop='', notes='', activity_type=None):
+        super().__init__(address_detail='충남 논산시')
+        self.crop = crop
+        self.notes = notes
+        self.activity_type = activity_type
+
+
+@pytest.mark.parametrize('crop,notes,code', [
+    ('승마 체험', '', 'horse_riding'),
+    ('딸기 따기', '인근 낚시터 이용 가능', 'fishing'),
+    ('포도 수확', '둘레길 산책 포함', 'hiking'),
+    ('카누 체험', '', 'kayak'),
+    ('자전거 투어', '', 'cycling'),
+])
+def test_keyword_found_in_name_or_notes(crop, notes, code):
+    assert compute_category_match({'activity': [code]}, ActivityExp(crop, notes)) == 1
+
+
+def test_no_keyword_is_not_judged():
+    """★억지로 맞히지 않는다.★ 키워드가 없으면 그 체험은 걸러진다."""
+    assert compute_category_match({'activity': ['horse_riding']}, ActivityExp('사과 따기')) == 0
+
+
+def test_empty_text_is_not_judged():
+    assert compute_category_match({'activity': ['fishing']}, ActivityExp('', '')) == 0
+
+
+def test_column_takes_priority_over_keywords():
+    """★activity_type 이 있으면 그것을 쓴다.★
+
+    등록 폼에 드롭다운이 생기면 키워드 폴백은 저절로 쓰이지 않는다.
+    """
+    # 이름에는 '승마'가 있지만 컬럼은 kayak — 컬럼이 이긴다
+    exp = ActivityExp('승마 체험', '', activity_type='kayak')
+    assert compute_category_match({'activity': ['horse_riding']}, exp) == 0
+    assert compute_category_match({'activity': ['kayak']}, exp) == 1
+
+
+def test_activity_is_an_experience_filter_again():
+    from services.eco_filter import JUDGEABLE_CATEGORIES
+    assert 'activity' in JUDGEABLE_CATEGORIES

@@ -75,15 +75,15 @@ def test_dead_category_is_hidden(code):
     assert code not in _top(visible_categories()), code
 
 
-def test_activity_visible_but_not_an_experience_filter():
-    """액티비티는 ★코스 장소★ 판정에만 쓴다.
+def test_activity_filters_both_list_and_course():
+    """액티비티는 코스 장소(카카오)와 체험 목록(키워드) 양쪽에 반영된다.
 
-    화면에는 보이지만 JUDGEABLE_CATEGORIES 에는 넣지 않는다.
-    activity_type 컬럼을 저장하는 코드가 없어 모든 체험이 NULL 이라,
-    넣으면 고르는 순간 체험 목록이 0건이 된다.
+    한동안 코스에만 반영됐다 — activity_type 컬럼을 저장하는 코드가 없어
+    모든 체험이 NULL 이라 목록 필터로 쓰면 0건이 됐기 때문이다.
+    2026-09-20 에 체험명·설명 키워드 판정을 붙여 양쪽 모두 동작한다.
     """
     assert 'activity' in _top(visible_categories())
-    assert 'activity' not in JUDGEABLE_CATEGORIES
+    assert 'activity' in JUDGEABLE_CATEGORIES
 
 
 def test_no_empty_category_on_screen():

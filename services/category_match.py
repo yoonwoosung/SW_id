@@ -3,7 +3,7 @@
 # 추천 가점(recommend_service)과 역제안 매칭(match_service)이 함께 재사용한다.
 from common.search_categories import (REGION_ADDRESS_KEYWORDS, BUDGET_RANGES,
                                       PET_WEIGHT_MIN_KG, OTHER_SUFFIX)
-from common.constants import EXPERIENCE_ACTIVITY_KEYWORDS
+from common.constants import EXPERIENCE_ACTIVITY_KEYWORDS, ORGANIC_APPROVED_STATUS
 from services.course_builder import estimate_course_cost_per_person
 
 
@@ -73,6 +73,21 @@ def _has_budget(selected, experience):
     return False
 
 
+def is_organic_approved(experience):
+    """유기농 인증이 ★관리자 승인까지 끝났는지.★
+
+    예전에는 organic_certification_type 값이 있기만 하면 인정했다. 그래서
+    같은 '유기농인증'인데 화면마다 결과가 달랐다(실측: 메인 2건, 추천 5건).
+    추천 쪽이 심사 전·반려된 인증까지 세고 있었다.
+
+    "농장주 자기신고가 아니라 관리자 심사"라고 안내해 왔으므로 승인된 것만
+    인정한다. 메인 페이지 필터(organic_cert_status == 'APPROVED')와 같은 기준이다.
+    """
+    if experience is None:
+        return False
+    return getattr(experience, "organic_cert_status", None) == ORGANIC_APPROVED_STATUS
+
+
 def _has_facility(selected, experience):
     if not selected:
         return False
@@ -83,7 +98,7 @@ def _has_facility(selected, experience):
             return True
         if code == "pesticide_free" and getattr(experience, "pesticide_free", False):
             return True
-        if code == "organic" and getattr(experience, "organic_certification_type", None):
+        if code == "organic" and is_organic_approved(experience):
             return True
         if code == "barrier_free" and getattr(experience, "barrier_free", False):
             return True

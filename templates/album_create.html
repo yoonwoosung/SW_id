@@ -1863,9 +1863,10 @@
                     + '<i class="fa-solid fa-book-open" style="font-size:2rem;"></i>'
                     + '<span>' + esc(album.title || '제목 없음') + '</span>'
                     + '</div>'
-                    + '<div style="padding:12px 14px;">'
+                var publicBadge = album.isPublic ? '<span style="color:#2e7d32; font-size:0.75rem; font-weight:700; margin-left:6px;">(전체공유됨)</span>' : '';
+                + '<div style="padding:12px 14px;">'
                     + '<div style="font-weight:800;font-size:.95rem;color:#253027;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'
-                    + esc(album.title || '제목 없음') + '</div>'
+                    + esc(album.title || '제목 없음') + publicBadge + '</div>'
                     + '<div style="font-size:.78rem;color:#9aa39c;margin-bottom:12px;">' + dateStr + ' 수정</div>'
                     + '<div style="display:flex;gap:8px;">'
                     + '<button onclick="openAlbumViewer(\'' + album.id + '\')" '
@@ -2020,9 +2021,25 @@
     }
 
     function deleteAlbum(id) {
-        if (!confirm('앨범을 삭제할까요? 이 작업은 되돌릴 수 없어요.')) return;
-        var albums = getAllAlbums().filter(function (a) { return a.id !== id; });
-        saveAllAlbums(albums);
+        if (!confirm('앨범을 삭제할까요? 이 작업은 되돌릴 수 없어요. (전체 공유된 앨범인 경우 공유 광장에서도 삭제됩니다.)')) return;
+
+        var albums = getAllAlbums();
+        var albumToDelete = albums.find(function (a) { return a.id === id; });
+
+        // 1. 서버에 저장된 앨범(serverId가 존재)이면 서버에도 삭제 요청 전송
+        if (albumToDelete && albumToDelete.serverId) {
+            fetch('/api/albums/' + albumToDelete.serverId, {
+                method: 'DELETE'
+            }).then(res => res.json()).then(data => {
+                if (!data.success) {
+                    console.error('서버 앨범 삭제 실패:', data.message);
+                }
+            }).catch(err => console.error('삭제 API 에러:', err));
+        }
+
+        // 2. 로컬 스토리지(내 보관함)에서 삭제 및 화면 갱신
+        var updatedAlbums = albums.filter(function (a) { return a.id !== id; });
+        saveAllAlbums(updatedAlbums);
         renderAlbumList();
         if (window.lucide) lucide.createIcons();
     }

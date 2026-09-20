@@ -158,6 +158,24 @@ def score_place(place, weights, api_sets=None):
     return sum(w for code, w in weights.items() if matches(place, code, api_sets))
 
 
+def usable_codes(selected_codes, api_sets=None):
+    """고른 조건 중 ★실제로 장소 판정에 쓰이는★ 것만 순서대로."""
+    return [code for code in (selected_codes or []) if judgeable(code, api_sets)]
+
+
+def applied_weights(selected_codes, api_sets=None):
+    """조건별 반영 비율(%). 화면에 '무엇이 얼마나 반영됐는지' 보여줄 때 쓴다.
+
+    판정 불가 조건은 빠지고 남은 것끼리 다시 나눈 뒤의 값이라,
+    사용자가 보는 숫자와 실제 계산이 같다.
+    """
+    usable = usable_codes(selected_codes, api_sets)
+    if not usable:
+        return {}
+    return {code: round(weight * 100, 1)
+            for code, weight in ordered_weights(usable).items()}
+
+
 def build_scorer(selected_codes, api_sets=None):
     """조건 코드 목록(고른 순서)으로 장소 점수 함수를 만든다.
 

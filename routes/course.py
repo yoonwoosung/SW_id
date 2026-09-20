@@ -5,7 +5,8 @@ from models import Experience
 from common.response import success_response, error_response
 from common.constants import (COURSE_SEARCH_RADIUS_M, MAX_SEARCH_RADIUS_M, COURSE_SLOTS,
                               TOUR_CSV_RADIUS_M)
-from common.search_categories import ALL_CODES
+from common.search_categories import ALL_CODES, CATEGORY_OF_CODE, LABEL_BY_CODE
+from services.eco_filter import JUDGEABLE_CATEGORIES
 from external import tour_api
 from external import chungnam_api
 from external import tour_csv
@@ -235,7 +236,7 @@ def _build_scorer(experience, codes, activity_names=None, pet_names=None,
     place_score 가 그 조건을 판정 불가로 빼 남은 조건끼리 가중치를 다시 나눈다.
     """
     if not codes:
-        return None
+        return None, {}
 
     barrier_free = []
     try:
@@ -254,9 +255,59 @@ def _build_scorer(experience, codes, activity_names=None, pet_names=None,
         for code, names in pet_sets.items():
             if names:
                 api_sets[code] = names
-        return place_score.build_scorer(codes, api_sets)
+        return place_score.build_scorer(codes, api_sets), api_sets
     except Exception:
-        return None      # 점수 계산이 어떤 이유로든 실패하면 기존 코스 생성을 지킨다
+        return None, {}   # 점수 계산이 어떤 이유로든 실패하면 기존 코스 생성을 지킨다
+
+
+# 코스 장소에는 반영되지 않는 조건을 왜 그런지 설명한다.
+# ★조용히 무시하면 "조건을 걸었는데 안 바뀐다"로만 보인다.★
+_IGNORED_REASON = {
+    "budget_range": "체험 목록에만 적용됩니다",
+    "companion_type": "아직 코스 장소에 반영되지 않습니다",
+    "schedule": "아직 반영되지 않습니다",
+    "duration_hours": "아직 반영되지 않습니다",
+}
+# 코스 장소에만 반영되고 ★체험 목록은 거르지 못하는★ 대분류.
+# (activity_type 컬럼을 저장하는 코드가 없어 체험은 전부 NULL 이다)
+_COURSE_ONLY = {"activity", "experience_type", "mood", "season"}
+
+
+def _condition_report(codes, api_sets, items):
+    """반영된 조건·반영되지 않은 조건·폴백 여부를 화면에 설명할 형태로 만든다."""
+    weights = place_score.applied_weights(codes, api_sets)
+
+    applied = [{
+        "code": code,
+        "label": LABEL_BY_CODE.get(code, code),
+        "percent": weights[code],
+        # 체험 목록은 못 거르고 코스 장소에만 쓰이는 조건은 그렇다고 밝힌다.
+        "course_only": CATEGORY_OF_CODE.get(code) in _COURSE_ONLY,
+    } for code in codes if code in weights]
+
+    ignored = []
+    for code in codes:
+        if code in weights:
+            continue
+        category = CATEGORY_OF_CODE.get(code)
+        reason = _IGNORED_REASON.get(category)
+        if reason is None:
+            reason = ("근처에 해당하는 장소 정보를 찾지 못했습니다"
+                      if category in JUDGEABLE_CATEGORIES or category in _COURSE_ONLY
+                      else "아직 반영되지 않습니다")
+        ignored.append({"code": code, "label": LABEL_BY_CODE.get(code, code),
+                        "reason": reason})
+
+    # 조건을 반영했는데 맞는 장소가 하나도 없으면 거리순으로 떨어진다.
+    # 지금까지 조용히 일어나 사용자는 "조건이 무시됐다"고만 느꼈다.
+    scored = [i for i in (items or []) if i.get("type") != "experience"]
+    matched_any = any((i.get("match_score") or 0) > 0 for i in scored)
+
+    return {
+        "applied": applied,
+        "ignored": ignored,
+        "fell_back": bool(applied) and not matched_any,
+    }
 
 
 def experience_course(item_id):
@@ -291,8 +342,13 @@ def experience_course(item_id):
         facility_names = _facility_names(item, codes, places_by_type)
     except Exception:
         facility_names = {}
-    scorer = _build_scorer(item, codes, activity_names, pet_names, facility_names)
+    scorer, _last_api_sets = _build_scorer(
+        item, codes, activity_names, pet_names, facility_names)
     items = course_builder.build_course(item, places_by_type, scorer=scorer)
+    try:
+        conditions = _condition_report(codes, _last_api_sets, items)
+    except Exception:
+        conditions = None      # 설명 생성 실패가 코스를 막지 않는다
     # 시간·비용 추정이 실패해도 코스는 그대로 나와야 한다.
     try:
         estimate = course_estimate.estimate(items, getattr(item, "cost", 0) or 0, transport)
@@ -318,6 +374,7 @@ def experience_course(item_id):
         "reason": build_course_reason(item, items),
         "items": items,
         "summary": summary,
+        "conditions": conditions,
     })
 
 

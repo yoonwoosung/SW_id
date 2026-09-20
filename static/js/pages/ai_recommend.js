@@ -376,6 +376,24 @@
         }).join('');
     }
 
+    // ★카드에도 조건 반영 흔적을 남긴다.★ 지금까지는 모달을 열어야만 보였다.
+    // 코스 응답(conditions)은 카드를 그리기 전에 이미 받아 둔 것이라 추가 호출이 없다.
+    function conditionChips(course) {
+        var cond = (course && course.conditions) || null;
+        if (!cond) return '';
+        // ★폴백이면 붙이지 않는다.★ 조건에 맞는 장소가 하나도 없어 거리순으로
+        // 떨어진 상태라, '반영'이라고 쓰면 거짓이 된다(모달의 경고와도 어긋난다).
+        if (cond.fell_back) return '';
+        // percent 가 있는 것 = 장소를 고를 때 점수로 쓰인 조건.
+        // 역할만 있는 조건(교통수단·일정 등)은 '이 카드가 뽑힌 이유'가 아니라 뺀다.
+        return (cond.applied || [])
+            .filter(function (a) { return a.percent != null; })
+            .slice(0, 2)
+            .map(function (a) {
+                return '<span class="fl-reason fl-reason--cond">' + esc(a.label) + ' 반영</span>';
+            }).join('');
+    }
+
     function renderRow(row, cards, s) {
         row.innerHTML = cards.map(function (cd, i) {
             var x = cd.rec, d = cd.course, sm = (d && d.summary) || {};
@@ -383,7 +401,8 @@
             var title = (region ? esc(region) + ' ' : '') + esc(x.crop) + ' 힐링 코스';
             var searchKey = (title + ' ' + (x.address || '') + ' ' + (x.crop || '')).toLowerCase();
             var viewers = COURSE_MOCK.viewers[x.id];
-            var reasons = (x.reasons || []).map(function (r) { return '<span class="fl-reason">' + esc(r) + '</span>'; }).join('');
+            var reasons = conditionChips(d)
+                + (x.reasons || []).map(function (r) { return '<span class="fl-reason">' + esc(r) + '</span>'; }).join('');
             var storeKey = s.key + '-' + i;
             cardStore[storeKey] = { rec: x, course: d || {}, section: s };
             var imgHtml = x.first_image

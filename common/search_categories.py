@@ -142,14 +142,13 @@ SEARCH_CATEGORIES = [
     {"code": "companion_type", "label": "동반유형", "group": "travel", "children": [
         {"code": "solo", "label": "혼자"}, {"code": "couple", "label": "커플"},
         {"code": "family_child", "label": "가족(아이)"}, {"code": "friends", "label": "친구"},
-        {"code": "parents", "label": "부모님"}, {"code": "with_pet", "label": "반려견"}]},
-    {"code": "pet_dog", "label": "반려견", "group": "travel", "children": [
-        {"code": "pet_allowed", "label": "동반가능", "children": [
-            {"code": "dog_small", "label": "소형(5kg 미만)", "children": _pet_conditions()},
-            {"code": "dog_medium", "label": "중형(5~15kg)", "children": _pet_conditions()},
-            {"code": "dog_large", "label": "대형(15kg 이상)", "children": _pet_conditions()},
+        {"code": "parents", "label": "부모님"},
+        {"code": "pet_allowed", "label": "반려견", "children": [
+            {"code": "dog_small", "label": "소형(5kg 미만)"},
+            {"code": "dog_medium", "label": "중형(5~15kg)"},
+            {"code": "dog_large", "label": "대형(15kg 이상)"},
         ]},
-        {"code": "pet_not_allowed", "label": "동반불가"},
+        {"code": "pet_not_allowed", "label": "노펫"},
     ]},
     {"code": "party", "label": "인원", "group": "travel", "children": [
         {"code": "headcount", "label": "인원수", "children": [

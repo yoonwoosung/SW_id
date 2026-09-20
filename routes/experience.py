@@ -88,7 +88,7 @@ def index():
             except ValueError:
                 pass
         if f_eco == '1':
-            base_query = base_query.filter(Experience.pesticide_free == True)
+            base_query = base_query.filter(Experience.organic_cert_status == 'APPROVED')
         if f_parking == '1':
             base_query = base_query.filter(Experience.has_parking == True)
         if f_pet == '1':

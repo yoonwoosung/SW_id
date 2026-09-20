@@ -19,7 +19,8 @@ from services.eco_filter import JUDGEABLE_CATEGORIES
 
 # 대분류째 감춘 것
 # 액티비티는 2026-09-20 에 카카오 판정이 붙어 감춤을 풀었다.
-HIDDEN_CATEGORIES = {'schedule', 'duration_hours'}
+# 일정은 2026-09-20 에 탐색 반경으로 반영해 감춤을 풀었다.
+HIDDEN_CATEGORIES = {'duration_hours'}
 
 # 개별로 감춘 잎
 HIDDEN_LEAF_CODES = {
@@ -27,6 +28,8 @@ HIDDEN_LEAF_CODES = {
     'walk', 'bike', 'transport_other',
     # 편의시설 — 대응 컬럼이 없거나 불리언이라 '기타'가 성립하지 않는다
     'restroom', 'nursing_room', 'facility_other',
+    # 일정 — 셋 중 하나를 반드시 쓰므로 '기타'가 성립하지 않는다
+    'schedule_other',
 }
 
 VISIBLE_FACILITY = {'parking', 'barrier_free', 'wifi', 'pesticide_free', 'organic'}

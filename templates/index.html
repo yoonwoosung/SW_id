@@ -3,8 +3,11 @@
 {% block content %}
 
 <style>
-.rd-left-item--active { background: var(--fl-green-50, #f0f7f2) !important; font-weight: 700; color: var(--fl-green-700); }
-.rd-left-item:hover { background: var(--fl-green-50, #f0f7f2); }
+.rd-col { padding: 0 4px; }
+.rd-group-label { font-size: .75rem; font-weight: 800; color: var(--fl-text-muted); padding: 4px 6px 4px; letter-spacing: .02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rd-opt { display: block; width: 100%; text-align: left; background: none; border: none; cursor: pointer; font-size: .82rem; padding: 4px 6px; border-radius: 6px; color: var(--fl-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rd-opt:hover { background: var(--fl-green-50, #f0f7f2); color: var(--fl-green-700); }
+.rd-opt--province { font-weight: 700; border-bottom: 1px solid var(--fl-border); margin-bottom: 2px; padding-bottom: 5px; }
 
 /* ========================================================
    📸 메인 화면 추억일지 미니 앨범 커버 스타일
@@ -120,21 +123,23 @@
                         <span id="regionLabel">{% set cur = request.args.get('region','') %}{% if cur %}{% for grp in region_groups %}{% for opt in grp.options %}{% if opt.value == cur %}{{ opt.label }}{% endif %}{% endfor %}{% endfor %}{% else %}전체{% endif %}</span>
                         <i class="fa-solid fa-chevron-down" style="font-size:.7rem;color:var(--fl-text-muted);"></i>
                     </button>
-                    <!-- 2열 지역 드롭다운 -->
-                    <div id="regionDropdown" style="display:none;position:absolute;top:100%;left:0;z-index:999;background:#fff;border:1px solid var(--fl-border);border-radius:10px;box-shadow:0 4px 16px rgba(0,0,0,.12);min-width:340px;max-height:360px;overflow:hidden;">
-                        <div style="display:flex;height:100%;">
-                            <!-- 1열: 대분류 -->
-                            <ul id="regionLeftCol" style="margin:0;padding:6px 0;list-style:none;width:130px;border-right:1px solid var(--fl-border);overflow-y:auto;max-height:360px;flex-shrink:0;">
-                                <li class="rd-left-item rd-left-item--active" data-grp="" style="padding:8px 14px;cursor:pointer;font-size:.88rem;font-weight:600;">전체</li>
-                                {% if region_groups %}
-                                {% for grp in region_groups %}
-                                <li class="rd-left-item" data-grp="{{ loop.index0 }}" style="padding:8px 14px;cursor:pointer;font-size:.88rem;">{{ grp.label }}</li>
+                    <!-- 전체 펼침 지역 드롭다운 -->
+                    <div id="regionDropdown" style="display:none;position:absolute;top:calc(100% + 4px);left:0;z-index:999;background:#fff;border:1px solid var(--fl-border);border-radius:12px;box-shadow:0 6px 24px rgba(0,0,0,.13);padding:12px 6px 10px;width:660px;">
+                        <!-- 전체 선택 -->
+                        <div style="padding:4px 8px 10px;border-bottom:1px solid var(--fl-border);margin-bottom:8px;">
+                            <button type="button" id="regionAll" style="background:none;border:none;cursor:pointer;font-size:.88rem;font-weight:700;color:var(--fl-green-700);padding:2px 6px;border-radius:6px;">전체 (선택 해제)</button>
+                        </div>
+                        <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:0 4px;">
+                            {% if region_groups %}
+                            {% for grp in region_groups %}
+                            <div class="rd-col">
+                                <div class="rd-group-label">{{ grp.label }}</div>
+                                {% for opt in grp.options %}
+                                <button type="button" class="rd-opt {% if loop.first and grp.label != '광역시·특별시' %}rd-opt--province{% endif %}" data-val="{{ opt.value }}" data-lbl="{{ opt.label }}">{{ opt.label }}</button>
                                 {% endfor %}
-                                {% endif %}
-                            </ul>
-                            <!-- 2열: 소분류 -->
-                            <ul id="regionRightCol" style="margin:0;padding:6px 0;list-style:none;flex:1;overflow-y:auto;max-height:360px;display:none;">
-                            </ul>
+                            </div>
+                            {% endfor %}
+                            {% endif %}
                         </div>
                     </div>
                 </div>
@@ -664,73 +669,34 @@
 </script>
 
 <script>
-/* ── 2열 지역 드롭다운 ── */
+/* ── 전체 펼침 지역 드롭다운 ── */
 (function () {
-    var trigger   = document.getElementById('regionTrigger');
-    var dropdown  = document.getElementById('regionDropdown');
-    var input     = document.getElementById('regionInput');
-    var labelEl   = document.getElementById('regionLabel');
-    var leftCol   = document.getElementById('regionLeftCol');
-    var rightCol  = document.getElementById('regionRightCol');
+    var trigger  = document.getElementById('regionTrigger');
+    var dropdown = document.getElementById('regionDropdown');
+    var input    = document.getElementById('regionInput');
+    var labelEl  = document.getElementById('regionLabel');
+    var allBtn   = document.getElementById('regionAll');
     if (!trigger) return;
 
-    // region_groups 데이터를 JS로 주입
-    var groups = {{ region_groups | tojson if region_groups else '[]' }};
-
     function setRegion(value, label) {
-        input.value  = value;
+        input.value = value;
         labelEl.textContent = label || '전체';
-        close();
-        // 폼 자동 제출
+        dropdown.style.display = 'none';
         document.getElementById('listFilterForm').submit();
     }
 
-    function renderRight(grpIndex) {
-        if (grpIndex === '') {
-            rightCol.style.display = 'none';
-            return;
-        }
-        var grp = groups[grpIndex];
-        if (!grp) { rightCol.style.display = 'none'; return; }
-        rightCol.innerHTML = grp.options.map(function (opt, i) {
-            var isFirst = i === 0;
-            return '<li style="padding:7px 14px;cursor:pointer;font-size:.86rem;' + (isFirst ? 'font-weight:700;border-bottom:1px solid var(--fl-border);' : '') + '" data-val="' + opt.value + '" data-lbl="' + opt.label + '">' + opt.label + (isFirst ? ' <span style=\"font-size:.75rem;color:var(--fl-text-muted);\">전체</span>' : '') + '</li>';
-        }).join('');
-        rightCol.style.display = 'block';
-        rightCol.querySelectorAll('li').forEach(function (li) {
-            li.addEventListener('click', function () { setRegion(li.dataset.val, li.dataset.lbl); });
-            li.addEventListener('mouseenter', function () { li.style.background = 'var(--fl-green-50,#f0f7f2)'; });
-            li.addEventListener('mouseleave', function () { li.style.background = ''; });
-        });
-    }
+    allBtn.addEventListener('click', function () { setRegion('', '전체'); });
 
-    // 1열 이벤트
-    leftCol.querySelectorAll('.rd-left-item').forEach(function (item) {
-        item.addEventListener('mouseenter', function () {
-            leftCol.querySelectorAll('.rd-left-item').forEach(function (el) {
-                el.classList.remove('rd-left-item--active');
-                el.style.background = '';
-            });
-            item.classList.add('rd-left-item--active');
-            item.style.background = 'var(--fl-green-50,#f0f7f2)';
-            var grp = item.dataset.grp;
-            if (grp === '') { rightCol.style.display = 'none'; }
-            else { renderRight(parseInt(grp)); }
-        });
-        item.addEventListener('click', function () {
-            if (item.dataset.grp === '') setRegion('', '전체');
-        });
+    dropdown.querySelectorAll('.rd-opt').forEach(function (btn) {
+        btn.addEventListener('click', function () { setRegion(btn.dataset.val, btn.dataset.lbl); });
     });
-
-    function open() { dropdown.style.display = 'block'; }
-    function close() { dropdown.style.display = 'none'; }
 
     trigger.addEventListener('click', function (e) {
         e.stopPropagation();
-        dropdown.style.display === 'none' ? open() : close();
+        dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
     });
     document.addEventListener('click', function (e) {
-        if (!dropdown.contains(e.target) && e.target !== trigger) close();
+        if (!dropdown.contains(e.target) && e.target !== trigger) dropdown.style.display = 'none';
     });
 })();
 </script>

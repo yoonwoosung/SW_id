@@ -1,0 +1,27 @@
+name: Notion Backfill (1회)
+
+# 과거 커밋을 노션 작업/배포 로그 DB에 일괄 기록한다.
+# Actions 탭 → "Notion Backfill (1회)" → Run workflow 버튼만 누르면 된다. 로컬 터미널 불필요.
+# 같은 파일로 두 번 돌리면 중복 row 가 생기므로 한 번만 실행한다.
+on:
+  workflow_dispatch:
+    inputs:
+      file:
+        description: '백필할 커밋 목록 JSON (저장소 안 경로)'
+        required: true
+        default: '.github/scripts/backfill-farmlink.json'
+
+jobs:
+  backfill:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Backfill to Notion
+        env:
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+          NOTION_DB_ID: ${{ secrets.NOTION_DB_ID }}
+          PROJECT_NAME: FarmLink
+        run: node .github/scripts/backfill-notion.mjs "${{ github.event.inputs.file }}"

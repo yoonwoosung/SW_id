@@ -57,3 +57,8 @@ docs/frontend_rules.md
 CLAUDE.md
 # 로컬 캐시 (KTO 조회 결과 — services/tour_cache.py)
 .cache/
+
+# 공모전 제출 서류(재학증명서 등 개인정보) — 저장소에 올리지 않는다
+최종 제출/
+제출/
+*.hwpx

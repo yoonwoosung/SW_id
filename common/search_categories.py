@@ -3,13 +3,30 @@
 # 구조: 각 노드 = {code(영문), label(한글), children?(하위 노드 리스트)}. children 없으면 잎(선택 가능).
 
 
+# '기타' = 그 대분류의 다른 선택지 어디에도 걸리지 않는 값.
+# ★값이 아예 없는 것은 제외한다★ — 값이 있는데 목록 밖인 것만 본다.
+#
+# 5개 대분류에만 넣는다. 나머지 8개는 넣어도 항상 0건이라서다:
+#   예산대   구간이 0~∞ 를 빈틈없이 덮는다(코스 총비용은 늘 20,000원 이상)
+#   편의시설·교통수단  불리언이라 '목록 밖 값'이라는 개념이 없다
+#   동반유형·인원·일정·소요시간  대응 데이터가 아예 없다
+OTHER_SUFFIX = "_other"
+OTHER_LABEL = "기타"
+
+
+def _other_node(category_code):
+    return {"code": category_code + OTHER_SUFFIX, "label": OTHER_LABEL}
+
+
 def _pet_conditions():
     # 반려견 몸무게 노드 하위 공통 조건(목줄·케이지 등) — 티어마다 새 리스트로 생성.
+    # ★hidden: Experience 에 대응 컬럼이 없어 고르면 결과가 항상 0건이다.★
+    # 컬럼(pet_leash_required 등)을 추가하면 hidden 만 지우면 살아난다.
     return [
-        {"code": "leash_required", "label": "목줄필수"},
-        {"code": "cage_required", "label": "케이지필요"},
-        {"code": "indoor_ok", "label": "실내동반"},
-        {"code": "outdoor_only", "label": "야외만"},
+        {"code": "leash_required", "label": "목줄필수", "hidden": True},
+        {"code": "cage_required", "label": "케이지필요", "hidden": True},
+        {"code": "indoor_ok", "label": "실내동반", "hidden": True},
+        {"code": "outdoor_only", "label": "야외만", "hidden": True},
     ]
 
 
@@ -20,8 +37,34 @@ CATEGORY_GROUPS = [
     {"code": "practical", "label": "실용 조건"},
 ]
 
-# 지역: 8도(+제주) → 시/군. 구 단위는 나누지 않는다. (code, 라벨, 도 별칭, [(시/군코드, 라벨)])
-_REGIONS = [
+# 광역시: 자치구는 나누지 않는다.
+# '북구'·'중구'·'동구'·'서구'가 부산·대구·인천·광주·울산에 모두 있어,
+# 주소 부분 문자열 매칭(services/category_match._has_region)에서 서로 섞인다.
+# 하위가 없으므로 프론트는 잎(체크박스 그리드)으로 그리고, 도 아코디언보다 위에 모인다.
+#
+# ★광주만 별칭이 '광주광역시' 다.★ 경기도 시군에 '광주(경기)'가 이미 있어
+# 키워드를 '광주'로 두면 "경기도 광주시" 주소가 광주광역시로 잡힌다.
+# "광주 북구" 같은 축약 표기는 놓치지만, 틀린 결과가 나오는 것보다 낫다고 봤다.
+# 나머지 6개는 같은 이름의 시군이 없어 '서울'처럼 짧게 둬도 안전하다
+# ("서울특별시 강남구"·"서울 강남구" 둘 다 매칭).
+# '광역시·특별시' 아코디언 그룹의 코드. 트리와 주소 키워드가 같은 값을 써야
+# 그룹의 '전체' 체크박스가 동작한다.
+METRO_GROUP_CODE = "metro"
+
+_METRO_REGIONS = [
+    ("seoul",   "서울", ["서울"],          []),
+    ("busan",   "부산", ["부산"],          []),
+    ("daegu",   "대구", ["대구"],          []),
+    ("incheon", "인천", ["인천"],          []),
+    ("gwangju", "광주", ["광주광역시"],    []),
+    ("daejeon", "대전", ["대전"],          []),
+    ("ulsan",   "울산", ["울산"],          []),
+    ("sejong",  "세종", ["세종특별자치시"], []),
+]
+
+# 지역: 광역시 7 + 8도(+제주) → 시/군. 구 단위는 나누지 않는다.
+# (code, 라벨, 도 별칭, [(시/군코드, 라벨)])
+_PROVINCES = [
     ("gyeonggi", "경기", ["경기"], [
         ("suwon", "수원"), ("seongnam", "성남"), ("yongin", "용인"), ("bucheon", "부천"),
         ("ansan", "안산"), ("anyang", "안양"), ("namyangju", "남양주"), ("hwaseong", "화성"),
@@ -75,43 +118,78 @@ _REGIONS = [
         ("jeju_si", "제주시"), ("seogwipo", "서귀포")]),
 ]
 
+_REGIONS = _METRO_REGIONS + _PROVINCES
+
+
+def region_dropdown_groups():
+    """체험 더보기 지역 <select> 용 그룹 데이터.
+    반환: [{"label": 그룹명, "options": [{"value": LIKE검색어, "label": 표시명}, ...]}]
+    광역시는 별도 aliases(주소 키워드)를 검색어로 씀(광주→광주광역시 등)."""
+    metro = {
+        "label": "광역시·특별시",
+        "options": [{"value": "광역시", "label": "광역시·특별시"}]
+        + [{"value": aliases[0], "label": label}
+           for _code, label, aliases, _cities in _METRO_REGIONS]
+    }
+    provinces = [
+        {
+            "label": label,
+            "options": [{"value": aliases[0], "label": label}]
+            + [{"value": city_label, "label": city_label} for _cc, city_label in cities]
+        }
+        for _code, label, aliases, cities in _PROVINCES
+    ]
+    return [metro] + provinces
+
 
 def _region_node():
-    return {"code": "region", "label": "지역", "group": "travel", "children": [
+    metro_children = [
+        {"code": prov_code, "label": prov_label}
+        for prov_code, prov_label, _aliases, _cities in _METRO_REGIONS
+    ]
+    province_children = [
         {"code": prov_code, "label": prov_label,
          "children": [{"code": c, "label": cl} for c, cl in cities]}
-        for prov_code, prov_label, _aliases, cities in _REGIONS
+        for prov_code, prov_label, _aliases, cities in _PROVINCES
+    ]
+    return {"code": "region", "label": "지역", "group": "travel", "children": [
+        {"code": METRO_GROUP_CODE, "label": "광역시·특별시", "children": metro_children},
+        *province_children,
     ]}
 
 
 SEARCH_CATEGORIES = [
     _region_node(),
     {"code": "companion_type", "label": "동반유형", "group": "travel", "children": [
-        {"code": "solo", "label": "혼자"}, {"code": "couple", "label": "커플"},
-        {"code": "family_child", "label": "가족(아이)"}, {"code": "friends", "label": "친구"},
-        {"code": "parents", "label": "부모님"}, {"code": "with_pet", "label": "반려견"}]},
-    {"code": "pet_dog", "label": "반려견", "group": "travel", "children": [
-        {"code": "pet_allowed", "label": "동반가능", "children": [
-            {"code": "dog_small", "label": "소형(5kg 미만)", "children": _pet_conditions()},
-            {"code": "dog_medium", "label": "중형(5~15kg)", "children": _pet_conditions()},
-            {"code": "dog_large", "label": "대형(15kg 이상)", "children": _pet_conditions()},
-        ]},
-        {"code": "pet_not_allowed", "label": "동반불가"},
-    ]},
-    {"code": "party", "label": "인원", "group": "travel", "children": [
-        {"code": "headcount", "label": "인원수", "children": [
+        {"code": "headcount", "label": "인원수", "no_select_all": True, "children": [
             {"code": "party_1", "label": "1명"}, {"code": "party_2", "label": "2명"},
             {"code": "party_3_4", "label": "3~4명"}, {"code": "party_5plus", "label": "5명 이상"}]},
-        {"code": "age_composition", "label": "연령대 구성", "children": [
-            {"code": "adults_only", "label": "성인만"}, {"code": "with_child", "label": "아이 동반"},
-            {"code": "with_parents", "label": "부모님 동반"}]},
+        {"code": "age_composition", "label": "동반 구성", "no_select_all": True, "children": [
+            {"code": "solo", "label": "혼자"}, {"code": "couple", "label": "커플"},
+            {"code": "family_child", "label": "가족(아이)"}, {"code": "friends", "label": "친구"},
+            {"code": "parents", "label": "부모님"}, {"code": "adults_only", "label": "성인만"}]},
+        {"code": "pet_allowed", "label": "반려견", "children": [
+            {"code": "dog_small", "label": "소형(5kg 미만)"},
+            {"code": "dog_medium", "label": "중형(5~15kg)"},
+            {"code": "dog_large", "label": "대형(15kg 이상)"},
+            {"code": "pet_not_allowed", "label": "노펫존"}]},
     ]},
+    # 2026-09-20: 탐색 반경으로 반영해 감춤을 풀었다(당일 20km · 1박 40km · 2박 60km).
+    # 숙박 장소를 붙이지는 않는다 — '얼마나 멀리까지 후보로 볼 것인가'로 해석한다.
     {"code": "schedule", "label": "일정", "group": "travel", "children": [
-        {"code": "day_trip", "label": "당일"}, {"code": "one_night", "label": "1박 2일"}]},
+        {"code": "day_trip", "label": "당일"},
+        {"code": "one_night", "label": "1박 2일"},
+        {"code": "two_night", "label": "2박 3일"},
+        # hidden: 셋 중 하나를 반드시 쓰므로 '기타'가 성립하지 않는다.
+        dict(_other_node("schedule"), hidden=True)]},
     {"code": "experience_type", "label": "체험종류", "group": "taste", "children": [
         {"code": "harvest", "label": "수확"}, {"code": "food", "label": "먹거리"},
         {"code": "craft", "label": "공예"}, {"code": "animal", "label": "동물교감"},
-        {"code": "nature", "label": "자연생태"}]},
+        {"code": "nature", "label": "자연생태"}, _other_node("experience_type")]},
+    # 2026-09-20: 카카오 로컬 키워드 검색으로 ★코스 장소 판정★ 이 가능해져 감춤을 풀었다.
+    # 체험 목록 필터로는 여전히 동작하지 않는다 — activity_type 컬럼은 있으나
+    # 저장하는 코드가 없어 모든 체험이 NULL 이다. 그래서 eco_filter 의
+    # JUDGEABLE_CATEGORIES 에는 넣지 않는다(넣으면 고르는 순간 목록이 0건이 된다).
     {"code": "activity", "label": "액티비티", "group": "taste", "children": [
         {"code": "horse_riding", "label": "승마"}, {"code": "kayak", "label": "카약"},
         {"code": "fishing", "label": "낚시"}, {"code": "hiking", "label": "등산"},
@@ -119,28 +197,75 @@ SEARCH_CATEGORIES = [
     {"code": "mood", "label": "분위기", "group": "taste", "children": [
         {"code": "healing", "label": "힐링"}, {"code": "active", "label": "액티브"},
         {"code": "photo", "label": "인생샷"}, {"code": "educational", "label": "교육적"},
-        {"code": "tradition", "label": "전통"}]},
-    {"code": "season", "label": "계절·제철", "group": "taste", "children": [
-        {"code": "spring_strawberry", "label": "봄 딸기"}, {"code": "summer_blueberry", "label": "여름 블루베리"},
-        {"code": "autumn_harvest", "label": "가을 수확"}, {"code": "winter_experience", "label": "겨울 체험"}]},
+        {"code": "tradition", "label": "전통"}, _other_node("mood")]},
+    {"code": "season", "label": "계절", "group": "taste", "children": [
+        {"code": "spring_strawberry", "label": "봄"}, {"code": "summer_blueberry", "label": "여름"},
+        {"code": "autumn_harvest", "label": "가을"}, {"code": "winter_experience", "label": "겨울"},
+        _other_node("season")]},
     {"code": "budget_range", "label": "예산대", "group": "practical",
      "note": "*1인당 코스 총비용(교통·식사 포함) 기준입니다", "children": [
         {"code": "course_under_30k", "label": "3만원 이하"}, {"code": "course_30_50k", "label": "3~5만원"},
         {"code": "course_50_100k", "label": "5~10만원"}, {"code": "course_over_100k", "label": "10만원 이상"}]},
     {"code": "transport", "label": "교통수단", "group": "practical", "children": [
-        {"code": "car", "label": "자가용"}, {"code": "public_transit", "label": "대중교통"},
-        {"code": "walk", "label": "도보"}, {"code": "bike", "label": "자전거"}]},
+        # 코스의 이동 시간·교통비 계산 기준이 된다(services/course_estimate).
+        # 미설정이면 대중교통으로 본다(보수적 = 시간이 더 걸린다).
+        {"code": "car", "label": "자가용"},
+        {"code": "public_transit", "label": "대중교통"},
+        {"code": "taxi", "label": "택시"},
+        # hidden: 도보·자전거로는 코스 거리(수 km~수십 km)를 감당할 수 없어
+        # 시간·비용 추정이 무의미하다.
+        {"code": "walk", "label": "도보", "hidden": True},
+        {"code": "bike", "label": "자전거", "hidden": True},
+        # 셋 중 하나를 반드시 쓰므로 '기타'가 성립하지 않는다.
+        dict(_other_node("transport"), hidden=True)]},
+    # 2026-09-20: 코스에 넣을 슬롯 수로 반영해 감춤을 풀었다.
+    # '2시간 미만'은 뺐다 — 체험 체류 기본값이 120분이라 수학적으로 불가능하다.
     {"code": "duration_hours", "label": "소요시간", "group": "practical", "children": [
-        {"code": "hours_2", "label": "2시간"}, {"code": "half_day", "label": "반나절"},
-        {"code": "full_day", "label": "종일"}]},
+        {"code": "under_2h",  "label": "2시간 미만", "hidden": True},
+        {"code": "hours_2",   "label": "2~4시간"},
+        {"code": "half_day",  "label": "반나절 (4~6시간)"},
+        {"code": "full_day",  "label": "종일 (6시간 이상)"},
+        # hidden: 셋 중 하나를 반드시 쓰므로 '기타'가 성립하지 않는다.
+        dict(_other_node("duration_hours"), hidden=True)]},
     {"code": "facility", "label": "편의시설", "group": "practical", "children": [
-        {"code": "parking", "label": "주차"}, {"code": "restroom", "label": "화장실"},
+        {"code": "parking", "label": "주차"},
         {"code": "barrier_free", "label": "무장애"}, {"code": "wifi", "label": "와이파이"},
+        {"code": "pesticide_free", "label": "무농약"}, {"code": "organic", "label": "유기농인증"},
+        # 2026-09-20: 코스 장소는 CSV 실데이터·장소 종류로 판정해 감춤을 풀었다.
+        # 체험 목록 필터로는 여전히 동작하지 않는다(Experience 에 대응 컬럼이 없다).
+        {"code": "restroom", "label": "화장실"},
         {"code": "nursing_room", "label": "수유실"},
-        {"code": "pesticide_free", "label": "무농약"}, {"code": "organic", "label": "유기농인증"}]},
+        # hidden: 불리언 항목이라 '목록에 없는 값'이라는 개념이 성립하지 않는다.
+        dict(_other_node("facility"), hidden=True)]},
 ]
 
 CATEGORY_CODES = [category["code"] for category in SEARCH_CATEGORIES]
+
+
+def _visible(nodes):
+    """hidden 이 아닌 노드만 남긴 새 트리. 원본은 건드리지 않는다."""
+    result = []
+    for node in nodes:
+        if node.get("hidden"):
+            continue
+        copy = {k: v for k, v in node.items() if k != "children"}
+        if node.get("children"):
+            copy["children"] = _visible(node["children"])
+        result.append(copy)
+    return result
+
+
+def visible_categories():
+    """화면(검색 필터)에 그릴 조건 트리.
+
+    판정할 데이터가 없어 고르면 결과가 항상 0건인 선택지를 빼고 준다.
+    ★동작하지 않는 선택지를 보여주는 것이 더 나쁘다.★
+
+    원본 SEARCH_CATEGORIES 는 그대로 둔다 — 컬럼이나 등록 폼 입력이 생기면
+    hidden 한 줄만 지우면 되살아나고, 저장된 링크의 코드 검증(LEAF_CODES)과
+    회원가입 선택지(profile_options)도 원본을 계속 쓴다.
+    """
+    return _visible(SEARCH_CATEGORIES)
 
 
 def _iter_leaf_codes(nodes):
@@ -154,6 +279,33 @@ def _iter_leaf_codes(nodes):
 
 # 트리 전체의 잎 코드 집합(유효성 검증·테스트용).
 LEAF_CODES = set(_iter_leaf_codes(SEARCH_CATEGORIES))
+
+
+def _iter_node_codes(nodes):
+    for node in nodes:
+        yield node["code"]
+        if node.get("children"):
+            yield from _iter_node_codes(node["children"])
+
+
+# ★그룹 노드까지 포함한 전체 코드 집합.★
+# 도(chungnam)·광역시 그룹(metro)·반려견 '전체'(pet_allowed)는 잎이 아니지만
+# 사용자가 실제로 고를 수 있고 판정 로직도 있다. LEAF_CODES 로만 검증하면
+# 이들이 전부 걸러져 조건이 서버에 전달되지 않는다.
+ALL_CODES = set(_iter_node_codes(SEARCH_CATEGORIES))
+
+
+def _build_category_of_code():
+    # 어떤 선택지가 어느 대분류에 속하는지.
+    # 화면에 '왜 반영되지 않았는지'를 설명할 때 쓴다.
+    mapping = {}
+    for category in SEARCH_CATEGORIES:
+        for code in _iter_node_codes(category.get("children") or []):
+            mapping[code] = category["code"]
+    return mapping
+
+
+CATEGORY_OF_CODE = _build_category_of_code()
 
 
 def _iter_all_nodes(nodes):
@@ -179,6 +331,11 @@ def _build_region_keywords():
         keywords[prov_code] = list(aliases)
         for city_code, city_label in cities:
             keywords[city_code] = [city_label.split("(")[0]]  # '광주(경기)' → '광주'
+    # '광역시·특별시' 그룹의 '전체' 체크박스는 그룹 코드(metro)를 보낸다.
+    # 키워드가 없으면 고르는 즉시 결과가 0건이 된다(그룹으로 묶으면서 생긴 구멍).
+    keywords[METRO_GROUP_CODE] = [
+        alias for _c, _l, aliases, _ci in _METRO_REGIONS for alias in aliases
+    ]
     return keywords
 
 

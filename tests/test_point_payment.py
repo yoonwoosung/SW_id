@@ -12,7 +12,7 @@ from werkzeug.security import generate_password_hash
 
 import app as farmlink
 from models import db, User, Experience, Application, Payment, PointLog
-from common.constants import (APPLICATION_STATUS_PENDING, APPLICATION_STATUS_CONFIRMED,
+from common.constants import (APPLICATION_STATUS_PENDING, APPLICATION_STATUS_PAID,
                               POINT_EARN_RATE, POINT_REASON_USE, POINT_REASON_REFUND)
 from services import payment_service, point_service, toss_service
 
@@ -137,7 +137,7 @@ def test_earn_is_three_percent_of_charged_amount(client, monkeypatch):
 
     charged = ORDER_TOTAL - 10000                    # 30,000원
     assert body['data']['earned_points'] == int(charged * POINT_EARN_RATE)   # 3% = 900
-    assert body['data']['status'] == APPLICATION_STATUS_CONFIRMED
+    assert body['data']['status'] == APPLICATION_STATUS_PAID          # 농장주 승인 대기
     # 잔액 = 지급 10000 - 사용 10000 + 적립 900
     assert point_service.get_balance(u.id) == 900
 

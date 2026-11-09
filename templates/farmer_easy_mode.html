@@ -11,13 +11,23 @@
         {# ===== 사이드바 ===== #}
         <aside class="fl-sidebar">
             <div class="fl-card"><div class="fl-card-body fl-side-profile">
-                {% if user.farm_image %}
-                <img class="fl-avatar" src="{{ url_for('static', filename='uploads/' + user.farm_image) }}" alt="{{ user.nickname }}">
-                {% elif user.profile_image %}
-                <img class="fl-avatar" src="{{ url_for('static', filename='uploads/' + user.profile_image) }}" alt="{{ user.nickname }}">
-                {% else %}
-                <img class="fl-avatar" src="{{ url_for('static', filename='uploads/default.png') }}" alt="{{ user.nickname }}">
-                {% endif %}
+                <style>
+                .em-avatar-wrap { position:relative; width:80px; height:80px; cursor:pointer; margin:0 auto var(--fl-s2); }
+                .em-avatar-wrap .fl-avatar { width:80px; height:80px; border-radius:50%; object-fit:cover; display:block; }
+                .em-avatar-overlay {
+                  position:absolute; inset:0; border-radius:50%;
+                  background:rgba(0,0,0,0.42); display:flex; align-items:center; justify-content:center;
+                  opacity:0; transition:opacity .18s; color:#fff; font-size:.75rem; flex-direction:column; gap:3px;
+                }
+                .em-avatar-wrap:hover .em-avatar-overlay { opacity:1; }
+                </style>
+                <div class="em-avatar-wrap" id="em-avatar-wrap" title="프로필 사진 변경">
+                  <img class="fl-avatar" id="em-avatar-img"
+                    src="{% if user.profile_image %}{{ url_for('static', filename='uploads/' + user.profile_image) }}{% elif user.farm_image %}{{ url_for('static', filename='uploads/' + user.farm_image) }}{% else %}{{ url_for('static', filename='images/no_image.svg') }}{% endif %}"
+                    alt="{{ user.nickname }}">
+                  <div class="em-avatar-overlay"><i class="fa-solid fa-camera"></i><span>변경</span></div>
+                </div>
+                <input type="file" id="em-avatar-input" accept="image/*" style="display:none;">
                 <strong>{{ user.nickname }}</strong>
                 <div class="fl-muted fl-meta">{{ (user.farm_address or '지역 미등록').split(' ')[:2] | join(' ') }}</div>
             </div></div>
@@ -26,6 +36,11 @@
                 <a href="#" data-tab="operations"><i class="fa-solid fa-gear"></i> 운영 관리</a>
                 <a href="#" data-tab="account"><i class="fa-solid fa-user"></i> 계정 설정</a>
                 <a href="#" data-tab="stats"><i class="fa-solid fa-chart-simple"></i> 농장 통계</a>
+            </div></div>
+            <div class="fl-card"><div class="fl-card-body" style="padding:var(--fl-s2);">
+                <a href="{{ url_for('farmer_guide') }}" class="fl-help-btn" style="width:100%;justify-content:center;font-size:1rem;padding:10px 14px;">
+                    <i class="fa-solid fa-circle-question"></i> 사용 도움말
+                </a>
             </div></div>
         </aside>
 
@@ -38,9 +53,12 @@
                 <section class="fl-card"><div class="fl-card-body">
                     <div class="fl-section-head">
                         <h2>예약 일정</h2>
-                        <a href="{{ url_for('farmer_calendar') }}" class="fl-btn fl-btn-outline">
-                            <i class="fa-solid fa-calendar-days"></i> 캘린더로 보기
-                        </a>
+                        <div style="display:flex;gap:0.5rem;align-items:center;">
+                            <a href="{{ url_for('farmer_guide') }}#reservation-screen" class="fl-help-btn"><i data-lucide="circle-help"></i> 도움말</a>
+                            <a href="{{ url_for('farmer_calendar') }}" class="fl-btn fl-btn-outline">
+                                <i class="fa-solid fa-calendar-days"></i> 캘린더로 보기
+                            </a>
+                        </div>
                     </div>
 
                     {# 날짜 데이터 #}
@@ -87,13 +105,14 @@
                             <form method="POST" action="{{ url_for('confirm_application', app_id=app.id) }}?easy_mode=true" style="margin:0;">
                                 <button type="submit" class="fl-btn em-btn-accept">수락</button>
                             </form>
-                            <form method="POST" action="{{ url_for('reject_application', app_id=app.id) }}" style="margin:0;">
+                            <form method="POST" action="{{ url_for('reject_application', app_id=app.id) }}" style="margin:0;"
+                                  onsubmit="return confirm('예약을 거절할까요?\n결제 금액은 신청자에게 포인트로 환급됩니다.');">
                                 <button type="submit" class="fl-btn em-btn-reject">거절</button>
                             </form>
                         </div>
                     </div>
                     {% else %}
-                    <div class="easy-no-item-small"><p>대기 중인 예약이 없어요 ✅</p></div>
+                    <div class="easy-no-item-small"><p>대기 중인 예약이 없어요</p></div>
                     {% endfor %}
                 </div></section>
 
@@ -106,7 +125,10 @@
                 <section class="fl-card"><div class="fl-card-body">
                     <div class="fl-section-head">
                         <h2>내 체험 목록</h2>
-                        <a href="{{ url_for('easy_create_experience') }}" class="fl-btn em-btn-register">+ 등록</a>
+                        <div style="display:flex;gap:0.5rem;align-items:center;">
+                            <a href="{{ url_for('farmer_guide') }}#experience-screen" class="fl-help-btn"><i data-lucide="circle-help"></i> 도움말</a>
+                            <a href="{{ url_for('easy_create_experience') }}" class="fl-btn em-btn-register">+ 등록</a>
+                        </div>
                     </div>
                     
                     {% for listing in listings if listing.status in ['recruiting', 'hidden'] %}
@@ -120,7 +142,7 @@
                                 {% if listing.status == 'recruiting' %}
                                     {% if 0 <= listing.d_day <= 7 and remaining > 0 %}
                                     <span class="badge badge-danger px-2 py-1 font-weight-bold" style="font-size:13px; animation: pulse 1.5s infinite;">
-                                        🔥 마감 D-{{ listing.d_day }}
+                                        마감 D-{{ listing.d_day }}
                                     </span>
                                     {% endif %}
                                     <span class="fl-badge fl-badge--active">모집 중</span>
@@ -131,8 +153,17 @@
 
                             <div class="em-listing-actions">
                                 <a href="{{ url_for('easy_modify_experience', item_id=listing.id) }}" class="fl-btn fl-btn-outline em-btn-edit">수정</a>
+                                {% if listing.status == 'recruiting' %}
                                 <form method="POST" action="{{ url_for('close_experience', item_id=listing.id) }}" style="margin:0;" onsubmit="return confirm('이 체험을 숨김 처리할까요?');">
                                     <button type="submit" class="fl-btn em-btn-delete">숨김</button>
+                                </form>
+                                {% else %}
+                                <form method="POST" action="{{ url_for('open_experience', item_id=listing.id) }}" style="margin:0;" onsubmit="return confirm('이 체험을 다시 공개할까요?');">
+                                    <button type="submit" class="fl-btn em-btn-delete">숨김 해제</button>
+                                </form>
+                                {% endif %}
+                                <form method="POST" action="{{ url_for('delete_experience', item_id=listing.id) }}" style="margin:0;" onsubmit="return confirm('체험을 삭제하면 되돌릴 수 없습니다. 삭제할까요?');">
+                                    <button type="submit" class="fl-btn em-btn-delete" style="background:var(--fl-danger,#e53935);color:#fff;border-color:var(--fl-danger,#e53935);">삭제</button>
                                 </form>
                             </div>
                         </div>
@@ -142,7 +173,7 @@
                         <div class="alert alert-warning mt-3 mb-1 p-3 rounded-lg border-0 shadow-sm" style="background:#fff9eb; border-left:4px solid #f59e0b !important;">
                             <div class="d-flex align-items-start justify-content-between">
                                 <div style="font-size:15px; color:#92400e; line-height:1.5;">
-                                    <strong>💡 마감 D-{{ listing.d_day }} 운영 조언:</strong><br>
+                                    <strong>마감 D-{{ listing.d_day }} 운영 조언:</strong><br>
                                     현재 모집 정원 중 <span class="text-danger font-weight-bold">{{ remaining }}자리</span>가 남아있어요.<br>
                                     마감 전 <strong>참가비를 10~20% 낮추거나</strong> 상세설명에 <strong>'직접 딴 과일 덤 증정'</strong> 같은 혜택을 추가해 마지막 손님을 모아보세요!
                                 </div>
@@ -154,7 +185,7 @@
                         {% endif %}
                     </div>
                     {% else %}
-                    <div class="easy-no-item-small"><p>등록된 체험이 없어요 🌱</p></div>
+                    <div class="easy-no-item-small"><p>등록된 체험이 없어요</p></div>
                     {% endfor %}
                 </div></section>
 
@@ -162,7 +193,10 @@
                 <section class="fl-card"><div class="fl-card-body">
                     <div class="fl-section-head">
                         <h2>문의 관리</h2>
-                        <a href="{{ url_for('easy_communication') }}" class="fl-btn fl-btn-outline">전체 보기</a>
+                        <div style="display:flex;gap:0.5rem;align-items:center;">
+                            <a href="{{ url_for('farmer_guide') }}#reservation-screen" class="fl-help-btn"><i data-lucide="circle-help"></i> 도움말</a>
+                            <a href="{{ url_for('easy_communication') }}" class="fl-btn fl-btn-outline">전체 보기</a>
+                        </div>
                     </div>
                     {% for inquiry in recent_inquiries %}
                     <div class="em-inquiry-row">
@@ -174,7 +208,7 @@
                         <a href="{{ url_for('easy_communication') }}" class="fl-btn fl-btn-outline em-btn-reply">답변</a>
                     </div>
                     {% else %}
-                    <div class="easy-no-item-small"><p>새 문의가 없어요 🌱</p></div>
+                    <div class="easy-no-item-small"><p>새 문의가 없어요</p></div>
                     {% endfor %}
                 </div></section>
 
@@ -187,9 +221,12 @@
                 <section class="fl-card"><div class="fl-card-body">
                     <div class="fl-section-head">
                         <h2>기본 정보</h2>
-                        <button type="button" class="fl-btn fl-btn-outline" id="account-edit-btn">
-                            <i class="fa-solid fa-pen"></i> 수정
-                        </button>
+                        <div style="display:flex;gap:0.5rem;align-items:center;">
+                            <a href="{{ url_for('farmer_guide') }}#stats-screen" class="fl-help-btn"><i data-lucide="circle-help"></i> 도움말</a>
+                            <button type="button" class="fl-btn fl-btn-outline" id="account-edit-btn">
+                                <i class="fa-solid fa-pen"></i> 수정
+                            </button>
+                        </div>
                     </div>
 
                     <div id="account-view">
@@ -255,32 +292,53 @@
                 <section class="fl-card" id="farm-management-section"><div class="fl-card-body">
                     <div class="fl-section-head">
                         <h2>농장 관리</h2>
-                        <button type="button" class="fl-btn fl-btn-outline" id="farm-add-btn">+ 농장 추가</button>
+                        <div style="display:flex;gap:0.5rem;align-items:center;">
+                            <a href="{{ url_for('farmer_guide') }}#register-screen" class="fl-help-btn"><i data-lucide="circle-help"></i> 도움말</a>
+                            <button type="button" class="fl-btn fl-btn-outline" id="farm-add-btn">+ 농장 추가</button>
+                        </div>
                     </div>
 
                     {% for farm in farms %}
                     <div class="ac-farm-card">
                         <div class="ac-farm-info">
-                            <div class="d-flex align-items-center mb-1">
-                                <strong class="text-dark mr-2" style="font-size: 1.1rem;">{{ farm.name or '기본 농장' }}</strong>
+                            <div class="d-flex align-items-center mb-1" style="gap:8px;">
+                                {# 이름 표시 / 인라인 편집 #}
+                                <span class="farm-name-view" data-farm-id="{{ farm.id }}" style="font-size:1.1rem;font-weight:700;color:#1a1a1a;">{{ farm.name or '기본 농장' }}</span>
+                                <button type="button" class="farm-name-edit-btn" data-farm-id="{{ farm.id }}" title="농장 이름 변경"
+                                  style="background:none;border:none;cursor:pointer;color:var(--fl-text-muted);padding:2px 4px;">
+                                  <i class="fa-solid fa-pen-to-square" style="font-size:.85rem;"></i>
+                                </button>
+                                <span class="farm-name-edit-area" data-farm-id="{{ farm.id }}" style="display:none;align-items:center;gap:6px;">
+                                  <input type="text" class="farm-name-input form-control form-control-sm" value="{{ farm.name or '' }}" placeholder="농장 이름" style="width:160px;">
+                                  <button type="button" class="farm-name-save fl-btn fl-btn-primary fl-btn-sm" data-farm-id="{{ farm.id }}">저장</button>
+                                  <button type="button" class="farm-name-cancel fl-btn fl-btn-outline fl-btn-sm" data-farm-id="{{ farm.id }}">취소</button>
+                                </span>
                                 {% if farm.status == 'APPROVED' %}
-                                <span class="fl-badge fl-badge--active">✅ 승인완료</span>
+                                <span class="fl-badge fl-badge--active"><img src="{{ url_for('static', filename='icons/icon-confirmed.svg') }}" width="16" height="16" style="vertical-align:-3px;margin-right:4px;"> 승인완료</span>
                                 {% elif farm.status == 'PENDING' %}
-                                <span class="badge badge-warning px-2 py-1" style="font-size:13px;">⏳ 심사 대기중</span>
+                                <span class="badge badge-warning px-2 py-1" style="font-size:13px;">심사 대기중</span>
                                 {% elif farm.status == 'REJECTED' %}
-                                <span class="badge badge-danger px-2 py-1" style="font-size:13px; cursor:pointer;" onclick="showRejectReason('{{ farm.reject_reason }}')">❌ 반려됨 (사유 확인)</span>
+                                <span class="badge badge-danger px-2 py-1" style="font-size:13px; cursor:pointer;" onclick="showRejectReason('{{ farm.reject_reason }}')">반려됨 (사유 확인)</span>
                                 {% endif %}
                             </div>
 
-                            <p class="ac-farm-address mb-1">{{ farm.address }} <span class="text-muted font-weight-normal">{{ farm.address_detail or '' }}</span></p>
+                            <p class="ac-farm-address mb-1">
+                                <span class="farm-addr-view" data-farm-id="{{ farm.id }}">{{ farm.address }} <span class="text-muted font-weight-normal">{{ farm.address_detail or '' }}</span></span>
+                                <button type="button" class="farm-addr-edit-btn" data-farm-id="{{ farm.id }}" title="주소 변경"
+                                  style="background:none;border:none;cursor:pointer;color:var(--fl-text-muted);padding:2px 6px;margin-left:6px;font-size:.78rem;display:inline-flex;align-items:center;gap:3px;">
+                                  <i class="fa-solid fa-pen-to-square" style="font-size:.78rem;"></i> 상세 주소 변경
+                                </button>
+                                <span class="farm-addr-edit-area" data-farm-id="{{ farm.id }}" style="display:none;align-items:center;gap:6px;flex-wrap:wrap;margin-top:4px;">
+                                  <input type="text" class="farm-addr-input form-control form-control-sm" value="{{ farm.address_detail or '' }}" placeholder="상세 주소 (동·호수, 번지 등)" style="width:240px;">
+                                  <button type="button" class="farm-addr-save fl-btn fl-btn-primary fl-btn-sm" data-farm-id="{{ farm.id }}">저장</button>
+                                  <button type="button" class="farm-addr-cancel fl-btn fl-btn-outline fl-btn-sm" data-farm-id="{{ farm.id }}">취소</button>
+                                </span>
+                            </p>
                             {% if farm.size %}<p class="ac-farm-size">농장 규모: {{ farm.size }}평</p>{% endif %}
                             
                             <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;">
                                 {% if farm.certificate_pdf %}
                                 <span class="fl-badge fl-badge--success"><i class="fa-solid fa-file-pdf"></i> 확인 서류 첨부됨</span>
-                                {% endif %}
-                                {% if farm.is_organic %}
-                                <span class="fl-badge fl-badge--active">🌿 친환경{% if farm.organic_cert_type %} · {{ farm.organic_cert_type }}{% endif %}</span>
                                 {% endif %}
                             </div>
 
@@ -297,11 +355,11 @@
                         </form>
                     </div>
                     {% else %}
-                    <div class="easy-no-item-small"><p>등록된 농장이 없어요. 농장 추가 버튼을 눌러주세요 🌾</p></div>
+                    <div class="easy-no-item-small"><p>등록된 농장이 없어요. 농장 추가 버튼을 눌러주세요</p></div>
                     {% endfor %}
 
                     {# 농장 추가 폼 #}
-                    <div id="farm-form-area" style="display:none;margin-top:var(--fl-s4); padding:20px; background:#fbfdfb; border:1.5px solid #2d6a4f; border-radius:14px;">
+                    <div id="farm-form-area" style="display:none;margin-top:var(--fl-s4); padding:20px; background:var(--fl-green-100); border:1.5px solid var(--green-dark, var(--fl-green-700)); border-radius:14px;">
                         <h4 class="font-weight-bold text-dark mb-3">새 농장 등록 및 서류 제출</h4>
                         <form method="POST" action="{{ url_for('farmer_add_farm') }}" enctype="multipart/form-data" class="easy-form">
                             <div class="form-group">
@@ -327,24 +385,6 @@
                                 <label class="easy-form-label-lg" for="farm-cert-input">농업인확인서 (PDF 필수) <span style="color:var(--fl-danger);">*</span></label>
                                 <input type="file" id="farm-cert-input" name="farmer_certificate_pdf" class="form-control-file" accept=".pdf" required>
                                 <small class="text-muted">국립농산물품질관리원에서 발급받은 농업인확인서 PDF를 제출해 주세요.</small>
-                            </div>
-
-                            <div class="form-group">
-                                <div class="farm-organic-check">
-                                    <input type="checkbox" id="farm-organic-chk" name="is_organic"
-                                           onchange="document.getElementById('farm-organic-area').style.display=this.checked?'block':'none'">
-                                    <label for="farm-organic-chk" class="easy-form-label-lg" style="margin:0;cursor:pointer;">🌿 친환경 인증 농장</label>
-                                </div>
-                                <div id="farm-organic-area" style="display:none;margin-top:12px;padding:16px;background:#f0faf4;border-radius:10px;">
-                                    <div class="form-group">
-                                        <label class="easy-form-label-lg" for="farm-organic-type">인증 종류</label>
-                                        <input type="text" id="farm-organic-type" name="organic_cert_type" class="form-control" placeholder="예) 유기농, 무농약">
-                                    </div>
-                                    <div class="form-group mb-0">
-                                        <label class="easy-form-label-lg" for="farm-organic-img">친환경 인증서 이미지</label>
-                                        <input type="file" id="farm-organic-img" name="organic_cert_image" class="form-control-file" accept=".jpg,.jpeg,.png">
-                                    </div>
-                                </div>
                             </div>
 
                             <div class="d-flex gap-2 mt-3">
@@ -377,7 +417,7 @@
             {# ===== 전화번호 인증 모달 ===== #}
             <div id="phone-auth-modal" class="ac-modal-overlay" style="display:none;">
                 <div class="ac-modal-box" style="text-align:center;">
-                    <p style="font-size:36px;margin-bottom:16px;">📱</p>
+                    <img src="{{ url_for('static', filename='icons/icon-qr-code.svg') }}" class="fl-icon-lg" style="margin-bottom:16px;" alt="QR 코드">
                     <h3 class="ac-modal-title">전화번호 인증</h3>
                     <p class="ac-modal-desc">전화번호 변경은 본인 인증 후 가능합니다.<br>현재 서비스 준비 중입니다.</p>
                     <button type="button" id="phone-auth-close" class="easy-submit-button" style="width:100%;margin-top:8px;">확인</button>
@@ -388,22 +428,25 @@
             <div class="farmer-tab-panel" id="panel-stats">
 
                 <section class="fl-card"><div class="fl-card-body">
-                    <div class="fl-section-head"><h2>내 농장 통계</h2></div>
+                    <div class="fl-section-head">
+                        <h2>내 농장 통계</h2>
+                        <a href="{{ url_for('farmer_guide') }}#stats-screen" class="fl-help-btn"><i data-lucide="circle-help"></i> 도움말</a>
+                    </div>
                     <div class="easy-stats-grid">
                         <div class="easy-stat-box">
-                            <span class="easy-stat-icon">🌾</span>
+                            <span class="easy-stat-icon"><img src="{{ url_for('static', filename='icons/icon-rural-experience.svg') }}" width="36" height="36"></span>
                             <strong class="easy-stat-value">{{ stats.total_experiences }}</strong>
                             <span class="easy-stat-label">등록 체험</span>
                             <span class="easy-stat-unit">건</span>
                         </div>
                         <div class="easy-stat-box">
-                            <span class="easy-stat-icon">⭐</span>
+                            <span class="easy-stat-icon"><img src="{{ url_for('static', filename='icons/icon-rating.svg') }}" width="36" height="36"></span>
                             <strong class="easy-stat-value">{{ stats.average_rating }}</strong>
                             <span class="easy-stat-label">평균 별점</span>
                             <span class="easy-stat-unit">/ 5.0</span>
                         </div>
                         <div class="easy-stat-box">
-                            <span class="easy-stat-icon">👥</span>
+                            <span class="easy-stat-icon"><img src="{{ url_for('static', filename='icons/icon-my-page.svg') }}" width="36" height="36"></span>
                             <strong class="easy-stat-value">{{ stats.total_visitors }}</strong>
                             <span class="easy-stat-label">총 방문자</span>
                             <span class="easy-stat-unit">명</span>
@@ -418,11 +461,11 @@
                     <div class="st-report-exp mb-4 p-4 rounded-lg" id="report-container-{{ farm_id }}" style="background:#fcfdfc; border:1.5px solid #e2ece5; border-radius:16px;">
                         <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom flex-wrap gap-2">
                             <div>
-                                <h3 class="st-report-exp-name mb-1" style="font-size:1.25rem; font-weight:800; color:#1d6340;">
-                                    🌾 {{ feedback.farm_name }}
+                                <h3 class="st-report-exp-name mb-1" style="font-size:1.25rem; font-weight:800; color:var(--green-dark, var(--fl-green-700));">
+                                    <img src="{{ url_for('static', filename='icons/icon-rural-experience.svg') }}" width="22" height="22" style="vertical-align:-4px;margin-right:6px;">{{ feedback.farm_name }}
                                 </h3>
                                 <div class="text-muted small">
-                                    {{ feedback.farm_address }} · 총 리뷰 {{ feedback.total_reviews }}개 (평균 ⭐ {{ feedback.avg_rating }})
+                                    {{ feedback.farm_address }} · 총 리뷰 {{ feedback.total_reviews }}개 (평균 <img src="{{ url_for('static', filename='icons/icon-rating.svg') }}" width="14" height="14" style="vertical-align:-2px;"> {{ feedback.avg_rating }})
                                     <span class="ml-2 text-secondary font-weight-bold" id="report-time-{{ farm_id }}">
                                         {% if feedback.ai_report_updated_at %}
                                             (최근 분석: {{ feedback.ai_report_updated_at.strftime('%Y.%m.%d %H:%M') if feedback.ai_report_updated_at is not string else feedback.ai_report_updated_at }})
@@ -434,7 +477,7 @@
                             </div>
                             <div class="d-flex align-items-center">
                                 {% for crop in feedback.crops %}
-                                <span class="badge badge-success px-2 py-1 mr-1" style="font-size:12px; background:#e8f5e9; color:#1d6340; border:1px solid var(--fl-border);">{{ crop }}</span>
+                                <span class="badge badge-success px-2 py-1 mr-1" style="font-size:12px; background:var(--fl-green-100); color:var(--green-dark, var(--fl-green-700)); border:1px solid var(--fl-border);">{{ crop }}</span>
                                 {% endfor %}
                                 
                                 <!-- 💡 AI 리포트 갱신 버튼 -->
@@ -449,14 +492,14 @@
 
                         <div class="st-report-cards">
                             <div class="st-report-card st-pos">
-                                <div class="st-report-card-icon">👍</div>
+                                <div class="st-report-card-icon"><img src="{{ url_for('static', filename='icons/icon-positive-review.svg') }}" width="40" height="40"></div>
                                 <div class="st-report-card-content">
                                     <p class="st-report-card-head">농장 긍정 포인트 요약</p>
                                     <p class="st-report-card-text" id="report-strengths-{{ farm_id }}">{{ feedback.strengths_summary or '분석된 데이터가 없습니다. 우측 상단의 [AI 분석 갱신]을 눌러보세요!' }}</p>
                                 </div>
                             </div>
                             <div class="st-report-card st-imp">
-                                <div class="st-report-card-icon">💡</div>
+                                <div class="st-report-card-icon"><img src="{{ url_for('static', filename='icons/icon-improvement-suggestion.svg') }}" width="40" height="40"></div>
                                 <div class="st-report-card-content">
                                     <p class="st-report-card-head">농장 개선 피드백 요약</p>
                                     <p class="st-report-card-text" id="report-improvements-{{ farm_id }}">{{ feedback.improvements_summary or '개선 피드백이 없어요. 잘 하고 있어요!' }}</p>
@@ -472,7 +515,7 @@
                     </div>
                     {% else %}
                     <div class="easy-no-item-small">
-                        <p>분석할 후기가 아직 없어요. 체험을 운영하고 후기를 모아보세요! 🌱</p>
+                        <p>분석할 후기가 아직 없어요. 체험을 운영하고 후기를 모아보세요!</p>
                     </div>
                     {% endfor %}
                 </div></section>
@@ -486,7 +529,7 @@
 {# 💡 로그인 시 대기 예약 알림 팝업 모달 #}
 <div id="pending-alert-modal" class="ac-modal-overlay" style="display:none;">
     <div class="ac-modal-box" style="text-align:center; max-width:440px;">
-        <p style="font-size:42px; margin-bottom:12px;">🔔</p>
+        <img src="{{ url_for('static', filename='icons/icon-notification.svg') }}" width="56" height="56" style="margin-bottom:12px;">
         <h3 class="ac-modal-title" style="font-size:22px;">수락 대기 중인 예약 알림</h3>
         <p class="ac-modal-desc" style="font-size:16px; color:#444; line-height:1.5;">
             현재 수락을 기다리는 예약이 <strong class="text-danger" style="font-size:18px;">{{ pending_applications | length }}건</strong> 있습니다!<br>
@@ -501,6 +544,129 @@
 
 {% block scripts %}
 <script>
+/* ── 농장 이름 인라인 편집 ── */
+document.querySelectorAll('.farm-name-edit-btn').forEach(function(btn) {
+  var id = btn.dataset.farmId;
+  var view = document.querySelector('.farm-name-view[data-farm-id="' + id + '"]');
+  var area = document.querySelector('.farm-name-edit-area[data-farm-id="' + id + '"]');
+  var input = area.querySelector('.farm-name-input');
+  var save  = area.querySelector('.farm-name-save');
+  var cancel = area.querySelector('.farm-name-cancel');
+
+  btn.addEventListener('click', function() {
+    input.value = view.textContent.trim() === '기본 농장' ? '' : view.textContent.trim();
+    view.style.display = 'none';
+    btn.style.display = 'none';
+    area.style.display = 'flex';
+    input.focus();
+  });
+
+  cancel.addEventListener('click', function() {
+    area.style.display = 'none';
+    view.style.display = '';
+    btn.style.display = '';
+  });
+
+  save.addEventListener('click', function() {
+    var name = input.value.trim();
+    if (!name) { input.focus(); return; }
+    save.disabled = true;
+    fetch('/farmer/farm/' + id + '/name', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: name })
+    }).then(function(r) { return r.json(); }).then(function(res) {
+      if (res.ok) {
+        view.textContent = name;
+        area.style.display = 'none';
+        view.style.display = '';
+        btn.style.display = '';
+      } else {
+        alert(res.msg || '저장에 실패했습니다.');
+      }
+    }).catch(function() { alert('오류가 발생했습니다.'); })
+      .finally(function() { save.disabled = false; });
+  });
+
+  input.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') save.click();
+    if (e.key === 'Escape') cancel.click();
+  });
+});
+
+/* ── 농장 주소 변경 ── */
+document.querySelectorAll('.farm-addr-edit-btn').forEach(function(btn) {
+  var id = btn.dataset.farmId;
+  var view   = document.querySelector('.farm-addr-view[data-farm-id="' + id + '"]');
+  var area   = document.querySelector('.farm-addr-edit-area[data-farm-id="' + id + '"]');
+  var input  = area.querySelector('.farm-addr-input');
+  var save   = area.querySelector('.farm-addr-save');
+  var cancel = area.querySelector('.farm-addr-cancel');
+
+  btn.addEventListener('click', function() {
+    view.style.display = 'none';
+    btn.style.display = 'none';
+    area.style.display = 'flex';
+    input.focus();
+  });
+
+  cancel.addEventListener('click', function() {
+    area.style.display = 'none';
+    view.style.display = '';
+    btn.style.display = '';
+  });
+
+  save.addEventListener('click', function() {
+    var detail = input.value.trim();
+    save.disabled = true;
+    var fd = new FormData();
+    fd.append('name', document.querySelector('.farm-name-view[data-farm-id="' + id + '"]').textContent.trim());
+    fd.append('address_detail', detail);
+    fetch('/api/farms/' + id, { method: 'PUT', body: fd })
+      .then(function(r) { return r.json(); })
+      .then(function(res) {
+        if (res.success) {
+          var detailSpan = view.querySelector('span');
+          if (detailSpan) detailSpan.textContent = detail;
+          area.style.display = 'none';
+          view.style.display = '';
+          btn.style.display = '';
+        } else {
+          alert((res.error && res.error.message) || '저장에 실패했습니다.');
+        }
+      }).catch(function() { alert('오류가 발생했습니다.'); })
+      .finally(function() { save.disabled = false; });
+  });
+
+  input.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') save.click();
+    if (e.key === 'Escape') cancel.click();
+  });
+});
+
+/* ── 프로필 사진 변경 ── */
+(function () {
+  var wrap  = document.getElementById('em-avatar-wrap');
+  var input = document.getElementById('em-avatar-input');
+  var img   = document.getElementById('em-avatar-img');
+  if (!wrap || !input || !img) return;
+  wrap.addEventListener('click', function () { input.click(); });
+  input.addEventListener('change', function () {
+    if (!input.files || !input.files[0]) return;
+    var fd = new FormData();
+    fd.append('profile_pic', input.files[0]);
+    fetch('/upload_profile', {
+      method: 'POST',
+      headers: { 'X-Requested-With': 'XMLHttpRequest' },
+      body: fd
+    }).then(function (r) { return r.json(); }).then(function (res) {
+      if (res.ok) { img.src = res.url + '?t=' + Date.now(); }
+      else { alert(res.msg || '업로드에 실패했습니다.'); }
+    }).catch(function () { alert('오류가 발생했습니다.'); });
+    input.value = '';
+  });
+})();
+
 function execDaumPostcode() {
     new daum.Postcode({
         oncomplete: function(data) {
@@ -657,7 +823,10 @@ document.addEventListener('DOMContentLoaded', function () {
     const farmAddBtn = document.getElementById('farm-add-btn');
     const farmCancelBtn = document.getElementById('farm-form-cancel');
 
-    if (farmAddBtn) farmAddBtn.addEventListener('click', function () { farmFormArea.style.display = 'block'; });
+    if (farmAddBtn) farmAddBtn.addEventListener('click', function () {
+        farmFormArea.style.display = 'block';
+        farmFormArea.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
     if (farmCancelBtn) farmCancelBtn.addEventListener('click', function () { farmFormArea.style.display = 'none'; });
 
     // ===== 4. 날짜별 예약 목록 =====
@@ -672,9 +841,9 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function statusBadge(status) {
-        if (status === '확정') return '<span class="fl-badge fl-badge--confirmed">✅ 확정</span>';
-        if (status === '완료') return '<span class="fl-badge fl-badge--done">🔵 완료</span>';
-        return '<span class="fl-badge fl-badge--cancelled">❌ 취소</span>';
+        if (status === '확정') return '<span class="fl-badge fl-badge--confirmed"><img src="/static/icons/icon-confirmed.svg" width="14" height="14" style="vertical-align:-2px;margin-right:3px;"> 확정</span>';
+        if (status === '완료') return '<span class="fl-badge fl-badge--done"><img src="/static/icons/icon-completed.svg" width="14" height="14" style="vertical-align:-2px;margin-right:3px;"> 완료</span>';
+        return '<span class="fl-badge fl-badge--cancelled">취소</span>';
     }
 
     function renderDay(d) {
@@ -685,7 +854,7 @@ document.addEventListener('DOMContentLoaded', function () {
         });
         const container = document.getElementById('em-day-list');
         if (list.length === 0) {
-            container.innerHTML = '<div class="easy-no-item-small"><p>이날 예약이 없어요 🌱</p></div>';
+            container.innerHTML = '<div class="easy-no-item-small"><p>이날 예약이 없어요</p></div>';
             return;
         }
         container.innerHTML = list.map(function (res) {

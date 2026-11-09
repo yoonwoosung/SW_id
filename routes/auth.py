@@ -24,6 +24,7 @@ from services.recommend_service import matches_specialty, score_components, calc
 from services.recommend_reason import recommendation_reason
 from services.review_service import analyze_review_with_clova
 from external.kakao_map import get_coords_from_address
+from common.constants import ROLE_SWITCH_ALLOWED_EMAILS, ROLE_SWITCH_ROLES
 from common.validators import allowed_file
 from services.profile_service import clean_profile
 from common.profile_options import AGE_GROUPS, GENDERS, FAMILY_TYPES, ACTIVITY_LABELS, TRANSPORT_LABELS
@@ -135,6 +136,40 @@ def login_page():
     return render_template('login.html')
 
 
+def switch_role(role):
+    """공모전 심사용 역할 전환. ★허용된 계정만.★
+
+    권한 판정이 전부 session['role'] 하나를 보므로 세션 값만 바꾸면 된다
+    (게이트 38곳을 건드리지 않는다). 대신 ★누가 바꿀 수 있는지★를 좁힌다.
+
+    판정은 세션이 아니라 ★DB의 이메일★로 한다. 세션 값은 이 함수가 바꾸는
+    대상이라 그것으로 자격을 판정하면 한 번 바꾼 뒤 계속 통과한다.
+    """
+    if 'user_id' not in session:
+        return redirect(url_for('login_page'))
+
+    user = User.query.get(session['user_id'])
+    if user is None or user.email not in ROLE_SWITCH_ALLOWED_EMAILS:
+        # 조용히 무시하지 않고 알린다. 심사위원이 왜 안 되는지 알 수 있게.
+        flash("이 계정은 역할 전환을 쓸 수 없습니다.", "danger")
+        return redirect(url_for('index'))
+
+    allowed = {code for code, _label in ROLE_SWITCH_ROLES}
+    if role not in allowed:
+        flash("전환할 수 없는 역할입니다.", "danger")
+        return redirect(url_for('index'))
+
+    session['role'] = role
+    label = dict(ROLE_SWITCH_ROLES)[role]
+    flash(f"{label} 화면으로 전환했습니다.", "success")
+
+    if role == 'admin':
+        return redirect(url_for('admin_farm_audit_list'))
+    if role == 'farmer':
+        return redirect(url_for('farmer_easy_mode'))
+    return redirect(url_for('index'))
+
+
 def logout():
     session.clear()
     flash("로그아웃되었습니다.", "info")
@@ -154,3 +189,4 @@ def register(app):
     app.add_url_rule('/check_email', 'check_email', check_email, methods=['POST'])
     app.add_url_rule('/login', 'login_page', login_page, methods=['GET', 'POST'])
     app.add_url_rule('/logout', 'logout', logout)
+    app.add_url_rule('/switch-role/<role>', 'switch_role', switch_role)

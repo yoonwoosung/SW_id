@@ -1,7 +1,9 @@
 # services/category_match.py — 사용자가 고른 조건과 체험의 대분류별 일치 여부를 판정한다(순수 함수).
 # ★규칙: 한 대분류 안에서 선택값 중 하나라도 맞으면(OR) 그 대분류는 '충족' 1회로 친다(중복 가산 없음).★
 # 추천 가점(recommend_service)과 역제안 매칭(match_service)이 함께 재사용한다.
-from common.search_categories import REGION_ADDRESS_KEYWORDS, BUDGET_RANGES, PET_WEIGHT_MIN_KG
+from common.search_categories import (REGION_ADDRESS_KEYWORDS, BUDGET_RANGES,
+                                      PET_WEIGHT_MIN_KG, OTHER_SUFFIX)
+from common.constants import EXPERIENCE_ACTIVITY_KEYWORDS, ORGANIC_APPROVED_STATUS
 from services.course_builder import estimate_course_cost_per_person
 
 
@@ -18,8 +20,8 @@ def matched_categories(conditions, experience):
         matched.add("facility")
     if _has_activity(conditions.get("activity"), experience):
         matched.add("activity")
-    if _has_pet(conditions.get("pet_dog"), experience):
-        matched.add("pet_dog")
+    if _has_pet(pet_selection(conditions.get("companion_type")), experience):
+        matched.add("companion_type")
     if _has_transport(conditions.get("transport"), experience):
         matched.add("transport")
     return matched
@@ -30,10 +32,25 @@ def compute_category_match(conditions, experience):
     return len(matched_categories(conditions, experience))
 
 
+REGION_OTHER = "region" + OTHER_SUFFIX
+
+# 지역 판정에 쓰는 전체 키워드(어느 지역에도 안 걸리는지 볼 때 쓴다).
+_ALL_REGION_KEYWORDS = tuple(
+    keyword for keywords in REGION_ADDRESS_KEYWORDS.values() for keyword in keywords
+)
+
+
 def _has_region(selected, experience):
     if not selected:
         return False
     address = experience.address_detail or ""
+
+    # '기타' = 주소는 있는데 어떤 시도·시군에도 걸리지 않는 체험.
+    # ★주소가 비어 있으면 제외한다★ — 값이 없는 것과 목록 밖인 것은 다르다.
+    if REGION_OTHER in selected and address.strip():
+        if not any(keyword in address for keyword in _ALL_REGION_KEYWORDS):
+            return True
+
     return any(
         keyword in address
         for code in selected
@@ -56,6 +73,21 @@ def _has_budget(selected, experience):
     return False
 
 
+def is_organic_approved(experience):
+    """유기농 인증이 ★관리자 승인까지 끝났는지.★
+
+    예전에는 organic_certification_type 값이 있기만 하면 인정했다. 그래서
+    같은 '유기농인증'인데 화면마다 결과가 달랐다(실측: 메인 2건, 추천 5건).
+    추천 쪽이 심사 전·반려된 인증까지 세고 있었다.
+
+    "농장주 자기신고가 아니라 관리자 심사"라고 안내해 왔으므로 승인된 것만
+    인정한다. 메인 페이지 필터(organic_cert_status == 'APPROVED')와 같은 기준이다.
+    """
+    if experience is None:
+        return False
+    return getattr(experience, "organic_cert_status", None) == ORGANIC_APPROVED_STATUS
+
+
 def _has_facility(selected, experience):
     if not selected:
         return False
@@ -66,26 +98,119 @@ def _has_facility(selected, experience):
             return True
         if code == "pesticide_free" and getattr(experience, "pesticide_free", False):
             return True
-        if code == "organic" and getattr(experience, "organic_certification_type", None):
+        if code == "organic" and is_organic_approved(experience):
             return True
-        # restroom, barrier_free, nursing_room: Experience에 대응 데이터가 없어 판정하지 않는다.
+        if code == "barrier_free" and getattr(experience, "barrier_free", False):
+            return True
+        # restroom, nursing_room: Experience 에 대응 컬럼이 없어 판정할 수 없다.
+        # 화면에서도 감춘다(common/search_categories 의 hidden).
     return False
 
 
 def _has_activity(selected, experience):
+    """체험의 액티비티 종류를 판정한다.
+
+    ★activity_type 컬럼이 있으면 그것을 우선한다.★ 등록 폼에 드롭다운이
+    생기면 아래 키워드 폴백은 저절로 쓰이지 않는다.
+
+    지금은 저장하는 코드가 없어 모든 체험이 NULL 이라, 체험명·설명에서
+    키워드를 찾는다. 하나도 없으면 판정하지 않는다 — 억지로 맞히지 않는다.
+    """
     if not selected:
         return False
+
     activity = getattr(experience, "activity_type", None)
-    return bool(activity) and activity in selected
+    if activity:
+        return activity in selected
+
+    text = " ".join(str(getattr(experience, field, "") or "")
+                    for field in ("crop", "notes"))
+    if not text.strip():
+        return False
+    return any(
+        word in text
+        for code in selected
+        for word in EXPERIENCE_ACTIVITY_KEYWORDS.get(code, ())
+    )
+
+
+# 반려견은 2026-09-20 리팩터로 'pet_dog' 대분류에서 '동반유형(companion_type)'
+# 하위 그룹으로 옮겨졌다. 그룹 노드의 코드가 'pet_allowed' 라서 그룹의 '전체'
+# 체크박스가 이 값을 보낸다.
+PET_ALLOWED = "pet_allowed"
+PET_NOT_ALLOWED = "pet_not_allowed"
+
+# ★동반유형 안에서 실제로 판정할 수 있는 코드.★
+# 같은 대분류에 인원수(party_*)·동반구성(solo 등)이 섞여 있는데 이들은
+# Experience 에 대응 데이터가 없다. 걸러내지 않으면 사용자가 '혼자'만 골랐을 때
+# 동반유형이 '충족해야 할 대분류'로 잡히고 아무 체험도 통과하지 못해
+# ★결과가 통째로 0건★ 이 된다(지금까지 무시되던 것이 더 나쁜 버그로 바뀐다).
+PET_CODES = frozenset({PET_ALLOWED, PET_NOT_ALLOWED}) | frozenset(PET_WEIGHT_MIN_KG)
+
+
+# ★같은 문제가 교통수단·편의시설에도 있었다.★ (2026-09-20 전수 확인)
+# 교통수단은 자가용만 주차 데이터로 판정한다(_has_transport). 대중교통·택시를
+# 단독으로 고르면 어떤 체험도 통과하지 못해 결과가 0건이었다(실측 확인).
+# 코스 쪽 반영(이동시간·교통비 추정)은 이와 무관하게 그대로 동작한다.
+TRANSPORT_CODES = frozenset({"car"})
+
+# 편의시설은 Experience 에 컬럼이 있는 것만 판정한다(_has_facility).
+# 화장실·수유실은 컬럼이 없는데, 코스 장소 기준값으로 살리면서 감춤을 푼 탓에
+# 체험 목록 쪽이 0건이 됐다. ★코스에는 반영되지만 목록은 거르지 못한다.★
+FACILITY_CODES = frozenset({"parking", "wifi", "pesticide_free",
+                            "organic", "barrier_free"})
+
+# 대분류별 '판정 가능한 코드' 집합. 여기 없는 값만 골랐다면 그 대분류는
+# 통째로 건너뛴다 — 넣으면 결과가 항상 0건이 된다.
+JUDGEABLE_CODES_BY_CATEGORY = {
+    "companion_type": PET_CODES,
+    "transport": TRANSPORT_CODES,
+    "facility": FACILITY_CODES,
+}
+
+
+def judgeable_selection(category_code, selected):
+    """대분류 안에서 ★실제로 판정할 수 있는 값★만 남긴다. 없으면 빈 리스트.
+
+    판정 가능 목록이 없는 대분류(지역·예산대·액티비티)는 값을 그대로 돌려준다.
+    """
+    codes = JUDGEABLE_CODES_BY_CATEGORY.get(category_code)
+    if codes is None:
+        return list(selected or [])
+    return [code for code in (selected or []) if code in codes]
+
+
+def pet_selection(selected):
+    """동반유형 선택값에서 반려견 코드만 추린다. 없으면 빈 리스트(판정 건너뜀)."""
+    return judgeable_selection("companion_type", selected)
 
 
 def _has_pet(selected, experience):
-    # 몸무게 티어(dog_small/medium/large)만 판정: 체험이 그 몸무게 이상 허용하면 충족.
-    if not selected or not getattr(experience, "pet_allowed", False):
+    """반려견 조건 충족 여부.
+
+    예전에는 몸무게 티어(dog_small/medium/large)만 봤다. 그래서 목록의
+    ★'동반가능'·'동반불가'를 고르면 어떤 체험도 통과하지 못했다.★
+    '동반가능'은 티어를 감싸는 부모 체크박스라 실제로 전송되는 값이다.
+
+    케어 조건(목줄·케이지·실내·야외)은 대응 컬럼이 없어 여전히 판정하지
+    않는다. 화면에서도 감춘다(common/search_categories 의 hidden).
+    """
+    if not selected:
         return False
+    pet_allowed = bool(getattr(experience, "pet_allowed", False))
+
+    if PET_NOT_ALLOWED in selected and not pet_allowed:
+        return True
+    if not pet_allowed:
+        return False
+    if PET_ALLOWED in selected:
+        return True
+
+    # 몸무게 티어: 체험이 그 몸무게 이상 허용하면 충족.
     allowed_kg = getattr(experience, "pet_max_weight_kg", None)
     if allowed_kg is None:
-        return False
+        return False      # 값이 없으면 '기타'도 아니다(목록 밖이 아니라 미입력이다)
+
     return any(
         PET_WEIGHT_MIN_KG.get(code) is not None and allowed_kg >= PET_WEIGHT_MIN_KG[code]
         for code in selected

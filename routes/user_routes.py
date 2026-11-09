@@ -29,6 +29,7 @@ from common.validators import allowed_file
 from common.response import success_response
 from common.auth import api_login_required
 from services.trend_service import recent_viewed_experiences
+from services import point_service
 from services.point_service import get_point_summary
 from services import activity_service
 
@@ -80,8 +81,11 @@ def delete_notification(notification_id):
 
 
 def upload_profile():
-    if 'user_id' not in session: return redirect(url_for('login_page'))
+    is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+    if 'user_id' not in session:
+        return (jsonify({'ok': False, 'msg': '로그인이 필요합니다.'}), 401) if is_ajax else redirect(url_for('login_page'))
     if 'profile_pic' not in request.files or request.files['profile_pic'].filename == '':
+        if is_ajax: return jsonify({'ok': False, 'msg': '선택된 파일이 없습니다.'})
         flash('선택된 파일이 없습니다.', 'warning')
         return redirect(url_for('my_info'))
     file = request.files['profile_pic']
@@ -92,12 +96,14 @@ def upload_profile():
         img = Image.open(file.stream)
         img.thumbnail((400, 400))
         img.save(filepath)
-
         user = User.query.get(session['user_id'])
         user.profile_image = filename
         db.session.commit()
+        if is_ajax:
+            return jsonify({'ok': True, 'url': '/static/uploads/' + filename})
         flash('프로필 사진이 변경되었습니다.', 'success')
     else:
+        if is_ajax: return jsonify({'ok': False, 'msg': '허용되지 않는 파일 형식입니다.'})
         flash('허용되지 않는 파일 형식입니다.', 'danger')
     return redirect(url_for('my_info'))
 
@@ -158,8 +164,19 @@ def my_info():
             return redirect(url_for('farmer_easy_mode', tab='account'))
         return redirect(url_for('my_info'))
 
+    # 체험이 끝난 예약을 '완료'로 올린다. 이게 없으면 종료된 체험이 계속
+    # '확정'으로 남아 후기 작성·레시피 버튼이 열리지 않는다.
+    activity_service.sync_user_completed_reservations(user.id)
+
     applications = Application.query.filter_by(user_id=user.id).order_by(Application.apply_date.desc()).all()
-    return render_template('my_info.html', user=user, applications=applications)
+    # ★화면에는 원본 status 가 아니라 계산된 상태를 넘긴다.★
+    # status 만 보면 '확정'과 '완료'를 구분하지 못한다 — reservation_state 는
+    # 상태값·can_review·체험 종료 시각을 함께 본다(mypage 와 같은 규칙).
+    reservation_states = {app.id: activity_service.reservation_state(app)
+                          for app in applications}
+    return render_template('my_info.html', user=user, applications=applications,
+                           reservation_states=reservation_states,
+                           refunded_app_ids=point_service.refunded_application_ids(user.id))
 
 
 def mypage():
@@ -175,7 +192,8 @@ def mypage():
             flash(f"🎉 '{crop}' 체험은 어떠셨나요? 소중한 후기를 남겨주세요.", "info")
 
     applications = Application.query.filter_by(user_id=user.id).order_by(Application.apply_date.desc()).all()
-    reservation_cards = activity_service.reservation_cards(applications)
+    reservation_cards = activity_service.reservation_cards(
+        applications, refunded_ids=point_service.refunded_application_ids(user_id))
     experienced_count = activity_service.experienced_count(applications)
 
     return render_template('mypage.html', user=user, applications=applications,
@@ -188,6 +206,11 @@ def guide_page():
 
 def farmer_guide():
     return render_template('farmer_guide.html')
+
+
+# 👇 새로 추가된 사용자 도움말 페이지 라우트
+def help_page():
+    return render_template('help.html')
 
 
 def album_create():
@@ -206,6 +229,24 @@ def verify_password():
     user = User.query.get(session['user_id'])
     password = (request.json or {}).get('password', '')
     return jsonify({'ok': check_password_hash(user.password, password)})
+
+
+def change_password():
+    if 'user_id' not in session:
+        return jsonify({'ok': False, 'msg': '로그인이 필요합니다.'})
+    data = request.json or {}
+    current = data.get('current_password', '')
+    new_pw = data.get('new_password', '')
+    if not current or not new_pw:
+        return jsonify({'ok': False, 'msg': '값을 모두 입력해주세요.'})
+    if len(new_pw) < 6:
+        return jsonify({'ok': False, 'msg': '새 비밀번호는 6자 이상이어야 합니다.'})
+    user = User.query.get(session['user_id'])
+    if not check_password_hash(user.password, current):
+        return jsonify({'ok': False, 'msg': '현재 비밀번호가 올바르지 않습니다.'})
+    user.password = generate_password_hash(new_pw, method='pbkdf2:sha256')
+    db.session.commit()
+    return jsonify({'ok': True})
 
 
 def farmer_update_info():
@@ -252,12 +293,14 @@ def add_farm():
     # [수정] models/farm.py 모델 매핑 (farmer_id -> user_id)
     farm = Farm(
         user_id=session['user_id'],
+        name=(request.form.get('farm_name') or '').strip() or None,
         address=address,
         size=size,
         certificate_pdf=cert_pdf_name,
         is_organic=is_organic,
         organic_cert_image=organic_img_name,
         organic_cert_type=organic_cert_type,
+        organic_cert_status='PENDING' if is_organic else None,
     )
     db.session.add(farm)
 
@@ -270,6 +313,24 @@ def add_farm():
     db.session.commit()
     flash('농장이 등록되었습니다.', 'success')
     return redirect(url_for('farmer_easy_mode', tab='account'))
+
+
+def update_farm_name(farm_id):
+    if 'user_id' not in session or session.get('role') != 'farmer':
+        return jsonify({'ok': False, 'msg': '권한이 없습니다.'})
+    farm = Farm.query.get_or_404(farm_id)
+    if farm.user_id != session['user_id']:
+        return jsonify({'ok': False, 'msg': '권한이 없습니다.'})
+    name = (request.json or {}).get('name', '').strip()
+    if not name:
+        return jsonify({'ok': False, 'msg': '농장 이름을 입력해주세요.'})
+    farm.name = name
+    try:
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        return jsonify({'ok': False, 'msg': '이미 사용 중인 농장 이름입니다.'})
+    return jsonify({'ok': True})
 
 
 def delete_farm(farm_id):
@@ -303,10 +364,16 @@ def register(app):
     app.add_url_rule('/api/users/me/points', 'my_points', my_points)
     app.add_url_rule('/guide', 'guide_page', guide_page)
     app.add_url_rule('/farmer_guide', 'farmer_guide', farmer_guide)
+    
+    # 👇 새로 추가된 사용자 도움말 페이지 라우트 규칙 등록
+    app.add_url_rule('/help', 'help_page', help_page)
+    
     app.add_url_rule('/album/create', 'album_create', album_create, methods=['GET', 'POST'])
     
     # FE 신규 기능 라우트 등록
     app.add_url_rule('/verify_password', 'verify_password', verify_password, methods=['POST'])
+    app.add_url_rule('/change_password', 'change_password', change_password, methods=['POST'])
     app.add_url_rule('/farmer/update_info', 'farmer_update_info', farmer_update_info, methods=['POST'])
     app.add_url_rule('/farmer/farm/add', 'add_farm', add_farm, methods=['POST'])
     app.add_url_rule('/farmer/farm/<int:farm_id>/delete', 'delete_farm', delete_farm, methods=['POST'])
+    app.add_url_rule('/farmer/farm/<int:farm_id>/name', 'update_farm_name', update_farm_name, methods=['POST'])

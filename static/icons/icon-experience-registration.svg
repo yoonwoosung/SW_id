@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg"
+     viewBox="0 0 32 32"
+     width="32"
+     height="32"
+     fill="none">
+
+  <!-- soft background -->
+  <circle cx="16" cy="16" r="12" fill="#E8F5E9"/>
+
+  <!-- experience card -->
+  <rect x="7.2" y="7.8" width="14.6" height="17.2" rx="3.2"
+        fill="#FFFFFF"
+        stroke="#4CAF50"
+        stroke-width="2"/>
+
+  <!-- top handle -->
+  <rect x="11.3" y="6.1" width="6.4" height="3.2" rx="1.6"
+        fill="#4CAF50"/>
+
+  <!-- simple content lines -->
+  <line x1="10.6" y1="13.1" x2="18.4" y2="13.1"
+        stroke="#4CAF50"
+        stroke-width="1.7"
+        stroke-linecap="round"/>
+
+  <line x1="10.6" y1="16.8" x2="16.6" y2="16.8"
+        stroke="#4CAF50"
+        stroke-width="1.7"
+        stroke-linecap="round"/>
+
+  <!-- add badge -->
+  <circle cx="22.8" cy="22.1" r="4.2" fill="#4CAF50"/>
+
+  <line x1="22.8" y1="19.8" x2="22.8" y2="24.4"
+        stroke="#FFFFFF"
+        stroke-width="1.9"
+        stroke-linecap="round"/>
+
+  <line x1="20.5" y1="22.1" x2="25.1" y2="22.1"
+        stroke="#FFFFFF"
+        stroke-width="1.9"
+        stroke-linecap="round"/>
+</svg>

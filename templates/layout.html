@@ -2,10 +2,12 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>FarmLink Travel</title>
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"/>
+    {# base.css 를 먼저 로드해 토큰·유틸을 깔고, 기존 스타일이 뒤에서 우선하도록 한다 #}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/theme.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <style>
@@ -29,6 +31,25 @@
         });
     </script>
     {% block head %}{% endblock %}
+    {# ── PWA (1단계: 설치·아이콘) ── #}
+    <link rel="icon" href="{{ url_for('static', filename='icons/icon-192.png') }}" type="image/png">
+    <link rel="manifest" href="{{ url_for('pwa_manifest') }}">
+    <meta name="theme-color" content="#1d6340">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='icons/icon-180.png') }}">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="FarmLink">
+    <script>
+        // Service Worker 는 HTTPS 또는 localhost 에서만 등록된다.
+        // 등록 실패가 페이지 동작에 영향을 주지 않도록 조용히 무시한다.
+        if ('serviceWorker' in navigator &&
+            (location.protocol === 'https:' || location.hostname === 'localhost')) {
+            window.addEventListener('load', function () {
+                navigator.serviceWorker.register('/sw.js').catch(function () {});
+            });
+        }
+    </script>
 </head>
 <body class="{% block page_class %}{% endblock %}">
 
@@ -45,6 +66,7 @@
             <a href="{{ url_for('my_info') }}?panel=res" {% if request.endpoint == 'my_info' and request.args.get('panel', 'info') != 'info' %}class="active"{% endif %}>내 활동</a>
             <a href="{{ url_for('album_create') }}" {% if request.endpoint == 'album_create' %}class="active"{% endif %}>추억 앨범</a>
             <a href="{{ url_for('community_page') }}" {% if request.endpoint == 'community_page' %}class="active"{% endif %}>추억 공유</a>
+            <a href="{{ url_for('help_page') }}" {% if request.endpoint == 'help_page' %}class="active"{% endif %}>사용 도움말</a>
         </nav>
         {% else %}
         <nav class="site-nav"></nav>
@@ -63,6 +85,9 @@
                     <a href="{{ url_for('admin_farm_audit_list') }}" style="color:#2d6a4f; font-weight:700;">
                         <i data-lucide="shield-check" class="mr-1"></i> 농장 심사
                     </a>
+                    <a href="{{ url_for('admin_organic_cert_list') }}" style="color:#2d6a4f; font-weight:700;">
+                        <i data-lucide="leaf" class="mr-1"></i> 친환경 인증 심사
+                    </a>
                     <a href="{{ url_for('farmer_easy_mode') }}">
                         <i data-lucide="tractor" class="mr-1"></i> 농장주 페이지
                     </a>
@@ -70,8 +95,23 @@
                     
                     <!-- 2️ 일반 회원(Experiencer) 전용 메뉴 -->
                     {% elif session.get('role') != 'farmer' %}
-                    <a href="{{ url_for('my_info') }}"><i data-lucide="user" class="mr-1"></i> 내 정보</a>
+                    <a href="{{ url_for('my_info') }}"><img src="{{ url_for('static', filename='icons/icon-my-page.svg') }}" class="fl-icon-sm" style="margin-right:4px;" alt=""> 내 정보</a>
                     <a href="{{ url_for('album_create') }}"><i data-lucide="book-open" class="mr-1"></i> 추억 앨범 만들기</a>
+                    <hr style="margin:4px 0; border-top:1px solid #f0f0f0;">
+                    {% endif %}
+
+                    {# 공모전 심사용 역할 전환. 허용된 계정에만 보인다(common/context.py). #}
+                    {% if can_switch_role() %}
+                    <div class="role-switch">
+                        <span class="role-switch__now">현재: {{ current_role_label() }}</span>
+                        {% for code, label in ROLE_SWITCH_ROLES %}
+                            {% if code != session.get('role') %}
+                        <a href="{{ url_for('switch_role', role=code) }}">
+                            <i data-lucide="repeat" class="mr-1"></i> {{ label }}로 보기
+                        </a>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
                     <hr style="margin:4px 0; border-top:1px solid #f0f0f0;">
                     {% endif %}
 
@@ -108,6 +148,10 @@
 
 <footer class="site-footer-bar">
     <p>&copy; 2025 FarmLink Travel. Farm to Link.</p>
+    <p class="site-footer-src">
+        본 서비스는 공공누리 제4유형 데이터를 활용합니다 — 관광지정보 표준데이터(공공데이터포털),
+        한국관광공사 국문 관광정보·무장애 여행 정보
+    </p>
 </footer>
 
 <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>

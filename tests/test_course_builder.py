@@ -76,3 +76,119 @@ def test_skips_places_without_coords():
     places = {"restaurant": [{"name": "좌표없음", "lat": None, "lng": None}]}
     items = build_course(exp, places)
     assert all(i["type"] == "experience" for i in items)  # 유효 장소 없음 → 체험만
+
+
+from services.place_score import build_scorer
+
+# ======================================================================
+# 조건 점수 반영 — 슬롯 구조는 그대로, 슬롯 '안에서' 고르는 기준만 바뀐다
+# ======================================================================
+
+def _place(name, lat, lng, category='', ctype=12):
+    return {'name': name, 'lat': lat, 'lng': lng, 'address': '충남',
+            'category': category, 'content_type_id': ctype}
+
+
+class _Exp:
+    crop = '딸기'
+    lat = 36.80
+    lng = 127.30
+
+
+def _places_by_type():
+    # 가까운 순: 가까운역사 → 먼자연.  조건이 없으면 가까운 쪽이 뽑힌다.
+    attractions = [
+        _place('가까운역사', 36.801, 127.301, 'A02010700'),
+        _place('먼자연',     36.850, 127.350, 'A01010900'),
+    ]
+    restaurants = [_place('식당A', 36.802, 127.302, 'A05020100', 39)]
+    return {'attraction': attractions, 'restaurant': restaurants, 'cafe': list(restaurants)}
+
+
+def test_without_scorer_keeps_distance_order():
+    """★조건을 안 고르면 예전 그대로 거리순이다.★ 기존 코스가 깨지면 안 된다."""
+    items = build_course(_Exp(), _places_by_type())
+    attraction = next(i for i in items if i['type'] == 'attraction')
+    assert attraction['name'] == '가까운역사'
+    assert 'match_score' not in attraction     # 점수 필드도 붙지 않는다
+
+
+def test_scorer_picks_matching_place_over_closer_one():
+    """조건에 맞으면 더 멀어도 고른다."""
+    scorer = build_scorer(['nature'])
+    items = build_course(_Exp(), _places_by_type(), scorer=scorer)
+    attraction = next(i for i in items if i['type'] == 'attraction')
+    assert attraction['name'] == '먼자연'
+    assert attraction['match_score'] == 1.0
+
+
+def test_order_changes_the_pick():
+    """★고른 순서가 결과를 바꾼다.★"""
+    first = build_course(_Exp(), _places_by_type(), scorer=build_scorer(['nature', 'tradition']))
+    second = build_course(_Exp(), _places_by_type(), scorer=build_scorer(['tradition', 'nature']))
+    pick = lambda items: next(i for i in items if i['type'] == 'attraction')['name']
+    assert pick(first) == '먼자연'
+    assert pick(second) == '가까운역사'
+
+
+def test_slot_structure_is_unchanged():
+    """슬롯 시각·종류는 조건과 무관하게 같아야 한다."""
+    plain = build_course(_Exp(), _places_by_type())
+    scored = build_course(_Exp(), _places_by_type(), scorer=build_scorer(['nature']))
+    assert [(i['time'], i['type']) for i in plain] == [(i['time'], i['type']) for i in scored]
+
+
+def test_all_zero_scores_fall_back_to_distance():
+    """조건에 맞는 장소가 하나도 없으면 거리순 그대로."""
+    items = build_course(_Exp(), _places_by_type(), scorer=build_scorer(['kayak']))
+    assert next(i for i in items if i['type'] == 'attraction')['name'] == '가까운역사'
+
+
+def test_broken_scorer_does_not_break_course():
+    """★점수 계산이 터져도 코스는 만들어져야 한다.★"""
+    def boom(place):
+        raise RuntimeError('점수 계산 실패')
+    items = build_course(_Exp(), _places_by_type(), scorer=boom)
+    assert next(i for i in items if i['type'] == 'attraction')['name'] == '가까운역사'
+    assert len(items) == len(build_course(_Exp(), _places_by_type()))
+
+
+def test_no_duplicate_places_across_slots():
+    """점수를 써도 같은 장소가 두 슬롯에 들어가면 안 된다(기존 규칙)."""
+    items = build_course(_Exp(), _places_by_type(), scorer=build_scorer(['food']))
+    names = [i['name'] for i in items]
+    assert len(names) == len(set(names))
+
+
+# ───────────────────── 소요시간 → 슬롯 수 ─────────────────────
+
+def test_max_slots_truncates_from_the_back():
+    """★뒤에서부터 잘라낸다.★ 앞 슬롯의 시각·종류는 그대로 남는다."""
+    full = build_course(_Exp(), _places_by_type())
+    cut = build_course(_Exp(), _places_by_type(), max_slots=3)
+    assert len(cut) == 3
+    assert [(i['time'], i['type']) for i in cut] == [(i['time'], i['type']) for i in full[:3]]
+
+
+def test_max_slots_one_leaves_experience_only():
+    """'2~4시간'은 체험 하나만 남는다 — 장소를 못 가져온 것과 구분돼야 한다."""
+    items = build_course(_Exp(), _places_by_type(), max_slots=1)
+    assert [i['type'] for i in items] == ['experience']
+
+
+def test_max_slots_none_is_unchanged():
+    """★기존 동작 유지.★ 안 주면 예전 그대로 전부 만든다."""
+    assert build_course(_Exp(), _places_by_type(), max_slots=None) == \
+           build_course(_Exp(), _places_by_type())
+
+
+def test_max_slots_zero_or_negative_still_keeps_experience():
+    """이상한 값이 와도 빈 코스가 되면 안 된다(체험은 남는다)."""
+    for bad in (0, -3):
+        items = build_course(_Exp(), _places_by_type(), max_slots=bad)
+        assert [i['type'] for i in items] == ['experience'], bad
+
+
+def test_max_slots_larger_than_slots_is_harmless():
+    assert build_course(_Exp(), _places_by_type(), max_slots=99) == \
+           build_course(_Exp(), _places_by_type())

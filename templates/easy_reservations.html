@@ -27,13 +27,20 @@
                         <span class="fl-badge fl-badge--done">완료</span>
                         {% elif res.status == '취소' %}
                         <span class="fl-badge fl-badge--cancelled">취소</span>
+                        {% elif res.status == '결제완료' %}
+                        <span class="fl-badge fl-badge--pending">수락 대기</span>
                         {% else %}
-                        <span class="fl-badge fl-badge--pending">예정</span>
+                        <span class="fl-badge fl-badge--pending">결제 대기</span>
                         {% endif %}
                     </span></div>
-                    {% if res.status == '예정' %}
+                    {# 수락·거절은 결제가 끝난 건에만 뜬다. 결제 전에는 확정할 수 없다. #}
+                    {% if res.status == '결제완료' %}
                         <form action="{{ url_for('confirm_application', app_id=res.id) }}?easy_mode=true" method="POST" class="mt-2">
                             <button type="submit" class="fl-btn fl-btn-primary fl-btn-block easy-confirm-button">예약 확정하기</button>
+                        </form>
+                        <form action="{{ url_for('reject_application', app_id=res.id) }}" method="POST" class="mt-2"
+                              onsubmit="return confirm('예약을 거절할까요?\n결제 금액은 신청자에게 포인트로 환급됩니다.');">
+                            <button type="submit" class="fl-btn fl-btn-outline fl-btn-block">거절하기</button>
                         </form>
                     {% endif %}
                 </div>

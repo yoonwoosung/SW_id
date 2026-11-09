@@ -24,7 +24,9 @@ from services.recommend_service import matches_specialty, score_components, calc
 from services.recommend_reason import recommendation_reason
 from services.review_service import analyze_review_with_clova
 from external.kakao_map import get_coords_from_address
+from common.constants import APPLICATION_STATUS_PAID
 from common.validators import allowed_file
+from services import experience_validator
 from services import farm_service
 
 
@@ -66,9 +68,11 @@ def farmer_easy_mode():
         Inquiry.experience_id.in_(experience_ids)
     ).order_by(Inquiry.timestamp.desc()).limit(5).all() if experience_ids else []
     
+    # 수락 대기 = 결제까지 끝나고 농장주 승인을 기다리는 건.
+    # 예전에는 '예정'(결제 전)을 봤는데, 그러면 돈을 낸 예약이 이 목록에 뜨지 않는다.
     pending_applications = Application.query.filter(
         Application.experience_id.in_(experience_ids),
-        Application.status == '예정'
+        Application.status == APPLICATION_STATUS_PAID
     ).order_by(Application.apply_date.asc(), Application.apply_time.asc()).all() if experience_ids else []
 
     # 농장 통계 기본값
@@ -181,7 +185,6 @@ def farmer_easy_mode():
             'crops': list(crops),
             'total_reviews': len(all_farm_reviews),
             'avg_rating': avg_farm_rating,
-            # DB 캐시 우선 매핑 (새로고침 버튼 클릭 시 Gemini 결과가 여기에 들어옴)
             'strengths_summary': cached_strengths or _build_summary(s_list, True),
             'improvements_summary': cached_improvements or _build_summary(i_list, False),
             'satisfaction_rate': cached_sat_rate if cached_sat_rate is not None else satisfaction_rate,
@@ -245,6 +248,30 @@ def easy_create_experience():
                 flash(f"'{name}' 항목을 입력해주세요. 모든 항목은 필수입니다.", "warning")
                 return render_template('easy_create_experience.html', item=None, approved_farms=approved_farms, form_data=request.form)
             
+        pet_allowed, pet_max_weight_kg, pet_error = experience_validator.parse_pet_fields(request.form)
+        if pet_error:
+            flash(pet_error, "warning")
+            return render_template('easy_create_experience.html', item=None, approved_farms=approved_farms, form_data=request.form)
+
+        cost, cost_error = experience_validator._parse_int(
+            request.form.get('price'), "가격", minimum=0)
+        if cost_error:
+            flash(cost_error, "warning")
+            return render_template('easy_create_experience.html', item=None, approved_farms=approved_farms, form_data=request.form)
+
+        surplus, surplus_error = experience_validator.parse_surplus_fields(request.form, cost)
+        if surplus_error:
+            flash(surplus_error, "warning")
+            return render_template('easy_create_experience.html', item=None, approved_farms=approved_farms, form_data=request.form)
+
+        capacity = experience_validator.capacity_from_quantity(
+            surplus['surplus_qty_total'], surplus['surplus_per_person'])
+        max_participants, cap_error = experience_validator.resolve_max_participants(
+            request.form.get('max_participants'), capacity)
+        if cap_error:
+            flash(cap_error, "warning")
+            return render_template('easy_create_experience.html', item=None, approved_farms=approved_farms, form_data=request.form)
+            
         is_organic = 'is_organic' in request.form
         cert_filename = None
         cert_type = None
@@ -260,13 +287,25 @@ def easy_create_experience():
                 flash("친환경 농법 사용 시 인증서 이미지를 반드시 등록해야 합니다.", "warning")
                 return render_template('easy_create_experience.html', item=None, approved_farms=approved_farms, form_data=request.form)
 
+        # 👇 레시피 전수 업로드 처리 로직 👇
+        has_recipe = 'has_recipe' in request.form
+        recipe_text = request.form.get('recipe_text')
+        recipe_image_filename = None
+
+        if has_recipe:
+            recipe_file = request.files.get('recipe_image')
+            if recipe_file and recipe_file.filename and allowed_file(recipe_file.filename):
+                ext = recipe_file.filename.rsplit('.', 1)[1].lower()
+                recipe_image_filename = f"recipe_{session['user_id']}_{uuid.uuid4().hex}.{ext}"
+                recipe_file.save(os.path.join(current_app.config['UPLOAD_FOLDER'], recipe_image_filename))
+
         full_address = f"{selected_farm.address} {selected_farm.address_detail or ''}".strip()
 
         new_experience = Experience(
             farm_id=selected_farm.id,
             crop=request.form.get('crop'),
-            cost=int(request.form.get('price')),
-            max_participants=int(request.form.get('max_participants')),
+            cost=cost,
+            max_participants=max_participants,
             duration_start=datetime.strptime(request.form.get('duration_start'), '%Y-%m-%d').date(),
             end_date=datetime.strptime(request.form.get('duration_end'), '%Y-%m-%d').date(),
             farmer_id=session['user_id'],
@@ -278,11 +317,23 @@ def easy_create_experience():
             excludes=request.form.get('excludes'),
             timetable_data=request.form.get('timetable_data'),
             has_parking='has_parking' in request.form,
+            barrier_free='barrier_free' in request.form,
+            has_wifi='has_wifi' in request.form,
+            pet_allowed=pet_allowed,
+            pet_max_weight_kg=pet_max_weight_kg,
+            **surplus,
             volunteer_needed=int(request.form.get('volunteer_needed', 0)),
             volunteer_duties=request.form.get('volunteer_duties'),
             pesticide_free=is_organic,
             organic_certification_type=cert_type,
             organic_certification_image=cert_filename,
+            organic_cert_status='PENDING' if (is_organic and cert_filename) else None,
+            has_recipe=has_recipe,
+            recipe_name=request.form.get('recipe_name'),
+            recipe_ingredients=request.form.get('recipe_ingredients'),
+            recipe_steps=request.form.get('recipe_steps'),
+            recipe_tip=request.form.get('recipe_tip'),
+            recipe_image=recipe_image_filename,
             lat=selected_farm.lat,
             lng=selected_farm.lng,
             status='recruiting'
@@ -355,6 +406,30 @@ def easy_modify_experience(item_id):
                 flash(f"'{name}' 항목을 입력해주세요. 모든 항목은 필수입니다.", "warning")
                 return render_template('easy_create_experience.html', item=item, approved_farms=approved_farms, form_data=request.form)
         
+        pet_allowed, pet_max_weight_kg, pet_error = experience_validator.parse_pet_fields(request.form)
+        if pet_error:
+            flash(pet_error, "warning")
+            return render_template('easy_create_experience.html', item=item, approved_farms=approved_farms, form_data=request.form)
+
+        cost, cost_error = experience_validator._parse_int(
+            request.form.get('price'), "가격", minimum=0)
+        if cost_error:
+            flash(cost_error, "warning")
+            return render_template('easy_create_experience.html', item=item, approved_farms=approved_farms, form_data=request.form)
+
+        surplus, surplus_error = experience_validator.parse_surplus_fields(request.form, cost)
+        if surplus_error:
+            flash(surplus_error, "warning")
+            return render_template('easy_create_experience.html', item=item, approved_farms=approved_farms, form_data=request.form)
+
+        capacity = experience_validator.capacity_from_quantity(
+            surplus['surplus_qty_total'], surplus['surplus_per_person'])
+        max_participants, cap_error = experience_validator.resolve_max_participants(
+            request.form.get('max_participants'), capacity)
+        if cap_error:
+            flash(cap_error, "warning")
+            return render_template('easy_create_experience.html', item=item, approved_farms=approved_farms, form_data=request.form)
+        
         is_organic = 'is_organic' in request.form
         if is_organic:
             item.pesticide_free = True
@@ -366,6 +441,8 @@ def easy_modify_experience(item_id):
                 new_cert_filename = f"cert_{session['user_id']}_{uuid.uuid4().hex}.{ext}"
                 cert_file.save(os.path.join(current_app.config['UPLOAD_FOLDER'], new_cert_filename))
                 item.organic_certification_image = new_cert_filename
+                item.organic_cert_status = 'PENDING'
+                item.organic_cert_reject_reason = None
             elif not item.organic_certification_image:
                 flash("친환경 농법 사용 시 인증서 이미지를 등록해야 합니다.", "warning")
                 return render_template('easy_create_experience.html', item=item, approved_farms=approved_farms, form_data=request.form)
@@ -373,6 +450,29 @@ def easy_modify_experience(item_id):
             item.pesticide_free = False
             item.organic_certification_type = None
             item.organic_certification_image = None
+            item.organic_cert_status = None
+            item.organic_cert_reject_reason = None
+
+        # 👇 레시피 수정 처리 로직 👇
+        item.has_recipe = 'has_recipe' in request.form
+        if item.has_recipe:
+            item.recipe_name = request.form.get('recipe_name')
+            item.recipe_ingredients = request.form.get('recipe_ingredients')
+            item.recipe_steps = request.form.get('recipe_steps')
+            item.recipe_tip = request.form.get('recipe_tip')
+            
+            recipe_file = request.files.get('recipe_image')
+            if recipe_file and recipe_file.filename and allowed_file(recipe_file.filename):
+                ext = recipe_file.filename.rsplit('.', 1)[1].lower()
+                new_recipe_filename = f"recipe_{session['user_id']}_{uuid.uuid4().hex}.{ext}"
+                recipe_file.save(os.path.join(current_app.config['UPLOAD_FOLDER'], new_recipe_filename))
+                item.recipe_image = new_recipe_filename
+        else:
+            item.recipe_name = None
+            item.recipe_ingredients = None
+            item.recipe_steps = None
+            item.recipe_tip = None
+            item.recipe_image = None
 
         full_address = f"{selected_farm.address} {selected_farm.address_detail or ''}".strip()
         item.farm_id = selected_farm.id
@@ -382,8 +482,8 @@ def easy_modify_experience(item_id):
         item.lng = selected_farm.lng
 
         item.crop = request.form.get('crop')
-        item.cost = int(request.form.get('price'))
-        item.max_participants = int(request.form.get('max_participants'))
+        item.cost = cost
+        item.max_participants = max_participants
         item.duration_start = datetime.strptime(request.form.get('duration_start'), '%Y-%m-%d').date()
         item.end_date = datetime.strptime(request.form.get('duration_end'), '%Y-%m-%d').date()
         item.phone = request.form.get('phone')
@@ -392,6 +492,12 @@ def easy_modify_experience(item_id):
         item.excludes = request.form.get('excludes')
         item.timetable_data = request.form.get('timetable_data')
         item.has_parking = 'has_parking' in request.form
+        item.barrier_free = 'barrier_free' in request.form
+        item.has_wifi = 'has_wifi' in request.form
+        item.pet_allowed = pet_allowed
+        item.pet_max_weight_kg = pet_max_weight_kg
+        for _field, _value in surplus.items():
+            setattr(item, _field, _value)
         item.volunteer_needed = int(request.form.get('volunteer_needed', 0))
         item.volunteer_duties = request.form.get('volunteer_duties')
 
@@ -411,7 +517,7 @@ def easy_modify_experience(item_id):
 
         db.session.commit()
         flash(f"'{item.crop}' 체험이 성공적으로 수정되었습니다.", "success")
-        return redirect(url_for('easy_modify_experience_list'))
+        return redirect(url_for('farmer_easy_mode', tab='operations'))
 
     return render_template('easy_create_experience.html', item=item, approved_farms=approved_farms, form_data={})
 
@@ -488,6 +594,36 @@ def close_experience(item_id):
     return redirect(url_for('farmer_easy_mode', tab='operations'))
 
 
+def open_experience(item_id):
+    if 'user_id' not in session or session.get('role') != 'farmer':
+        return redirect(url_for('login_page'))
+    item = Experience.query.get_or_404(item_id)
+    if item.farmer_id != session.get('user_id'):
+        abort(403)
+    item.status = 'recruiting'
+    db.session.commit()
+    flash(f"'{item.crop}' 체험이 다시 공개되었습니다.", 'success')
+    return redirect(url_for('farmer_easy_mode', tab='operations'))
+
+
+# 👇 마이페이지에서 레시피 데이터를 가져오기 위한 API 👇
+def get_recipe_api(item_id):
+    exp = Experience.query.get_or_404(item_id)
+    if not exp.has_recipe:
+        return jsonify({"success": False, "message": "등록된 레시피가 없습니다."}), 404
+        
+    return jsonify({
+        "success": True,
+        "crop": exp.crop,
+        "recipe_name": exp.recipe_name,
+        "recipe_ingredients": exp.recipe_ingredients,
+        "recipe_steps": exp.recipe_steps,
+        "recipe_tip": exp.recipe_tip,
+        "recipe_image": exp.recipe_image,
+        "exp_image": exp.images.split(',')[0] if exp.images else None
+    })
+
+
 def register(app):
     app.add_url_rule('/easy_mode', 'farmer_easy_mode', farmer_easy_mode)
     app.add_url_rule('/easy_mode/edit_bio', 'easy_edit_bio', easy_edit_bio, methods=['GET', 'POST'])
@@ -497,3 +633,6 @@ def register(app):
     app.add_url_rule('/easy_mode/reservations', 'easy_reservations', easy_reservations)
     app.add_url_rule('/easy_mode/communication', 'easy_communication', easy_communication)
     app.add_url_rule('/easy_mode/close_experience/<int:item_id>', 'close_experience', close_experience, methods=['POST'])
+    app.add_url_rule('/easy_mode/open_experience/<int:item_id>', 'open_experience', open_experience, methods=['POST'])
+    # 마이페이지 레시피 요청 API 라우트 등록
+    app.add_url_rule('/api/experiences/<int:item_id>/recipe', 'get_recipe_api', get_recipe_api)

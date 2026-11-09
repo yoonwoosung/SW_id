@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- FarmLink 앱 아이콘 원본.
+     딥그린(#1d6340) 라운드 사각 배경 위에 흰색으로
+     밭고랑 곡선 3줄(위→아래로 점점 연하게)과 그 위의 새싹(줄기 + 잎 2장)을 그린다.
+     512x512 기준. PNG 는 이 비율을 유지해 각 크기로 렌더한다. -->
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="112" ry="112" fill="#1d6340"/>
+
+  <!-- 새싹: 줄기 -->
+  <path d="M256 300 V186" stroke="#ffffff" stroke-width="20" stroke-linecap="round" fill="none"/>
+  <!-- 새싹: 왼쪽 잎 -->
+  <path d="M256 214 C214 214 184 190 176 154 C216 148 248 168 256 214 Z" fill="#ffffff"/>
+  <!-- 새싹: 오른쪽 잎 -->
+  <path d="M256 236 C298 236 328 212 336 176 C296 170 264 190 256 236 Z" fill="#ffffff"/>
+
+  <!-- 밭고랑 3줄: 위에서 아래로 점점 연하게 -->
+  <path d="M112 336 C176 312 336 312 400 336" stroke="#ffffff" stroke-opacity="0.95"
+        stroke-width="22" stroke-linecap="round" fill="none"/>
+  <path d="M112 386 C176 362 336 362 400 386" stroke="#ffffff" stroke-opacity="0.62"
+        stroke-width="22" stroke-linecap="round" fill="none"/>
+  <path d="M112 436 C176 412 336 412 400 436" stroke="#ffffff" stroke-opacity="0.34"
+        stroke-width="22" stroke-linecap="round" fill="none"/>
+</svg>

@@ -16,13 +16,14 @@ window.FarmFilter = (function () {
     function esc(s) { var d = document.createElement('div'); d.textContent = (s == null ? '' : String(s)); return d.innerHTML; }
 
     // 잎은 그리드 체크박스, 중분류(children 있음)는 가로 아코디언(헤더 토글 + 우측 '전체' 부모 체크박스 + 재귀 하위).
-    function renderPanelNodes(nodes, topCode) {
+    function renderPanelNodes(nodes, topCode, init) {
         var leaves = nodes.filter(function (n) { return !(n.children && n.children.length); });
         var groups = nodes.filter(function (n) { return n.children && n.children.length; });
         var html = '';
         if (leaves.length) {
             html += '<div class="fl-grid">' + leaves.map(function (n) {
-                return '<label class="fl-cell"><input type="checkbox" data-cat="' + esc(topCode) + '" value="' + esc(n.code) + '">'
+                var chk = init && (init[topCode] || []).indexOf(n.code) !== -1 ? ' checked' : '';
+                return '<label class="fl-cell"><input type="checkbox" data-cat="' + esc(topCode) + '" value="' + esc(n.code) + '"' + chk + '>'
                     + '<span>' + esc(n.label) + '</span></label>';
             }).join('') + '</div>';
         }
@@ -32,10 +33,10 @@ window.FarmFilter = (function () {
                 + '<button type="button" class="fl-acc__toggle-btn" aria-expanded="false">'
                 + '<i class="fa-solid fa-chevron-right fl-acc__caret" aria-hidden="true"></i>'
                 + '<span>' + esc(g.label) + '</span></button>'
-                + '<label class="fl-acc__check" title="' + esc(g.label) + ' 전체 선택">'
-                + '<input type="checkbox" class="fl-parent" data-cat="' + esc(topCode) + '" value="' + esc(g.code) + '"><span>전체</span></label>'
+                + (g.no_select_all ? '' : '<label class="fl-acc__check" title="' + esc(g.label) + ' 전체 선택">'
+                + '<input type="checkbox" class="fl-parent" data-cat="' + esc(topCode) + '" value="' + esc(g.code) + '"><span>전체</span></label>')
                 + '</div>'
-                + '<div class="fl-acc__body" hidden>' + renderPanelNodes(g.children, topCode) + '</div>'
+                + '<div class="fl-acc__body" hidden>' + renderPanelNodes(g.children, topCode, init) + '</div>'
                 + '</div>';
         });
         return html;
@@ -92,16 +93,33 @@ window.FarmFilter = (function () {
             });
         }
 
+        // ★고른 '순서'를 기억한다.★ 체크박스 DOM 순서로는 알 수 없고,
+        // getSelected() 가 돌려주는 {대분류: [값]} 구조도 순서를 담지 못한다.
+        // 코스 장소 점수에서 1순위에 40% 를 주므로 순서가 결과를 좌우한다.
+        var clickOrder = [];
+        function remember(code, checked) {
+            var at = clickOrder.indexOf(code);
+            if (checked) { if (at === -1) clickOrder.push(code); }
+            else if (at !== -1) { clickOrder.splice(at, 1); }
+        }
+
         function getSelected() {
             var out = {};
-            effectiveChecked().forEach(function (cb) {
+            var checked = effectiveChecked();
+            checked.forEach(function (cb) {
                 (out[cb.dataset.cat] = out[cb.dataset.cat] || []).push(cb.value);
             });
+            // 지금 켜져 있는 것만, 고른 순서대로. 순서 기록에 없는 값(초기 상태 등)은 뒤에 붙인다.
+            var live = checked.map(function (cb) { return cb.value; });
+            var ordered = clickOrder.filter(function (c) { return live.indexOf(c) !== -1; });
+            live.forEach(function (c) { if (ordered.indexOf(c) === -1) ordered.push(c); });
+            out.__order = ordered;
             return out;
         }
 
         function reset() {
             root.querySelectorAll('input[type=checkbox]').forEach(function (cb) { cb.checked = false; cb.indeterminate = false; });
+            clickOrder = [];
             refresh();
         }
 
@@ -118,16 +136,22 @@ window.FarmFilter = (function () {
         }
 
         function renderTree(tree) {
+            var init = opts.initialState || null;
+            var firstInitCat = init && Object.keys(init)[0];
+            // initialState의 cat이 실제 트리에 없으면(API 실패 등) 첫 탭 기본 활성화로 폴백
+            var initCatExists = firstInitCat && tree.some(function (c) { return c.code === firstInitCat; });
             root.innerHTML =
                 '<div class="fl-chips" data-role="chips" aria-live="polite"></div>'
                 + '<div class="fl-filter">'
                 + '<div class="fl-tabbar fl-tabbar--vertical" role="tablist">' + tree.map(function (c, i) {
-                    return '<button type="button" class="fl-tab' + (i === 0 ? ' is-active' : '') + '" data-cat="' + esc(c.code) + '">'
+                    var isActive = initCatExists ? c.code === firstInitCat : i === 0;
+                    return '<button type="button" class="fl-tab' + (isActive ? ' is-active' : '') + '" data-cat="' + esc(c.code) + '">'
                         + '<span class="fl-tab__label">' + esc(c.label) + '</span><span class="fl-tab__count" hidden>0</span></button>';
                 }).join('') + '</div>'
                 + '<div class="fl-panel-body">' + tree.map(function (c, i) {
-                    return '<div class="fl-catpanel" data-catpanel="' + esc(c.code) + '"' + (i === 0 ? '' : ' hidden') + '>'
-                        + renderPanelNodes(c.children || [], c.code)
+                    var isActive = initCatExists ? c.code === firstInitCat : i === 0;
+                    return '<div class="fl-catpanel" data-catpanel="' + esc(c.code) + '"' + (isActive ? '' : ' hidden') + '>'
+                        + renderPanelNodes(c.children || [], c.code, init)
                         + (c.note ? '<div class="fl-note">' + esc(c.note) + '</div>' : '')
                         + '</div>';
                 }).join('') + '</div>'
@@ -152,8 +176,11 @@ window.FarmFilter = (function () {
                     var cb = root.querySelector('input[data-cat="' + chip.dataset.cat + '"][value="' + chip.dataset.value + '"]');
                     if (cb) {
                         cb.checked = false;
+                        remember(cb.value, false);
                         if (cb.classList.contains('fl-parent')) {
-                            cb.closest('.fl-subgroup').querySelectorAll('input[type=checkbox]').forEach(function (d) { d.checked = false; d.indeterminate = false; });
+                            cb.closest('.fl-subgroup').querySelectorAll('input[type=checkbox]').forEach(function (d) {
+                                d.checked = false; d.indeterminate = false; remember(d.value, false);
+                            });
                         }
                         syncParents(); refresh();
                     }
@@ -164,9 +191,11 @@ window.FarmFilter = (function () {
             });
             root.addEventListener('change', function (e) {
                 if (!e.target.matches('input[type=checkbox]')) return;
+                remember(e.target.value, e.target.checked);
                 if (e.target.classList.contains('fl-parent')) {   // 중분류 '전체' 체크 → 하위 소분류 전체 선택/해제
                     e.target.closest('.fl-subgroup').querySelectorAll('input[type=checkbox]').forEach(function (cb) {
                         cb.checked = e.target.checked; cb.indeterminate = false;
+                        remember(cb.value, cb.checked);
                     });
                 }
                 syncParents();
@@ -176,7 +205,15 @@ window.FarmFilter = (function () {
 
         function load() {
             var url = opts.endpoint || root.dataset.endpoint;
-            var done = function (tree) { renderTree(tree && tree.length ? tree : MOCK_TREE); };
+            var done = function (tree) {
+                renderTree(tree && tree.length ? tree : MOCK_TREE);
+                // initialState로 체크박스가 렌더됐으면 칩 즉시 표시
+                if (opts.initialState && Object.keys(opts.initialState).length) {
+                    syncParents();
+                    refresh();
+                }
+                if (opts.onReady) opts.onReady();
+            };
             if (!url) { done(MOCK_TREE); return; }
             fetch(url).then(function (r) { return r.json(); }).then(function (res) {
                 done((res && res.data && res.data.categories) || []);

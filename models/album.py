@@ -39,10 +39,15 @@ class Album(db.Model):
             'created_at': self.created_at.strftime('%Y-%m-%dT%H:%M:%S'),
             'updated_at': self.updated_at.strftime('%Y-%m-%dT%H:%M:%S')
         }
+        import json
+        try:
+            parsed = json.loads(self.pages_data) if self.pages_data else []
+        except (json.JSONDecodeError, TypeError):
+            parsed = []
+
+        # 커버 페이지(index 0)는 목록에서도 썸네일 렌더링에 필요하므로 항상 포함
+        data['cover_page'] = parsed[0] if parsed else {}
+
         if include_pages:
-            import json
-            try:
-                data['pages_data'] = json.loads(self.pages_data) if self.pages_data else []
-            except (json.JSONDecodeError, TypeError):
-                data['pages_data'] = []
+            data['pages_data'] = parsed
         return data

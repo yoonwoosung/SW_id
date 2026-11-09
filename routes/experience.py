@@ -14,6 +14,8 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 from sqlalchemy.sql import func
 from sqlalchemy import or_, case
+from sqlalchemy.orm import joinedload
+from services.thumbnail_service import experience_thumbnail_url, first_image_name
 from types import SimpleNamespace
 from PIL import Image
 
@@ -25,10 +27,11 @@ from services.recommend_reason import recommendation_reason
 from services.review_service import analyze_review_with_clova
 from services.trend_service import record_click
 from services import policy_service
-from common.search_categories import SEARCH_CATEGORIES, CATEGORY_CODES, CATEGORY_GROUPS
+from common.search_categories import CATEGORY_CODES, CATEGORY_GROUPS, visible_categories, region_dropdown_groups
 from common.response import success_response
 from external.kakao_map import get_coords_from_address
 from common.validators import allowed_file
+from services import experience_validator
 from services import farm_service
 
 
@@ -43,15 +46,63 @@ def index():
         sort_by = request.args.get('sort', 'recommended', type=str)
         region = request.args.get('region', type=str)
         crop_query = request.args.get('crop_query', type=str)
+        view = request.args.get('view', type=str)
+        date_filter = request.args.get('date_filter', type=str)
+        people_count = request.args.get('people_count', type=str)
+        f_eco = request.args.get('eco', type=str)
+        f_parking = request.args.get('parking', type=str)
+        f_pet = request.args.get('pet', type=str)
+        f_surplus = request.args.get('surplus', type=str)
+        per_page = 12 if view == 'list' else 15
         selected_conditions = {code: request.args.getlist('cond_' + code) for code in CATEGORY_CODES}
 
         today = date.today()
         base_query = Experience.query.filter(Experience.status == 'recruiting', Experience.end_date >= today)
 
         if region:
-            base_query = base_query.filter(Experience.address_detail.like(f"%{region}%"))
+            if region == '광역시':
+                # 광역시·특별시 전체: 서울특별시·세종특별자치시는 '광역시' 키워드에 안 걸려 별도 처리
+                _metro_kw = ['서울', '부산', '대구', '인천', '광주광역시', '대전', '울산', '세종']
+                base_query = base_query.filter(
+                    or_(*[Experience.address_detail.like(f"%{kw}%") for kw in _metro_kw],
+                        *[Experience.location.like(f"%{kw}%") for kw in _metro_kw])
+                )
+            else:
+                base_query = base_query.filter(
+                    or_(Experience.address_detail.like(f"%{region}%"),
+                        Experience.location.like(f"%{region}%"))
+                )
         if crop_query:
-            base_query = base_query.filter(Experience.crop.like(f"%{crop_query}%"))
+            base_query = base_query.filter(
+                or_(Experience.crop.like(f"%{crop_query}%"),
+                    Experience.address_detail.like(f"%{crop_query}%"),
+                    Experience.location.like(f"%{crop_query}%"))
+            )
+        if date_filter:
+            try:
+                target_date = datetime.strptime(date_filter, '%Y-%m-%d').date()
+                base_query = base_query.filter(
+                    or_(Experience.duration_start.is_(None), Experience.duration_start <= target_date),
+                    Experience.end_date >= target_date
+                )
+            except ValueError:
+                pass
+        if people_count and people_count != '5+':
+            try:
+                needed = int(people_count)
+                base_query = base_query.filter(
+                    (Experience.max_participants - Experience.current_participants) >= needed
+                )
+            except ValueError:
+                pass
+        if f_eco == '1':
+            base_query = base_query.filter(Experience.organic_cert_status == 'APPROVED')
+        if f_parking == '1':
+            base_query = base_query.filter(Experience.has_parking == True)
+        if f_pet == '1':
+            base_query = base_query.filter(Experience.pet_allowed == True)
+        if f_surplus == '1':
+            base_query = base_query.filter(Experience.is_surplus == True, Experience.surplus_terms_agreed == True)
 
         items_on_page = []
         pagination = None
@@ -93,32 +144,43 @@ def index():
 
                 sorted_items = sorted(ranked_experiences, key=lambda x: x.recommendation_score, reverse=True)
 
-                start = (page - 1) * 15
-                end = start + 15
+                start = (page - 1) * per_page
+                end = start + per_page
                 items_on_page = sorted_items[start:end]
                 total_items = len(sorted_items)
-            
-                total_pages = math.ceil(total_items / 15) if total_items > 0 else 1
+
+                total_pages = math.ceil(total_items / per_page) if total_items > 0 else 1
                 pagination = SimpleNamespace(
-                    items=items_on_page, page=page, per_page=15, total=total_items,
+                    items=items_on_page, page=page, per_page=per_page, total=total_items,
                     pages=total_pages, has_prev=(page > 1), has_next=(page < total_pages),
                     prev_num=page - 1, next_num=page + 1,
                     iter_pages=lambda **kwargs: range(1, total_pages + 1)
                 )
             else:
                 query = base_query.order_by(is_closed.asc(), Experience.end_date.asc())
-                pagination = query.paginate(page=page, per_page=15, error_out=False)
+                pagination = query.paginate(page=page, per_page=per_page, error_out=False)
                 items_on_page = pagination.items
 
         elif sort_by == 'reviews':
             review_count = func.count(Review.id).label('review_count')
             query = base_query.outerjoin(Review).group_by(Experience.id).order_by(is_closed.asc(), review_count.desc())
-            pagination = query.paginate(page=page, per_page=15, error_out=False)
+            pagination = query.paginate(page=page, per_page=per_page, error_out=False)
+            items_on_page = pagination.items
+
+        elif sort_by == 'surplus':
+            # 과생산만 보기. 정렬이 아니라 목록을 좁히는 탭이지만 sort 파라미터를 같이 쓰면
+            # 탭 UI·페이지네이션·지역/검색어 유지가 그대로 따라온다.
+            # 약관에 동의하지 않은 건 노출하지 않는다(등록 화면과 같은 기준).
+            query = base_query.filter(
+                Experience.is_surplus.is_(True),
+                Experience.surplus_terms_agreed.is_(True),
+            ).order_by(is_closed.asc(), Experience.end_date.asc())
+            pagination = query.paginate(page=page, per_page=per_page, error_out=False)
             items_on_page = pagination.items
 
         else:
             query = base_query.order_by(is_closed.asc(), Experience.end_date.asc())
-            pagination = query.paginate(page=page, per_page=15, error_out=False)
+            pagination = query.paginate(page=page, per_page=per_page, error_out=False)
             items_on_page = pagination.items
 
         if items_on_page:
@@ -137,7 +199,15 @@ def index():
                                items=items_on_page,
                                pagination=pagination,
                                featured=featured,
-                               sort_by=sort_by)
+                               sort_by=sort_by,
+                               view=view,
+                               date_filter=date_filter,
+                               people_count=people_count,
+                               f_eco=f_eco,
+                               f_parking=f_parking,
+                               f_pet=f_pet,
+                               f_surplus=f_surplus,
+                               region_groups=region_dropdown_groups())
 
 
 # ==========================================
@@ -156,7 +226,8 @@ def api_search():
         per_page = 15
 
         today = date.today()
-        base_query = Experience.query.filter(
+        # 카드마다 farmer.farm_image 를 읽으므로 farmer 를 함께 가져온다(N+1 방지)
+        base_query = Experience.query.options(joinedload(Experience.farmer)).filter(
             Experience.status == 'recruiting',
             Experience.end_date >= today
         )
@@ -261,11 +332,7 @@ def api_search():
         # 6. JSON 응답 직렬화
         response_items = []
         for item in items_on_page:
-            first_image = None
-            if item.images:
-                imgs = [img.strip() for img in item.images.split(',') if img.strip()]
-                if imgs:
-                    first_image = imgs[0]
+            first_image = first_image_name(item)
 
             is_specialty = getattr(item, 'is_specialty_val', None)
             if is_specialty is None:
@@ -283,7 +350,8 @@ def api_search():
                 'crop': item.crop,
                 'address_detail': item.address_detail or item.location or '',
                 'cost': item.cost,
-                'first_image': first_image,
+                'first_image': first_image,          # 기존 프론트 호환용(파일명만)
+                'thumbnail_url': experience_thumbnail_url(item),
                 'remaining_spots': max(0, item.max_participants - item.current_participants),
                 'pesticide_free': bool(item.pesticide_free),
                 'is_specialty': bool(is_specialty),
@@ -358,6 +426,33 @@ def farmer_register(item_id=None):
     if request.method == 'POST':
         is_organic = 'is_organic' in request.form
         has_parking = 'has_parking' in request.form
+        barrier_free = 'barrier_free' in request.form
+        has_wifi = 'has_wifi' in request.form
+        pet_allowed, pet_max_weight_kg, pet_error = experience_validator.parse_pet_fields(request.form)
+        if pet_error:
+            flash(pet_error, "danger")
+            return render_template('farmer_register.html', item=item, form_data=request.form)
+
+        # 과생산 검증은 판매가가 필요하다. price 파싱을 앞으로 당긴다
+        # (기존에는 Experience(...) 안에서 맨몸 int() 였다 — 비정수 입력에 500).
+        cost, cost_error = experience_validator._parse_int(
+            request.form.get('price'), "가격", minimum=0)
+        if cost_error:
+            flash(cost_error, "danger")
+            return render_template('farmer_register.html', item=item, form_data=request.form)
+
+        surplus, surplus_error = experience_validator.parse_surplus_fields(request.form, cost)
+        if surplus_error:
+            flash(surplus_error, "danger")
+            return render_template('farmer_register.html', item=item, form_data=request.form)
+
+        capacity = experience_validator.capacity_from_quantity(
+            surplus['surplus_qty_total'], surplus['surplus_per_person'])
+        max_participants, cap_error = experience_validator.resolve_max_participants(
+            request.form.get('max_participants'), capacity)
+        if cap_error:
+            flash(cap_error, "danger")
+            return render_template('farmer_register.html', item=item, form_data=request.form)
         cert_filename = item.organic_certification_image if item and item.organic_certification_image else None
         cert_file = request.files.get('organic_certification_image')
 
@@ -406,8 +501,8 @@ def farmer_register(item_id=None):
             item.farm_size = request.form.get('farm_size')
             item.duration_start = datetime.strptime(request.form.get('duration_start'), '%Y-%m-%d').date()
             item.end_date = datetime.strptime(request.form.get('duration_end'), '%Y-%m-%d').date()
-            item.max_participants = int(request.form.get('max_participants'))
-            item.cost = int(request.form.get('price'))
+            item.max_participants = max_participants
+            item.cost = cost
             item.images = image_string
             item.notes = request.form.get('notes')
             item.includes = request.form.get('includes')
@@ -416,11 +511,23 @@ def farmer_register(item_id=None):
             item.pesticide_free = is_organic
             item.organic_certification_image = cert_filename
             item.organic_certification_type = request.form.get('organic_certification_type')
+            if is_organic and cert_filename:
+                item.organic_cert_status = 'PENDING'
+                item.organic_cert_reject_reason = None
+            elif not is_organic:
+                item.organic_cert_status = None
+                item.organic_cert_reject_reason = None
             item.lat = lat
             item.lng = lng
             item.volunteer_needed = volunteer_needed
             item.volunteer_duties = request.form.get('volunteer_duties')
             item.has_parking = has_parking
+            item.barrier_free = barrier_free
+            item.has_wifi = has_wifi
+            item.pet_allowed = pet_allowed
+            item.pet_max_weight_kg = pet_max_weight_kg
+            for _field, _value in surplus.items():
+                setattr(item, _field, _value)
             flash("체험 정보가 성공적으로 수정되었습니다!", "success")
         else:
             farmer = User.query.get(session['user_id'])
@@ -434,8 +541,8 @@ def farmer_register(item_id=None):
                 farm_size=request.form.get('farm_size'),
                 duration_start=datetime.strptime(request.form.get('duration_start'), '%Y-%m-%d').date(),
                 end_date=datetime.strptime(request.form.get('duration_end'), '%Y-%m-%d').date(),
-                max_participants=int(request.form.get('max_participants')),
-                cost=int(request.form.get('price')),
+                max_participants=max_participants,
+                cost=cost,
                 images=image_string,
                 notes=request.form.get('notes'),
                 includes=request.form.get('includes'),
@@ -444,11 +551,17 @@ def farmer_register(item_id=None):
                 pesticide_free=is_organic,
                 organic_certification_image=cert_filename,
                 organic_certification_type=request.form.get('organic_certification_type'),
+                organic_cert_status='PENDING' if (is_organic and cert_filename) else None,
                 lat=lat,
                 lng=lng,
                 farmer_id=session['user_id'],
                 volunteer_needed=volunteer_needed,
                 has_parking=has_parking,
+                barrier_free=barrier_free,
+                has_wifi=has_wifi,
+                pet_allowed=pet_allowed,
+                pet_max_weight_kg=pet_max_weight_kg,
+                **surplus,
                 volunteer_duties=request.form.get('volunteer_duties'),
                 status='recruiting'
             )
@@ -498,8 +611,24 @@ def get_experiences_json():
     return jsonify(experience_list)
 
 
+def get_experience_json(item_id):
+    item = Experience.query.get_or_404(item_id)
+    imgs = [x.strip() for x in item.images.split(',') if x.strip()] if item.images else []
+    return jsonify({
+        'id': item.id,
+        'crop': item.crop,
+        'address': item.address_detail or item.location or '',
+        'cost': item.cost,
+        'eco': item.pesticide_free,
+        'first_image': imgs[0] if imgs else None,
+        'esg_grade': None,
+        'reasons': [],
+    })
+
+
 def search_categories():
-    return success_response({"categories": SEARCH_CATEGORIES, "groups": CATEGORY_GROUPS})
+    # 판정할 데이터가 없는 선택지는 빼고 준다(고르면 항상 0건이라 혼란만 준다).
+    return success_response({"categories": visible_categories(), "groups": CATEGORY_GROUPS})
 
 
 def register(app):
@@ -512,3 +641,4 @@ def register(app):
     app.add_url_rule('/experience/delete/<int:item_id>', 'delete_experience', delete_experience, methods=['POST'])
     app.add_url_rule('/api/experience/<int:item_id>/toggle_visibility', 'toggle_visibility', toggle_visibility, methods=['PATCH'])
     app.add_url_rule('/api/experiences', 'get_experiences_json', get_experiences_json)
+    app.add_url_rule('/api/experiences/<int:item_id>', 'get_experience_json', get_experience_json)

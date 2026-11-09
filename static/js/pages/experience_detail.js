@@ -157,24 +157,6 @@
         }
     })();
 
-    // ---------- 비슷한 체험 (기존 목록 API 재사용, 같은 작물) ----------
-    (function similar() {
-        var el = $('ed-similar');
-        if (!el) return;
-        fetch('/api/experiences').then(function (r) { return r.json(); }).then(function (list) {
-            var similar = (list || []).filter(function (x) { return x.id !== DATA.id && x.crop === DATA.crop; }).slice(0, 8);
-            if (!similar.length) { el.closest('.section-block').hidden = true; return; }
-            el.innerHTML = similar.map(function (x) {
-                return '<a class="ed-similar-card" href="/experience/' + x.id + '">'
-                    + '<div class="ed-similar-card__thumb"><i data-lucide="sprout"></i></div>'
-                    + '<div class="ed-similar-card__body">'
-                    + '<div class="ed-similar-card__title">' + esc(x.crop) + ' 체험</div>'
-                    + '<div class="ed-similar-card__loc">' + esc(x.location || '') + '</div>'
-                    + '<div class="ed-similar-card__price">' + Number(x.cost || 0).toLocaleString() + '원</div>'
-                    + '</div></a>';
-            }).join('');
-        }).catch(function () { el.closest('.section-block').hidden = true; });
-    })();
 
     // ---------- AI 추천 코스 ----------
     (function course() {

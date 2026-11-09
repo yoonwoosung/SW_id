@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" fill="none">
+  <!-- soft background -->
+  <circle cx="16" cy="16" r="12" fill="#E8F5E9"/>
+
+  <!-- speech bubble -->
+  <path d="M8.2 9.2H22.6C24.4 9.2 25.8 10.6 25.8 12.4V18.4C25.8 20.2 24.4 21.6 22.6 21.6H17.3L13.6 24.7C12.9 25.3 11.8 24.8 11.8 23.9V21.6H8.2C6.4 21.6 5 20.2 5 18.4V12.4C5 10.6 6.4 9.2 8.2 9.2Z"
+        fill="#4CAF50"/>
+
+  <!-- positive check -->
+  <path d="M11.2 15.6L14.2 18.3L20.6 12.8"
+        stroke="#FFFFFF"
+        stroke-width="2.2"
+        stroke-linecap="round"
+        stroke-linejoin="round"/>
+</svg>

@@ -60,7 +60,16 @@ def add_farm():
         
     pdf_filename = _save_certificate()
     lat, lng = get_coords_from_address(address)
-    
+
+    _is_organic = 'is_organic' in request.form
+    organic_img_name = None
+    if _is_organic:
+        org_file = request.files.get('organic_cert_image')
+        if org_file and org_file.filename and allowed_file(org_file.filename):
+            ext = org_file.filename.rsplit('.', 1)[1].lower()
+            organic_img_name = f"organic_{farmer_id}_{uuid.uuid4().hex}.{ext}"
+            org_file.save(os.path.join(current_app.config['UPLOAD_FOLDER'], organic_img_name))
+
     new_farm = Farm(
         user_id=farmer_id,
         name=name or None,
@@ -71,8 +80,10 @@ def add_farm():
         lat=lat,
         lng=lng,
         status='PENDING',
-        is_organic='is_organic' in request.form,
-        organic_cert_type=request.form.get('organic_cert_type')
+        is_organic=_is_organic,
+        organic_cert_image=organic_img_name,
+        organic_cert_type=request.form.get('organic_cert_type'),
+        organic_cert_status='PENDING' if _is_organic else None,
     )
     
     db.session.add(new_farm)
@@ -107,7 +118,9 @@ def create_farm_api():
 def update_farm_api(farm_id):
     name = (request.form.get('name') or '').strip()
     address = (request.form.get('address') or '').strip()
-    status, farm = farm_service.update_farm(session['user_id'], farm_id, name, address, _save_certificate())
+    raw_detail = request.form.get('address_detail')
+    address_detail = raw_detail.strip() if raw_detail is not None else None
+    status, farm = farm_service.update_farm(session['user_id'], farm_id, name, address, _save_certificate(), address_detail=address_detail)
     if status == 'not_found':
         return error_response("FARM_NOT_FOUND", "농장을 찾을 수 없습니다.", 404)
     if status == 'forbidden':

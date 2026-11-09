@@ -4,16 +4,23 @@
 (function () {
     'use strict';
     var TYPE_ICON = { experience: 'sprout', restaurant: 'utensils', attraction: 'landmark', cafe: 'coffee' };
+    // 코스 장소 출처 배지. 관광공사 결과는 source 가 없어 배지가 붙지 않는다.
+    var SOURCE_LABEL = { standard: '공공데이터포털', chungnam: '충남도 제공', kakao: '카카오맵' };
 
     // ▼▼ 목업: 코스별 "지금 N명이 보는 중" 값만 직접 채우세요(비우면 안 보임). {체험id: 인원} ▼▼
     var COURSE_MOCK = { viewers: {} };   // 예: { 2: 12, 3: 7 }
     // ▲▲
 
     // 코스 섹션 정의: segment=null이면 종합 점수순, 'peers'/'esg'는 세그먼트 적용.
+    // segment 값은 URL 파라미터(?segment=...)로도 쓰이므로 키는 바꾸지 않는다.
+    // 'peers' 는 화면에서 '가볍게 다녀오기 좋은 코스'로 표시된다(기준: 저렴·가까움).
     var SECTIONS = [
-        { key: 'nearby', rowId: 'sec-nearby', segment: null,   esg: false },
-        { key: 'peers',  rowId: 'sec-peers',  segment: 'peers', esg: false },
-        { key: 'esg',    rowId: 'sec-esg',    segment: 'esg',   esg: true }
+        { key: 'nearby',       rowId: 'sec-nearby',       segment: 'nearby',       esg: false, titleId: null },
+        { key: 'peers_age',    rowId: 'sec-peers-age',    segment: 'peers_age',    esg: false, titleId: 'peers-age-title' },
+        { key: 'peers_gender', rowId: 'sec-peers-gender', segment: 'peers_gender', esg: false, titleId: 'peers-gender-title' },
+        { key: 'light',        rowId: 'sec-peers',        segment: 'peers',        esg: false, titleId: 'peers-title' },
+        { key: 'group',        rowId: 'sec-group',        segment: 'group',        esg: false, titleId: null },
+        { key: 'esg',          rowId: 'sec-esg',          segment: 'esg',          esg: true,  titleId: null }
     ];
 
     function esc(s) { var d = document.createElement('div'); d.textContent = (s == null ? '' : String(s)); return d.innerHTML; }
@@ -21,11 +28,73 @@
     function shortRegion(addr) { if (!addr) return ''; var m = addr.match(/([가-힣]+?)(시|군|구)/); return m ? m[1] : addr.split(' ')[0]; }
     function won(n) { return Number(n || 0).toLocaleString() + '원'; }
 
+    // 같은 체험의 코스를 섹션마다 다시 부르지 않는다.
+    // 세 섹션(nearby/peers/esg)은 같은 후보 풀에서 뽑아 상위 결과가 겹치는데,
+    // loadAll() 이 셋을 동시에 띄우므로 첫 응답을 기다리는 동안에도 중복 요청이 나간다.
+    // 결과가 아니라 '진행 중인 Promise' 를 기억해 그 창까지 막는다.
+    // 실패하면 항목을 지워 다음 시도가 다시 요청할 수 있게 한다.
+    var courseCache = {};
+
+    // 고른 조건을 고른 순서대로 이어 붙인다. 코스 장소 점수에서 1순위가 40% 를
+    // 차지하므로 순서가 결과를 좌우한다. 조건이 없으면 빈 문자열 → 서버는 거리순.
+    function conditionOrder() {
+        return ((lastSelected && lastSelected.__order) || []).join(',');
+    }
+
+    function fetchCourse(id) {
+        var order = conditionOrder();
+        // ★조건이 바뀌면 캐시도 갈라져야 한다.★ id 만으로 캐싱하면 조건을 바꿔도
+        // 먼저 받아둔 코스가 그대로 나와 "바뀌지 않는다"로 보인다.
+        var key = String(id) + '|' + order;
+        if (!courseCache[key]) {
+            var url = '/api/experiences/' + encodeURIComponent(id) + '/course'
+                + (order ? '?cond_order=' + encodeURIComponent(order) : '');
+            courseCache[key] = fetch(url)
+                .then(function (r) { return r.json(); })
+                .catch(function (err) { delete courseCache[key]; throw err; });
+        }
+        return courseCache[key];
+    }
+
     var filterEl = $('cond-filter'), noteEl = $('rec-note'),
         quickEl = $('quick-segments'), searchInput = $('course-q'), searchEmpty = $('search-empty');
     var coords = { lat: null, lon: null };
-    var lastSelected = {};
     var currentQuery = '';
+
+    // cond_* 파라미터가 있고 아직 리로드 전이면 1회 강제 새로고침
+    (function () {
+        var p = new URLSearchParams(window.location.search);
+        var hasCond = false;
+        p.forEach(function (v, k) { if (k.indexOf('cond_') === 0) hasCond = true; });
+        if (hasCond && !p.get('_r')) {
+            p.set('_r', '1');
+            location.replace(location.pathname + '?' + p.toString());
+        }
+    })();
+
+    // URL 파라미터(cond_*)에서 초기 필터 상태 읽기 (상황 카드 연동)
+    var presetFromUrl = (function () {
+        var params = new URLSearchParams(window.location.search);
+        var out = {};
+        params.forEach(function (val, key) {
+            if (key.indexOf('cond_') === 0) {
+                var cat = key.slice(5);
+                if (!out[cat]) out[cat] = [];
+                out[cat].push(val);
+            }
+        });
+        return out;
+    })();
+    var lastSelected = Object.keys(presetFromUrl).length ? presetFromUrl : {};
+
+    // 프리셋 파라미터가 있으면 API 응답 전에 아코디언을 즉시 열어둔다
+    // (onReady 지연으로 기본 뷰가 먼저 보이는 문제 방지)
+    if (Object.keys(presetFromUrl).length) {
+        var _preColBody = document.getElementById('cond-body');
+        var _preColToggle = document.querySelector('.fl-collapse__toggle');
+        if (_preColToggle) _preColToggle.setAttribute('aria-expanded', 'true');
+        if (_preColBody) _preColBody.hidden = false;
+    }
     var cardStore = {};   // storeKey → { rec, course, section }
 
     // ---- 저장된 코스 렌더 ----
@@ -36,12 +105,23 @@
         if (!list.length) { sec.hidden = true; return; }
         sec.hidden = false;
         row.innerHTML = list.map(function (c, i) {
-            return '<article class="fl-course-card" style="min-width:200px;max-width:220px;flex-shrink:0;">'
-                + '<div class="fl-course-card__band"><span class="fl-badge fl-badge--day">저장됨</span></div>'
+            var imgHtml = c.first_image
+                ? '<img class="fl-course-card__img" src="/static/uploads/' + esc(c.first_image) + '" alt="" loading="lazy" onerror="this.remove()">'
+                : '';
+            var sm = c.summary || {};
+            var chips = [];
+            if (sm.duration) chips.push('<span class="ci-modal__summary-chip"><i class="fa-solid fa-clock"></i> 총 ' + esc(sm.duration) + '</span>');
+            if (sm.transport) chips.push('<span class="ci-modal__summary-chip"><i class="fa-solid fa-' + (sm.transport === '자가용' ? 'car' : 'bus') + '"></i> ' + esc(sm.transport) + ' 추천</span>');
+            if (sm.count) chips.push('<span class="ci-modal__summary-chip"><i class="fa-solid fa-map-pin"></i> ' + sm.count + '개 장소</span>');
+            var chipsHtml = chips.length ? '<div class="ci-modal__summary" style="margin:6px 0 4px;">' + chips.join('') + '</div>' : '';
+            return '<article class="fl-course-card" data-saved-id="' + c.id + '" style="cursor:pointer;">'
+                + '<div class="fl-course-card__band">' + imgHtml + '<span class="fl-badge fl-badge--day">저장됨</span></div>'
                 + '<div class="fl-course-card__head">'
                 + '<h3 class="fl-course-card__title">' + esc(c.title) + '</h3>'
-                + (c.cost ? '<div class="fl-course-price"><span class="fl-cost">' + won(c.cost) + '</span><span class="fl-per">＊1인당 가격</span></div>' : '')
-                + '</div>'
+                + chipsHtml
+                + '<div class="fl-course-price">'
+                + (c.cost ? '<span class="fl-cost">' + won(c.cost) + '</span><span class="fl-per">＊1인당 가격</span>' : '')
+                + '</div></div>'
                 + '<button type="button" class="fl-course-card__toggle saved-remove-btn" data-idx="' + i + '" style="color:var(--fl-text-muted);">'
                 + '저장 취소 <i class="fa-solid fa-xmark" aria-hidden="true"></i></button>'
                 + '</article>';
@@ -59,10 +139,92 @@
             localStorage.removeItem('fl-saved-courses');
             renderSavedCourses();
         };
+
+        row.querySelectorAll('.fl-course-card[data-saved-id]').forEach(function (card) {
+            card.addEventListener('click', function (e) {
+                if (e.target.closest('.saved-remove-btn')) return;
+                var id = this.dataset.savedId;
+                Promise.all([
+                    fetch('/api/experiences/' + id).then(function (r) { return r.json(); }),
+                    fetch('/api/experiences/' + id + '/course').then(function (r) { return r.json(); })
+                ]).then(function (results) {
+                    var rec = results[0];
+                    var courseRes = results[1];
+                    openCourseModal({
+                        rec: rec,
+                        course: courseRes.success ? courseRes.data : {},
+                        section: { key: 'saved', esg: false }
+                    });
+                });
+            });
+        });
     }
     renderSavedCourses();
 
-    FarmFilter.mount(filterEl, { endpoint: filterEl.dataset.endpoint, onApply: function (sel) { lastSelected = sel; loadAll(); } });
+    var hasPreset = Object.keys(presetFromUrl).length > 0;
+    FarmFilter.mount(filterEl, {
+        endpoint: filterEl.dataset.endpoint,
+        initialState: hasPreset ? presetFromUrl : null,
+        onApply: function (sel) {
+            lastSelected = sel;
+            loadAll();
+            // ★누른 뒤 화면에 아무 변화가 없으면 "안 먹는다"로 보인다.★
+            // 패널이 화면을 채우고 있어 바뀐 카드는 스크롤 밖에 있다.
+            updateCondCount(sel);
+            collapsePanel();
+            scrollToResults();
+        },
+        onReady: hasPreset ? function () {
+            // 칩 하이라이트 애니메이션
+            setTimeout(function () {
+                filterEl.querySelectorAll('.fl-chip').forEach(function (chip) {
+                    chip.classList.add('fl-chip--preset');
+                    setTimeout(function () { chip.classList.remove('fl-chip--preset'); }, 1800);
+                });
+            }, 100);
+        } : null
+    });
+
+    // ---- 조건 개수 배지 · 패널 접기 · 결과로 스크롤 ----
+    function appliedCount(sel) {
+        return Object.keys(sel || {}).reduce(function (n, cat) {
+            return cat === '__order' ? n : n + ((sel[cat] || []).length);
+        }, 0);
+    }
+
+    function updateCondCount(sel) {
+        var toggle = document.querySelector('.fl-collapse__toggle');
+        if (!toggle) return;
+        var badge = toggle.querySelector('.fl-collapse__count');
+        if (!badge) {
+            badge = document.createElement('span');
+            badge.className = 'fl-collapse__count';
+            // 여는 화살표 앞에 둔다(라벨 바로 뒤).
+            toggle.insertBefore(badge, toggle.querySelector('i') || null);
+        }
+        var n = appliedCount(sel);
+        badge.textContent = n;
+        badge.hidden = n === 0;
+        // 패널을 접으면 칩이 안 보이므로, 개수를 읽어줄 수 있게 라벨에도 담는다.
+        toggle.setAttribute('aria-label', n ? '여행 조건 설정하기, ' + n + '개 적용 중' : '여행 조건 설정하기');
+    }
+
+    function collapsePanel() {
+        var toggle = document.querySelector('.fl-collapse__toggle');
+        var body = $('cond-body');
+        if (toggle) toggle.setAttribute('aria-expanded', 'false');
+        if (body) body.hidden = true;
+    }
+
+    function scrollToResults() {
+        var sec = document.querySelector('.fl-sec[data-section]:not([hidden])');
+        if (!sec) return;
+        var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        sec.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
+    }
+
+    // 링크로 들어와 조건이 미리 걸린 경우에도 개수를 맞춰 둔다.
+    updateCondCount(lastSelected);
 
     // ---- 상세조건 접힘 토글 ----
     var collapseToggle = document.querySelector('.fl-collapse__toggle');
@@ -72,13 +234,36 @@
         $(this.getAttribute('aria-controls')).hidden = open;
     });
 
+    // ★근거가 없는 섹션은 그리지 않는다.★
+    // '내 또래가 즐기는 코스'는 같은 나이대의 클릭 로그로 순서를 매기는데,
+    // 나이대가 없으면 집계가 0건이라 '지금 내 주변 추천'과 똑같은 카드가 나온다
+    // (배포 서버 확인: 세 섹션 상위 3건이 전부 같았다). 제목이 거짓이 되므로
+    // 섹션째 숨기고, 로그인해서 나이·성별을 넣으면 다시 나타난다.
+    var PEER_SECTIONS = {
+        age: { key: 'peers_age', wrapId: 'sec-peers-age-wrap' },
+        gender: { key: 'peers_gender', wrapId: 'sec-peers-gender-wrap' }
+    };
+
+    function hidePeerSection(which) {
+        var conf = PEER_SECTIONS[which];
+        var wrap = conf && $(conf.wrapId);
+        if (wrap) wrap.hidden = true;
+        // 숨긴 섹션은 더 부르지 않는다(불필요한 호출·코스 조회를 줄인다).
+        SECTIONS = SECTIONS.filter(function (s) { return s.key !== conf.key; });
+    }
+
     // ---- 섹션 제목/문구 개인화(회원 세그먼트 라벨) ----
     fetch('/api/recommendations/segments').then(function (r) { return r.json(); }).then(function (res) {
         if (!res.success) return;
         var label = (res.data && res.data.segment_label) || '';        // 예: "20대·남성"
         var age = label.split('·').filter(function (p) { return /대$/.test(p); })[0] || '';
         if (noteEl && label) noteEl.textContent = label + ' 회원님께 어울리는 코스를 준비했어요.';
-        if (age) { var pt = $('peers-title'); if (pt) pt.textContent = '🌿 ' + age + '가 놀러가기 좋은 코스'; }
+        var peers = (res.data && res.data.peer_segments) || {};
+        if (!peers.age) hidePeerSection('age');
+        if (!peers.gender) hidePeerSection('gender');
+        // 섹션 제목은 '기준'을 드러내야 하므로 나이로 덮어쓰지 않는다.
+        // (예전에는 '20대가 놀러가기 좋은 코스'로 바꿨는데, 실제로는 나이를 기준으로
+        //  고르지 않아 이름과 근거가 어긋났다.)
     }).catch(function () {});
 
     // ---- 인적사항 단축 버튼 2개(백엔드 segment-buttons 응답으로 렌더, 문구 하드코딩 금지) ----
@@ -86,8 +271,8 @@
         var btns = (res.data && res.data.buttons) || [];
         if (!quickEl || !btns.length) return;
         quickEl.innerHTML = btns.map(function (b) {
-            return '<button type="button" class="fl-quickbtn" data-segment="' + esc(b.segment) + '" data-label="' + esc(b.label) + '" data-icon="' + esc(b.icon) + '">'
-                + '<span class="fl-quickbtn__icon">' + esc(b.icon) + '</span><span>' + esc(b.label) + '</span></button>';
+            return '<button type="button" class="fl-quickbtn" data-segment="' + esc(b.segment) + '" data-label="' + esc(b.label) + '">'
+                + '<span>' + esc(b.label) + '</span></button>';
         }).join('');
     }).catch(function () {});
 
@@ -98,11 +283,22 @@
         var seg = btn.dataset.segment;
         var target = SECTIONS.filter(function (s) { return (s.segment || '') === (seg || ''); })[0];
         if (!target) return;
-        if (target.rowId === 'sec-peers') {
-            var pt = $('peers-title');
-            if (pt) pt.textContent = btn.dataset.icon + ' ' + btn.dataset.label;
+        // 섹션 제목을 버튼 라벨로 변경 (아이콘 뒤 텍스트 노드만 교체)
+        if (target.titleId) {
+            var titleEl = $(target.titleId);
+            if (titleEl) {
+                var nodes = titleEl.childNodes;
+                for (var ni = nodes.length - 1; ni >= 0; ni--) {
+                    if (nodes[ni].nodeType === 3) { nodes[ni].textContent = ' ' + btn.dataset.label; break; }
+                }
+            }
         }
-        $(target.rowId).closest('.fl-sec').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        // 해당 섹션으로 스크롤 이동 (헤더 + 여유 공간 오프셋 보정)
+        var sec = $(target.rowId).closest('.fl-sec');
+        var headerEl = document.querySelector('.fl-header') || document.querySelector('nav') || document.querySelector('header');
+        var offset = (headerEl ? headerEl.offsetHeight : 70) + 80;
+        var top = sec.getBoundingClientRect().top + window.pageYOffset - offset;
+        window.scrollTo({ top: top, behavior: 'smooth' });
     });
 
     // ---- 트렌드 키워드(상세조건 안) ----
@@ -118,8 +314,9 @@
     function buildQuery(selected, segment) {
         var qs = new URLSearchParams();
         if (coords.lat != null && coords.lon != null) { qs.set('lat', coords.lat); qs.set('lon', coords.lon); }
-        if (segment) qs.set('segment', segment);
+        if (segment && segment !== 'nearby') qs.set('segment', segment);
         Object.keys(selected || {}).forEach(function (cat) {
+            if (cat === '__order') return;      // 순서는 아래에서 따로 보낸다
             (selected[cat] || []).forEach(function (v) { qs.append('cond_' + cat, v); });
         });
         return qs.toString();
@@ -137,10 +334,13 @@
             .then(function (res) {
                 if (!res.success) { row.innerHTML = '<p class="fl-empty">' + esc((res.error && res.error.message) || '추천을 불러올 수 없어요.') + '</p>'; return; }
                 var list = (res.data.results || []).slice(0, 3);
-                if (!list.length) { row.innerHTML = '<p class="fl-empty">추천할 코스를 찾지 못했어요.</p>'; return; }
+                // 0건이어도 섹션을 숨기거나 조건을 완화하지 않는다. 필터가 동작했음을 보여준다.
+                if (!list.length) {
+                    row.innerHTML = '<p class="fl-empty">조건에 맞는 체험이 아직 없습니다.</p>';
+                    return;
+                }
                 Promise.all(list.map(function (x) {
-                    return fetch('/api/experiences/' + x.id + '/course')
-                        .then(function (r) { return r.json(); })
+                    return fetchCourse(x.id)
                         .then(function (c) { return { rec: x, course: c.data || {} }; });
                 })).then(function (cards) { renderRow(row, cards, s); });
             })
@@ -168,10 +368,30 @@
         if (!stops) return '<p class="fl-empty">주변 장소가 부족해 상세 코스를 만들지 못했어요.</p>';
         return (items || []).map(function (it) {
             var sub = it.type === 'experience' ? '이 체험' : (esc(it.address || '') + (it.distance_km != null ? ' · ' + it.distance_km + 'km' : ''));
+            // 충남도가 제공한 장소는 출처를 밝힌다(공공누리 제4유형 출처표시).
+            if (it.source) sub += ' <span class="fl-src-cn">' + esc(SOURCE_LABEL[it.source] || '공공데이터') + '</span>';
             return '<div class="ai-timeline-item"><div class="ai-time">' + esc(it.time) + '</div><div class="ai-dot"></div>'
                 + '<div class="ai-timeline-body"><div class="ai-act-name">' + esc(it.name || '') + '</div><div class="ai-act-sub">' + sub + '</div></div>'
                 + '<div class="ai-thumb">' + ('<i data-lucide="' + (TYPE_ICON[it.type] || 'map-pin') + '"></i>') + '</div></div>';
         }).join('');
+    }
+
+    // ★카드에도 조건 반영 흔적을 남긴다.★ 지금까지는 모달을 열어야만 보였다.
+    // 코스 응답(conditions)은 카드를 그리기 전에 이미 받아 둔 것이라 추가 호출이 없다.
+    function conditionChips(course) {
+        var cond = (course && course.conditions) || null;
+        if (!cond) return '';
+        // ★폴백이면 붙이지 않는다.★ 조건에 맞는 장소가 하나도 없어 거리순으로
+        // 떨어진 상태라, '반영'이라고 쓰면 거짓이 된다(모달의 경고와도 어긋난다).
+        if (cond.fell_back) return '';
+        // percent 가 있는 것 = 장소를 고를 때 점수로 쓰인 조건.
+        // 역할만 있는 조건(교통수단·일정 등)은 '이 카드가 뽑힌 이유'가 아니라 뺀다.
+        return (cond.applied || [])
+            .filter(function (a) { return a.percent != null; })
+            .slice(0, 2)
+            .map(function (a) {
+                return '<span class="fl-reason fl-reason--cond">' + esc(a.label) + ' 반영</span>';
+            }).join('');
     }
 
     function renderRow(row, cards, s) {
@@ -181,11 +401,15 @@
             var title = (region ? esc(region) + ' ' : '') + esc(x.crop) + ' 힐링 코스';
             var searchKey = (title + ' ' + (x.address || '') + ' ' + (x.crop || '')).toLowerCase();
             var viewers = COURSE_MOCK.viewers[x.id];
-            var reasons = (x.reasons || []).map(function (r) { return '<span class="fl-reason">' + esc(r) + '</span>'; }).join('');
+            var reasons = conditionChips(d)
+                + (x.reasons || []).map(function (r) { return '<span class="fl-reason">' + esc(r) + '</span>'; }).join('');
             var storeKey = s.key + '-' + i;
             cardStore[storeKey] = { rec: x, course: d || {}, section: s };
+            var imgHtml = x.first_image
+                ? '<img class="fl-course-card__img" src="/static/uploads/' + esc(x.first_image) + '" alt="' + esc(x.crop) + '" loading="lazy" onerror="this.remove()">'
+                : '';
             return '<article class="fl-course-card" data-search="' + esc(searchKey) + '" data-store-key="' + storeKey + '">'
-                + '<div class="fl-course-card__band">' + badges(x, s.esg) + '</div>'
+                + '<div class="fl-course-card__band">' + imgHtml + badges(x, s.esg) + '</div>'
                 + '<div class="fl-course-card__head">'
                 + '<h3 class="fl-course-card__title">' + title + '</h3>'
                 + (viewers != null ? '<p class="fl-course-viewers"><i data-lucide="eye"></i> 지금 ' + esc(viewers) + '명이 보는 중</p>' : '')
@@ -209,6 +433,18 @@
     });
 
     var ciModal = document.getElementById('ci-modal');
+
+    function fmtMinutes(mins) {
+        var h = Math.floor(mins / 60), m = mins % 60;
+        return (h ? h + '시간' : '') + (m ? (h ? ' ' : '') + m + '분' : (h ? '' : '0분'));
+    }
+
+    // 서버가 이동·체류로 계산한 값을 쓴다. 없으면 예전처럼 슬롯 시각 차이로 대략 표시.
+    // (예전 값은 09:00~17:00 상수 뺄셈이라 실제 소요시간과 달랐다)
+    function courseDuration(sm, items) {
+        if (sm && sm.total_minutes) return fmtMinutes(sm.total_minutes);
+        return computeDuration(items);
+    }
 
     function computeDuration(items) {
         if (!items || items.length < 2) return null;
@@ -248,23 +484,42 @@
         // 예상 비용
         var costEl = document.getElementById('ci-cost');
         if (sm.estimated_cost) {
-            costEl.innerHTML = '<div class="ci-modal__cost-num">' + Number(sm.estimated_cost).toLocaleString() + '원</div>'
-                + '<div class="ci-modal__cost-lbl">1인당 예상 비용 · 체험비 + 식사 + 교통 포함</div>';
+            var detail = '';
+            if (sm.cost_breakdown && sm.cost_breakdown.length) {
+                // ★'예상'임을 밝히고 산출 내역을 함께 보여준다.★
+                // 실제 경로·요금 API 를 쓰지 않는 추정값이라 근거 없이 단정하면 안 된다.
+                detail = '<details class="ci-cost-detail"><summary>산출 내역 보기</summary><ul>'
+                    + sm.cost_breakdown.map(function (c) {
+                        return '<li><span>' + esc(c.label)
+                            + (c.note ? ' <em>(' + esc(c.note) + ')</em>' : '')
+                            + (c.estimated ? ' <em>예상</em>' : '') + '</span>'
+                            + '<b>' + Number(c.amount).toLocaleString() + '원</b></li>';
+                    }).join('')
+                    + '</ul></details>';
+            }
+            costEl.innerHTML = '<div class="ci-modal__cost-num">' + Number(sm.estimated_cost).toLocaleString() + '원'
+                + (sm.is_estimate ? ' <span class="ci-est-tag">예상</span>' : '') + '</div>'
+                + '<div class="ci-modal__cost-lbl">1인당 · 체험비 외에는 평균값으로 추정합니다</div>'
+                + detail;
             costEl.hidden = false;
         } else { costEl.hidden = true; }
 
         // 코스 요약 칩
         var summaryEl = document.getElementById('ci-summary');
         var chips = [];
-        var dur = computeDuration(items);
-        if (dur) chips.push('<span class="ci-modal__summary-chip"><i class="fa-solid fa-clock"></i> 총 ' + dur + '</span>');
+        var dur = courseDuration(sm, items);
+        if (dur) chips.push('<span class="ci-modal__summary-chip"><i class="fa-solid fa-clock"></i> 총 ' + esc(dur)
+            + (sm.is_estimate ? ' <span style="opacity:.7;font-weight:500;">예상</span>' : '') + '</span>');
+        if (sm.total_distance_km) chips.push('<span class="ci-modal__summary-chip"><i class="fa-solid fa-route"></i> '
+            + sm.total_distance_km + 'km</span>');
         if (sm.transport) chips.push('<span class="ci-modal__summary-chip"><i class="fa-solid fa-' + (sm.transport === '자가용' ? 'car' : 'bus') + '"></i> ' + esc(sm.transport) + ' 추천</span>');
         if (items.length) chips.push('<span class="ci-modal__summary-chip"><i class="fa-solid fa-map-pin"></i> ' + items.length + '개 장소</span>');
         if (chips.length) { summaryEl.innerHTML = chips.join(''); summaryEl.hidden = false; }
         else { summaryEl.hidden = true; }
 
         // 추천 일정 타임라인
-        document.getElementById('ci-timeline').innerHTML = buildModalTimeline(items);
+        document.getElementById('ci-timeline').innerHTML =
+            buildConditionBox(course && course.conditions) + buildModalTimeline(items, sm);
 
         // ESG + 편의 태그
         var amenityEl = document.getElementById('ci-amenity');
@@ -301,7 +556,7 @@
             if (this.disabled) return;
             var list = JSON.parse(localStorage.getItem('fl-saved-courses') || '[]');
             if (!list.some(function (c) { return String(c.id) === String(rec.id); })) {
-                list.push({ id: rec.id, title: title, cost: sm.estimated_cost || null });
+                list.push({ id: rec.id, title: title, cost: sm.estimated_cost || null, first_image: rec.first_image || null, summary: { duration: computeDuration(items), transport: sm.transport || null, count: items.length || 0 } });
                 localStorage.setItem('fl-saved-courses', JSON.stringify(list));
             }
             this.innerHTML = '<i class="fa-solid fa-bookmark" style="margin-right:5px;"></i>저장됨';
@@ -316,25 +571,75 @@
 
     var TL_ICON = { experience: 'sprout', restaurant: 'utensils', attraction: 'landmark', cafe: 'coffee' };
 
-    function buildModalTimeline(items) {
+    // ★반영된 조건과 비율을 보여준다.★ 지금까지는 조건이 반영돼도 사용자가 알 수 없었고,
+    // 반영되지 않은 조건은 조용히 무시돼 "걸었는데 안 바뀐다"로만 보였다.
+    function buildConditionBox(cond) {
+        if (!cond) return '';
+        var applied = cond.applied || [], ignored = cond.ignored || [];
+        if (!applied.length && !ignored.length) return '';
+
+        var html = '<div class="ci-cond">';
+        if (applied.length) {
+            html += '<div class="ci-cond__row"><span class="ci-cond__tag">반영됨</span>'
+                + applied.map(function (a) {
+                    return '<span class="ci-cond__item">' + esc(a.label)
+                        + (a.percent != null ? ' <b>' + a.percent + '%</b>' : '')
+                        + (a.role ? '<em>' + esc(a.role) + '</em>' : '')
+                        + (a.estimated ? '<em title="장소 종류로 추정한 값입니다">예상</em>' : '')
+                        + (a.course_only ? '<em title="체험 목록은 거르지 않습니다">코스만</em>' : '')
+                        + '</span>';
+                }).join('') + '</div>';
+        }
+        if (cond.budget_over) {
+            html += '<p class="ci-cond__warn">예산 안에 드는 장소가 부족해 가장 저렴한 곳으로 구성했습니다.</p>';
+        }
+        if (cond.fell_back) {
+            html += '<p class="ci-cond__warn">조건에 맞는 장소가 근처에 없어 가까운 순으로 구성했습니다.</p>';
+        }
+        if (cond.pet_cafe_missing) {
+            // 카페 시간에 식당을 넣지 않는 대신, 동반이 안 될 수 있음을 알린다.
+            html += '<p class="ci-cond__warn">반려견 동반이 가능한 카페가 근처에 없어 일반 카페로 구성했습니다.</p>';
+        }
+        if (ignored.length) {
+            html += '<details class="ci-cond__more"><summary>반영되지 않은 조건 '
+                + ignored.length + '개</summary><ul>'
+                + ignored.map(function (g) {
+                    return '<li><span>' + esc(g.label) + '</span><em>' + esc(g.reason) + '</em></li>';
+                }).join('') + '</ul></details>';
+        }
+        return html + '</div>';
+    }
+
+    function buildModalTimeline(items, sm) {
         if (!items || !items.length) return '<p class="fl-empty">코스 정보를 불러올 수 없어요.</p>';
         var stops = items.filter(function (it) { return it.type !== 'experience'; });
+        // 구간별 이동(이전 장소 → 다음 장소). 서버가 좌표로 계산해 내려준다.
+        var legBefore = {};
+        ((sm && sm.legs) || []).forEach(function (l) { legBefore[l.to] = l; });
         var tlHtml = '<div class="ci-tl">' + items.map(function (it) {
             var icon = TL_ICON[it.type] || 'map-pin';
             var sub = it.type === 'experience'
-                ? '메인 체험'
+                ? ('메인 체험' + (sm && sm.experience_stay_is_default ? ' · 2시간(기본값)' : ''))
                 : ((it.address || '') + (it.distance_km != null ? ' · ' + it.distance_km + 'km' : ''));
-            return '<div class="ci-tl-item">'
+            var leg = legBefore[it.name];
+            var legHtml = leg
+                ? '<div class="ci-tl-leg">↓ 이동 ' + leg.distance_km + 'km · 약 ' + leg.minutes + '분</div>'
+                : '';
+            return legHtml + '<div class="ci-tl-item">'
                 + '<div class="ci-tl-time">' + esc(it.time) + '</div>'
                 + '<div class="ci-tl-icon"><i data-lucide="' + icon + '"></i></div>'
                 + '<div><div class="ci-tl-name">' + esc(it.name || '') + '</div>'
-                + (sub ? '<div class="ci-tl-sub">' + esc(sub) + '</div>' : '')
+                + (sub ? '<div class="ci-tl-sub">' + esc(sub)
+                    + (it.source ? ' <span class="fl-src-cn">' + esc(SOURCE_LABEL[it.source] || '공공데이터') + '</span>' : '')
+                    + '</div>' : '')
                 + '</div></div>';
         }).join('') + '</div>';
+        // 공공누리 제4유형 출처표시. 프론트가 문구를 지어내지 않게 고정 문자열로 둔다.
+        var srcHtml = '<p class="ci-source">관광지 정보 출처: 한국관광공사, 공공데이터포털</p>';
         if (!stops.length) {
-            return '<p class="fl-empty" style="margin-bottom:10px;">주변 관광지 정보를 불러오지 못했어요.<br>체험 장소만 표시됩니다.</p>' + tlHtml;
+            return '<p class="fl-empty" style="margin-bottom:10px;">주변 관광지 정보를 불러오지 못했어요.<br>체험 장소만 표시됩니다.</p>' + tlHtml + srcHtml;
         }
-        return tlHtml;
+        return tlHtml + srcHtml;
     }
 
     document.getElementById('ci-close').addEventListener('click', closeCourseModal);
@@ -370,8 +675,7 @@
         if (!sec || !row) return;
         sec.hidden = false;
         row.innerHTML = '<p class="fl-empty">방금 예약한 체험 코스를 준비하는 중…</p>';
-        fetch('/api/experiences/' + encodeURIComponent(id) + '/course')
-            .then(function (r) { return r.json(); })
+        fetchCourse(id)
             .then(function (c) {
                 var d = c.data;
                 if (!d) { row.innerHTML = '<p class="fl-empty">코스를 불러오지 못했어요.</p>'; return; }

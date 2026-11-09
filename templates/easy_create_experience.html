@@ -5,6 +5,11 @@
     {# 단계 표시기 #}
     <div class="step-box fl-card">
         <div class="fl-card-body" style="padding-bottom:8px;">
+            <div style="display:flex;justify-content:flex-end;margin-bottom:var(--fl-s1);">
+                <a href="{{ url_for('farmer_guide') }}#experience-screen" class="fl-help-btn" style="font-size:1rem;padding:8px 16px;">
+                    <i data-lucide="circle-help"></i> 체험 등록 도움말
+                </a>
+            </div>
             <p id="step-label" class="step-label-text"></p>
             <div class="step-dots">
                 <div class="step-item">
@@ -24,11 +29,6 @@
                 <div class="step-line" id="line-3"></div>
                 <div class="step-item">
                     <div class="step-dot" id="dot-4">4</div>
-                    <span class="step-dot-label">봉사자</span>
-                </div>
-                <div class="step-line" id="line-4"></div>
-                <div class="step-item">
-                    <div class="step-dot" id="dot-5">5</div>
                     <span class="step-dot-label">최종 확인</span>
                 </div>
             </div>
@@ -84,7 +84,7 @@
                             <i class="fa-solid fa-triangle-exclamation mr-1"></i> 현재 <strong>심사 승인 완료</strong>된 농장이 없습니다.<br>
                             체험을 등록하려면 먼저 [농장 관리]에서 농장을 등록하고 관리자 승인을 받아야 합니다.
                             <div class="mt-2">
-                                <a href="{{ url_for('farmer_easy_mode', tab='account') }}" class="btn btn-sm btn-success font-weight-bold">
+                                <a href="{{ url_for('farmer_easy_mode', tab='account') }}" class="fl-btn fl-btn-primary fl-btn-sm">
                                     농장 등록 및 심사 신청하러 가기 →
                                 </a>
                             </div>
@@ -103,21 +103,121 @@
                         <label class="easy-form-label-lg">추가 옵션</label>
                         
                         <!-- 주차장 체크 행 -->
+                        <div class="custom-option-card" onclick="toggleCheckbox('barrier_free')">
+                            <span class="option-title">♿ 무장애 접근 가능 (휠체어·유모차)</span>
+                            <input type="checkbox" class="custom-large-check" id="barrier_free" name="barrier_free"
+                                {% if form_data.get('barrier_free') or (item and item.barrier_free) %}checked{% endif %} onclick="event.stopPropagation()">
+                        </div>
+                        <div class="custom-option-card" onclick="toggleCheckbox('has_wifi')">
+                            <span class="option-title">📶 와이파이 제공</span>
+                            <input type="checkbox" class="custom-large-check" id="has_wifi" name="has_wifi"
+                                {% if form_data.get('has_wifi') or (item and item.has_wifi) %}checked{% endif %} onclick="event.stopPropagation()">
+                        </div>
                         <div class="custom-option-card" onclick="toggleCheckbox('has_parking')">
                             <span class="option-title">🅿️ 주차장 제공</span>
                             <input type="checkbox" class="custom-large-check" id="has_parking" name="has_parking" 
                                 {% if form_data.get('has_parking') or (item and item.has_parking) %}checked{% endif %} onclick="event.stopPropagation()">
                         </div>
 
+                        <!-- 반려견 동반 체크 행 -->
+                        <div class="custom-option-card" onclick="toggleCheckbox('pet_allowed')">
+                            <span class="option-title">🐕 반려견 동반 가능</span>
+                            <input type="checkbox" class="custom-large-check" id="pet_allowed" name="pet_allowed"
+                                {% if form_data.get('pet_allowed') or (item and item.pet_allowed) %}checked{% endif %}
+                                onclick="event.stopPropagation()"
+                                onchange="document.getElementById('pet-weight-row').hidden = !this.checked;">
+                        </div>
+                        <div id="pet-weight-row" class="mb-3"
+                             {% if not (form_data.get('pet_allowed') or (item and item.pet_allowed)) %}hidden{% endif %}>
+                            <label for="pet_max_weight_kg" class="option-title d-block mb-2">허용 최대 몸무게(kg)</label>
+                            <input type="number" class="form-control" name="pet_max_weight_kg" id="pet_max_weight_kg"
+                                   min="1" max="100" step="1" placeholder="예) 15"
+                                   value="{{ form_data.get('pet_max_weight_kg') or (item.pet_max_weight_kg if item and item.pet_max_weight_kg else '') }}">
+                            <small class="text-muted">소형 5kg~ · 중형 15kg~ · 대형 25kg~ 검색에 쓰입니다.</small>
+                        </div>
+
+                        <!-- 과생산 체크 행 -->
+                        <div class="custom-option-card" onclick="toggleCheckbox('is_surplus')">
+                            <span class="option-title">🥕 잉여 농산물 수확 체험</span>
+                            <input type="checkbox" class="custom-large-check" id="is_surplus" name="is_surplus"
+                                {% if form_data.get('is_surplus') or (item and item.is_surplus) %}checked{% endif %}
+                                onclick="event.stopPropagation()"
+                                onchange="document.getElementById('surplus-box').hidden = !this.checked; flUpdateSurplus();">
+                        </div>
+                        <div id="surplus-box" class="mb-3 p-3" style="background:#f7f9f7;border-radius:10px;"
+                             {% if not (form_data.get('is_surplus') or (item and item.is_surplus)) %}hidden{% endif %}>
+                            <label for="list_price" class="option-title d-block mb-2">정가(원, 1인)</label>
+                            <input type="number" class="form-control mb-2" name="list_price" id="list_price"
+                                   min="1" step="1" placeholder="예) 50000" oninput="flUpdateSurplus()"
+                                   value="{{ form_data.get('list_price') or (item.list_price if item and item.list_price else '') }}">
+                            <small class="text-muted d-block mb-3">할인 없이 팔 때의 1인 가격입니다.</small>
+
+                            <label for="surplus_qty_total" class="option-title d-block mb-2">총 수량</label>
+                            <input type="number" class="form-control mb-2" name="surplus_qty_total" id="surplus_qty_total"
+                                   min="1" step="1" placeholder="예) 500" oninput="flUpdateSurplus()"
+                                   value="{{ form_data.get('surplus_qty_total') or (item.surplus_qty_total if item and item.surplus_qty_total else '') }}">
+
+                            <label for="surplus_per_person" class="option-title d-block mb-2">1인당 수확량</label>
+                            <input type="number" class="form-control mb-2" name="surplus_per_person" id="surplus_per_person"
+                                   min="1" step="1" placeholder="예) 5" oninput="flUpdateSurplus()"
+                                   value="{{ form_data.get('surplus_per_person') or (item.surplus_per_person if item and item.surplus_per_person else '') }}">
+
+                            <label for="surplus_unit" class="option-title d-block mb-2">단위</label>
+                            <select class="form-control mb-2" name="surplus_unit" id="surplus_unit" onchange="flUpdateSurplus()">
+                                {% for u in ['kg', 'g', '박스', '구좌', '포기', '단'] %}
+                                <option value="{{ u }}" {% if item and item.surplus_unit == u %}selected{% endif %}>{{ u }}</option>
+                                {% endfor %}
+                            </select>
+                            <div id="surplus-rate" class="alert alert-light border py-2 px-3 mb-2">
+                                정가와 총 수량을 입력하면 할인율과 최대 체험료가 표시됩니다.
+                            </div>
+                            <p id="surplus-capacity" class="text-muted mb-3">—</p>
+
+                            <label for="surplus_reason" class="option-title d-block mb-2">할인 사유 <span class="text-danger">*</span></label>
+                            {% set _presets = ['할인', '못난이', '수확임박', '규격외'] %}
+                            {% set _saved = form_data.get('surplus_reason') or (item.surplus_reason if item else None) %}
+                            {% set _is_etc = _saved and _saved not in _presets %}
+                            <select class="form-control mb-2" name="surplus_reason" id="surplus_reason"
+                                    onchange="document.getElementById('surplus-reason-etc-row').hidden = this.value !== '기타';">
+                                <option value="">-- 선택 --</option>
+                                {% for r in _presets + ['기타'] %}
+                                <option value="{{ r }}"
+                                    {% if (r == '기타' and _is_etc) or (r != '기타' and _saved == r) %}selected{% endif %}>{{ r }}</option>
+                                {% endfor %}
+                            </select>
+                            <div id="surplus-reason-etc-row" class="mb-3" {% if not _is_etc %}hidden{% endif %}>
+                                <input type="text" class="form-control" name="surplus_reason_etc" id="surplus_reason_etc"
+                                       maxlength="6" placeholder="예) 잔여물량"
+                                       value="{{ _saved if _is_etc else '' }}">
+                                <small class="text-muted">할인 리본에 표시되므로 6자 이내로 입력해주세요.</small>
+                            </div>
+
+                            <label for="surplus_origin" class="option-title d-block mb-2">원산지</label>
+                            <input type="text" class="form-control mb-1" name="surplus_origin" id="surplus_origin"
+                                   placeholder="예) 충남 논산시"
+                                   value="{{ form_data.get('surplus_origin') or (item.surplus_origin if item and item.surplus_origin else '') }}">
+                            <small class="text-muted d-block mb-3">농산물 원산지 표시 의무 항목입니다.</small>
+
+                            <div class="alert alert-secondary py-2 px-3 mb-2">
+                                <strong>현장 수확·수령만 가능합니다.</strong> 택배 발송은 제공하지 않습니다.
+                            </div>
+                            <div class="custom-option-card" onclick="toggleCheckbox('surplus_terms_agreed')">
+                                <span class="option-title" style="font-size:.95rem;">자동 산출된 할인율만큼 저렴하게 판매 (필수 동의)</span>
+                                <input type="checkbox" class="custom-large-check" id="surplus_terms_agreed"
+                                       name="surplus_terms_agreed" onclick="event.stopPropagation()"
+                                       {% if item and item.surplus_terms_agreed %}checked{% endif %}>
+                            </div>
+                        </div>
+
                         <!-- 친환경 체크 행 -->
                         <div class="custom-option-card" onclick="toggleCheckbox('is_organic')">
-                            <span class="option-title">🌿 친환경 농법 사용</span>
+                            <span class="option-title"><img src="{{ url_for('static', filename='icons/icon-eco-friendly.svg') }}" width="20" height="20" style="vertical-align:-4px;margin-right:6px;"> 친환경 농법 사용</span>
                             <input type="checkbox" class="custom-large-check" id="is_organic" name="is_organic" 
                                 {% if form_data.get('is_organic') or (item and item.pesticide_free) %}checked{% endif %} onclick="event.stopPropagation()">
                         </div>
 
                         <div id="organic-cert-fields-easy"
-                            style="display: {% if form_data.get('is_organic') or (item and item.pesticide_free) %}block{% else %}none{% endif %}; margin-top:16px; padding:16px; background:#f9fbf9; border-radius:12px; border-left:4px solid #2d6a4f;">
+                            style="display: {% if form_data.get('is_organic') or (item and item.pesticide_free) %}block{% else %}none{% endif %}; margin-top:16px; margin-bottom: 12px; padding:16px; background:var(--fl-green-100); border-radius:12px; border-left:4px solid var(--green-dark, var(--fl-green-700));">
                             <div class="form-group">
                                 <label class="easy-form-label-lg" for="organic_certification_type">친환경 인증 종류</label>
                                 <input type="text" class="form-control" id="organic_certification_type"
@@ -134,6 +234,48 @@
                                 {% endif %}
                             </div>
                         </div>
+                        
+                        <!-- 👇 레시피 전수 추가 👇 -->
+                        <div class="custom-option-card" onclick="toggleCheckbox('has_recipe')">
+                            <span class="option-title">🍳 나만의 특별한 레시피 전수</span>
+                            <input type="checkbox" class="custom-large-check" id="has_recipe" name="has_recipe"
+                                {% if form_data.get('has_recipe') or (item and item.has_recipe) %}checked{% endif %} onclick="event.stopPropagation()">
+                        </div>
+
+                        <div id="recipe-fields-easy"
+                            style="display: {% if form_data.get('has_recipe') or (item and item.has_recipe) %}block{% else %}none{% endif %}; margin-top:16px; padding:20px; background:#f4faec; border-radius:12px; border:1px solid #c8e6c9;">
+                            <p class="text-muted small mb-3">체험을 완료한 손님에게만 특별한 레시피가 제공됩니다. <br><b>모든 칸을 채울 필요 없이, 글로 직접 적으시거나 손글씨 레시피 사진만 한 장 올리셔도 됩니다!</b></p>
+                            
+                            <div class="form-group">
+                                <label class="easy-form-label-lg" style="font-size:1rem;" for="recipe_name">요리 이름 (선택)</label>
+                                <input type="text" class="form-control" id="recipe_name" name="recipe_name" placeholder="예) 가을 송이버섯 소금구이"
+                                    value="{{ form_data.get('recipe_name') or (item.recipe_name if item else '') }}">
+                            </div>
+                            <div class="form-group">
+                                <label class="easy-form-label-lg" style="font-size:1rem;" for="recipe_ingredients">재료 (선택)</label>
+                                <textarea class="form-control" id="recipe_ingredients" name="recipe_ingredients" rows="2"
+                                    placeholder="엔터로 줄바꿈 해주세요.&#13;&#10;예) 송이버섯 3~4개&#13;&#10;소금 약간">{{ form_data.get('recipe_ingredients') or (item.recipe_ingredients if item else '') }}</textarea>
+                            </div>
+                            <div class="form-group">
+                                <label class="easy-form-label-lg" style="font-size:1rem;" for="recipe_steps">만드는 방법 (선택)</label>
+                                <textarea class="form-control" id="recipe_steps" name="recipe_steps" rows="3"
+                                    placeholder="엔터로 줄바꿈 하면 번호가 자동 생성됩니다.&#13;&#10;예) 송이버섯을 두툼하게 썰어주세요.&#13;&#10;팬을 달군 뒤 구워주세요.">{{ form_data.get('recipe_steps') or (item.recipe_steps if item else '') }}</textarea>
+                            </div>
+                            <div class="form-group">
+                                <label class="easy-form-label-lg" style="font-size:1rem;" for="recipe_tip">Tip! (선택)</label>
+                                <input type="text" class="form-control" id="recipe_tip" name="recipe_tip" placeholder="예) 버섯은 물에 씻지 말고 흙만 털어내세요."
+                                    value="{{ form_data.get('recipe_tip') or (item.recipe_tip if item else '') }}">
+                            </div>
+
+                            <div class="form-group mb-0">
+                                <label class="easy-form-label-lg" style="font-size:1rem;" for="recipe_image">손글씨 레시피 사진 (선택)</label>
+                                <input type="file" class="form-control-file" id="recipe_image" name="recipe_image" accept="image/*">
+                                {% if item and item.recipe_image %}
+                                <small class="form-text text-muted" id="existing_recipe_img">현재 파일: {{ item.recipe_image }}</small>
+                                {% endif %}
+                            </div>
+                        </div>
+
                     </div>
                 </div>
             </section>
@@ -207,6 +349,7 @@
                             <span style="font-size:18px;color:#555;">원</span>
                         </div>
                         <p class="easy-form-hint">예: 15000</p>
+                        <p id="price-surplus-hint" class="easy-form-hint" hidden></p>
                     </div>
                 </div>
             </section>
@@ -247,31 +390,8 @@
             </section>
         </div>
 
-        {# ===== 4단계: 봉사자 ===== #}
+        {# ===== 4단계: 최종 확인 ===== #}
         <div class="step-panel" id="step-4" style="display:none;">
-            <section class="fl-card">
-                <div class="fl-card-body">
-                    <p style="font-size:17px;color:#555;margin-bottom:var(--fl-s4);">봉사자 모집이 필요하지 않으면 0을 입력하고 다음 단계로 넘어가세요.</p>
-                    <div class="form-group">
-                        <label class="easy-form-label-lg" for="volunteer_needed">필요 봉사자 수</label>
-                        <div style="display:flex;align-items:center;gap:12px;">
-                            <input type="number" class="form-control" id="volunteer_needed" name="volunteer_needed" min="0"
-                                style="max-width:200px;"
-                                value="{{ form_data.get('volunteer_needed') or (item.volunteer_needed if item else 0) }}">
-                            <span style="font-size:18px;color:#555;">명 (0이면 모집 안 함)</span>
-                        </div>
-                    </div>
-                    <div class="form-group mb-0">
-                        <label class="easy-form-label-lg" for="volunteer_duties">봉사자 주요 업무</label>
-                        <textarea class="form-control" id="volunteer_duties" name="volunteer_duties" rows="4"
-                            placeholder="예) 잡초 제거, 수확 보조">{{ form_data.get('volunteer_duties') or (item.volunteer_duties if item else '') }}</textarea>
-                    </div>
-                </div>
-            </section>
-        </div>
-
-        {# ===== 5단계: 최종 확인 ===== #}
-        <div class="step-panel" id="step-5" style="display:none;">
             <section class="fl-card">
                 <div class="fl-card-body">
                     <h3 style="font-size:20px;font-weight:700;margin-bottom:var(--fl-s4);">입력하신 내용을 확인해 주세요.</h3>
@@ -297,17 +417,19 @@
                     <button type="submit" class="easy-submit-button" id="btn-final-submit" style="width:100%;">
                         {% if item %}이 내용으로 수정하기{% else %}등록하기{% endif %}
                     </button>
-                    <a href="{{ url_for('farmer_easy_mode', tab='operations') }}" class="easy-back-button"
-                        style="display:block;text-align:center;margin-top:14px;width:100%;text-decoration:none;">돌아가기</a>
+                    <button type="button" id="btn-prev-final" class="easy-back-button"
+                        style="display:block;width:100%;margin-top:14px;font-weight:700;">← 이전 단계</button>
                 </div>
             </section>
         </div>
 
-        {# 하단 이전/다음 버튼 영역 #}
-        <div class="step-nav-btns">
-            <button type="button" id="btn-prev" class="easy-nav-btn easy-back-button is-hidden">← 이전 단계</button>
-            <button type="button" id="btn-next" class="easy-nav-btn easy-submit-button">다음 단계 →</button>
-        </div>
+        {# 1~3단계 하단 버튼 영역 (4단계 버튼 UI와 동일, 약관 동의 없음) #}
+        <section class="fl-card step-nav-btns">
+            <div class="fl-card-body">
+                <button type="button" id="btn-next" class="easy-submit-button" style="width:100%;">다음 단계 →</button>
+                <button type="button" id="btn-prev-nav" class="easy-back-button is-hidden" style="display:block;width:100%;margin-top:14px;font-weight:700;">← 이전 단계</button>
+            </div>
+        </section>
 
     </form>
 </div>
@@ -349,8 +471,8 @@
 
 .custom-option-card:hover,
 .custom-terms-card:hover {
-    border-color: #2d6a4f;
-    background-color: #f8faf8;
+    border-color: var(--green-dark, var(--fl-green-700));
+    background-color: var(--fl-green-100);
 }
 
 .option-title,
@@ -365,12 +487,12 @@
     height: 24px !important;
     min-height: 24px !important;
     cursor: pointer;
-    accent-color: #2d6a4f;
+    accent-color: var(--green-dark, var(--fl-green-700));
     margin: 0 !important;
 }
 
 .terms-modal-trigger {
-    color: #2d6a4f;
+    color: var(--green-dark, var(--fl-green-700));
     font-weight: 600;
     text-decoration: underline;
     margin-left: 6px;
@@ -427,34 +549,15 @@
 }
 
 .time-slot.selected {
-    background-color: #2d6a4f !important;
+    background-color: var(--green-dark, var(--fl-green-700)) !important;
     color: #ffffff !important;
 }
 
 .step-nav-btns {
-    display: flex;
-    gap: 16px;
-    margin-top: 24px;
-    width: 100%;
+    margin-top: var(--fl-s3, 24px);
 }
 
-.easy-nav-btn {
-    flex: 1 1 0;
-    min-height: 56px;
-    height: 56px;
-    font-size: 18px;
-    font-weight: 700;
-    border-radius: 12px;
-    margin: 0;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    box-sizing: border-box;
-    cursor: pointer;
-    transition: all 0.15s ease;
-}
-
-.easy-nav-btn.is-hidden {
+.is-hidden {
     display: none !important;
 }
 
@@ -514,14 +617,13 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // ===== 1. 단계 관리 =====
     let cur = 1;
-    const total = 5;
-    const LABELS = ['', '작물명과 진행 농장을 선택해 주세요.', '운영 기간과 시간을 입력해 주세요.', '상세 정보를 입력해 주세요.', '봉사자 정보를 입력해 주세요.', '내용을 확인하고 등록해 주세요.'];
+    const total = 4;
+    const LABELS = ['', '작물명과 진행 농장을 선택해 주세요.', '운영 기간과 시간을 입력해 주세요.', '상세 정보를 입력해 주세요.', '내용을 확인하고 등록해 주세요.'];
     const ENCOURAGE = [
         '',
         '첫 번째 단계예요! 천천히 입력해 주세요.',
-        '잘 하고 계세요! 3단계만 더 입력하면 등록이 완료돼요.',
-        '절반을 넘었어요! 거의 다 왔습니다 🌱',
-        '한 단계만 더예요! 봉사자 정보를 입력해 주세요.',
+        '잘 하고 계세요! 2단계만 더 입력하면 등록이 완료돼요.',
+        '절반을 넘었어요! 거의 다 왔습니다.',
         '다 됐어요! 내용을 확인하고 등록해 주세요.'
     ];
 
@@ -539,19 +641,19 @@ document.addEventListener('DOMContentLoaded', function () {
             if (line) line.classList.toggle('done', i < n);
         }
         document.getElementById('step-label').textContent = n + '단계 / 전체 ' + total + '단계 — ' + LABELS[n];
-        document.getElementById('step-encourage').textContent = '🌱 ' + ENCOURAGE[n];
+        document.getElementById('step-encourage').textContent = ENCOURAGE[n];
         
-        const prevBtn = document.getElementById('btn-prev');
         const nextBtn = document.getElementById('btn-next');
-        
-        if (prevBtn) {
-            if (n === 1) prevBtn.classList.add('is-hidden');
-            else prevBtn.classList.remove('is-hidden');
+        const prevNavBtn = document.getElementById('btn-prev-nav');
+        const navSection = document.querySelector('.step-nav-btns');
+
+        if (navSection) {
+            if (n === total) navSection.classList.add('is-hidden');
+            else navSection.classList.remove('is-hidden');
         }
-        
-        if (nextBtn) {
-            if (n === total) nextBtn.classList.add('is-hidden');
-            else nextBtn.classList.remove('is-hidden');
+        if (prevNavBtn) {
+            if (n <= 1) prevNavBtn.classList.add('is-hidden');
+            else prevNavBtn.classList.remove('is-hidden');
         }
 
         if (n === total) fillConfirm();
@@ -572,7 +674,7 @@ document.addEventListener('DOMContentLoaded', function () {
         document.getElementById('confirm-price').textContent = get('price') ? Number(get('price')).toLocaleString() + '원' : '—';
     }
 
-    // 단계별 필수 항목 검증
+    // 단계별 필수 항목 검증 (👇 1단계에 레시피 검증 추가 👇)
     function validateStep(n) {
         if (n === 1) {
             const crop = document.getElementById('crop').value.trim();
@@ -586,6 +688,23 @@ document.addEventListener('DOMContentLoaded', function () {
                 return false; 
             }
             if (!phone) { alert('농장 연락처를 입력해 주세요.'); document.getElementById('phone').focus(); return false; }
+
+            // 💡 레시피 전수 유효성 검사 (글이나 사진 중 하나는 필수)
+            const hasRecipe = document.getElementById('has_recipe');
+            if (hasRecipe && hasRecipe.checked) {
+                const rName = document.getElementById('recipe_name').value.trim();
+                const rIng = document.getElementById('recipe_ingredients').value.trim();
+                const rSteps = document.getElementById('recipe_steps').value.trim();
+                const rTip = document.getElementById('recipe_tip').value.trim();
+                const rImgCount = document.getElementById('recipe_image').files.length;
+                const existingImg = document.getElementById('existing_recipe_img');
+
+                if (!rName && !rIng && !rSteps && !rTip && rImgCount === 0 && !existingImg) {
+                    alert('레시피 전수를 선택하셨습니다. 내용이나 사진 중 하나는 반드시 입력해 주세요!');
+                    document.getElementById('recipe_name').focus();
+                    return false;
+                }
+            }
         }
         if (n === 2) {
             const ds = document.getElementById('duration_start').value;
@@ -609,7 +728,11 @@ document.addEventListener('DOMContentLoaded', function () {
         if (cur < total) { cur++; showStep(cur); }
     });
 
-    document.getElementById('btn-prev').addEventListener('click', function () {
+    document.getElementById('btn-prev-final').addEventListener('click', function () {
+        if (cur > 1) { cur--; showStep(cur); }
+    });
+
+    document.getElementById('btn-prev-nav').addEventListener('click', function () {
         if (cur > 1) { cur--; showStep(cur); }
     });
 
@@ -627,12 +750,21 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
-    // ===== 3. 친환경 인증 토글 =====
+    // ===== 3. 토글 항목 처리 (친환경 & 레시피) =====
     const organicCb = document.getElementById('is_organic');
     const certFields = document.getElementById('organic-cert-fields-easy');
     if (organicCb && certFields) {
         organicCb.addEventListener('change', function () {
             certFields.style.display = this.checked ? 'block' : 'none';
+        });
+    }
+    
+    // 👇 레시피 입력창 토글 처리 추가 👇
+    const recipeCb = document.getElementById('has_recipe');
+    const recipeFields = document.getElementById('recipe-fields-easy');
+    if (recipeCb && recipeFields) {
+        recipeCb.addEventListener('change', function () {
+            recipeFields.style.display = this.checked ? 'block' : 'none';
         });
     }
 
@@ -646,7 +778,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (!slot || !slot.classList.contains('time-slot')) return;
         if (select) {
             slot.classList.add('selected');
-            slot.style.setProperty('background-color', '#2d6a4f', 'important');
+            slot.style.setProperty('background-color', getComputedStyle(document.documentElement).getPropertyValue('--green-dark').trim() || '#2d6a4f', 'important');
             slot.style.setProperty('color', '#ffffff', 'important');
             slot.innerText = '✓';
         } else {
@@ -766,6 +898,108 @@ document.addEventListener('DOMContentLoaded', function () {
             if (e.target === termsModal) termsModal.style.display = 'none';
         });
     }
+});
+
+// --- 과생산: 할인율·최대 체험료·정원 즉시 표시 ---
+// 구간표는 서버 상수를 그대로 주입받는다. 서버가 저장 전에 다시 검증한다.
+var FL_SURPLUS = {{ SURPLUS_TIERS_JSON|safe }};
+
+// services/experience_validator.auto_discount_percent 와 같은 규칙.
+function flSurplusPercent(total, unit) {
+    if (!(total > 0)) return null;
+    var amount = total, table = unit;
+    if (FL_SURPLUS.conversion[unit]) {          // g → kg 처럼 환산만 하는 단위
+        amount = total / FL_SURPLUS.conversion[unit][1];
+        table = FL_SURPLUS.conversion[unit][0];
+    }
+    var tiers = FL_SURPLUS.tiers[table];
+    if (!tiers) return FL_SURPLUS.default;      // 구간표가 없는 단위(포기·단)
+    for (var i = 0; i < tiers.length; i++) {
+        if (tiers[i][0] === null || amount < tiers[i][0]) return tiers[i][1];
+    }
+    return FL_SURPLUS.default;
+}
+
+function flSurplusMaxCost(listPrice, total, unit) {
+    var percent = flSurplusPercent(total, unit);
+    if (percent === null || !(listPrice > 0)) return null;
+    return Math.floor(listPrice * (100 - percent) / 100);
+}
+
+function flWon(n) { return n.toLocaleString('ko-KR') + '원'; }
+
+function flUpdateSurplus() {
+    var lp = document.getElementById('list_price');
+    var rateEl = document.getElementById('surplus-rate');
+    if (!lp || !rateEl) return;
+
+    var on = !!document.getElementById('is_surplus').checked;
+    var listPrice = parseInt(lp.value, 10);
+    var total = parseInt(document.getElementById('surplus_qty_total').value, 10);
+    var per = parseInt(document.getElementById('surplus_per_person').value, 10);
+    var unit = document.getElementById('surplus_unit').value;
+    var priceEl = document.getElementById('price');
+    var hintEl = document.getElementById('price-surplus-hint');
+
+    var percent = flSurplusPercent(total, unit);
+    var cap = flSurplusMaxCost(listPrice, total, unit);
+
+    // --- 할인율 · 최대 체험료 안내 ---
+    if (!on) {
+        rateEl.textContent = '정가와 총 수량을 입력하면 할인율과 최대 체험료가 표시됩니다.';
+        rateEl.className = 'alert alert-light border py-2 px-3 mb-2';
+    } else if (cap === null) {
+        rateEl.textContent = percent === null
+            ? '총 수량을 입력하면 할인율이 정해집니다.'
+            : '정가를 입력하면 최대 체험료가 계산됩니다. (현재 할인율 ' + percent + '%)';
+        rateEl.className = 'alert alert-light border py-2 px-3 mb-2';
+    } else {
+        var msg = '총 ' + total + unit + ' → 할인율 <strong>' + percent + '%</strong>'
+                + ' → 최대 체험료 <strong>' + flWon(cap) + '</strong>';
+        if (!FL_SURPLUS.tiers[unit] && !FL_SURPLUS.conversion[unit]) {
+            // 포기·단은 kg 환산 기준이 없어 기본 할인율을 준다. 이유를 알려야 한다.
+            msg += '<br><span class="text-muted">' + unit
+                 + ' 단위는 기본 할인율 ' + FL_SURPLUS.default + '%가 적용됩니다.</span>';
+        }
+        rateEl.innerHTML = msg;
+        rateEl.className = 'alert alert-success py-2 px-3 mb-2';
+    }
+
+    // --- 참가비: 비어 있을 때만 채운다 ---
+    // 이미 적어 둔 값을 말없이 덮어쓰면 농장주가 모르는 채 저장된다.
+    if (on && cap !== null && priceEl) {
+        if (!priceEl.value) priceEl.value = cap;
+        var price = parseInt(priceEl.value, 10);
+        hintEl.hidden = false;
+        if (price > cap) {
+            hintEl.innerHTML = '최대 <strong>' + flWon(cap)
+                + '</strong>까지 가능합니다. 지금 금액으로는 저장되지 않습니다.';
+            hintEl.style.color = '#c62828';
+        } else {
+            hintEl.innerHTML = '할인율 ' + percent + '% 적용 — 최대 ' + flWon(cap) + '까지 가능합니다.';
+            hintEl.style.color = '';
+        }
+    } else if (hintEl) {
+        hintEl.hidden = true;
+    }
+
+    // --- 수량으로 정해지는 정원 ---
+    var capEl = document.getElementById('surplus-capacity');
+    if (total > 0 && per > 0) {
+        var room = Math.floor(total / per);
+        var rest = total - room * per;
+        capEl.textContent = '최대 ' + room + '명까지 받을 수 있습니다.'
+            + (rest > 0 ? ' (자투리 ' + rest + unit + '은 예약받지 않습니다)' : '');
+        var maxEl = document.getElementById('max_participants');
+        if (maxEl && (!maxEl.value || parseInt(maxEl.value, 10) > room)) maxEl.value = room;
+    } else {
+        capEl.textContent = '—';
+    }
+}
+document.addEventListener('DOMContentLoaded', function () {
+    var priceEl = document.getElementById('price');
+    if (priceEl) priceEl.addEventListener('input', flUpdateSurplus);
+    flUpdateSurplus();
 });
 </script>
 {% endblock %}

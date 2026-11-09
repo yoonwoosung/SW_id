@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" fill="none">
+  <!-- soft background -->
+  <circle cx="16" cy="16" r="12" fill="#E8F5E9"/>
+
+  <!-- completion badge -->
+  <path d="M16 7.2L18.4 9.1L21.5 8.8L22.7 11.7L25.5 13.2L24.8 16.3L26.3 19L23.9 21.1L23.6 24.2L20.5 24.8L18.5 27.2L16 25.7L13.5 27.2L11.5 24.8L8.4 24.2L8.1 21.1L5.7 19L7.2 16.3L6.5 13.2L9.3 11.7L10.5 8.8L13.6 9.1L16 7.2Z"
+        fill="#4CAF50"/>
+
+  <!-- inner check -->
+  <path d="M12 16.2L14.8 19L20.3 13.6"
+        stroke="#FFFFFF"
+        stroke-width="2.2"
+        stroke-linecap="round"
+        stroke-linejoin="round"/>
+</svg>

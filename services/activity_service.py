@@ -6,6 +6,7 @@ from common.constants import (
     APPLICATION_STATUS_CONFIRMED, APPLICATION_STATUS_CANCELLED,
 )
 from models import db, Application, Notification
+from services.thumbnail_service import first_image_name
 
 # 카드 상태 코드
 STATE_PAY_PENDING = 'pay_pending'     # 결제 대기
@@ -106,15 +107,15 @@ def badge_label(state):
     return _BADGE_LABEL.get(state, '')
 
 
-def reservation_cards(applications, today=None):
+def reservation_cards(applications, today=None, refunded_ids=None):
+    """예약 카드 목록. refunded_ids 를 주면 거절 환급 건을 표시할 수 있다."""
     today = today or date.today()
+    refunded_ids = refunded_ids or set()
     cards = []
     for app in applications:
         exp = app.experience
         state = reservation_state(app, today)
-        image = ''
-        if exp is not None and exp.images:
-            image = exp.images.split(',')[0]
+        image = first_image_name(exp) or ''   # 없을 때 '' 는 기존 계약 유지
         cards.append({
             'app_id': app.id,
             'exp_id': app.experience_id,
@@ -127,6 +128,8 @@ def reservation_cards(applications, today=None):
             'state': state,
             'badge': badge_label(state),
             'can_review': app.can_review,
+            # 취소 건이 '농장주 거절 + 환급'인지 사용자가 직접 취소한 건지 구분한다.
+            'refunded': app.id in refunded_ids,
         })
     return cards
 

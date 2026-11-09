@@ -6,6 +6,23 @@ _AGE_LABEL = dict(AGE_GROUPS)                                  # {'20s':'20대',
 _GENDER_LABEL = {code: label for code, label in GENDERS if code != 'other'}  # 기타는 라벨 생략
 
 
+def peer_segment_availability(user):
+    """또래·성별 섹션을 그릴 수 있는지. {'age': bool, 'gender': bool}
+
+    ★섹션 이름과 실제 기준이 어긋나면 안 된다.★ '내 또래가 즐기는 코스'는
+    같은 나이대의 클릭 로그로 순서를 매기는데, 나이대가 없으면 집계가 0건이라
+    기본 점수순으로 떨어져 '지금 내 주변 추천'과 똑같은 카드가 나온다
+    (배포 서버 확인: 세 섹션 상위 3건이 전부 같았다).
+
+    그래서 근거가 없는 섹션은 아예 그리지 않는다. 화면을 채우려고 다른
+    기준으로 정렬하면 제목이 거짓말이 된다.
+    """
+    return {
+        'age': bool(getattr(user, 'age_group', None)) if user else False,
+        'gender': bool(getattr(user, 'gender', None)) if user else False,
+    }
+
+
 def user_segment_label(user):
     """'20대·남성'처럼 사용자 세그먼트 라벨. 프로필 없으면 None."""
     if user is None:
@@ -20,12 +37,10 @@ def user_segment_label(user):
 
 def auto_segments(user):
     """진입 즉시 보여줄 자동 추천 세그먼트 카드 3개. key는 추천 API의 segment 파라미터로 쓰인다."""
-    age = _AGE_LABEL.get(getattr(user, 'age_group', None)) if user is not None else None
-    peers_title = (age + ' 인기 체험') if age else '요즘 인기 체험'
     return [
-        {'key': 'peers', 'emoji': '🎯', 'title': peers_title, 'subtitle': '또래가 많이 봤어요'},
-        {'key': 'active', 'emoji': '👥', 'title': '가볍게 즐기는 코스', 'subtitle': '부담 없는 하루'},
-        {'key': 'esg', 'emoji': '🌱', 'title': 'ESG 친환경 코스', 'subtitle': '무농약·유기농'},
+        {'key': 'peers', 'emoji': '🎯', 'title': '가볍게 다녀오기', 'subtitle': '저렴하고 가까움'},
+        {'key': 'group', 'emoji': '👥', 'title': '단체로 가기 좋은 코스', 'subtitle': '자리 넉넉·주차 편함'},
+        {'key': 'esg', 'emoji': '🌱', 'title': '친환경 인증 농장', 'subtitle': '무농약·유기농'},
     ]
 
 
@@ -33,8 +48,8 @@ def auto_segments(user):
 _GENDER_BUTTON = {'male': ('남자', '👬'), 'female': ('여자', '👭')}
 # 프로필이 없을 때 채울 기본 버튼(순서대로 부족분을 채움).
 _FALLBACK_BUTTONS = [
-    {'label': '요즘 인기 있는 곳', 'icon': '🔥', 'segment': 'peers'},
-    {'label': '친환경으로 즐기기', 'icon': '🌱', 'segment': 'esg'},
+    {'label': '요즘 인기 있는 곳', 'icon': '', 'segment': 'nearby'},
+    {'label': '친환경으로 즐기기', 'icon': '', 'segment': 'esg'},
 ]
 
 
@@ -45,10 +60,10 @@ def segment_buttons(user):
     gender = getattr(user, 'gender', None) if user is not None else None
     buttons = []
     if age:
-        buttons.append({'label': age + ' 놀러가기 좋은 곳', 'icon': '🌿', 'segment': 'peers'})
+        buttons.append({'label': age + ' 놀러가기 좋은 곳', 'icon': '', 'segment': 'peers_age'})
     if gender in _GENDER_BUTTON:
         word, icon = _GENDER_BUTTON[gender]
-        buttons.append({'label': word + '끼리 가기 좋은 곳', 'icon': icon, 'segment': 'peers'})
+        buttons.append({'label': word + '끼리 가기 좋은 곳', 'icon': '', 'segment': 'peers_gender'})
     for fallback in _FALLBACK_BUTTONS:      # 프로필 정보가 부족하면 기본 버튼으로 2개를 채운다.
         if len(buttons) >= 2:
             break

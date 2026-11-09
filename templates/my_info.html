@@ -2,7 +2,21 @@
 {% block page_class %}page-myinfo{% endblock %}
 
 {% block head %}
+<!-- 💡 레시피 PDF 변환을 위한 라이브러리 추가 -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
+@font-face {
+    font-family: 'BareunHippie';
+    src: url('{{ url_for("static", filename="fonts/나눔손글씨 바른히피.ttf") }}') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+
+.recipe-handwriting-font {
+    font-family: 'BareunHippie', cursive, sans-serif !important;
+}
+
 /* ── 내비 카테고리 레이블 ── */
 .mi-nav-cat {
   font-size: .75rem; font-weight: 700; color: var(--fl-text-muted);
@@ -19,6 +33,11 @@
 
 /* ── 예약 카드 ── */
 .mi-res-list { display:flex; flex-direction:column; gap:12px; }
+.mi-res-note {
+  margin-top:6px; font-size:.78rem; line-height:1.45;
+  color:var(--fl-text-muted);
+}
+.mi-res-note--refund { color:var(--fl-green-700,#2e7d32); font-weight:600; }
 .mi-res-card {
   display:flex; gap:14px; background:var(--fl-surface); border:1px solid var(--fl-border);
   border-radius:14px; padding:14px; align-items:center;
@@ -89,20 +108,6 @@
 .mi-point-pos { color:var(--fl-green-700); font-weight:700; }
 .mi-point-neg { color:var(--fl-danger); font-weight:700; }
 
-/* ── 추억 앨범 그리드 ── */
-.mi-album-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
-.mi-album-item {
-  border-radius:var(--fl-radius); overflow:hidden;
-  aspect-ratio:1; position:relative; background:var(--fl-green-100);
-  display:flex; align-items:center; justify-content:center; color:var(--fl-green-700);
-}
-.mi-album-item img { width:100%; height:100%; object-fit:cover; display:block; }
-.mi-album-label {
-  position:absolute; bottom:0; left:0; right:0;
-  background:rgba(0,0,0,.45); color:var(--fl-surface); font-size:.75rem; font-weight:700;
-  padding:4px 6px; text-align:center;
-}
-
 /* ── 빈 상태 ── */
 .mi-empty { color:var(--fl-text-muted); padding:20px 4px; font-size:.83rem; }
 
@@ -114,6 +119,16 @@
 .mi-tl-time { font-weight:700; color:var(--fl-green-700); font-size:.83rem; min-width:40px; margin-top:2px; }
 .mi-tl-name { font-weight:700; font-size:.97rem; }
 .mi-tl-sub { font-size:.83rem; color:var(--fl-text-muted); margin-top:2px; }
+
+/* ── 아바타 변경 ── */
+.mi-avatar-wrap { position:relative; width:80px; height:80px; cursor:pointer; margin:0 auto var(--fl-s2); }
+.mi-avatar-wrap .fl-avatar { width:80px; height:80px; border-radius:50%; object-fit:cover; display:block; }
+.mi-avatar-overlay {
+  position:absolute; inset:0; border-radius:50%;
+  background:rgba(0,0,0,0.42); display:flex; align-items:center; justify-content:center;
+  opacity:0; transition:opacity .18s; color:#fff; font-size:.75rem; flex-direction:column; gap:3px;
+}
+.mi-avatar-wrap:hover .mi-avatar-overlay { opacity:1; }
 
 /* ── 사이드바 프로필 스탯 ── */
 .mi-side-stats { display:flex; gap:0; border-top:1px solid var(--fl-border); margin-top:10px; width:100%; }
@@ -130,6 +145,12 @@
 @media (max-width: 860px) {
   .mi-nav-cat { display:none; }
   .mi-nav-divider { display:none; }
+}
+
+@media (min-width: 861px) {
+  .mi-album-grid { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .fl-scope.fl-container { padding-left: var(--fl-s5); padding-right: var(--fl-s5); }
+  .fl-scope { padding-bottom: 0; }
 }
 </style>
 {% endblock %}
@@ -148,7 +169,7 @@
 {% set pending_count = applications | selectattr('status', 'equalto', '예정') | list | length %}
 {% set exp_count = applications | selectattr('status', 'in', ['결제완료', '확정']) | list | length %}
 
-<div class="fl-container fl-scope" style="margin-top:var(--fl-s5);max-width:1100px;">
+<div class="fl-container fl-scope" style="margin-top:var(--fl-s5);max-width:1200px;">
   <div class="fl-layout">
 
     {# ══ 사이드바 ══ #}
@@ -157,11 +178,14 @@
       {# 프로필 카드 #}
       <div class="fl-card">
         <div class="fl-card-body fl-side-profile">
-          {% if user.profile_image and user.profile_image not in ['shd.png', 'default.png'] %}
-            <img class="fl-avatar" src="{{ url_for('static', filename='uploads/' + user.profile_image) }}" alt="{{ user.nickname }}">
-          {% else %}
-            <img class="fl-avatar" src="{{ url_for('static', filename='uploads/default.png') }}" alt="{{ user.nickname }}">
-          {% endif %}
+          <div class="mi-avatar-wrap" id="mi-avatar-wrap" title="프로필 사진 변경">
+            <img class="fl-avatar" id="mi-avatar-img"
+              src="{% if user.profile_image and user.profile_image not in ['shd.png','default.png'] %}{{ url_for('static', filename='uploads/' + user.profile_image) }}{% else %}data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 80 80'%3E%3Ccircle cx='40' cy='40' r='40' fill='%23d8f3dc'/%3E%3Ccircle cx='40' cy='32' r='14' fill='%232d6a4f'/%3E%3Cellipse cx='40' cy='68' rx='22' ry='16' fill='%232d6a4f'/%3E%3C/svg%3E{% endif %}"
+              alt="{{ user.nickname }}"
+              onerror="this.onerror=null;this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 80 80\'%3E%3Ccircle cx=\'40\' cy=\'40\' r=\'40\' fill=\'%23d8f3dc\'/%3E%3Ccircle cx=\'40\' cy=\'32\' r=\'14\' fill=\'%232d6a4f\'/%3E%3Cellipse cx=\'40\' cy=\'68\' rx=\'22\' ry=\'16\' fill=\'%232d6a4f\'/%3E%3C/svg%3E';">
+            <div class="mi-avatar-overlay"><i class="fa-solid fa-camera"></i><span>변경</span></div>
+          </div>
+          <input type="file" id="mi-avatar-input" accept="image/*" style="display:none;">
           <strong>{{ user.nickname }}</strong>
           <div class="fl-muted fl-meta">일반 회원</div>
           <div class="mi-side-stats">
@@ -197,9 +221,6 @@
           <a href="#" data-panel="recent"><i class="fa-solid fa-clock-rotate-left"></i> 최근 본 것</a>
           <a href="#" data-panel="point"><i class="fa-solid fa-coins"></i> 포인트</a>
           <a href="#" data-panel="ai"><i class="fa-solid fa-route"></i> AI 여행 코스</a>
-          <div class="mi-nav-divider"></div>
-          <div class="mi-nav-cat">추억</div>
-          <a href="#" data-panel="album"><i class="fa-regular fa-images"></i> 추억 앨범</a>
         </div>
       </div>
 
@@ -264,7 +285,7 @@
 
         <section class="fl-card"><div class="fl-card-body">
           <div class="fl-section-head"><h2><i data-lucide="settings"></i> 계정</h2></div>
-          <div class="fl-info-row" style="cursor:pointer;">
+          <div id="mi-pw-row" class="fl-info-row" style="cursor:pointer;">
             <span class="lbl">비밀번호</span>
             <span class="val" style="color:var(--fl-text-muted);font-weight:400;">변경하기</span>
             <i data-lucide="chevron-right" style="color:var(--fl-text-muted);"></i>
@@ -296,9 +317,9 @@
                 {% if next_trip.status == '확정' %}예약 확정{% elif next_trip.status == '결제완료' %}수락 대기중{% else %}결제 대기{% endif %}
               </span>
               <div class="mi-next-title">{{ next_trip.experience.crop }} 체험</div>
-              <div class="mi-next-meta"><i data-lucide="calendar"></i> {{ next_trip.apply_date.strftime('%Y.%m.%d') }} {{ next_trip.apply_time or '' }}</div>
-              <div class="mi-next-meta"><i data-lucide="map-pin"></i> {{ next_trip.experience.address_detail or next_trip.experience.location or '' }}</div>
-              <div class="mi-next-meta"><i data-lucide="users"></i> {{ next_trip.participants_count }}명</div>
+              <div class="mi-next-meta"><img src="{{ url_for('static', filename='icons/icon-calendar-schedule.svg') }}" class="fl-icon-sm" alt=""> {{ next_trip.apply_date.strftime('%Y.%m.%d') }} {{ next_trip.apply_time or '' }}</div>
+              <div class="mi-next-meta"><img src="{{ url_for('static', filename='icons/icon-map-location.svg') }}" class="fl-icon-sm" alt=""> {{ next_trip.experience.address_detail or next_trip.experience.location or '' }}</div>
+              <div class="mi-next-meta"><img src="{{ url_for('static', filename='icons/icon-participants.svg') }}" class="fl-icon-sm" alt=""> {{ next_trip.participants_count }}명</div>
             </div>
             <div class="mi-next-actions">
               {% if next_trip.status == '확정' %}
@@ -311,12 +332,19 @@
         {% endif %}
 
         <section class="fl-card"><div class="fl-card-body" style="padding-bottom:0;">
-          <div class="fl-section-head"><h2><i data-lucide="calendar-check"></i> 전체 예약 내역</h2></div>
+          <div class="fl-section-head" style="display:flex;align-items:center;justify-content:space-between;">
+            <h2><img src="{{ url_for('static', filename='icons/icon-calendar-schedule.svg') }}" class="fl-icon-sm" alt=""> 전체 예약 내역</h2>
+            <a href="{{ url_for('help_page') }}#activity-screen" class="fl-help-btn"><i data-lucide="circle-help"></i> 도움말</a>
+          </div>
         </div>
         {% if applications %}
           <div class="mi-res-list" style="padding:0 20px 16px;">
             {% for app in applications %}
-            <div class="mi-res-card">
+            {# 레시피 조회를 위해 data-state, data-exp-id 를 둔다.
+               ★원본 status 가 아니라 계산된 상태를 쓴다.★ status 만 보면 체험이
+               끝났는데도 '확정'으로 남아 있어 완료 예약을 못 찾는다.
+               mypage.html 과 같은 값(completed 등)을 쓴다. #}
+            <div class="mi-res-card" data-state="{{ reservation_states[app.id] }}" data-exp-id="{{ app.experience.id }}">
               {% if app.experience.images %}
                 <img class="mi-res-thumb" src="{{ url_for('static', filename='uploads/' + app.experience.images.split(',')[0]) }}" alt="{{ app.experience.crop }}">
               {% else %}
@@ -325,9 +353,14 @@
               <div class="mi-res-body">
                 {{ res_badge(app.status) }}
                 <div class="mi-res-title">{{ app.experience.crop }} 체험</div>
-                <div class="mi-res-meta"><i data-lucide="calendar"></i> {{ app.apply_date.strftime('%Y.%m.%d') }} {{ app.apply_time or '' }} &nbsp;·&nbsp; <i data-lucide="users"></i> {{ app.participants_count }}명</div>
-                <div class="mi-res-meta"><i data-lucide="map-pin"></i> {{ app.experience.address_detail or app.experience.location or '' }}</div>
+                <div class="mi-res-meta"><img src="{{ url_for('static', filename='icons/icon-calendar-schedule.svg') }}" class="fl-icon-sm" alt=""> {{ app.apply_date.strftime('%Y.%m.%d') }} {{ app.apply_time or '' }} &nbsp;·&nbsp; <img src="{{ url_for('static', filename='icons/icon-participants.svg') }}" class="fl-icon-sm" alt=""> {{ app.participants_count }}명</div>
+                <div class="mi-res-meta"><img src="{{ url_for('static', filename='icons/icon-map-location.svg') }}" class="fl-icon-sm" alt=""> {{ app.experience.address_detail or app.experience.location or '' }}</div>
                 <div style="font-size:.72rem;color:var(--fl-text-muted);margin-top:3px;">예약번호 FLT-{{ '%06d' | format(app.id) }}</div>
+                {% if app.status == '결제완료' %}
+                <div class="mi-res-note">결제가 끝났습니다. 농장주 승인을 기다리는 중입니다.</div>
+                {% elif app.status == '취소' and app.id in (refunded_app_ids or []) %}
+                <div class="mi-res-note mi-res-note--refund">농장주가 예약을 거절해 결제 금액이 포인트로 환급되었습니다.</div>
+                {% endif %}
               </div>
               <div class="mi-res-actions">
                 {% if app.status == '예정' %}
@@ -362,7 +395,7 @@
       {# ── 찜 ── #}
       <div id="panel-wish" class="mi-panel" style="display:none;flex-direction:column;gap:var(--fl-s4);">
         <section class="fl-card"><div class="fl-card-body">
-          <div class="fl-section-head"><h2><i data-lucide="heart"></i> 찜한 체험</h2></div>
+          <div class="fl-section-head"><h2><img src="{{ url_for('static', filename='icons/icon-favorites.svg') }}" class="fl-icon-sm" alt=""> 찜한 체험</h2></div>
           <div id="mi-wish-list"><p class="mi-empty">불러오는 중…</p></div>
         </div></section>
       </div>
@@ -390,7 +423,6 @@
         <section class="fl-card"><div class="fl-card-body">
           <div class="fl-section-head">
             <h2><i data-lucide="route"></i> AI 추천 여행 코스</h2>
-            <a href="{{ url_for('ai_recommend_page') }}" class="fl-more">코스 만들기 →</a>
           </div>
           {% if next_trip %}
             <p style="font-size:.84rem;color:var(--fl-text-muted);margin-bottom:16px;">
@@ -425,36 +457,6 @@
         </div></section>
       </div>
 
-      {# ── 추억 앨범 ── #}
-      <div id="panel-album" class="mi-panel" style="display:none;flex-direction:column;gap:var(--fl-s4);">
-        <section class="fl-card"><div class="fl-card-body">
-          <div class="fl-section-head">
-            <h2><i data-lucide="images"></i> 추억 앨범</h2>
-            <a href="{{ url_for('album_create') }}" class="fl-btn fl-btn-primary fl-btn-sm">앨범 만들기</a>
-          </div>
-          {% set archive = [] %}
-          {% for app in applications %}
-            {% if app.experience.images %}
-              {% set _ = archive.append({'crop': app.experience.crop, 'img': app.experience.images.split(',')[0]}) %}
-            {% endif %}
-          {% endfor %}
-          {% if archive %}
-            <div class="mi-album-grid">
-              {% for item in archive[:9] %}
-              <div class="mi-album-item">
-                <img src="{{ url_for('static', filename='uploads/' + item.img) }}" alt="{{ item.crop }}">
-                <div class="mi-album-label">{{ item.crop }}</div>
-              </div>
-              {% endfor %}
-            </div>
-          {% else %}
-            <p class="mi-empty">농장 체험의 추억을 앨범으로 만들어보세요.<br>
-              <a href="{{ url_for('album_create') }}" style="color:var(--fl-green-700);font-weight:700;">앨범 만들기 →</a>
-            </p>
-          {% endif %}
-        </div></section>
-      </div>
-
     </main>
   </div>
 </div>
@@ -473,11 +475,151 @@
     </div>
   </div>
 </div>
+<!-- 비밀번호 변경 모달 -->
+<div id="mi-pw-modal" style="display:none;position:fixed;inset:0;z-index:1050;background:rgba(0,0,0,0.45);overflow-y:auto;">
+  <div style="max-width:420px;margin:120px auto;background:#fff;border-radius:16px;padding:28px 24px;position:relative;">
+    <button type="button" id="mi-pw-modal-close" style="position:absolute;top:16px;right:18px;background:none;border:none;font-size:1.4rem;color:#888;cursor:pointer;">&times;</button>
+    <h3 style="font-size:1.05rem;font-weight:800;color:#1b4332;margin:0 0 20px;">비밀번호 변경</h3>
+    <div style="display:flex;flex-direction:column;gap:14px;">
+      <div>
+        <label style="font-size:.82rem;font-weight:700;color:#444;display:block;margin-bottom:4px;">현재 비밀번호</label>
+        <input id="mi-pw-current" type="password" placeholder="현재 비밀번호 입력"
+          style="width:100%;padding:10px 12px;border:1px solid var(--fl-border);border-radius:8px;font-size:.9rem;box-sizing:border-box;">
+      </div>
+      <div>
+        <label style="font-size:.82rem;font-weight:700;color:#444;display:block;margin-bottom:4px;">새 비밀번호</label>
+        <input id="mi-pw-new" type="password" placeholder="새 비밀번호 (6자 이상)"
+          style="width:100%;padding:10px 12px;border:1px solid var(--fl-border);border-radius:8px;font-size:.9rem;box-sizing:border-box;">
+      </div>
+      <div>
+        <label style="font-size:.82rem;font-weight:700;color:#444;display:block;margin-bottom:4px;">새 비밀번호 확인</label>
+        <input id="mi-pw-confirm" type="password" placeholder="새 비밀번호 다시 입력"
+          style="width:100%;padding:10px 12px;border:1px solid var(--fl-border);border-radius:8px;font-size:.9rem;box-sizing:border-box;">
+      </div>
+      <p id="mi-pw-msg" style="font-size:.82rem;color:var(--fl-danger);margin:0;min-height:18px;"></p>
+      <button id="mi-pw-submit" class="fl-btn fl-btn-primary fl-btn-block" style="justify-content:center;">변경하기</button>
+    </div>
+  </div>
+</div>
+
+<!-- 💡 레시피 다운로드 모달 (확장된 가로형 디자인) 💡 -->
+<div id="recipeModalOverlay" class="modal-overlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:9999; align-items:center; justify-content:center;">
+  <div class="modal-content" style="background:#f4faec; padding:0; border-radius:18px; max-width:780px; width:95%; max-height:92vh; position:relative; box-shadow: 0 12px 35px rgba(0,0,0,0.25); display:flex; flex-direction:column; overflow:hidden;">
+      
+      <!-- 상단 헤더 -->
+      <div style="background:#fff; padding:18px 26px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #e0e0e0; flex-shrink:0;">
+          <div style="font-weight:800; color:var(--fl-green-700); font-size:1.15rem;">
+              <i class="fa-solid fa-leaf"></i> FarmLink 레시피북
+          </div>
+          <button onclick="document.getElementById('recipeModalOverlay').style.display='none'" style="border:none; background:none; font-size:1.7rem; color:#888; cursor:pointer;">&times;</button>
+      </div>
+
+      <!-- PDF로 캡처될 진짜 영역 (스크롤 가능) -->
+      <div id="recipePrintArea" style="padding:36px; background:#f4faec; overflow-y:auto; flex:1;">
+          
+          <!-- 타이틀 & 농장 사진 영역 -->
+          <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:28px; gap:24px;">
+              <div style="flex:1;">
+                  <h2 id="r_title" style="font-size:2rem; font-weight:900; color:#2e3b32; margin-bottom:10px; line-height:1.25;"></h2>
+                  <p id="r_subtitle" style="font-size:0.95rem; color:#666; margin-bottom:14px; display:none;">자연의 향을 그대로, 가장 간단하지만 특별한 레시피</p>
+                  <div style="display:flex; gap:8px;">
+                      <span style="background:#fff; border:1px solid #ddd; padding:5px 14px; border-radius:20px; font-size:0.85rem; color:#555;"><span id="r_crop_tag"></span></span>
+                      <span style="background:#fff; border:1px solid #ddd; padding:5px 14px; border-radius:20px; font-size:0.85rem; color:#555;">특별 요리</span>
+                  </div>
+              </div>
+              <img id="r_img" src="" style="width:130px; height:130px; object-fit:cover; border-radius:16px; box-shadow:0 4px 12px rgba(0,0,0,0.1); display:none; flex-shrink:0;">
+          </div>
+          
+          <!-- 손글씨 사진 영역 -->
+          <div id="r_handwritten_box" style="background:#fff; padding:22px; border-radius:14px; box-shadow:0 2px 8px rgba(0,0,0,0.03); margin-bottom:24px; display:none; text-align:center;">
+              <div style="font-weight:800; color:#2e3b32; margin-bottom:16px; font-size:1.1rem; text-align:left;"><i class="fa-solid fa-camera"></i> 농부님의 손글씨 레시피</div>
+              <img id="r_handwritten_img" src="" style="max-width:100%; height:auto; border-radius:10px; display:inline-block;">
+          </div>
+
+          {# 사진과 글이 둘 다 있으면 사진을 먼저 보여주고 글은 접어 둔다.
+             ★숨기지 않고 접는다.★ 완전히 숨기면 PDF 저장(화면을 그대로 캡처한다)
+             에서도 재료·순서가 사라져, 손글씨가 흐릴 때 대안이 없어진다. #}
+          <button type="button" id="r_text_toggle" class="recipe-text-toggle" style="display:none;"
+                  aria-expanded="false" aria-controls="r_text_group">
+              <i class="fa-solid fa-chevron-down"></i> <span>글로 된 레시피 보기</span>
+          </button>
+
+          <div id="r_text_group">
+          <!-- 재료 & Tip 영역 (가로 배치) -->
+          <div style="display:flex; gap:20px; margin-bottom:28px;">
+              <div id="r_ing_box" style="flex:1; background:#fff; padding:22px; border-radius:14px; box-shadow:0 2px 8px rgba(0,0,0,0.03); display:none;">
+                  <div style="font-weight:800; color:#2e3b32; margin-bottom:14px; font-size:1.05rem;">재료</div>
+                  <ul id="r_ing_list" style="list-style:none; padding:0; margin:0; font-size:0.95rem; color:#444;">
+                  </ul>
+              </div>
+              <div id="r_tip_box" style="flex:1; background:#fff9c4; padding:22px; border-radius:14px; box-shadow:0 2px 8px rgba(0,0,0,0.03); display:none;">
+                  <div style="font-weight:800; color:#f57f17; margin-bottom:10px; font-size:1.05rem;">Tip!</div>
+                  <p id="r_tip_text" style="font-size:0.95rem; color:#555; line-height:1.55; margin:0; word-break:keep-all;"></p>
+              </div>
+          </div>
+
+          <!-- 만드는 방법 영역 -->
+          <div id="r_steps_box" style="background:#fff; padding:26px; border-radius:14px; box-shadow:0 2px 8px rgba(0,0,0,0.03); margin-bottom:28px; display:none;">
+              <div style="font-weight:800; color:#2e3b32; margin-bottom:20px; font-size:1.15rem;"><i class="fa-solid fa-utensils"></i> 만드는 방법</div>
+              <div id="r_steps_list">
+                  <!-- JS에서 동적 생성 -->
+              </div>
+          </div>
+          </div><!-- /#r_text_group -->
+
+          <!-- 하단 마무리 멘트 (나눔손글씨 바른히피 적용) -->
+          <div style="background:#e8f5e9; padding:24px 28px; border-radius:14px; display:flex; justify-content:space-between; align-items:center;">
+              <div>
+                  <div style="font-weight:900; color:var(--fl-green-700); font-size:1.2rem; margin-bottom:4px;">따뜻할 때 바로 드세요! <i class="fa-solid fa-seedling"></i></div>
+                  <div style="font-size:0.85rem; color:#666;">농촌에서의 특별한 경험이, 식탁에서도 이어지길 바랍니다.</div>
+              </div>
+              <!-- 💡 나눔손글씨 바른히피 폰트 적용 -->
+              <div class="recipe-handwriting-font" style="font-size:1.6rem; color:#2d6a4f; text-align:right; line-height:1.25; transform:rotate(-4deg); padding-right:10px;">
+                  여행의 맛이<br>일상이 되다 ♥
+              </div>
+          </div>
+      </div>
+
+      <!-- 하단 버튼 영역 -->
+      <div style="padding:18px 26px; background:#fff; border-top:1px solid #e0e0e0; flex-shrink:0;">
+          <button type="button" class="fl-btn fl-btn-primary" onclick="downloadRecipePDF()" style="width:100%; font-size:1.1rem; padding:14px; border-radius:12px;">
+              <i class="fa-solid fa-file-pdf"></i> PDF로 저장하기
+          </button>
+      </div>
+  </div>
+</div>
 {% endblock %}
 
 {% block scripts %}
 <script>
 var AI_REC_URL = "{{ url_for('ai_recommend_page') }}";
+
+/* ── 프로필 사진 변경 ── */
+(function () {
+  var wrap  = document.getElementById('mi-avatar-wrap');
+  var input = document.getElementById('mi-avatar-input');
+  var img   = document.getElementById('mi-avatar-img');
+  if (!wrap || !input || !img) return;
+
+  wrap.addEventListener('click', function () { input.click(); });
+  input.addEventListener('change', function () {
+    if (!input.files || !input.files[0]) return;
+    var fd = new FormData();
+    fd.append('profile_pic', input.files[0]);
+    fetch('/upload_profile', {
+      method: 'POST',
+      headers: { 'X-Requested-With': 'XMLHttpRequest' },
+      body: fd
+    }).then(function (r) { return r.json(); }).then(function (res) {
+      if (res.ok) {
+        img.src = res.url + '?t=' + Date.now();
+      } else {
+        alert(res.msg || '업로드에 실패했습니다.');
+      }
+    }).catch(function () { alert('오류가 발생했습니다.'); });
+    input.value = '';
+  });
+})();
 
 function openCourseModal(expId, cropName) {
     var modal = document.getElementById('mi-course-modal');
@@ -490,7 +632,19 @@ function openCourseModal(expId, cropName) {
     modal.style.display = 'block';
     document.body.style.overflow = 'hidden';
 
-    var TYPE_LABEL = { experience: '🌱 체험', restaurant: '🍽 식사', attraction: '🏛 관광지', cafe: '☕ 카페' };
+    var ICON_BASE = "{{ url_for('static', filename='icons/') }}";
+    var TYPE_ICON = {
+        experience: '<img src="' + ICON_BASE + 'icon-rural-experience.svg" width="16" height="16" style="vertical-align:-3px;margin-right:4px;">',
+        restaurant: '<img src="' + ICON_BASE + 'icon-meal.svg" width="16" height="16" style="vertical-align:-3px;margin-right:4px;">',
+        attraction: '<img src="' + ICON_BASE + 'icon-tourist-attraction.svg" width="16" height="16" style="vertical-align:-3px;margin-right:4px;">',
+        cafe:       '<img src="' + ICON_BASE + 'icon-cafe.svg" width="16" height="16" style="vertical-align:-3px;margin-right:4px;">'
+    };
+    var TYPE_LABEL = {
+        experience: TYPE_ICON.experience + '체험',
+        restaurant: TYPE_ICON.restaurant + '식사',
+        attraction: TYPE_ICON.attraction + '관광지',
+        cafe:       TYPE_ICON.cafe + '카페'
+    };
     fetch('/api/experiences/' + expId + '/course')
         .then(function(r) { return r.json(); })
         .then(function(res) {
@@ -503,13 +657,13 @@ function openCourseModal(expId, cropName) {
             var html = reason ? '<p style="font-size:.83rem;color:#555;margin-bottom:16px;">' + reason + '</p>' : '';
             html += '<div style="display:flex;flex-direction:column;gap:12px;">';
             items.forEach(function(it) {
-                var label = TYPE_LABEL[it.type] || '📍';
+                var label = TYPE_LABEL[it.type] || '<img src="' + ICON_BASE + 'icon-map-location.svg" width="16" height="16" style="vertical-align:-3px;margin-right:4px;">';
                 var sub = it.type === 'experience'
                     ? (it.address || '')
                     : ((it.address || '') + (it.distance_km != null ? ' · ' + it.distance_km + 'km' : ''));
                 html += '<div style="display:flex;gap:14px;align-items:flex-start;">'
-                    + '<div style="min-width:44px;font-size:.78rem;font-weight:700;color:#2d6a4f;padding-top:2px;">' + (it.time || '') + '</div>'
-                    + '<div style="flex:1;border-left:2px dashed #b7e4c7;padding-left:14px;">'
+                    + '<div style="min-width:44px;font-size:.78rem;font-weight:700;color:var(--green-dark, var(--fl-green-700));padding-top:2px;">' + (it.time || '') + '</div>'
+                    + '<div style="flex:1;border-left:2px dashed var(--fl-green-100);padding-left:14px;">'
                     + '<div style="font-size:.88rem;font-weight:700;color:#1b4332;">' + label + ' ' + (it.name || '') + '</div>'
                     + (sub ? '<div style="font-size:.78rem;color:#888;margin-top:2px;">' + sub + '</div>' : '')
                     + '</div></div>';
@@ -530,8 +684,8 @@ function closeCourseModal() {
 document.getElementById('mi-course-modal').addEventListener('click', function(e) {
     if (e.target === this) closeCourseModal();
 });
+
 (function () {
-  /* ── 사이드 내비 ── */
   var navLinks = document.querySelectorAll('.fl-side-menu a[data-panel]');
   var panels   = document.querySelectorAll('.mi-panel');
   var loaded   = {};
@@ -552,7 +706,6 @@ document.getElementById('mi-course-modal').addEventListener('click', function(e)
     });
   });
 
-  /* ── 정보 수정 토글 ── */
   var editBtn  = document.getElementById('mi-edit-btn');
   var cancelBtn = document.getElementById('mi-cancel-btn');
   var infoView = document.getElementById('mi-info-view');
@@ -568,12 +721,10 @@ document.getElementById('mi-course-modal').addEventListener('click', function(e)
     editBtn.style.display = '';
   });
 
-  /* ── 유틸 ── */
   function esc(s) { var d = document.createElement('div'); d.textContent = s == null ? '' : String(s); return d.innerHTML; }
   function setText(id, v) { var e = document.getElementById(id); if (e) e.textContent = v; }
   function won(n) { return Number(n || 0).toLocaleString() + '원'; }
 
-  /* ── 패널별 API 로드 ── */
   function loadPanel(name) {
     if (name === 'wish') loadWishlist();
     else if (name === 'recent') loadRecent();
@@ -654,7 +805,7 @@ document.getElementById('mi-course-modal').addEventListener('click', function(e)
       el.innerHTML = logs.length ? logs.map(function (l) {
         var pos = l.amount >= 0;
         return '<div class="mi-point-row">'
-          + '<div style="flex:1;"><div style="font-size:.88rem;font-weight:600;">' + esc(l.reason) + '</div>'
+          + '<div style="flex:1;"><div style="font-size:.88rem;font-weight:600;">' + esc(l.reason_label || l.reason) + '</div>'
           + '<div style="font-size:.72rem;color:var(--fl-text-muted);">' + esc((l.created_at || '').slice(0, 10)) + '</div></div>'
           + '<div class="' + (pos ? 'mi-point-pos' : 'mi-point-neg') + '">'
           + (pos ? '+' : '') + Number(l.amount).toLocaleString() + 'P</div></div>';
@@ -662,11 +813,55 @@ document.getElementById('mi-course-modal').addEventListener('click', function(e)
     }).catch(function () {});
   }
 
-  /* ── URL 파라미터로 초기 패널 결정 ── */
+  (function () {
+    var modal   = document.getElementById('mi-pw-modal');
+    var msgEl   = document.getElementById('mi-pw-msg');
+
+    function openPwModal() {
+      document.getElementById('mi-pw-current').value = '';
+      document.getElementById('mi-pw-new').value = '';
+      document.getElementById('mi-pw-confirm').value = '';
+      msgEl.textContent = '';
+      modal.style.display = 'block';
+      document.body.style.overflow = 'hidden';
+    }
+    function closePwModal() {
+      modal.style.display = 'none';
+      document.body.style.overflow = '';
+    }
+
+    document.getElementById('mi-pw-row').addEventListener('click', openPwModal);
+    document.getElementById('mi-pw-modal-close').addEventListener('click', closePwModal);
+    modal.addEventListener('click', function (e) { if (e.target === modal) closePwModal(); });
+
+    document.getElementById('mi-pw-submit').addEventListener('click', function () {
+      var current = document.getElementById('mi-pw-current').value.trim();
+      var newPw   = document.getElementById('mi-pw-new').value;
+      var confirm = document.getElementById('mi-pw-confirm').value;
+      msgEl.style.color = 'var(--fl-danger)';
+      if (!current || !newPw || !confirm) { msgEl.textContent = '모든 칸을 입력해주세요.'; return; }
+      if (newPw.length < 6) { msgEl.textContent = '새 비밀번호는 6자 이상이어야 합니다.'; return; }
+      if (newPw !== confirm) { msgEl.textContent = '새 비밀번호가 일치하지 않습니다.'; return; }
+
+      fetch('/change_password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ current_password: current, new_password: newPw })
+      }).then(function (r) { return r.json(); }).then(function (res) {
+        if (res.ok) {
+          msgEl.style.color = 'var(--fl-green-700)';
+          msgEl.textContent = '비밀번호가 변경되었습니다.';
+          setTimeout(closePwModal, 1200);
+        } else {
+          msgEl.textContent = res.msg || '변경에 실패했습니다.';
+        }
+      }).catch(function () { msgEl.textContent = '오류가 발생했습니다. 다시 시도해주세요.'; });
+    });
+  })();
+
   var initPanel = new URLSearchParams(location.search).get('panel') || 'info';
   showPanel(initPanel);
 
-  /* ── 사이드바 숫자 초기 로드 ── */
   fetch('/api/users/me/points').then(function (r) { return r.json(); }).then(function (res) {
     if (res.success) setText('mi-side-points', Number(res.data.balance || 0).toLocaleString() + 'P');
   }).catch(function () {});
@@ -674,5 +869,176 @@ document.getElementById('mi-course-modal').addEventListener('click', function(e)
     if (res.success) setText('mi-side-wish', (res.data.wishlists || []).length);
   }).catch(function () {});
 })();
+
+document.addEventListener('DOMContentLoaded', function () {
+    // ★체험이 끝난 예약에 레시피 버튼을 붙인다.★
+    // 예전에는 '확정'(체험 전)을 찾아서, 체험 전에는 보이고 완료되면 사라졌다.
+    // data-state 는 이제 계산된 상태다(services/activity_service.STATE_COMPLETED).
+    const completedCards = document.querySelectorAll('.mi-res-card[data-state="completed"]');
+    
+    completedCards.forEach(card => {
+        const expId = card.getAttribute('data-exp-id');
+        const actionsDiv = card.querySelector('.mi-res-actions');
+        
+        if (!expId || !actionsDiv) return;
+        fetch('/api/experiences/' + expId + '/recipe')
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    const rName = (data.recipe_name || '').trim();
+                    const rIng = (data.recipe_ingredients || '').trim();
+                    const rStep = (data.recipe_steps || '').trim();
+                    const rTip = (data.recipe_tip || '').trim();
+                    const rImg = (data.recipe_image || '').trim();
+                    if (!rName && !rIng && !rStep && !rTip && !rImg) return;
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.className = 'fl-btn fl-btn-sm';
+                    btn.style.cssText = 'background:#4caf50; color:#fff; margin-bottom:4px; border:none; border-radius:8px; font-weight:700;';
+                    btn.innerHTML = '<i class="fa-solid fa-book-open"></i> 레시피 보기';
+                    btn.onclick = () => openRecipeModal(data);
+                    
+                    actionsDiv.insertBefore(btn, actionsDiv.firstChild);
+                }
+            })
+            .catch(e => console.error("레시피 조회 오류:", e));
+    });
+});
+
+let currentRecipeCrop = '';
+function openRecipeModal(data) {
+    currentRecipeCrop = data.crop;
+    
+    document.getElementById('r_title').innerText = data.recipe_name || data.crop + ' 맛있는 비법';
+    document.getElementById('r_crop_tag').innerText = data.crop;
+    
+    const imgEl = document.getElementById('r_img');
+    if (data.exp_image) {
+        imgEl.src = '/static/uploads/' + data.exp_image;
+        imgEl.style.display = 'block';
+    } else {
+        imgEl.style.display = 'none';
+    }
+
+    // 손글씨 레시피 큰 사진 세팅
+    const hwBox = document.getElementById('r_handwritten_box');
+    const hwImg = document.getElementById('r_handwritten_img');
+    if (data.recipe_image) {
+        hwImg.src = '/static/uploads/' + data.recipe_image;
+        hwBox.style.display = 'block';
+    } else {
+        hwBox.style.display = 'none';
+    }
+
+    const ingBox = document.getElementById('r_ing_box');
+    if (data.recipe_ingredients) {
+        const lines = data.recipe_ingredients.split('\n').filter(l => l.trim() !== '');
+        let html = '';
+        lines.forEach(l => {
+            html += `<li style="margin-bottom:8px; display:flex; align-items:flex-start;"><div style="width:6px; height:6px; background:#a5d6a7; border-radius:50%; margin-right:8px; margin-top:6px; flex-shrink:0;"></div>${l.trim()}</li>`;
+        });
+        document.getElementById('r_ing_list').innerHTML = html;
+        ingBox.style.display = 'block';
+    } else {
+        ingBox.style.display = 'none';
+    }
+
+    const tipBox = document.getElementById('r_tip_box');
+    if (data.recipe_tip) {
+        document.getElementById('r_tip_text').innerText = data.recipe_tip;
+        tipBox.style.display = 'block';
+    } else {
+        tipBox.style.display = 'none';
+    }
+
+    const stepsBox = document.getElementById('r_steps_box');
+    if (data.recipe_steps) {
+        const lines = data.recipe_steps.split('\n').filter(l => l.trim() !== '');
+        let html = '';
+        lines.forEach((l, idx) => {
+            html += `<div style="display:flex; margin-bottom:14px; align-items:flex-start;">
+                <div style="background:var(--fl-green-700); color:white; border-radius:50%; width:22px; height:22px; display:flex; align-items:center; justify-content:center; font-weight:bold; font-size:0.8rem; margin-right:10px; flex-shrink:0;">${idx+1}</div>
+                <div style="font-size:0.9rem; color:#444; line-height:1.5; padding-top:2px;">${l.trim()}</div>
+            </div>`;
+        });
+        document.getElementById('r_steps_list').innerHTML = html;
+        stepsBox.style.display = 'block';
+    } else {
+        stepsBox.style.display = 'none';
+    }
+
+    // ★사진이 있으면 글은 접어 둔다.★ 첫 화면은 사진만 보인다.
+    // 사진만 있으면 펼침 버튼도 안 나오고, 글만 있으면 예전처럼 그대로 펼쳐진다.
+    const textGroup = document.getElementById('r_text_group');
+    const textToggle = document.getElementById('r_text_toggle');
+    const hasPhoto = !!(data.recipe_image || '').trim();
+    const hasText = !!((data.recipe_ingredients || '').trim()
+                    || (data.recipe_steps || '').trim()
+                    || (data.recipe_tip || '').trim());
+    if (hasPhoto && hasText) {
+        setRecipeTextOpen(false);
+        textToggle.style.display = 'flex';
+    } else {
+        textGroup.style.display = 'block';
+        textToggle.style.display = 'none';
+        textToggle.setAttribute('aria-expanded', 'true');
+    }
+
+    document.getElementById('recipeModalOverlay').style.display = 'flex';
+}
+
+function setRecipeTextOpen(open) {
+    const group = document.getElementById('r_text_group');
+    const toggle = document.getElementById('r_text_toggle');
+    group.style.display = open ? 'block' : 'none';
+    toggle.setAttribute('aria-expanded', String(open));
+    toggle.querySelector('span').textContent = open ? '글로 된 레시피 접기' : '글로 된 레시피 보기';
+    toggle.querySelector('i').className = open
+        ? 'fa-solid fa-chevron-up' : 'fa-solid fa-chevron-down';
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+    const toggle = document.getElementById('r_text_toggle');
+    if (!toggle) return;
+    // 펼친 상태 그대로 PDF 에 담긴다 — 사진만 원하면 접은 채로 내려받으면 된다.
+    toggle.addEventListener('click', function () {
+        setRecipeTextOpen(this.getAttribute('aria-expanded') !== 'true');
+    });
+});
+
+function downloadRecipePDF() {
+    const printArea = document.getElementById('recipePrintArea');
+    const modalContent = document.querySelector('#recipeModalOverlay .modal-content');
+    
+    // 💡 캡처 전, 스크롤을 없애고 높이 제한을 완전히 해제하여 화면을 길게 늘립니다.
+    const originalModalMaxHeight = modalContent.style.maxHeight;
+    const originalPrintOverflow = printArea.style.overflowY;
+    const originalPrintHeight = printArea.style.height;
+
+    modalContent.style.maxHeight = 'none';
+    printArea.style.overflowY = 'visible';
+    printArea.style.height = 'auto';
+
+    // 브라우저가 레이아웃을 다시 그릴 시간을 0.3초 여유롭게 줍니다.
+    setTimeout(() => {
+        html2canvas(printArea, { scale: 2, useCORS: true, backgroundColor: '#f4faec', scrollY: 0 }).then(canvas => {
+            // 캡처 완료 후 스타일 원래대로 롤백
+            modalContent.style.maxHeight = originalModalMaxHeight;
+            printArea.style.overflowY = originalPrintOverflow;
+            printArea.style.height = originalPrintHeight;
+            
+            const imgData = canvas.toDataURL('image/png');
+            const { jsPDF } = window.jspdf;
+            
+            // A4 가로 폭(210mm)을 기준으로 세로 길이를 캔버스 비율에 맞게 동적으로 늘려줍니다.
+            const pdfWidth = 210; 
+            const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+            
+            const pdf = new jsPDF('p', 'mm', [pdfWidth, pdfHeight]);
+            pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+            pdf.save(currentRecipeCrop + '_레시피북.pdf');
+        });
+    }, 300);
+}
 </script>
 {% endblock %}

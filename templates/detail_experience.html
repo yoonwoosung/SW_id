@@ -32,13 +32,104 @@
 }
 /* 선택된 시간대 초록색 강제 적용 */
 .timetable-display td.selected {
-    background-color: #2d6a4f !important;
+    background-color: var(--green-dark, var(--fl-green-700)) !important;
     color: #ffffff !important;
 }
 .slot-check-mark {
     font-size: 16px;
     font-weight: bold;
     color: #ffffff;
+}
+
+/* 👇 슬라이더(캐러셀) 스타일 👇 */
+.ed-carousel-container {
+    position: relative;
+    width: 100%; /* 어떤 화면이든(맥북/일반노트북) 가로 길이를 컨테이너에 100% 동적으로 꽉 채움 */
+    overflow: hidden;
+    border-radius: 12px;
+    
+    /* 기존 16/9 보다 세로를 확 줄인 와이드 비율 (가로 2 : 세로 1) */
+    aspect-ratio: 2 / 1; 
+    
+    background-color: #f8f9fa;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+.ed-carousel-track {
+    display: flex;
+    width: 100%;
+    height: 100%;
+    transition: transform 0.5s ease-in-out;
+}
+.ed-carousel-slide {
+    min-width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.ed-carousel-slide img {
+    width: 100%; 
+    height: 100%;
+    object-fit: cover; /* 비율이 달라도 찌그러지지 않고 예쁘게 잘라서 채워줌 */
+}
+
+/* 양옆 화살표 버튼 */
+.ed-carousel-btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(255, 255, 255, 0.85);
+    border: none;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    z-index: 10;
+    transition: background 0.2s, transform 0.1s;
+    color: #333;
+}
+.ed-carousel-btn:hover { background: #ffffff; transform: translateY(-50%) scale(1.05); }
+.ed-carousel-btn-prev { left: 16px; }
+.ed-carousel-btn-next { right: 16px; }
+
+/* 하단 동그라미 인디케이터 */
+.ed-carousel-indicators {
+    position: absolute;
+    bottom: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 8px;
+    z-index: 10;
+}
+.ed-carousel-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.5);
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+.ed-carousel-dot.active {
+    background: #ffffff;
+    width: 24px;
+    border-radius: 4px;
+}
+
+/* 등록된 사진이 없을 때 빈 공간 처리 */
+.detail-img-placeholder {
+    aspect-ratio: 16 / 9;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background-color: #f1f3f5;
+    border-radius: 12px;
+    color: #adb5bd;
 }
 </style>
 {% endblock %}
@@ -53,25 +144,48 @@
     <!-- 왼쪽: 메인 콘텐츠 -->
     <div class="detail-main-col">
 
-        <!-- 1. 이미지 갤러리 -->
+        <!-- 1. 이미지 갤러리 (슬라이더로 변경됨) -->
         <div class="detail-gallery-card">
             {% if item.images %}
             {% set imgs = item.images.split(',') %}
-            <div class="ed-photogrid ed-photogrid--{{ 'multi' if imgs|length > 1 else 'single' }}">
-                <img id="ed-gallery-main" class="ed-photogrid__main"
-                     src="{{ url_for('static', filename='uploads/' + imgs[0]) }}" alt="{{ item.crop }} 체험 사진">
-                {% for image in imgs[1:5] %}
-                <div class="ed-photogrid__cell">
-                    <img class="ed-gallery__thumb" src="{{ url_for('static', filename='uploads/' + image) }}" alt="썸네일 {{ loop.index + 1 }}">
-                    {% if loop.last and imgs|length > 5 %}
-                    <span class="ed-photogrid__more">사진 {{ imgs|length }}장 →</span>
-                    {% endif %}
+            <div class="ed-carousel-container" id="ed-carousel">
+                {% set _ribbon = ribbon_text(item) %}
+                {% if _ribbon %}
+                <div class="fl-ribbon detail-ribbon"><span class="fl-ribbon__text">{{ _ribbon }}</span></div>
+                {% endif %}
+                <!-- 슬라이드 트랙 -->
+                <div class="ed-carousel-track" id="ed-carousel-track">
+                    {% for image in imgs %}
+                    <div class="ed-carousel-slide">
+                        <img src="{{ url_for('static', filename='uploads/' + image) }}" alt="{{ item.crop }} 체험 사진 {{ loop.index }}">
+                    </div>
+                    {% endfor %}
                 </div>
-                {% endfor %}
+                
+                <!-- 여러 장일 경우 화살표와 인디케이터 표시 -->
+                {% if imgs|length > 1 %}
+                <button class="ed-carousel-btn ed-carousel-btn-prev" onclick="moveCarousel(-1)" title="이전 사진">
+                    <i data-lucide="chevron-left"></i>
+                </button>
+                <button class="ed-carousel-btn ed-carousel-btn-next" onclick="moveCarousel(1)" title="다음 사진">
+                    <i data-lucide="chevron-right"></i>
+                </button>
+                
+                <div class="ed-carousel-indicators" id="ed-carousel-indicators">
+                    {% for image in imgs %}
+                    <span class="ed-carousel-dot {% if loop.index0 == 0 %}active{% endif %}" onclick="goToCarouselSlide({{ loop.index0 }})"></span>
+                    {% endfor %}
+                </div>
+                {% endif %}
             </div>
             {% else %}
-            <div class="detail-img-placeholder">
-                <i data-lucide="camera"></i><span>아직 등록된 사진이 없습니다.</span>
+            <div class="detail-img-placeholder" style="position:relative;overflow:hidden;">
+                {% set _ribbon = ribbon_text(item) %}
+                {% if _ribbon %}
+                <div class="fl-ribbon detail-ribbon"><span class="fl-ribbon__text">{{ _ribbon }}</span></div>
+                {% endif %}
+                <i data-lucide="camera" style="width:48px;height:48px;margin-bottom:10px;"></i>
+                <span>아직 등록된 사진이 없습니다.</span>
             </div>
             {% endif %}
         </div>
@@ -79,16 +193,22 @@
         <!-- 2. 핵심 정보 -->
         <div class="detail-info-card">
             <div class="detail-info-badges">
-                {% if item.pesticide_free %}<span class="detail-badge badge-eco"><i data-lucide="leaf"></i> 친환경</span>{% endif %}
+                {% if item.pesticide_free and item.organic_cert_status == 'APPROVED' %}
+                <span class="detail-badge badge-eco">
+                    <img src="{{ url_for('static', filename='icons/icon-eco-friendly.svg') }}" class="fl-icon-sm" alt=""> 친환경
+                </span>
+                {% endif %}
                 {% if item.has_parking %}<span class="detail-badge badge-parking"><i data-lucide="square-parking"></i> 주차 가능</span>{% endif %}
                 {% if item.barrier_free %}<span class="detail-badge badge-family"><i data-lucide="accessibility"></i> 무장애</span>{% endif %}
+                {% if item.pet_allowed %}<span class="detail-badge badge-family"><i data-lucide="dog"></i> 반려견 동반{% if item.pet_max_weight_kg %} · {{ item.pet_max_weight_kg }}kg까지{% endif %}</span>{% endif %}
+                {% if shows_surplus(item) %}{% set _pct = discount_percent(item) %}<span class="detail-badge" style="background:#fdecea;color:#c0392b;">🥕 잉여 농산물{% if _pct is not none %} · {{ _pct }}% 할인{% endif %}</span>{% endif %}
                 <span id="ed-esg-chip" class="detail-badge badge-esg" hidden></span>
             </div>
             <h1 class="detail-crop-title">{{ item.crop }} 수확 체험</h1>
             <div class="detail-info-meta">
-                <span><i data-lucide="map-pin"></i> {{ item.address_detail }}</span>
+                <span><img src="{{ url_for('static', filename='icons/icon-map-location.svg') }}" class="fl-icon-sm" alt=""> {{ item.address_detail }}</span>
                 {% if review_count %}
-                <span class="ed-rating"><span class="ed-rating__star">★</span> {{ '%.1f'|format(rating_avg) }}
+                <span class="ed-rating"><img src="{{ url_for('static', filename='icons/icon-rating.svg') }}" class="fl-icon-sm" alt="별점"> {{ '%.1f'|format(rating_avg) }}
                     <span class="ed-rating__count">· 후기 {{ review_count }}</span></span>
                 {% else %}
                 <span class="ed-rating ed-rating--empty">아직 후기가 없어요</span>
@@ -105,7 +225,7 @@
 
             <!-- 찜하기 / 공유 -->
             <div class="ed-actions">
-                <button type="button" id="ed-wish" class="ed-icon-btn"><i data-lucide="heart"></i> <span class="ed-wish-label">찜하기</span></button>
+                <button type="button" id="ed-wish" class="ed-icon-btn"><img src="{{ url_for('static', filename='icons/icon-favorites.svg') }}" class="fl-icon-sm" alt=""> <span class="ed-wish-label">찜하기</span></button>
                 <button type="button" id="ed-share" class="ed-icon-btn"><i data-lucide="share-2"></i> 공유</button>
             </div>
 
@@ -128,7 +248,7 @@
         <!-- 3. 예약 안내: 운영 시간표 -->
         {% if item.timetable_data %}
         <div class="detail-section-card">
-            <h3 class="detail-section-title"><i data-lucide="calendar-check"></i> 운영 시간표</h3>
+            <h3 class="detail-section-title"><img src="{{ url_for('static', filename='icons/icon-calendar-schedule.svg') }}" class="fl-icon-sm" alt=""> 운영 시간표</h3>
             <div class="detail-timetable-wrap">
                 <table class="timetable-display text-center" id="detail-timetable">
                     <thead>
@@ -158,7 +278,7 @@
         </div>
         {% endif %}
 
-        <!-- 4. 농장 위치 -->
+        <!-- 4. 농장 위치 + 주변 시설 -->
         <div class="detail-section-card">
             <div class="detail-section-header">
                 <h3 class="detail-section-title"><i data-lucide="map"></i> 농장 위치</h3>
@@ -167,54 +287,14 @@
                 </a>
             </div>
             <div id="map" class="detail-map"></div>
-            <div id="nearby-distances" class="detail-nearby">
-                <h5 class="detail-nearby-title">주요 시설까지 거리</h5>
-                <div id="distance-list"><small class="text-muted">검색 중...</small></div>
+            <div style="margin-top:20px;">
+                <h4 class="detail-section-title" style="font-size:1rem;margin-bottom:6px;"><i data-lucide="store"></i> 주변 시설</h4>
+                <p class="ed-amenities__lead">체험 농장 반경 안의 편의시설을 가까운 순으로 하나씩 모았어요.</p>
+                <div id="ed-amenities" class="ed-amenities"><small class="text-muted">주변 편의시설을 불러오는 중…</small></div>
             </div>
         </div>
 
-    </div>
-
-    <!-- 오른쪽: 예약 패널 -->
-    <div class="detail-booking-col">
-        <div class="detail-booking-panel">
-            <div class="detail-booking-price">
-                <span class="detail-booking-price-num">{{ "{:,}".format(item.cost) }}원</span>
-                <span class="detail-booking-price-per">/ 1인</span>
-            </div>
-            <p style="font-size:0.78rem;color:#9aa39c;margin:-6px 0 10px;">* 1인당 가격입니다</p>
-            <div class="detail-booking-stats">
-                <div class="detail-booking-stat"><i data-lucide="users"></i> <span>{{ item.current_participants }}/{{ item.max_participants }}명</span></div>
-                <div class="detail-booking-stat"><i data-lucide="calendar-x"></i> <span>D-{{ item.d_day }}</span></div>
-            </div>
-            {% set remaining = item.max_participants - item.current_participants %}
-            {% if remaining > 0 %}
-            <a href="{{ url_for('experience_apply', item_id=item.id) }}" class="detail-booking-btn"><i data-lucide="calendar-check"></i> 예약 신청하기</a>
-            <p class="ed-book-nocharge">예약 확정 전에는 요금이 청구되지 않아요</p>
-            <div class="ed-book-breakdown">
-                <div class="ed-book-row"><span>1인 요금</span><span>{{ "{:,}".format(item.cost) }}원</span></div>
-                <div class="ed-book-row ed-book-total"><span>합계 (1인 기준)</span><span>{{ "{:,}".format(item.cost) }}원</span></div>
-                <p class="ed-book-note">＊날짜·시간·인원은 다음 단계에서 선택해요</p>
-            </div>
-            <p class="detail-booking-remaining">잔여 <strong>{{ remaining }}</strong>석 남았습니다.</p>
-            {% else %}
-            <button class="detail-booking-btn disabled" disabled>마감되었습니다</button>
-            {% endif %}
-            <div class="detail-booking-info">
-                <div class="detail-booking-info-row"><i data-lucide="map-pin"></i> <span>{{ item.address_detail }}</span></div>
-                <div class="detail-booking-info-row"><i data-lucide="leaf"></i> <span>친환경: {{ "예" if item.pesticide_free else "아니오" }}</span></div>
-                <div class="detail-booking-info-row"><i data-lucide="square-parking"></i> <span>주차: {{ "가능" if item.has_parking else "불가" }}</span></div>
-                <div class="detail-booking-info-row"><i data-lucide="calendar"></i> <span>마감: {{ item.end_date.strftime('%Y.%m.%d') }}</span></div>
-            </div>
-        </div>
-    </div>
-
-</div>
-</div>
-
-<!-- 하단 확장 섹션 -->
-<div class="detail-extra-bg">
-    <div class="detail-extra-inner">
+        <!-- 하단 확장 섹션 — detail-main-col 안에 포함시켜 우측 sticky가 페이지 끝까지 추적하도록 -->
 
         <!-- AI 추천 코스 -->
         <section id="ai-course-section" class="section-card">
@@ -263,22 +343,9 @@
             </div>
         </section>
 
-        <!-- 주변 맛집·카페·편의점 -->
-        <section class="section-card">
-            <div class="section-header"><h2 class="section-title"><i data-lucide="store"></i> 주변 맛집·카페·편의점</h2></div>
-            <p class="ed-amenities__lead">체험 농장 반경 안의 편의시설을 가까운 순으로 하나씩 모았어요.</p>
-            <div id="ed-amenities" class="ed-amenities"><small class="text-muted">주변 편의시설을 불러오는 중…</small></div>
-        </section>
-
-        <!-- 비슷한 체험 -->
-        <section class="section-card">
-            <div class="section-header"><h2 class="section-title"><i data-lucide="wheat"></i> 비슷한 체험</h2></div>
-            <div class="ed-similar-scroll" id="ed-similar"><small class="text-muted">불러오는 중…</small></div>
-        </section>
-
         <!-- 방문자 후기 -->
         <section class="section-card">
-            <h2 class="section-title" style="margin-bottom:16px;"><i data-lucide="star"></i> 방문자 후기</h2>
+            <h2 class="section-title" style="margin-bottom:16px;"><img src="{{ url_for('static', filename='icons/icon-rating.svg') }}" class="fl-icon-sm" alt=""> 방문자 후기</h2>
             {% if review_count %}
             <div class="ed-review-summary">
                 <div class="ed-review-avg">
@@ -347,7 +414,78 @@
             </div>
         </section>
 
+    </div><!-- /detail-main-col -->
+
+    <!-- 오른쪽: 예약 패널 -->
+    <div class="detail-booking-col">
+        <div class="detail-booking-panel">
+            <div class="detail-booking-price">
+                {% if item.is_surplus and item.list_price %}<span style="text-decoration:line-through;color:#9aa;font-size:.9rem;margin-right:6px;">{{ "{:,}".format(item.list_price) }}원</span>{% endif %}<span class="detail-booking-price-num">{{ "{:,}".format(item.cost) }}원</span>
+                <span class="detail-booking-price-per">/ 1인</span>
+            </div>
+            <p style="font-size:0.78rem;color:#9aa39c;margin:-6px 0 10px;">* 1인당 가격입니다</p>
+            <div class="detail-booking-stats">
+                <div class="detail-booking-stat"><img src="{{ url_for('static', filename='icons/icon-participants.svg') }}" class="fl-icon-sm" alt=""> <span>{{ item.current_participants }}/{{ item.max_participants }}명</span></div>
+                <div class="detail-booking-stat"><i data-lucide="calendar-x"></i> <span>D-{{ item.d_day }}</span></div>
+            </div>
+            {% set remaining = item.max_participants - item.current_participants %}
+            {% if remaining > 0 %}
+            <a href="{{ url_for('experience_apply', item_id=item.id) }}" class="detail-booking-btn"><img src="{{ url_for('static', filename='icons/icon-calendar-schedule.svg') }}" class="fl-icon-sm" alt=""> 예약 신청하기</a>
+            <p class="ed-book-nocharge">예약 확정 전에는 요금이 청구되지 않아요</p>
+            <div class="ed-book-breakdown">
+                <div class="ed-book-row"><span>1인 요금</span><span>{{ "{:,}".format(item.cost) }}원</span></div>
+                <div class="ed-book-row ed-book-total"><span>최종 결제 금액 (1인 기준)</span><span>{{ "{:,}".format(item.cost) }}원</span></div>
+                <p class="ed-book-note">＊날짜·시간·인원은 다음 단계에서 선택해요</p>
+            </div>
+            <p class="detail-booking-remaining">잔여 <strong>{{ remaining }}</strong>석 남았습니다.</p>
+            {% else %}
+            <button class="detail-booking-btn disabled" disabled>예약 마감</button>
+            {% endif %}
+            <div class="detail-booking-info">
+                <div class="detail-booking-info-row"><img src="{{ url_for('static', filename='icons/icon-map-location.svg') }}" class="fl-icon-sm" alt=""> <span>{{ item.address_detail }}</span></div>
+                <div class="detail-booking-info-row"><img src="{{ url_for('static', filename='icons/icon-eco-friendly.svg') }}" class="fl-icon-sm" alt="">
+                    <span>친환경:
+                        {% if item.pesticide_free and item.organic_cert_status == 'APPROVED' %}예 (인증완료)
+                        {% elif item.pesticide_free %}예 (심사중)
+                        {% else %}아니오{% endif %}
+                    </span>
+                </div>
+                <div class="detail-booking-info-row"><i data-lucide="square-parking"></i> <span>주차: {{ "가능" if item.has_parking else "불가" }}</span></div>
+                <div class="detail-booking-info-row"><i data-lucide="dog"></i> <span>반려견: {% if item.pet_allowed %}동반 가능{% if item.pet_max_weight_kg %} (최대 {{ item.pet_max_weight_kg }}kg){% endif %}{% else %}동반 불가{% endif %}</span></div>
+                {% if item.is_surplus %}
+                <div class="detail-booking-info-row"><i data-lucide="carrot"></i>
+                    <span>1인 수확량: {{ item.surplus_per_person }}{{ item.surplus_unit or 'kg' }}</span></div>
+                <div class="detail-booking-info-row"><i data-lucide="package"></i>
+                    <span>남은 수량: <strong>{{ (item.surplus_qty_total or 0) - (item.surplus_qty_taken or 0) }}{{ item.surplus_unit or 'kg' }}</strong>
+                    / 총 {{ item.surplus_qty_total }}{{ item.surplus_unit or 'kg' }}</span></div>
+                {% if item.surplus_origin %}
+                <div class="detail-booking-info-row"><i data-lucide="map-pin"></i>
+                    <span>원산지: {{ item.surplus_origin }}</span></div>
+                {% endif %}
+                <div class="detail-booking-info-row"><i data-lucide="truck"></i>
+                    <span><strong>현장 수확·수령만 가능</strong> (택배 없음)</span></div>
+                {% endif %}
+                <div class="detail-booking-info-row"><img src="{{ url_for('static', filename='icons/icon-calendar-schedule.svg') }}" class="fl-icon-sm" alt=""> <span>마감: {{ item.end_date.strftime('%Y.%m.%d') }}</span></div>
+            </div>
+        </div>
+    </div><!-- /detail-booking-col -->
+
+</div><!-- /detail-page-wrapper -->
+</div><!-- /detail-page-bg -->
+
+{# 모바일 전용 하단 고정 예약 바 #}
+{% set remaining_mobile = item.max_participants - item.current_participants %}
+<div class="ed-mobile-cta" aria-hidden="false">
+    <div class="ed-mobile-cta__price">
+        <strong>{{ "{:,}".format(item.cost) }}원</strong><span>/ 1인</span>
     </div>
+    {% if remaining_mobile > 0 %}
+    <a href="{{ url_for('experience_apply', item_id=item.id) }}" class="ed-mobile-cta__btn fl-touch">
+        <img src="{{ url_for('static', filename='icons/icon-calendar-schedule.svg') }}" class="fl-icon-sm" alt=""> 예약 신청
+    </a>
+    {% else %}
+    <button class="ed-mobile-cta__btn fl-touch" disabled>마감</button>
+    {% endif %}
 </div>
 
 <!-- 라이트박스 · 토스트 -->
@@ -363,8 +501,63 @@
 </script>
 
 <script>
-// 💡 상세 페이지 운영 시간표 렌더링 엔진
+// 👇 새로 추가되는 이미지 슬라이더 동작 로직 👇
+let currentSlideIdx = 0;
+let slideTimer = null;
+
+function updateCarousel() {
+    const track = document.getElementById('ed-carousel-track');
+    const dots = document.querySelectorAll('.ed-carousel-dot');
+    if (!track) return;
+    
+    // 트랙의 X축을 이동시켜 사진을 넘김
+    track.style.transform = `translateX(-${currentSlideIdx * 100}%)`;
+    
+    // 하단 동그라미(인디케이터) 상태 업데이트
+    dots.forEach((dot, index) => {
+        dot.classList.toggle('active', index === currentSlideIdx);
+    });
+}
+
+function moveCarousel(direction) {
+    const slides = document.querySelectorAll('.ed-carousel-slide');
+    if (slides.length <= 1) return;
+    
+    currentSlideIdx += direction;
+    
+    // 무한 루프 처리: 맨 끝에서 넘기면 처음으로, 처음에서 뒤로가면 맨 끝으로
+    if (currentSlideIdx < 0) {
+        currentSlideIdx = slides.length - 1;
+    } else if (currentSlideIdx >= slides.length) {
+        currentSlideIdx = 0;
+    }
+    
+    updateCarousel();
+    resetCarouselTimer(); // 사용자가 직접 넘겼으므로 타이머 초기화
+}
+
+function goToCarouselSlide(index) {
+    currentSlideIdx = index;
+    updateCarousel();
+    resetCarouselTimer();
+}
+
+function resetCarouselTimer() {
+    if (slideTimer) clearInterval(slideTimer);
+    const slides = document.querySelectorAll('.ed-carousel-slide');
+    if (slides.length > 1) {
+        // 7초(7000ms)마다 자동으로 다음 사진으로 넘김
+        slideTimer = setInterval(() => {
+            moveCarousel(1);
+        }, 7000);
+    }
+}
+
+// 💡 상세 페이지 로딩 시 실행되는 기존 로직
 document.addEventListener('DOMContentLoaded', function() {
+    // 슬라이더 타이머 시작
+    resetCarouselTimer();
+
     const rawData = {{ (item.timetable_data or '') | tojson | safe }};
     if (!rawData) return;
 
@@ -372,7 +565,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const slot = document.querySelector(`.detail-time-slot[data-day="${day}"][data-time="${time}"]`);
         if (slot) {
             slot.classList.add('selected');
-            slot.style.setProperty('background-color', '#2d6a4f', 'important');
+            slot.style.setProperty('background-color', getComputedStyle(document.documentElement).getPropertyValue('--green-dark').trim() || '#2d6a4f', 'important');
             slot.style.setProperty('color', '#ffffff', 'important');
             slot.innerHTML = '<span class="slot-check-mark">✓</span>';
         }
@@ -381,7 +574,7 @@ document.addEventListener('DOMContentLoaded', function() {
     try {
         const trimmed = rawData.trim();
         if (trimmed.startsWith('[')) {
-            // 1. 시드 데이터 JSON 포맷: [{"time": "10:00", "available": true}, ...]
+            // 1. 시드 데이터 JSON 포맷
             const parsed = JSON.parse(trimmed);
             if (Array.isArray(parsed)) {
                 parsed.forEach(item => {
@@ -393,7 +586,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
             }
         } else {
-            // 2. 간편 등록 쉼표 포맷: "월-09:00,화-10:00"
+            // 2. 간편 등록 쉼표 포맷
             trimmed.split(',').forEach(part => {
                 const sp = part.split('-');
                 if (sp.length >= 2) {

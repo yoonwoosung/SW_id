@@ -3,8 +3,9 @@ import os
 import re
 import json
 import math
+import uuid
 import requests
-from flask import render_template, request, jsonify, session, Response
+from flask import render_template, request, jsonify, session, Response, current_app
 from models import db, Album, User
 
 
@@ -134,6 +135,58 @@ def get_tour_photos():
 
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
+
+
+def allowed_file(filename):
+    ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+
+def upload_album_images():
+    """앨범 제작 시 업로드되는 이미지들을 서버에 저장하고 URL 목록을 반환"""
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'message': '로그인이 필요합니다.'}), 401
+
+    if 'images' not in request.files:
+        return jsonify({"success": False, "message": "업로드된 파일이 없습니다."}), 400
+
+    files = request.files.getlist('images')
+    if len(files) > 50:
+        return jsonify({"success": False, "message": "최대 50장까지만 업로드 가능합니다."}), 400
+
+    upload_folder = os.path.join(current_app.static_folder, 'uploads', 'albums')
+    os.makedirs(upload_folder, exist_ok=True)
+
+    saved_urls = []
+
+    for file in files:
+        if file and allowed_file(file.filename):
+            ext = file.filename.rsplit('.', 1)[1].lower()
+            unique_filename = f"album_{uuid.uuid4().hex}.{ext}"
+            filepath = os.path.join(upload_folder, unique_filename)
+
+            try:
+                # PIL을 이용한 이미지 리사이즈 및 최적화
+                from PIL import Image
+                img = Image.open(file)
+                if img.mode in ("RGBA", "P") and ext in ("jpg", "jpeg"):
+                    img = img.convert("RGB")
+
+                # 최대 가로/세로 1200px 비율 유지 축소
+                img.thumbnail((1200, 1200))
+                img.save(filepath, optimize=True, quality=85)
+
+                file_url = f"/static/uploads/albums/{unique_filename}"
+                saved_urls.append(file_url)
+            except Exception as e:
+                print(f"이미지 저장 오류: {e}")
+
+    return jsonify({
+        "success": True,
+        "data": {"urls": saved_urls}
+    }), 200
+
+
 
 
 # ==========================================
@@ -319,6 +372,8 @@ def register(app):
     # 💡 한국관광공사 사진 API 및 이미지 프록시 등록
     app.add_url_rule('/api/proxy-image', 'proxy_image', proxy_image, methods=['GET'])
     app.add_url_rule('/api/tour-photos', 'get_tour_photos', get_tour_photos, methods=['GET'])
+
+    app.add_url_rule('/api/albums/images', 'upload_album_images', upload_album_images, methods=['POST'])
 
     # 앨범 CRUD API
     app.add_url_rule('/api/albums', 'get_albums', get_albums, methods=['GET'])

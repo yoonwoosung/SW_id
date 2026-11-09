@@ -11,7 +11,7 @@
 | 스택 | Python 3.10 · Flask 3.1 · SQLAlchemy · MySQL · PWA · PythonAnywhere · GitHub Actions |
 | 외부 API | 한국관광공사 TourAPI(KorService2 · 반려동물 · 무장애 · 의료) · 카카오맵 · 네이버 CLOVA |
 | 성과 | 2025 ICT이노베이션 SW개발 부문 **충청권 대상** · 2026 관광데이터 활용 공모전 **예비심사 통과** |
-| 코드 | 서버 코드 10,335줄 · 테스트 45파일 / 680 케이스 · 본인 커밋 174건 |
+| 코드 | 서버 코드 10,335줄 · 테스트 45파일 / 773 케이스(770 통과) · 본인 커밋 174건 |
 
 팀원 담당: 건태(백엔드 — 회원·권한·농장·체험·예약·결제·리뷰·관리자) · 준형(프론트 전 화면) · 대윤(PM — 기획·조사·문서·발표)
 
@@ -30,7 +30,7 @@ services/ (33)    추천 점수 · 코스 구성 · ESG · 결제 · 캐시 등 
 models/   (15)    SQLAlchemy 엔티티
 external/ (10)    TourAPI · 카카오맵 · CLOVA 래퍼 (예외를 밖으로 내보내지 않음)
 common/   (8)     응답 포맷 {success,data,error} · 상수 · 검증 · 인증
-tests/    (45)    pytest 680 케이스
+tests/    (45)    pytest 773 케이스 (770 통과 · 2 실패 · 1 스킵)
 .github/workflows/deploy.yml   develop push → SSH 배포 → reload → 헬스체크
 ```
 
@@ -133,7 +133,7 @@ def find_nearby_places(lat, lng, radius_m, content_type_id=None, rows=None):
 | 조건 필터 | 7개 → **11개 대분류 · 223개 세부 옵션** (대분류 탭 + 세부 체크박스, 대분류당 1회 가점) | `common/search_categories.py` |
 | 공공데이터 | 관광지정보 표준데이터 **840건** CSV 연동(충남 43건) | `external/tour_csv.py`, `data/` |
 | 외부 API | TourAPI 4종 + 카카오맵 + CLOVA, 일일 한도 1,000건 대응 | `external/` |
-| 테스트 | **45파일 · 680 케이스** (pytest) | `tests/` |
+| 테스트 | **45파일 · 773 케이스** (pytest 수집 기준, 770 통과 · 날짜 하드코딩 테스트 2건 실패) | `tests/` |
 | 배포 | develop push → 자동 배포(SSH · reload · 헬스체크), 동시 배포 방지 `concurrency` | `.github/workflows/deploy.yml` |
 | 커밋 | 본인 174건 / 전체 497건 (2026.07 ~ 09 집중) | `git log` |
 | 수상 | ICT이노베이션 충청권 대상(2025.10) · 관광데이터 공모전 예비심사 통과(2026.05) | — |
